@@ -164,7 +164,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 
 ### 7. Store connections
 
-Our stores are Fry's, Costco and Walmart. Fry's is built; the rest is planned (see [roadmap.md](roadmap.md#milestone-6-store-connections-and-the-mise-extension)).
+Our stores are Fry's, Costco and Walmart. Fry's and Costco are built; Walmart is planned (see [roadmap.md](roadmap.md#milestone-6-store-connections-and-the-mise-extension)).
 
 - **Fry's: straight into the cart** (List → **Send to Fry's**). Once a household admin picks the store and links the household's Fry's account in Settings → Stores:
   - Each item gets a product at that Fry's. The first time, Mise suggests one (the small AI model picks from Fry's search results, so "chicken thighs" isn't dog treats); after that it remembers. **Change** searches Fry's to pick another, and that's remembered too.
@@ -172,7 +172,7 @@ Our stores are Fry's, Costco and Walmart. Fry's is built; the rest is planned (s
   - Fry's prices for that store today, sales, stock and the aisle show on each line, with a total.
   - **Add to Fry's cart** sends the ticked lines. Pick a pickup or delivery time and pay in the Fry's app or website. Kroger's API can only add, so what was sent is marked **Sent** and left out next time unless ticked.
   - Works the same for any Kroger store: Ralphs, King Soopers, Smith's, Harris Teeter and the rest.
-- **Costco (planned):** the list for Costco, each item linked to Costco Same-Day to add there.
+- **Costco** (List → Shop → **Shop at Costco**): Costco has no way for apps to fill a cart, so the list for Costco links each item to its search at Costco Same-Day (run by Instacart; sign in there once with your membership). Check items off as they go in.
 - **Walmart (planned): through the Mise browser extension.** It fills your Walmart cart from your own signed-in tab, asking the first time which product to use for each item.
 - **Review first:** when the weekly autopilot plans the week, nothing goes into a cart by itself.
 - **Mise never touches payment.**

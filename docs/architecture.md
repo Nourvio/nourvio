@@ -327,7 +327,7 @@ The parser lives in the shared package, so the server and browser use the same c
 | Review | A queue of AI proposals waiting for you, such as bulk cleanup results |
 | Find recipes | Tabs for starter collections (photo cards; a collection's page lists its recipes with Import and Import all) and Discover with AI (a theme box, ideas, results and earlier searches) and Sites (newest recipes from followed sites, filterable by site, with following and suggestions to the side). `?tab=` picks the tab, `?search=` the search shown and `?site=` the site |
 | Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, Add to list, and calories per day |
-| List | Shopping list grouped by section, with every-week items, always-on-hand items and **Send to Fry's** (`/list/shop`: each item's Fry's product, packages, prices and sales, a total, then add to the cart) |
+| List | Shopping list grouped by section, with every-week items, always-on-hand items and a **Shop** menu: Send to Fry's (`/list/shop`: each item's Fry's product, packages, prices and sales, a total, then add to the cart) and Shop at Costco (`/list/costco`: each item linked to its Costco Same-Day search, `sameday.costco.com/store/costco/s?k=`) |
 | Pantry | Use soon (near use-by dates, and fresh leftovers from skipped meals), everything else by aisle, and always-on-hand items |
 | Chat | Available on every screen (see below) |
 | Settings | Your account and appearance; your household (members, invites, rename, tidying up, which meals to plan and the first day of the week); nutrition for the whole library; for the server admin, the server (sign-up, households), AI (keys, models, usage by household), the USDA key and the Mealie import; later the API token and plan rules |

@@ -109,17 +109,33 @@ export function ListPage() {
         }
         actions={
           <>
-            {kroger?.store && toGet.length > 0 && (
-              <Button variant="outline" asChild>
-                <Link to="/list/shop">
-                  <HugeiconsIcon
-                    icon={ShoppingCart01Icon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                  />
-                  Send to {kroger.store.banner}
-                </Link>
-              </Button>
+            {toGet.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <HugeiconsIcon
+                      icon={ShoppingCart01Icon}
+                      strokeWidth={2}
+                      data-icon="inline-start"
+                    />
+                    Shop
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {kroger?.store ? (
+                    <DropdownMenuItem asChild>
+                      <Link to="/list/shop">Send to {kroger.store.banner}</Link>
+                    </DropdownMenuItem>
+                  ) : (
+                    <DropdownMenuItem asChild>
+                      <Link to="/settings#connections">Connect Fry's</Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem asChild>
+                    <Link to="/list/costco">Shop at Costco</Link>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             <Button onClick={() => setFromPlan(true)}>
               <HugeiconsIcon
