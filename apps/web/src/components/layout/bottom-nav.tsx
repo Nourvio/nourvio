@@ -12,11 +12,12 @@ export function BottomNav() {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {PRIMARY_NAV.map((item) => (
           <li key={item.to}>
             <NavLink
               to={item.to}
+              end={item.to === "/"}
               className={({ isActive }) =>
                 cn(
                   "flex flex-col items-center gap-1 pt-2 pb-2.5 text-xs font-medium text-muted-foreground transition-colors",
@@ -28,7 +29,7 @@ export function BottomNav() {
                 <>
                   <span
                     className={cn(
-                      "flex h-8 w-14 items-center justify-center rounded-full transition-colors",
+                      "flex h-8 w-12 items-center justify-center rounded-full transition-colors min-[400px]:w-14",
                       isActive && "bg-accent text-accent-foreground"
                     )}
                   >

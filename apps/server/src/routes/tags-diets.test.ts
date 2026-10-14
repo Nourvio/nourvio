@@ -53,6 +53,25 @@ describe("diet labels and tags", () => {
     ])
   })
 
+  test("works them out again when the ingredients change", async () => {
+    const stirFry = (
+      await t.admin.post("/api/recipes", {
+        name: "Stir Fry",
+        ingredients: ["1 lb chicken thighs", "2 cups broccoli"],
+      })
+    ).body.recipe as Recipe
+    const diets = async () =>
+      (await list()).find((r) => r.id === stirFry.id)!.diets
+    expect(await diets()).not.toContain("vegetarian")
+
+    await t.admin.put(`/api/recipes/${stirFry.id}`, {
+      name: "Stir Fry",
+      ingredients: ["1 block firm tofu", "2 cups broccoli"],
+    })
+    expect(await diets()).toContain("vegan")
+    await t.admin.delete(`/api/recipes/${stirFry.id}`)
+  })
+
   test("takes the household's corrections", async () => {
     const res = await t.admin.put(`/api/recipes/${soup.id}/diets`, {
       overrides: { vegan: false },

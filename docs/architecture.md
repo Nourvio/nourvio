@@ -271,7 +271,8 @@ The parser lives in the shared package, so the server and browser use the same c
 - The original text is always kept. Display shows the line as written, swapping in the scaled quantity when you change servings.
 - **Grams:** each ingredient comes with `unitGrams`, what one of its unit weighs, worked out when the recipe is read (`nutrition/weights.ts`) so it always uses the latest matches. The order: the weight the line states ("(200 g)", spread over its amount so it scales), a weight unit, a can's size, a stick of butter, the shared baking table (`weights.ts`, grams per cup for about fifty staples), the matched USDA food's volume portions, then what the AI weighed before. "1 cup plus 2 tbsp" counts both. The same order weighs ingredients for nutrition.
 - **Pairings** (`pairings.ts`): a recipe with what it goes with is put together in the browser, not saved. The pairing is scaled to the same servings when both say how many they make (else a batch per batch), its lines and steps come first under its own heading, nutrition per serving is the two added up, and diet labels are the ones both share. The list and pantry use the same scaling for a planned meal's pairing (`services/meal-lines.ts`).
-- **Diet labels** (`diets.ts`) come from the ingredient lines when a recipe is read: each line is checked against groups (meat, fish, dairy, egg, gluten, nuts, honey), after taking out phrases that don't count ("vegetable broth", "corn tortillas", "peanut butter"). A diet is labeled only when no line rules it out. `diet_overrides` holds the household's corrections, which win.
+- **Diet labels** (`diets.ts`) come from the ingredient lines when a recipe is read: each line is checked against groups (meat, fish, dairy, egg, gluten, nuts, honey), after taking out phrases that don't count ("vegetable broth", "corn tortillas", "peanut butter"). A diet is labeled only when no line rules it out. `diet_overrides` holds the household's corrections, which win. Listing the library remembers each recipe's labels in memory until its `updated_at` changes (saving ingredients always updates the recipe), and reads only the columns a card needs, so a big library lists without reading every ingredient line each time.
+- **Kitchen timers** live in the browser outside any page (saved in localStorage), so they keep running and ringing anywhere in the app and survive a reload. The cook view also saves where you got to for 12 hours.
 - When a food or unit isn't recognized, the line still saves. It just won't combine with other lines on lists or match the pantry.
 
 ## Auth
@@ -295,9 +296,10 @@ The parser lives in the shared package, so the server and browser use the same c
 
 | Screen | Purpose |
 |---|---|
-| Recipes | Grid with search, diet, tag and time filters, sorting, and tag management |
+| Today | The home page: the next meal today (or a dinner idea), the next few days, food to use soon, what's left on the list, and recipes to cook again or added lately |
+| Recipes | Cards or a compact list, with search, diet, tag and time filters, sorting, and tag management. Cards are drawn a page at a time as you scroll |
 | Recipe | Detail page with a servings scaler, ingredients, steps, nutrition, and buttons for Cook, Edit, Tidy up, Made it and History |
-| Cook | Full-screen cooking view |
+| Cook | Full-screen cooking: a get-ready checklist, then a step at a time with that step's ingredients, timers and a text size. `?entry=` (from the plan or Today) makes Done cooking mark that meal cooked |
 | Add | Link, Text, Photo and Manual tabs |
 | Review | A queue of AI proposals waiting for you, such as bulk cleanup results |
 | Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, Add to list, and calories per day |
@@ -308,7 +310,7 @@ The parser lives in the shared package, so the server and browser use the same c
 
 ### Layout
 
-- **Phone:** a bottom tab bar (Recipes, Plan, List, Pantry) and a floating chat button. Chat opens as a full-height bottom drawer.
+- **Phone:** a bottom tab bar (Today, Recipes, Plan, List, Pantry) and a floating chat button. Chat opens as a full-height bottom drawer.
 - **iPad and desktop:** a sidebar for navigation. Chat opens as a side panel next to the recipe or cook view, so you can read and ask at the same time.
 
 ### shadcn/ui components we expect to use

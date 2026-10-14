@@ -32,10 +32,12 @@ import { RecipeImage } from "@/features/recipes/recipe-image"
 import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
+import { cookLink } from "./cook-link"
 import { dayName, monthDay } from "./dates"
 import { EntryPairingDialog } from "./entry-pairing-dialog"
 import {
   useRemovePlanEntry,
+  useSetEntryStatus,
   useSuggestMeal,
   useUpdatePlanEntry,
 } from "./use-plan"
@@ -152,46 +154,18 @@ function DayNutrition({ entries }: { entries: PlanEntry[] }) {
   )
 }
 
-/** The cook view for a planned meal, at its scale and with what it goes with. */
-function cookLink(slug: string, scale: number, withSlug?: string) {
-  const params = new URLSearchParams()
-  if (scale !== 1) params.set("scale", String(scale))
-  if (withSlug) params.set("with", withSlug)
-  return `/recipes/${slug}/cook${params.size ? `?${params}` : ""}`
-}
-
 function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
   const [pairing, setPairing] = React.useState(false)
   const update = useUpdatePlanEntry()
   const remove = useRemovePlanEntry()
   const suggestOne = useSuggestMeal()
+  const { setStatus: setEntryStatus } = useSetEntryStatus()
   const { recipe } = entry
   const servings = entry.servings ?? recipe?.servings ?? null
-  const scale =
-    recipe?.servings && entry.servings ? entry.servings / recipe.servings : 1
   const skipped = entry.status === "skipped"
   const cooked = entry.status === "cooked"
-
-  function setStatus(status: PlanEntry["status"], message: string) {
-    const names = (list: string[]) => list.join(", ").toLowerCase()
-    update.mutate(
-      { id: entry.id, status },
-      {
-        onSuccess: (updated) =>
-          toast.success(message, {
-            description: updated.pantryUsed.length
-              ? `Took ${names(updated.pantryUsed)} out of the pantry.`
-              : entry.pantryUsed.length
-                ? `Put ${names(entry.pantryUsed)} back in the pantry.`
-                : undefined,
-          }),
-        onError: (error) =>
-          toast.error(
-            error instanceof ApiError ? error.message : "Couldn't save that"
-          ),
-      }
-    )
-  }
+  const setStatus = (status: PlanEntry["status"], message: string) =>
+    setEntryStatus(entry, status, message)
 
   /** Swaps in another recipe that suits the meal, with an undo. */
   function swap() {
@@ -311,7 +285,7 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
         <DropdownMenuContent align="end" className="w-52">
           {recipe && (
             <DropdownMenuItem asChild>
-              <Link to={cookLink(recipe.slug, scale, entry.with?.slug)}>
+              <Link to={cookLink(entry)}>
                 <HugeiconsIcon icon={CookingPotIcon} strokeWidth={2} />
                 Start cooking
               </Link>

@@ -108,7 +108,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
         else next.delete("with")
         return next
       },
-      { replace: true }
+      { replace: true, preventScrollReset: true }
     )
   }
   useChatScreen({

@@ -13,9 +13,7 @@ import { useLogin, useSession, useSetupStatus } from "./use-session"
 
 /** Only follow `next` to a page in this app, never to another site. */
 function safeNext(next: string | null) {
-  return next && next.startsWith("/") && !next.startsWith("//")
-    ? next
-    : "/recipes"
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : "/"
 }
 
 export function LoginPage() {

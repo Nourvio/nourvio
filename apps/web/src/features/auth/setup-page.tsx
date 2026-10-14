@@ -33,7 +33,7 @@ export function SetupPage() {
     const input = form.validate()
     if (!input) return
     setup.mutate(input, {
-      onSuccess: () => navigate("/recipes", { replace: true }),
+      onSuccess: () => navigate("/", { replace: true }),
       onError: form.showError,
     })
   }

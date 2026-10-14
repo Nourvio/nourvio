@@ -25,7 +25,7 @@ export function SignupPage() {
     householdName: "",
   })
 
-  if (session.data) return <Navigate to="/recipes" replace />
+  if (session.data) return <Navigate to="/" replace />
   if (status.data?.needsSetup) return <Navigate to="/setup" replace />
 
   if (status.data && !status.data.signupOpen) {
@@ -46,7 +46,7 @@ export function SignupPage() {
     const input = form.validate()
     if (!input) return
     signup.mutate(input, {
-      onSuccess: () => navigate("/recipes", { replace: true }),
+      onSuccess: () => navigate("/", { replace: true }),
       onError: form.showError,
     })
   }

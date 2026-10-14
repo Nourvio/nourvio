@@ -5,7 +5,7 @@ import {
   Link01Icon,
   SparklesIcon,
 } from "@hugeicons/core-free-icons"
-import { Link, useSearchParams } from "react-router"
+import { Link, useLocation, useSearchParams } from "react-router"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -23,7 +23,7 @@ import { useCurrentUser } from "@/features/auth/current-user"
 
 import { AddRecipeMenu } from "./add-recipe-menu"
 import { ImportDialog } from "./import-dialog"
-import { RecipeCard } from "./recipe-card"
+import { RecipeCard, RecipeRow, useRecipeView } from "./recipe-card"
 import { usePendingProposals } from "./use-cleanup"
 import { useImportDialog } from "./use-import"
 import { RecipeFilterBar } from "./recipe-filter-bar"
@@ -39,17 +39,26 @@ import { useRecipes } from "./use-recipes"
 /**
  * The library: search (on the server, through ingredients too), then diet,
  * tag and time filters and sorting here, instantly. Everything is in the
- * URL.
+ * URL. Cards are drawn a page at a time as you scroll, so a big library
+ * opens quickly.
  */
 export function RecipesPage() {
   const [params, setParams] = useSearchParams()
   const filters = readFilters(params)
   const [search, setSearch] = React.useState(filters.q)
   const q = useDebounced(search.trim(), 250)
+  const [view] = useRecipeView()
 
+  // Only when the typed search settles on something new: an unneeded
+  // replace would lose the scroll position coming Back to the page.
+  const urlQ = filters.q
   React.useEffect(() => {
-    setParams((current) => writeFilters(current, { q }), { replace: true })
-  }, [q, setParams])
+    if (q === urlQ) return
+    setParams((current) => writeFilters(current, { q }), {
+      replace: true,
+      preventScrollReset: true,
+    })
+  }, [q, urlQ, setParams])
 
   const me = useCurrentUser()
   const importDialog = useImportDialog()
@@ -57,18 +66,27 @@ export function RecipesPage() {
   const recipes = useRecipes({ q })
   const all = recipes.data ?? []
   const shown = sortRecipes(filterRecipes(all, filters), filters.sort)
+  const [revealed, revealMore] = useRevealed()
 
   function change(next: Partial<RecipeFilters>) {
-    setParams((current) => writeFilters(current, next), { replace: true })
+    setParams((current) => writeFilters(current, next), {
+      replace: true,
+      preventScrollReset: true,
+    })
   }
 
   const libraryEmpty = !q && recipes.data?.length === 0
+  const libraryCount = !q && recipes.data?.length ? recipes.data.length : null
 
   return (
     <>
       <PageHeader
         title="Recipes"
-        description="Everything you cook, in one place."
+        description={
+          libraryCount
+            ? `${libraryCount.toLocaleString()} ${libraryCount === 1 ? "recipe" : "recipes"}, everything you cook in one place.`
+            : "Everything you cook, in one place."
+        }
         actions={
           <>
             {pendingReview > 0 && (
@@ -162,13 +180,73 @@ export function RecipesPage() {
           )}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {shown.map((recipe) => (
-            <RecipeCard key={recipe.id} recipe={recipe} />
-          ))}
-        </div>
+        <>
+          {view === "list" ? (
+            <div className="-mx-2 grid gap-x-6 gap-y-0.5 lg:grid-cols-2">
+              {shown.slice(0, revealed).map((recipe) => (
+                <RecipeRow key={recipe.id} recipe={recipe} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {shown.slice(0, revealed).map((recipe) => (
+                <RecipeCard key={recipe.id} recipe={recipe} />
+              ))}
+            </div>
+          )}
+          {shown.length > revealed && <RevealMore onReveal={revealMore} />}
+        </>
       )}
     </>
+  )
+}
+
+const PAGE_SIZE = 48
+
+/**
+ * How far each visit to the page got (by history entry), while the app is
+ * open. Not kept across reloads: the first page loaded always has the same
+ * key, so a saved count could belong to another visit.
+ */
+const revealedByVisit = new Map<string, number>()
+
+/**
+ * How many recipes to draw: a page at first, then more as the end scrolls
+ * near. Remembered for this visit to the page (filters make a new one), so
+ * Back from a recipe lands where you were.
+ */
+function useRevealed() {
+  const { key } = useLocation()
+  const [, redraw] = React.useReducer((n: number) => n + 1, 0)
+  const count = revealedByVisit.get(key) ?? PAGE_SIZE
+  const more = React.useCallback(() => {
+    revealedByVisit.set(key, count + PAGE_SIZE)
+    redraw()
+  }, [count, key])
+  return [count, more] as const
+}
+
+/** Asks for more once it's within a couple of screens of view. */
+function RevealMore({ onReveal }: { onReveal: () => void }) {
+  const marker = React.useRef<HTMLDivElement>(null)
+  React.useEffect(() => {
+    const node = marker.current
+    if (!node) return
+    // A new observer after each reveal checks again, so a tall screen
+    // keeps filling until the marker is out of reach.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) onReveal()
+      },
+      { rootMargin: "1500px 0px" }
+    )
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [onReveal])
+  return (
+    <div ref={marker} className="flex justify-center py-8">
+      <Skeleton className="h-4 w-32" />
+    </div>
   )
 }
 

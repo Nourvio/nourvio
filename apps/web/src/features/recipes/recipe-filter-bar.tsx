@@ -3,6 +3,8 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowDown01Icon,
   Cancel01Icon,
+  GridViewIcon,
+  ListViewIcon,
   Search01Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
@@ -32,14 +34,17 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import { Kbd } from "@/components/ui/kbd"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { cn } from "@/lib/utils"
 
 import { ManageTagsDialog } from "./manage-tags-dialog"
+import { useRecipeView, type RecipeView } from "./recipe-card"
 import {
   countDiets,
   countTags,
@@ -73,8 +78,24 @@ export function RecipeFilterBar({
   total: number
 }) {
   const [managing, setManaging] = React.useState(false)
+  const searchBox = React.useRef<HTMLInputElement>(null)
   const active =
     filters.tags.length + filters.diets.length + (filters.time ? 1 : 0)
+
+  // "/" jumps to the search box, like most sites with one.
+  React.useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key !== "/" || event.metaKey || event.ctrlKey) return
+      const target = event.target as HTMLElement | null
+      if (target?.closest("input, textarea, [contenteditable=true]")) return
+      if (document.querySelector("[role=dialog]")) return
+      event.preventDefault()
+      searchBox.current?.focus()
+      searchBox.current?.select()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [])
 
   function toggleDiet(diet: Diet) {
     onChange({
@@ -103,12 +124,28 @@ export function RecipeFilterBar({
             <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
           </InputGroupAddon>
           <InputGroupInput
+            ref={searchBox}
             type="search"
             placeholder="Search recipes, ingredients or tags"
             aria-label="Search recipes"
+            aria-keyshortcuts="/"
             value={search}
             onChange={(event) => onSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape" && search) {
+                event.preventDefault()
+                onSearch("")
+              }
+            }}
           />
+          {!search && (
+            <InputGroupAddon
+              align="inline-end"
+              className="hidden pointer-fine:flex"
+            >
+              <Kbd>/</Kbd>
+            </InputGroupAddon>
+          )}
           {search && (
             <InputGroupAddon align="inline-end">
               <InputGroupButton
@@ -142,6 +179,7 @@ export function RecipeFilterBar({
             value={filters.sort}
             onChange={(sort) => onChange({ sort })}
           />
+          <ViewToggle />
         </div>
       </div>
 
@@ -417,5 +455,26 @@ function SortMenu({
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+/** Photo cards, or a compact list for scanning lots of recipes. */
+function ViewToggle() {
+  const [view, setView] = useRecipeView()
+  return (
+    <ToggleGroup
+      type="single"
+      variant="outline"
+      value={view}
+      onValueChange={(value) => value && setView(value as RecipeView)}
+      aria-label="Show recipes as"
+    >
+      <ToggleGroupItem value="grid" aria-label="Cards" title="Cards">
+        <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+      </ToggleGroupItem>
+      <ToggleGroupItem value="list" aria-label="List" title="List">
+        <HugeiconsIcon icon={ListViewIcon} strokeWidth={2} />
+      </ToggleGroupItem>
+    </ToggleGroup>
   )
 }

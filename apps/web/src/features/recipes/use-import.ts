@@ -35,12 +35,16 @@ export function useImportDialog() {
         ? "link"
         : null
 
+  // The page behind the dialog stays where it was.
   function open(next: ImportTab) {
-    setParams((current) => {
-      const updated = new URLSearchParams(current)
-      updated.set("import", next)
-      return updated
-    })
+    setParams(
+      (current) => {
+        const updated = new URLSearchParams(current)
+        updated.set("import", next)
+        return updated
+      },
+      { preventScrollReset: true }
+    )
   }
 
   function close() {
@@ -50,7 +54,7 @@ export function useImportDialog() {
         for (const key of IMPORT_PARAMS) updated.delete(key)
         return updated
       },
-      { replace: true }
+      { replace: true, preventScrollReset: true }
     )
   }
 

@@ -40,6 +40,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
   - Search by name, description, tag or ingredient.
   - Filter by diet, tags (several at once, searchable, with counts) and time ("Under 30 min"), and sort by newest, name, rating, recently made or quickest. Filters show as chips you can remove, with "12 of 140 recipes", and live in the URL so a view can be bookmarked.
   - **Tags** can be renamed, merged (rename one to another's name) and deleted for the whole household, for tidying an imported library.
+  - **Cards or a compact list,** remembered on each device. Cards load as you scroll, so thousands of recipes open quickly, and Back from a recipe returns to the same spot. "/" jumps to the search box.
 - **Goes with** (mix and match): a recipe can go with sauces, sides and the like, so "chicken + rice" or "pasta" isn't saved a hundred times over:
   - Pick particular recipes, or a whole tag ("any sauce"), so new ones join by themselves. A sauce shows what it pairs with.
   - Tap a pairing on the recipe to see the two as one: the sauce's ingredients and steps first, each under its own heading, the sauce scaled to the servings, nutrition added up and only the diet labels both share. Cooking it walks through both, and the link can be shared.
@@ -168,13 +169,19 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 ### 9. Phone and iPad
 
 - A mobile-first layout that also works well on iPad and desktop. It can be added to the home screen and runs like an app.
+- **Today,** the home page:
+  - **What's next:** the next meal planned today, big, with Start cooking and Mark cooked. With nothing planned for dinner, it offers one idea at a time from the library (using up what needs using first), planned for tonight with a tap.
+  - The next few days of the plan, food to use soon (each with a link to recipes that use it), what's left on the shopping list, favorites not made in three weeks, and what was added lately.
+  - A new household gets three steps to start instead.
 - **The cook view:**
-  - large text
-  - one step at a time or the full list
-  - an ingredient checklist
-  - scaled quantities
-  - the screen stays on
-  - times in steps become tap-to-start timers ("bake 25 minutes")
+  - **Get ready** first: everything to gather, as a checklist, then one step at a time.
+  - Each step shows the ingredients it uses, with amounts (tap one once it's in).
+  - Large text, with a size setting (up to extra large) remembered on each device.
+  - Scaled quantities, as written or in grams.
+  - The screen stays on.
+  - **Timers:** times in steps become tap-to-start timers ("bake 25 minutes"), and any other length is a tap away. They beep and buzz when done, take "+1 min", keep running while you look at something else in the app (shown in the top bar, a tap away from the cooking), and survive a reload.
+  - **Leaving doesn't lose your place:** coming back within 12 hours picks up at the same step, with what was ticked off.
+  - Started from the plan or Today, **Done cooking** marks that meal cooked (and takes its ingredients out of the pantry), then goes back where you started.
 - **Built for messy hands:** big tap targets, and swipe between steps.
 - Reading recipes offline may come later.
 

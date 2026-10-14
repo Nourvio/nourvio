@@ -15,7 +15,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-import { PRIMARY_NAV } from "./nav-items"
+import { isSectionActive, PRIMARY_NAV } from "./nav-items"
 
 export function AppSidebar() {
   const { pathname } = useLocation()
@@ -26,7 +26,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link to="/recipes" aria-label="Mise home">
+              <Link to="/" aria-label="Mise home">
                 <Logo />
               </Link>
             </SidebarMenuButton>
@@ -42,10 +42,10 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.to}>
                   <SidebarMenuButton
                     asChild
-                    isActive={pathname.startsWith(item.to)}
+                    isActive={isSectionActive(item.to, pathname)}
                     tooltip={item.label}
                   >
-                    <NavLink to={item.to}>
+                    <NavLink to={item.to} end={item.to === "/"}>
                       <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                       <span>{item.label}</span>
                     </NavLink>

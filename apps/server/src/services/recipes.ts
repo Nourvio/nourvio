@@ -10,6 +10,7 @@ import {
   type RecipeInputParsed,
   type RecipeOrigin,
   type RecipeSummary,
+  type Diet,
   type RecipeVersion,
   type Tag,
 } from "@mise/shared"
@@ -44,6 +45,23 @@ import { deleteImage, imageUrls } from "./images.ts"
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0]
 type RecipeRow = typeof recipes.$inferSelect
+
+/** What a recipe card needs, so listing a big library skips notes and nutrition. */
+const SUMMARY_COLUMNS = {
+  id: recipes.id,
+  slug: recipes.slug,
+  name: recipes.name,
+  description: recipes.description,
+  image: recipes.image,
+  totalMinutes: recipes.totalMinutes,
+  servings: recipes.servings,
+  rating: recipes.rating,
+  dietOverrides: recipes.dietOverrides,
+  lastMadeAt: recipes.lastMadeAt,
+  createdAt: recipes.createdAt,
+  updatedAt: recipes.updatedAt,
+}
+type SummaryRow = Pick<RecipeRow, keyof typeof SUMMARY_COLUMNS>
 
 const uuidSchema = z.uuid()
 
@@ -224,9 +242,10 @@ async function tagsFor(db: Db | Tx, recipeIds: string[]) {
 }
 
 function toSummary(
-  row: RecipeRow,
+  row: SummaryRow,
   tagNames: string[],
-  lines: string[]
+  /** Worked out from the ingredients, before the household's corrections. */
+  diets: Diet[]
 ): RecipeSummary {
   return {
     id: row.id,
@@ -238,7 +257,7 @@ function toSummary(
     servings: row.servings,
     rating: row.rating,
     tags: tagNames,
-    diets: applyDietOverrides(dietsFor(lines), row.dietOverrides),
+    diets: applyDietOverrides(diets, row.dietOverrides),
     lastMadeAt: row.lastMadeAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
   }
@@ -289,7 +308,7 @@ export async function getRecipe(
     ...toSummary(
       row,
       tagMap.get(row.id) ?? [],
-      ingredients.map((i) => i.rawText)
+      dietsFor(ingredients.map((i) => i.rawText))
     ),
     origin: row.origin,
     sourceUrl: row.sourceUrl,
@@ -370,35 +389,69 @@ export async function listRecipes(
     )
   }
   const rows = await db
-    .select()
+    .select(SUMMARY_COLUMNS)
     .from(recipes)
     .where(and(...conditions))
     .orderBy(desc(recipes.createdAt))
-  const ids = rows.map((r) => r.id)
-  const [tagMap, lines] = await Promise.all([
-    tagsFor(db, ids),
-    ingredientLines(db, ids),
+  const [tagMap, diets] = await Promise.all([
+    tagsFor(
+      db,
+      rows.map((r) => r.id)
+    ),
+    dietsByRecipe(db, rows),
   ])
   return rows.map((row) =>
-    toSummary(row, tagMap.get(row.id) ?? [], lines.get(row.id) ?? [])
+    toSummary(row, tagMap.get(row.id) ?? [], diets.get(row.id) ?? [])
   )
 }
 
-/** Each recipe's ingredient lines, for working out diet labels. */
-async function ingredientLines(db: Db, ids: string[]) {
+/**
+ * Diet labels worked out from each recipe's ingredients, remembered until the
+ * recipe changes (saving ingredients always updates the recipe), so listing a
+ * big library doesn't read and check every ingredient line each time.
+ */
+const dietCache = new Map<string, { updatedAt: number; diets: Diet[] }>()
+const DIET_CACHE_LIMIT = 50_000
+
+async function dietsByRecipe(
+  db: Db,
+  rows: Pick<RecipeRow, "id" | "updatedAt">[]
+) {
+  const result = new Map<string, Diet[]>()
+  const missing: string[] = []
+  for (const row of rows) {
+    const cached = dietCache.get(row.id)
+    if (cached && cached.updatedAt === row.updatedAt.getTime()) {
+      result.set(row.id, cached.diets)
+    } else {
+      missing.push(row.id)
+    }
+  }
+  if (!missing.length) return result
   const lines = new Map<string, string[]>()
-  if (!ids.length) return lines
-  const rows = await db
+  const lineRows = await db
     .select({
       recipeId: recipeIngredients.recipeId,
       text: recipeIngredients.rawText,
     })
     .from(recipeIngredients)
-    .where(inArray(recipeIngredients.recipeId, ids))
-  for (const row of rows) {
+    .where(inArray(recipeIngredients.recipeId, missing))
+  for (const row of lineRows) {
     lines.set(row.recipeId, [...(lines.get(row.recipeId) ?? []), row.text])
   }
-  return lines
+  const updated = new Map(rows.map((r) => [r.id, r.updatedAt.getTime()]))
+  for (const id of missing) {
+    const diets = dietsFor(lines.get(id) ?? [])
+    result.set(id, diets)
+    dietCache.delete(id)
+    dietCache.set(id, { updatedAt: updated.get(id)!, diets })
+  }
+  // Oldest first, so the least recently worked out go.
+  for (const id of dietCache.keys()) {
+    if (dietCache.size <= DIET_CACHE_LIMIT) break
+    dietCache.delete(id)
+  }
+  return result
 }
 
 /** The household's tag by name, ignoring case. */

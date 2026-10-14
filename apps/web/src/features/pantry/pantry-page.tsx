@@ -7,7 +7,6 @@ import {
   ShoppingBasketAdd01Icon,
 } from "@hugeicons/core-free-icons"
 import {
-  addDays,
   DEFAULT_ON_HAND,
   STORE_SECTIONS,
   whyUseSoon,
@@ -41,17 +40,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { OnHandDialog } from "@/features/list/list-dialogs"
 import { useAddListItem } from "@/features/list/use-list"
-import {
-  dayInSentence,
-  monthDay,
-  shortDayName,
-  today,
-} from "@/features/plan/dates"
+import { shortDayName, today } from "@/features/plan/dates"
 import { useHouseholdInfo } from "@/features/settings/use-household"
 import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 import { EditPantryDialog } from "./edit-pantry-dialog"
+import { labelForUseBy, soonLabel, urgency } from "./soon"
 import { useAddPantryItem, usePantry, useRemovePantryItem } from "./use-pantry"
 
 /** What's at home, by aisle, with what to use soon at the top. */
@@ -193,32 +188,6 @@ export function PantryPage() {
 
 function failed(error: unknown) {
   toast.error(error instanceof ApiError ? error.message : "Couldn't save that")
-}
-
-/** Past dates first, then by date, then leftovers. */
-function urgency(soon: UseSoonReason) {
-  if (soon.kind === "leftover") return Number.MAX_SAFE_INTEGER
-  return Date.parse(soon.date)
-}
-
-/** "Use by tomorrow", "Use by Oct 20". */
-function labelForUseBy(date: string) {
-  const now = today()
-  return date <= addDays(now, 6)
-    ? `Use by ${dayInSentence(date)}`
-    : `Use by ${monthDay(date)}`
-}
-
-function soonLabel(soon: UseSoonReason) {
-  if (soon.kind !== "leftover") {
-    return soon.kind === "past"
-      ? `Past its use-by date (${monthDay(soon.date)})`
-      : labelForUseBy(soon.date)
-  }
-  const meal = soon.meals[0]!
-  return meal.status === "skipped"
-    ? `Bought for ${meal.name}, which was skipped`
-    : `Bought for ${meal.name} on ${shortDayName(meal.date)}, not cooked yet`
 }
 
 function PantryRow({

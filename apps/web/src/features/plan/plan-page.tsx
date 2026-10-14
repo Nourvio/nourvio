@@ -62,7 +62,7 @@ export function PlanPage() {
         else next.set("week", week)
         return next
       },
-      { replace: true }
+      { replace: true, preventScrollReset: true }
     )
   }
 

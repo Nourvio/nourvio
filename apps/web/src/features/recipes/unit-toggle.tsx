@@ -1,40 +1,16 @@
-import * as React from "react"
 import type { RecipeIngredient } from "@mise/shared"
 
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { storedChoice } from "@/lib/stored-choice"
 
 export type UnitMode = "written" | "grams"
 
-const STORAGE_KEY = "mise.units"
-const listeners = new Set<() => void>()
-
-function read(): UnitMode {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === "grams" ? "grams" : "written"
-  } catch {
-    return "written"
-  }
-}
-
-function write(mode: UnitMode) {
-  try {
-    localStorage.setItem(STORAGE_KEY, mode)
-  } catch {
-    // Private windows can refuse; it just won't be remembered.
-  }
-  for (const listener of listeners) listener()
-}
-
-function subscribe(listener: () => void) {
-  listeners.add(listener)
-  return () => listeners.delete(listener)
-}
-
 /** As written or in grams, remembered on this device. */
-export function useUnitMode() {
-  const mode = React.useSyncExternalStore(subscribe, read, () => "written")
-  return [mode, write] as const
-}
+export const useUnitMode = storedChoice<UnitMode>(
+  "mise.units",
+  ["written", "grams"],
+  "written"
+)
 
 /** Whether switching to grams would change anything ("2 eggs" wouldn't). */
 export function canShowGrams(ingredients: RecipeIngredient[]) {

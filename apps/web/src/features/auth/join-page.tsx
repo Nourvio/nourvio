@@ -92,7 +92,7 @@ function JoinForm({ token }: { token: string }) {
     const input = form.validate()
     if (!input) return
     join.mutate(input, {
-      onSuccess: () => navigate("/recipes", { replace: true }),
+      onSuccess: () => navigate("/", { replace: true }),
       onError: form.showError,
     })
   }

@@ -7,8 +7,9 @@ import type {
   UpdatePlanEntryInput,
 } from "@mise/shared"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { toast } from "sonner"
 
-import { api } from "@/lib/api"
+import { api, ApiError } from "@/lib/api"
 
 export const PLAN_KEY = ["plan"] as const
 
@@ -43,12 +44,53 @@ export function useUpdatePlanEntry() {
           body: input,
         })
       ).entry,
-    onSuccess: () => {
+    onSuccess: (_entry, input) => {
       queryClient.invalidateQueries({ queryKey: PLAN_KEY })
-      // Cooking a meal (or taking it back) changes the pantry.
+      // Cooking a meal (or taking it back) changes the pantry...
       queryClient.invalidateQueries({ queryKey: ["pantry"] })
+      // ...and when its recipes were last made.
+      if (input.status) {
+        queryClient.invalidateQueries({ queryKey: ["recipes"] })
+        queryClient.invalidateQueries({ queryKey: ["recipe"] })
+      }
     },
   })
+}
+
+/**
+ * Marks a planned meal cooked, skipped or planned again, saying what was
+ * taken out of (or put back in) the pantry.
+ */
+export function useSetEntryStatus() {
+  const update = useUpdatePlanEntry()
+  function setStatus(
+    entry: PlanEntry,
+    status: PlanEntry["status"],
+    message: string,
+    { onDone }: { onDone?: () => void } = {}
+  ) {
+    const names = (list: string[]) => list.join(", ").toLowerCase()
+    update.mutate(
+      { id: entry.id, status },
+      {
+        onSuccess: (updated) => {
+          toast.success(message, {
+            description: updated.pantryUsed.length
+              ? `Took ${names(updated.pantryUsed)} out of the pantry.`
+              : entry.pantryUsed.length
+                ? `Put ${names(entry.pantryUsed)} back in the pantry.`
+                : undefined,
+          })
+          onDone?.()
+        },
+        onError: (error) =>
+          toast.error(
+            error instanceof ApiError ? error.message : "Couldn't save that"
+          ),
+      }
+    )
+  }
+  return { setStatus, isPending: update.isPending }
 }
 
 export function useRemovePlanEntry() {
