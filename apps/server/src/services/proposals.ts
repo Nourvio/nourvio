@@ -151,6 +151,7 @@ function toProposal({ proposal, recipe, result }: Joined): Proposal {
     items: proposal.payload.items ?? null,
     tastes: proposal.payload.tastes ?? null,
     fromNote: proposal.payload.fromNote ?? null,
+    link: proposal.payload.link ?? null,
     createdAt: proposal.createdAt.toISOString(),
   }
 }
@@ -275,7 +276,9 @@ export async function applyProposal(
   householdId: string,
   id: string,
   options: ApplyProposalInput,
-  userId: string | null
+  userId: string | null,
+  /** How a link from the web is imported (the importer needs the network). */
+  importLink?: (url: string) => Promise<Recipe>
 ): Promise<{ recipe: Recipe | null; proposal: Proposal }> {
   const { proposal } = await findPending(db, householdId, id)
   let recipe: Recipe | null = null
@@ -308,6 +311,12 @@ export async function applyProposal(
     for (const item of proposal.payload.items ?? []) {
       await addManualItem(db, householdId, item)
     }
+  } else if (proposal.kind === "import_link") {
+    const url = proposal.payload.link?.url
+    if (!url || !importLink) {
+      throw new HttpError(400, "That suggestion has no link to import")
+    }
+    recipe = await importLink(url)
   } else if (proposal.kind === "tastes") {
     const household = await getHousehold(db, householdId)
     await updateHousehold(db, householdId, {

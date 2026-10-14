@@ -38,15 +38,135 @@ const KIND_LABELS: Record<Proposal["kind"], string> = {
   plan_meals: "Meal plan",
   list_items: "Shopping list",
   tastes: "Remember",
+  import_link: "From the web",
 }
 
 /** Something the assistant suggested, with buttons to save or apply it. */
 export function ProposalCard({ proposal }: { proposal: Proposal }) {
   if (proposal.kind === "tastes") return <TastesCard proposal={proposal} />
+  if (proposal.kind === "import_link") return <LinkCard proposal={proposal} />
   return proposal.kind === "plan_meals" || proposal.kind === "list_items" ? (
     <AddCard proposal={proposal} />
   ) : (
     <RecipeCard proposal={proposal} />
+  )
+}
+
+/** A recipe found on the web, imported into the library with one tap. */
+function LinkCard({ proposal }: { proposal: Proposal }) {
+  const chat = useChat()
+  const navigate = useNavigate()
+  const isMobile = useIsMobile()
+  const apply = useApplyProposal()
+  const dismiss = useDismissProposal()
+  const busy = apply.isPending || dismiss.isPending
+  const link = proposal.link
+  if (!link) return null
+
+  function open(slug: string) {
+    if (isMobile) chat.setOpen(false)
+    navigate(`/recipes/${slug}`)
+  }
+
+  if (proposal.status !== "pending") {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-dashed px-3 py-2 text-sm text-muted-foreground">
+        {proposal.status === "applied" && proposal.result ? (
+          <>
+            <HugeiconsIcon
+              icon={Tick02Icon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
+            <span className="min-w-0 truncate">
+              Imported{" "}
+              <Link
+                to={`/recipes/${proposal.result.slug}`}
+                onClick={(event) => {
+                  event.preventDefault()
+                  open(proposal.result!.slug)
+                }}
+                className="font-medium text-foreground underline underline-offset-4"
+              >
+                {proposal.result.name}
+              </Link>
+            </span>
+          </>
+        ) : (
+          <span className="min-w-0 truncate">Not imported: {link.title}</span>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid min-w-0 grid-cols-1 gap-3 rounded-2xl border bg-card p-3.5 text-card-foreground shadow-xs">
+      <div className="grid gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{KIND_LABELS.import_link}</Badge>
+          <span className="text-sm text-muted-foreground">{link.site}</span>
+        </div>
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium underline-offset-4 hover:underline"
+        >
+          {link.title}
+        </a>
+        <p className="text-sm text-muted-foreground">{proposal.summary}</p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          disabled={busy}
+          onClick={() =>
+            apply.mutate(
+              { proposal },
+              {
+                onSuccess: ({ proposal: updated, recipe }) => {
+                  chat.updateProposal(updated)
+                  if (recipe) {
+                    toast.success(`Imported ${recipe.name}`, {
+                      action: {
+                        label: "Open",
+                        onClick: () => open(recipe.slug),
+                      },
+                    })
+                  }
+                },
+                onError: (error) =>
+                  toast.error(
+                    error instanceof ApiError
+                      ? error.message
+                      : "Couldn't import that"
+                  ),
+              }
+            )
+          }
+        >
+          {apply.isPending && <Spinner data-icon="inline-start" />}
+          Import
+        </Button>
+        <Button size="sm" variant="ghost" asChild>
+          <a href={link.url} target="_blank" rel="noreferrer">
+            Open the page
+          </a>
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={busy}
+          onClick={() =>
+            dismiss.mutate(proposal, {
+              onSuccess: (updated) => chat.updateProposal(updated),
+            })
+          }
+        >
+          No thanks
+        </Button>
+      </div>
+    </div>
   )
 }
 

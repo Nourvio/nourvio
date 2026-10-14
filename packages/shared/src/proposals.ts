@@ -78,6 +78,7 @@ export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number]
  * - plan_meals: meals to add to the plan, from chat
  * - list_items: things to add to the shopping list, from chat
  * - tastes: something for the household to remember, from chat
+ * - import_link: a recipe found on the web, to import, from chat
  */
 export const PROPOSAL_KINDS = [
   "cleanup",
@@ -86,10 +87,14 @@ export const PROPOSAL_KINDS = [
   "plan_meals",
   "list_items",
   "tastes",
+  "import_link",
 ] as const
 export type ProposalKind = (typeof PROPOSAL_KINDS)[number]
 
 type RecipeRef = { id: string; slug: string; name: string }
+
+/** A recipe page on the web the assistant found. */
+export type WebRecipeLink = { url: string; title: string; site: string }
 
 /** A meal a plan_meals proposal would add. */
 export type ProposedMeal = {
@@ -126,6 +131,8 @@ export type Proposal = {
   tastes: Partial<HouseholdTastes> | null
   /** For a change worked out from a note left after cooking: the note. */
   fromNote: string | null
+  /** For import_link: the recipe page found on the web. */
+  link: WebRecipeLink | null
   createdAt: string
 }
 

@@ -23,6 +23,8 @@ import type { ChatToolSpec } from "../ai/types.ts"
 import type { Db } from "../db/client.ts"
 import { HttpError } from "../http.ts"
 import { toRecipeInput } from "../import/ai-extract.ts"
+import { findBySourceUrl, normalizeUrl } from "../import/links.ts"
+import type { Fetcher } from "../import/safe-fetch.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
 import { getHousehold } from "../services/households.ts"
 import { listItems } from "../services/list.ts"
@@ -46,6 +48,8 @@ import {
 export type ToolContext = {
   db: Db
   ai: AiService
+  /** Opens web pages, to check a found recipe can be imported. */
+  fetcher?: Fetcher
   householdId: string
   userId: string
   conversationId: string
@@ -630,6 +634,77 @@ const proposeTastes = tool({
   },
 })
 
+const proposeImportRecipe = tool({
+  name: "propose_import_recipe",
+  description:
+    "Offer a recipe you found on the web as a card the person can import into their library with one tap. Use the recipe page's own link (not a search result page, a roundup or a video list). One call per recipe; offer the best one to three.",
+  input: z.object({
+    url: z.string().describe("The recipe page's link"),
+    title: z.string().describe("The recipe's name"),
+    site: z.string().describe('Where it\'s from, like "Serious Eats"'),
+    why: z
+      .string()
+      .describe("One sentence on why it's a good pick, for the card"),
+  }),
+  runningLabel: "Getting the recipe ready to import",
+  async run(ctx, { url, title, site, why }) {
+    let link: string
+    try {
+      link = normalizeUrl(url.trim())
+      const { protocol } = new URL(link)
+      if (protocol !== "http:" && protocol !== "https:") throw new Error()
+    } catch {
+      return {
+        output: "That isn't a web link.",
+        label: "Couldn't use that link",
+        isError: true,
+      }
+    }
+    const existing = await findBySourceUrl(ctx.db, ctx.householdId, [link])
+    if (existing) {
+      return {
+        output: `That one's already in their library as ${existing.name} (${existing.slug}). Mention it rather than importing it again.`,
+        label: `Already have ${existing.name}`,
+      }
+    }
+    // Some sites refuse anything that isn't a browser; don't offer what
+    // Mise can't import.
+    if (ctx.fetcher) {
+      try {
+        await ctx.fetcher(link)
+      } catch (error) {
+        return {
+          output: `Mise can't open that page (${(error as Error).message}), so it couldn't be imported. Offer a recipe from a different site instead.`,
+          label: `Couldn't open ${site.trim() || "that site"}`,
+          isError: true,
+        }
+      }
+    }
+    const proposal = await createProposal(ctx.db, {
+      householdId: ctx.householdId,
+      kind: "import_link",
+      recipeId: null,
+      payload: {
+        summary: why.trim().slice(0, 300),
+        before: {},
+        after: {},
+        link: {
+          url: link,
+          title: title.trim().slice(0, 200) || link,
+          site: site.trim().slice(0, 80) || new URL(link).hostname,
+        },
+      },
+      userId: ctx.userId,
+      conversationId: ctx.conversationId,
+    })
+    return {
+      output: PROPOSED,
+      label: `Found ${title.trim().slice(0, 80)}`,
+      proposal,
+    }
+  },
+})
+
 export const TOOLS = [
   searchRecipes,
   getRecipeTool,
@@ -644,6 +719,7 @@ export const TOOLS = [
   proposeMeals,
   proposeListItems,
   proposeTastes,
+  proposeImportRecipe,
 ] as Tool<z.ZodType>[]
 
 /** The tools as each provider's adapter wants them: name, description, JSON schema. */

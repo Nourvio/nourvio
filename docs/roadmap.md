@@ -132,7 +132,7 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 ## Milestone 7: A smarter assistant
 
-**Status:** picked October 14, 2026, and being built in this order, a commit for each. 1 to 3 are built.
+**Status:** picked October 14, 2026, and being built in this order, a commit for each. 1 to 4 are built.
 
 1. **Household tastes and rules:** foods to avoid (and who, and allergies), diets every meal must fit, a time limit for weeknight dinners, and notes for the assistant ("no fish on Mondays"). Fill the week, dinner ideas and the assistant follow them; recipes that break one say so; the assistant offers to remember new ones it hears.
 2. **"How did it go?" after cooking:** a rating and a note when cooking finishes. Notes show on the recipe and in cook mode next time, and the AI turns a note into a suggested edit to review.

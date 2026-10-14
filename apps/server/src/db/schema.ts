@@ -1,5 +1,6 @@
 import type {
   HouseholdTastes,
+  WebRecipeLink,
   DietOverrides,
   AiProviderId,
   AiUsageTask,
@@ -411,6 +412,7 @@ export const proposals = pgTable(
         items?: string[]
         tastes?: Partial<HouseholdTastes>
         fromNote?: string
+        link?: WebRecipeLink
       }>()
       .notNull(),
     /** Set when part of a library run. */

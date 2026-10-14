@@ -9,6 +9,10 @@ import {
   type AppEnv,
 } from "../context.ts"
 import { readBody } from "../http.ts"
+import type { AiService } from "../ai/service.ts"
+import { fetchPublic } from "../import/safe-fetch.ts"
+import { importFromUrl } from "../import/url.ts"
+import { systemVideoTools } from "../import/video-tools.ts"
 import type { NutritionService } from "../services/nutrition.ts"
 import type { PhotoService } from "../services/photos.ts"
 import {
@@ -24,7 +28,8 @@ import { getRecipe } from "../services/recipes.ts"
  * proposal (tidy-ups, and chat's edits and new recipes).
  */
 export function proposalsRoutes(
-  { db }: AppContext,
+  { db, fetcher = fetchPublic, videoTools = systemVideoTools }: AppContext,
+  ai: AiService,
   nutrition: NutritionService,
   photos: PhotoService
 ) {
@@ -42,19 +47,35 @@ export function proposalsRoutes(
     const previous = proposal?.recipe
       ? await getRecipe(db, householdId, proposal.recipe.id).catch(() => null)
       : null
+    // A recipe the assistant found on the web: import it like any link.
+    let imported = false
+    const importLink = async (url: string) => {
+      const result = await importFromUrl(db, url, {
+        userId: currentUser(c).id,
+        householdId,
+        fetcher,
+        ai,
+        videoTools,
+      })
+      imported = !result.duplicate
+      return result.recipe
+    }
     const result = await applyProposal(
       db,
       householdId,
       c.req.param("id"),
       input,
-      currentUser(c).id
+      currentUser(c).id,
+      importLink
     )
     if (result.recipe) {
       const actor = { userId: currentUser(c).id, householdId }
       // Saved as a new recipe: compare it with nothing.
       const same = previous?.id === result.recipe.id ? previous : null
-      nutrition.afterSave(actor, result.recipe, same)
-      if (!same) photos.afterCreate(actor, result.recipe)
+      if (proposal?.kind !== "import_link" || imported) {
+        nutrition.afterSave(actor, result.recipe, same)
+        if (!same) photos.afterCreate(actor, result.recipe)
+      }
     }
     return c.json(result)
   })

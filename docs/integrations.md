@@ -78,6 +78,7 @@ Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x
 - **OpenAI models and prices** change often (GPT-6 Sol and Luna launched September 22, 2026), so Settings lists whatever models the key can use. Check OpenAI's pricing page before choosing one.
 - **Photos** for recipes without one are made by OpenAI's image models; Claude can't make pictures. Mise uses `gpt-image-2.5-flare` ("fast, high-quality everyday generation"), falling back to `gpt-image-2`, `gpt-image-1.5` and `gpt-image-1-mini` if a key can't use it. Images are billed per token ($5 per million text tokens in, $30 per million image tokens out); a 1536×1024 photo at medium quality is about 340 image tokens, so roughly 1¢ (measured October 2026: 1.1–1.2¢ each). OpenAI may ask for the organization to be verified, and a new account needs credit, before it makes images. Both errors say so in the app.
 - **Picking models:** Settings tracks spend by provider, model and task, so we can see where a cheaper model is good enough.
+- **Web search** for the assistant uses each provider's own search tool, $10 per 1,000 searches at both. Search results add a lot of reading: a "find me a birria recipe" reply on Claude Opus 5.5 read about 52,000 tokens (about 24¢ in all), so a smaller Assistant model is worth it for heavy searching.
 
 ## Nutrition
 
@@ -149,6 +150,7 @@ If we ever want connectors, the same service layer and tool definitions could ba
 - Kroger API: https://jentic.com/apis/kroger, https://pypi.org/project/kroger-cart/
 - Instacart Developer Platform: https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page
 - USDA FoodData Central API: https://fdc.nal.usda.gov/api-guide/
+- Claude web search tool: https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool
 - OpenAI image generation and pricing: https://developers.openai.com/api/docs/guides/image-generation, https://developers.openai.com/api/docs/pricing
 - ChatGPT developer mode (connector research): https://developers.openai.com/api/docs/guides/developer-mode, https://help.openai.com/articles/12584461
 - ChatGPT connector auth: https://docs.atlan.com/product/capabilities/atlan-ai/how-tos/chatgpt-remote-mcp

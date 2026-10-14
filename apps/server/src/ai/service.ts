@@ -25,7 +25,15 @@ import { decryptSecret, encryptSecret } from "../secrets.ts"
 import { usdaKey } from "../nutrition/settings.ts"
 import { createAnthropicProvider } from "./anthropic.ts"
 import { createOpenAiProvider } from "./openai.ts"
-import type { AiProvider, AiProviderFactory, ExtractRequest } from "./types.ts"
+import type {
+  AiProvider,
+  AiProviderFactory,
+  AiUsage,
+  ExtractRequest,
+} from "./types.ts"
+
+/** What a web search costs on top of tokens: $10 per 1,000 at both providers (October 2026). */
+const WEB_SEARCH_USD = 0.01
 
 const SETTINGS_KEY = "ai"
 
@@ -248,9 +256,11 @@ export function createAiService(
     provider: AiProviderId,
     model: string,
     task: AiUsageTask,
-    usage: { inputTokens: number; outputTokens: number }
+    usage: AiUsage
   ) {
     if (!usage.inputTokens && !usage.outputTokens) return
+    const tokens = estimateCost(model, usage.inputTokens, usage.outputTokens)
+    const searches = (usage.webSearches ?? 0) * WEB_SEARCH_USD
     await db.insert(aiUsage).values({
       ...actor,
       provider,
@@ -258,7 +268,7 @@ export function createAiService(
       task,
       inputTokens: usage.inputTokens,
       outputTokens: usage.outputTokens,
-      costUsd: estimateCost(model, usage.inputTokens, usage.outputTokens),
+      costUsd: tokens === null && !searches ? null : (tokens ?? 0) + searches,
     })
   }
 

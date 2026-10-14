@@ -8,12 +8,16 @@ import type { AiService } from "../ai/service.ts"
 import { requireUser } from "../auth/middleware.ts"
 import { prepareChat, toConversation, toMessage } from "../chat/agent.ts"
 import { currentUser, type AppContext, type AppEnv } from "../context.ts"
+import { fetchPublic } from "../import/safe-fetch.ts"
 import { chatConversations, chatMessages } from "../db/schema.ts"
 import { HttpError, readBody } from "../http.ts"
 import { getProposals } from "../services/proposals.ts"
 
 /** The assistant: send a message (streamed reply) and the person's conversations. */
-export function chatRoutes({ db }: AppContext, ai: AiService) {
+export function chatRoutes(
+  { db, fetcher = fetchPublic }: AppContext,
+  ai: AiService
+) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
 
@@ -36,7 +40,7 @@ export function chatRoutes({ db }: AppContext, ai: AiService) {
   /** Sends a message; the reply streams back as server-sent events. */
   app.post("/", async (c) => {
     const input = await readBody(c, sendChatInput)
-    const run = await prepareChat({ db, ai }, currentUser(c), input)
+    const run = await prepareChat({ db, ai, fetcher }, currentUser(c), input)
     c.header("Cache-Control", "no-cache, no-transform")
     c.header("X-Accel-Buffering", "no")
     return streamSSE(c, async (stream) => {

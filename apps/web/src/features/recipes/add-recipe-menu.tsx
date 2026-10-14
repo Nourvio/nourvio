@@ -2,6 +2,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
   Camera01Icon,
+  Globe02Icon,
   Link01Icon,
   Note01Icon,
   PencilEdit01Icon,
@@ -16,11 +17,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
+import { useChat } from "@/features/chat/chat-provider"
+import { useAiStatus } from "@/features/settings/use-ai"
+
 import { useImportDialog } from "./use-import"
 
 export function AddRecipeMenu() {
   const navigate = useNavigate()
   const importDialog = useImportDialog()
+  const chat = useChat()
+  const ai = useAiStatus()
 
   return (
     <DropdownMenu>
@@ -51,6 +57,19 @@ export function AddRecipeMenu() {
           <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} />
           Type it in
         </DropdownMenuItem>
+        {ai.data?.available && (
+          <DropdownMenuItem
+            onSelect={() => {
+              // A fresh chat with the start of the question typed in.
+              chat.newChat()
+              chat.setDraft("Find me a recipe for ")
+              chat.setOpen(true)
+            }}
+          >
+            <HugeiconsIcon icon={Globe02Icon} strokeWidth={2} />
+            Find one online
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -74,6 +74,9 @@ function useResolved() {
     if (proposal.status === "applied" && proposal.kind === "tastes") {
       queryClient.invalidateQueries({ queryKey: ["household-info"] })
     }
+    if (proposal.status === "applied" && proposal.kind === "import_link") {
+      queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
+    }
     if (recipe) {
       queryClient.setQueryData(["recipe", recipe.slug], recipe)
       queryClient.setQueryData(["recipe", recipe.id], recipe)

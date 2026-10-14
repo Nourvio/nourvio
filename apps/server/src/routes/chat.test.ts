@@ -9,10 +9,22 @@ import type {
 import { HttpError } from "../http.ts"
 import { apiClient, createTestAppWithAdmin } from "../test/helpers.ts"
 
-/** One scripted model turn: some text, and maybe tool calls. */
-type Step = { text?: string; tools?: ChatToolCall[] } | Error
+/** One scripted model turn: some text, and maybe tool calls, web searches or a pause. */
+type Step =
+  | {
+      text?: string
+      tools?: ChatToolCall[]
+      searches?: { id: string; query: string }[]
+      pause?: boolean
+    }
+  | Error
 
-type Seen = { history: unknown[]; system: string; tools: ChatToolSpec[] }
+type Seen = {
+  history: unknown[]
+  system: string
+  tools: ChatToolSpec[]
+  webSearch: boolean
+}
 
 /**
  * A pretend chat model. Each call to `turn` plays the next scripted step;
@@ -29,8 +41,13 @@ function fakeChat() {
       return []
     },
     chat: {
-      async turn({ history, system, tools, onText }) {
-        state.seen.push({ history: structuredClone(history), system, tools })
+      async turn({ history, system, tools, webSearch, onText }) {
+        state.seen.push({
+          history: structuredClone(history),
+          system,
+          tools,
+          webSearch: Boolean(webSearch),
+        })
         const step = state.script.shift() ?? { text: "Done." }
         if (step instanceof Error) throw step
         for (const word of (step.text ?? "").split(/(?<= )/)) onText(word)
@@ -43,8 +60,13 @@ function fakeChat() {
             },
           ],
           toolCalls: step.tools ?? [],
-          stop: step.tools?.length ? "tool_use" : "end",
-          usage: { inputTokens: 100, outputTokens: 20 },
+          stop: step.tools?.length ? "tool_use" : step.pause ? "pause" : "end",
+          searches: step.searches ?? [],
+          usage: {
+            inputTokens: 100,
+            outputTokens: 20,
+            webSearches: step.searches?.length ?? 0,
+          },
         }
       },
       userMessage: (text) => ({ role: "user", text }),
@@ -62,7 +84,20 @@ describe("chat", () => {
   let conversationId: string
 
   beforeAll(async () => {
-    t = await createTestAppWithAdmin({ aiFactory: chat.factory })
+    t = await createTestAppWithAdmin({
+      aiFactory: chat.factory,
+      // A pretend internet where one site blocks anything that isn't a browser.
+      fetcher: async (url) => {
+        if (url.includes("blocked.example")) {
+          throw new HttpError(502, "That site blocked the request")
+        }
+        return {
+          url,
+          contentType: "text/html",
+          body: Buffer.from("<html></html>"),
+        }
+      },
+    })
     await t.admin.put("/api/ai/settings", {
       keys: { anthropic: "sk-ant-test-key-1234" },
     })
@@ -185,6 +220,112 @@ describe("chat", () => {
     conversationId = conversation.conversation.id
     expect(conversation.conversation.title).toBe(
       "No buttermilk, what can I use?"
+    )
+  })
+
+  test("searches the web and offers a found recipe to import", async () => {
+    chat.state.script = [
+      // A long search turn the provider paused, then carried on.
+      { searches: [{ id: "s1", query: "best birria recipe" }], pause: true },
+      {
+        text: "This one's a keeper. ",
+        searches: [{ id: "s2", query: "birria serious eats" }],
+        tools: [
+          {
+            id: "c9",
+            name: "propose_import_recipe",
+            input: {
+              url: "https://www.seriouseats.com/birria-recipe?utm_source=x",
+              title: "Birria de Res",
+              site: "Serious Eats",
+              why: "Tested to death, with a deep, rich consommé.",
+            },
+          },
+        ],
+      },
+      { text: "Tap Import to add it." },
+    ]
+    const { events } = await send({ message: "Find me a good birria recipe" })
+    const tools = events.flatMap((e) =>
+      e.type === "tool" && e.status !== "running" ? [e.label] : []
+    )
+    expect(tools).toEqual([
+      "Searched the web for “best birria recipe”",
+      "Searched the web for “birria serious eats”",
+      "Found Birria de Res",
+    ])
+    expect(chat.state.seen.at(-1)!.webSearch).toBe(true)
+    const card = events.find((e) => e.type === "proposal")
+    if (card?.type !== "proposal") throw new Error("No card")
+    expect(card.proposal).toMatchObject({
+      kind: "import_link",
+      summary: "Tested to death, with a deep, rich consommé.",
+      // Tracking bits are dropped from the link.
+      link: {
+        url: "https://www.seriouseats.com/birria-recipe",
+        title: "Birria de Res",
+        site: "Serious Eats",
+      },
+    })
+  })
+
+  test("doesn't offer a recipe that's already in the library", async () => {
+    await t.admin.post("/api/recipes", {
+      name: "Grandma's Chili",
+      sourceUrl: "https://food.example/chili",
+      ingredients: ["1 lb beef"],
+    })
+    chat.state.script = [
+      {
+        tools: [
+          {
+            id: "c10",
+            name: "propose_import_recipe",
+            input: {
+              url: "https://food.example/chili",
+              title: "Chili",
+              site: "Food Example",
+              why: "Classic.",
+            },
+          },
+        ],
+      },
+      { text: "You already have it." },
+    ]
+    const { events } = await send({ message: "Find a chili recipe" })
+    expect(events.some((e) => e.type === "proposal")).toBe(false)
+    const tools = events.flatMap((e) =>
+      e.type === "tool" && e.status !== "running" ? [e.label] : []
+    )
+    expect(tools).toEqual(["Already have Grandma's Chili"])
+  })
+
+  test("doesn't offer a page Mise can't open", async () => {
+    chat.state.script = [
+      {
+        tools: [
+          {
+            id: "c11",
+            name: "propose_import_recipe",
+            input: {
+              url: "https://blocked.example/tacos",
+              title: "Tacos",
+              site: "Blocked Eats",
+              why: "Good.",
+            },
+          },
+        ],
+      },
+      { text: "That site won't open; here's another." },
+    ]
+    const { events } = await send({ message: "Find tacos" })
+    expect(events.some((e) => e.type === "proposal")).toBe(false)
+    const tools = events.flatMap((e) =>
+      e.type === "tool" && e.status !== "running" ? [e.label] : []
+    )
+    expect(tools).toEqual(["Couldn't open Blocked Eats"])
+    expect(JSON.stringify(chat.state.seen.at(-1)!.history)).toContain(
+      "Offer a recipe from a different site instead"
     )
   })
 

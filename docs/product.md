@@ -99,6 +99,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
   - "What can I make tonight with what we have?"
   - "Plan next week and use up the spinach."
 - **It gives ideas.** Ask for "something with chicken thighs under 30 minutes." It suggests recipes from the library first, then new ideas you can save.
+- **It finds recipes online.** "Find me a good birria recipe" searches the web (well-tested sources first, fitting the household's rules) and offers the best one to three as cards: the site, the recipe and why it's a good pick, with **Import**, **Open the page** and **No thanks**. It checks Mise can open each page before offering it, and mentions a recipe that's already in the library instead. Recipes → Add recipe → **Find one online** starts a chat for it. A search costs about a cent, plus the model reading the results.
 - **It can act, with your OK:**
   - save a new recipe
   - save a variant or edit a recipe

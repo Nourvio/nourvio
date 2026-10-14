@@ -212,12 +212,14 @@ The AI never writes directly to recipes, the plan, the list or the pantry.
 - **Claude:** adaptive thinking (not shown, but passed back between turns), medium effort, and the conversation prefix cached with `cache_control`. **OpenAI:** stateless Responses API (`store: false`) with encrypted reasoning passed back.
 - **Context goes with each message:** the recipe on screen and the scale it's shown at, or the week of the plan being viewed with what's planned and what in the pantry needs using soon, prepended in a `<context>` block. The person can drop it with one tap.
 - **Read tools:** `search_recipes`, `get_recipe`, `list_tags`, `get_recipe_pairings`, `get_meal_plan`, `get_shopping_list`, `get_pantry`.
+- **Web search** is the provider's own tool, run on their side (Claude's `web_search_20250305`, up to 5 searches a reply; OpenAI's `web_search`). Each search shows as an activity line ("Searched the web for …") and costs about a cent on top of tokens, recorded with the reply's usage. Claude can pause a long search turn; the loop sends it back to carry on. OpenAI's search items aren't sent back (nothing is stored there to look them up).
 - **Proposal tools** (each makes a card with buttons, nothing is saved until tapped):
   - `propose_new_recipe`: a recipe from the conversation
   - `propose_recipe_edit`: substitutions, scaling, notes; with a `variantName`, it can be saved as a new recipe instead of changing the original
   - `tidy_recipe`: runs the regular tidy-up on a recipe
   - `propose_meals`: recipes (or notes) for days and meals, added to the plan in one tap
   - `propose_list_items`: lines for the shopping list
+  - `propose_import_recipe`: a recipe page found on the web, imported with one tap through the regular link importer (checked to open first, and skipped if the link is already in the library)
   - `propose_tastes`: something for the household to remember (a food someone avoids or is allergic to, a diet, the weeknight time limit, a note), offered when it comes up in passing
   - *Later:* `propose_pantry_update`
 - **Tastes and rules** go in the system prompt, and search results and recipes say when one "doesn't suit the household" (`tasteWarnings` in `packages/shared/src/tastes.ts`), so the assistant follows them and treats allergies as strict.

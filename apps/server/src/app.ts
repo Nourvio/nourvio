@@ -101,7 +101,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/users", usersRoutes(ctx))
   app.route("/api/server", serverRoutes(ctx))
   app.route("/api/recipes", recipesRoutes(ctx, ai, nutrition, photos))
-  app.route("/api/proposals", proposalsRoutes(ctx, nutrition, photos))
+  app.route("/api/proposals", proposalsRoutes(ctx, ai, nutrition, photos))
   app.route("/api/nutrition", nutritionRoutes(ctx, nutrition))
   app.route("/api/photos", photosRoutes(photos))
   app.route("/api/plan", planRoutes(ctx))

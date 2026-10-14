@@ -25,7 +25,17 @@ const MODERN = /^claude-(opus|sonnet)-[5-9]/
 
 function chatAdapter(client: Anthropic): ChatAdapter {
   return {
-    async turn({ model, system, history, tools, onText, onToolStart, signal }) {
+    async turn({
+      model,
+      system,
+      history,
+      tools,
+      webSearch,
+      onText,
+      onToolStart,
+      onSearchStart,
+      signal,
+    }) {
       let message: Anthropic.Message
       try {
         const stream = client.messages.stream(
@@ -34,11 +44,23 @@ function chatAdapter(client: Anthropic): ChatAdapter {
             max_tokens: 16_000,
             system,
             messages: history as Anthropic.MessageParam[],
-            tools: tools.map((tool) => ({
-              name: tool.name,
-              description: tool.description,
-              input_schema: tool.inputSchema as Anthropic.Tool.InputSchema,
-            })),
+            tools: [
+              ...tools.map((tool) => ({
+                name: tool.name,
+                description: tool.description,
+                input_schema: tool.inputSchema as Anthropic.Tool.InputSchema,
+              })),
+              // Run by Anthropic; results come back in the reply.
+              ...(webSearch
+                ? [
+                    {
+                      type: "web_search_20250305" as const,
+                      name: "web_search" as const,
+                      max_uses: 5,
+                    },
+                  ]
+                : []),
+            ],
             // Caches everything up to the latest message, so each turn only
             // pays full price for what's new.
             cache_control: { type: "ephemeral" },
@@ -64,6 +86,12 @@ function chatAdapter(client: Anthropic): ChatAdapter {
           ) {
             onToolStart?.(event.content_block.id, event.content_block.name)
           }
+          if (
+            event.type === "content_block_start" &&
+            event.content_block.type === "server_tool_use"
+          ) {
+            onSearchStart?.(event.content_block.id)
+          }
         })
         message = await stream.finalMessage()
       } catch (error) {
@@ -73,6 +101,16 @@ function chatAdapter(client: Anthropic): ChatAdapter {
       const toolCalls = message.content.flatMap((block) =>
         block.type === "tool_use"
           ? [{ id: block.id, name: block.name, input: block.input }]
+          : []
+      )
+      const searches = message.content.flatMap((block) =>
+        block.type === "server_tool_use" && block.name === "web_search"
+          ? [
+              {
+                id: block.id,
+                query: String((block.input as { query?: unknown }).query ?? ""),
+              },
+            ]
           : []
       )
       const usage = message.usage
@@ -86,13 +124,17 @@ function chatAdapter(client: Anthropic): ChatAdapter {
               ? "max_tokens"
               : message.stop_reason === "refusal"
                 ? "refusal"
-                : "end",
+                : message.stop_reason === "pause_turn"
+                  ? "pause"
+                  : "end",
+        searches,
         usage: {
           inputTokens:
             usage.input_tokens +
             (usage.cache_creation_input_tokens ?? 0) +
             (usage.cache_read_input_tokens ?? 0),
           outputTokens: usage.output_tokens,
+          webSearches: usage.server_tool_use?.web_search_requests ?? 0,
         },
       }
     },

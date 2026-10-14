@@ -19,7 +19,12 @@ export type ExtractRequest<T extends z.ZodType> = {
   maxTokens?: number
 }
 
-export type AiUsage = { inputTokens: number; outputTokens: number }
+export type AiUsage = {
+  inputTokens: number
+  outputTokens: number
+  /** Web searches made (billed per search on top of tokens). */
+  webSearches?: number
+}
 
 export type ExtractResult<T> = { data: T; usage: AiUsage }
 
@@ -57,7 +62,10 @@ export type ChatTurnResult = {
   /** The assistant's output, in the provider's format, to append to the history. */
   native: unknown[]
   toolCalls: ChatToolCall[]
-  stop: "end" | "tool_use" | "max_tokens" | "refusal"
+  /** "pause": the provider stopped a long search turn; send it back to carry on. */
+  stop: "end" | "tool_use" | "max_tokens" | "refusal" | "pause"
+  /** Web searches the provider ran itself during the turn. */
+  searches: { id: string; query: string }[]
   usage: AiUsage
 }
 
@@ -73,9 +81,13 @@ export interface ChatAdapter {
     system: string
     history: unknown[]
     tools: ChatToolSpec[]
+    /** Let the model search the web (run by the provider). */
+    webSearch?: boolean
     onText: (delta: string) => void
     /** A tool call has started (its input is still being written). */
     onToolStart?: (id: string, name: string) => void
+    /** A web search has started. */
+    onSearchStart?: (id: string) => void
     signal?: AbortSignal
   }): Promise<ChatTurnResult>
   userMessage(text: string): unknown

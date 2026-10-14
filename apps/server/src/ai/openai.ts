@@ -85,7 +85,17 @@ function parseArguments(raw: string) {
 
 function chatAdapter(client: OpenAI): ChatAdapter {
   return {
-    async turn({ model, system, history, tools, onText, onToolStart, signal }) {
+    async turn({
+      model,
+      system,
+      history,
+      tools,
+      webSearch,
+      onText,
+      onToolStart,
+      onSearchStart,
+      signal,
+    }) {
       let response
       try {
         // Stateless: the history is sent each time, with reasoning passed
@@ -95,13 +105,17 @@ function chatAdapter(client: OpenAI): ChatAdapter {
             model,
             instructions: system,
             input: history as OpenAI.Responses.ResponseInput,
-            tools: tools.map((tool) => ({
-              type: "function" as const,
-              name: tool.name,
-              description: tool.description,
-              parameters: tool.inputSchema,
-              strict: false,
-            })),
+            tools: [
+              ...tools.map((tool) => ({
+                type: "function" as const,
+                name: tool.name,
+                description: tool.description,
+                parameters: tool.inputSchema,
+                strict: false,
+              })),
+              // Run by OpenAI; results come back in the reply.
+              ...(webSearch ? [{ type: "web_search" as const }] : []),
+            ],
             store: false,
             max_output_tokens: 16_000,
             ...(REASONING.test(model)
@@ -121,6 +135,12 @@ function chatAdapter(client: OpenAI): ChatAdapter {
           ) {
             onToolStart?.(event.item.call_id, event.item.name)
           }
+          if (
+            event.type === "response.output_item.added" &&
+            event.item.type === "web_search_call"
+          ) {
+            onSearchStart?.(event.item.id)
+          }
         }
         response = await stream.finalResponse()
       } catch (error) {
@@ -138,15 +158,34 @@ function chatAdapter(client: OpenAI): ChatAdapter {
             ]
           : []
       )
+      const searches = response.output.flatMap((item) =>
+        item.type === "web_search_call"
+          ? [
+              {
+                id: item.id,
+                query:
+                  item.action?.type === "search"
+                    ? (item.action.query ?? "")
+                    : "",
+              },
+            ]
+          : []
+      )
       return {
-        native: asInput(response.output),
+        // Searches aren't sent back: with nothing stored at OpenAI they
+        // can't be looked up again, and the reply already carries what was found.
+        native: asInput(
+          response.output.filter((item) => item.type !== "web_search_call")
+        ),
         toolCalls,
+        searches,
         stop: toolCalls.length
           ? "tool_use"
           : response.incomplete_details?.reason === "max_output_tokens"
             ? "max_tokens"
             : "end",
         usage: {
+          webSearches: searches.length,
           inputTokens: response.usage?.input_tokens ?? 0,
           outputTokens: response.usage?.output_tokens ?? 0,
         },
