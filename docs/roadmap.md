@@ -120,7 +120,7 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 ## Milestone 6: Store connections and the Mise extension
 
-**Status:** built October 14, 2026, steps 1 to 5 (1 and 2 in one commit). Still to check for real: Fry's with the real Kroger app's keys (it was checked against a stand-in Kroger server), and the extension in Chrome (its pieces were checked in the browser: the connect page, page import from Budget Bytes, and on walmart.com, reading search results and adding to a guest cart with Walmart's own buttons). The research is in [integrations.md](integrations.md#grocery-stores-connections). Decided with the user:
+**Status:** built October 14, 2026, steps 1 to 5 (1 and 2 in one commit), and checked for real by the user: a Fry's cart sent through their own Kroger app (which led to counting packs by what's in them), and the extension in Chrome picking Walmart products and filling the Walmart cart. The research is in [integrations.md](integrations.md#grocery-stores-connections). Decided with the user:
 
 - **Stores:** Fry's, Costco and Walmart.
 - **How each connects:** Fry's through Kroger's official cart API, and Walmart through a Mise browser extension, which also takes on other jobs like importing a recipe from any page. Costco was going to be an Instacart shopping link, but the user found Instacart's Developer Platform isn't open to the public, so Costco gets links to each item at Costco Same-Day, plus the extension's list side panel.
