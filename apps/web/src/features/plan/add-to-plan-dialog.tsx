@@ -28,9 +28,12 @@ import { useAddPlanEntry } from "./use-plan"
 export function AddToPlanButton({
   recipe,
   factor,
+  withRecipe = null,
 }: {
   recipe: Recipe
   factor: number
+  /** Planned with this, when it's being shown with it. */
+  withRecipe?: { id: string; name: string } | null
 }) {
   const [open, setOpen] = React.useState(false)
   return (
@@ -46,12 +49,13 @@ export function AddToPlanButton({
       <ResponsiveDialog
         open={open}
         onOpenChange={setOpen}
-        title={`Plan ${recipe.name}`}
+        title={`Plan ${recipe.name}${withRecipe ? ` with ${withRecipe.name}` : ""}`}
       >
         {open && (
           <AddToPlan
             recipe={recipe}
             factor={factor}
+            withRecipe={withRecipe}
             onDone={() => setOpen(false)}
           />
         )}
@@ -63,10 +67,12 @@ export function AddToPlanButton({
 function AddToPlan({
   recipe,
   factor,
+  withRecipe,
   onDone,
 }: {
   recipe: Recipe
   factor: number
+  withRecipe: { id: string; name: string } | null
   onDone: () => void
 }) {
   const navigate = useNavigate()
@@ -88,6 +94,7 @@ function AddToPlan({
         date,
         meal,
         recipeId: recipe.id,
+        withRecipeId: withRecipe?.id ?? null,
         servings:
           base && scale !== 1 ? Math.round(base * scale * 100) / 100 : null,
       },

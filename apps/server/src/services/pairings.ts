@@ -168,3 +168,46 @@ export async function removePairing(
   if (!removed.length) throw new HttpError(404, "That pairing isn't there")
   return getPairings(db, householdId, base.id)
 }
+
+/**
+ * Every recipe's pairing options in the household, by recipe id, for
+ * suggesting meals: picked recipes and tagged ones.
+ */
+export async function pairingOptionsByRecipe(db: Db, householdId: string) {
+  const rules = await db
+    .select()
+    .from(recipePairings)
+    .where(eq(recipePairings.householdId, householdId))
+  const tagNames = [
+    ...new Set(rules.flatMap((r) => (r.tag ? [r.tag.toLowerCase()] : []))),
+  ]
+  const tagged = tagNames.length
+    ? await db
+        .select({
+          recipeId: recipeTags.recipeId,
+          tag: sql<string>`lower(${tags.name})`,
+        })
+        .from(recipeTags)
+        .innerJoin(tags, eq(tags.id, recipeTags.tagId))
+        .where(
+          and(
+            eq(tags.householdId, householdId),
+            inArray(sql`lower(${tags.name})`, tagNames)
+          )
+        )
+    : []
+  const byTag = new Map<string, string[]>()
+  for (const row of tagged) {
+    byTag.set(row.tag, [...(byTag.get(row.tag) ?? []), row.recipeId])
+  }
+  const options = new Map<string, Set<string>>()
+  for (const rule of rules) {
+    const found = options.get(rule.recipeId) ?? new Set<string>()
+    const ids = rule.pairedRecipeId
+      ? [rule.pairedRecipeId]
+      : (byTag.get(rule.tag!.toLowerCase()) ?? [])
+    for (const id of ids) if (id !== rule.recipeId) found.add(id)
+    options.set(rule.recipeId, found)
+  }
+  return options
+}

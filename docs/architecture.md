@@ -90,10 +90,11 @@ Everything a household owns carries its `household_id`, and every query is scope
 | `recipe_steps` | recipe_id, position, section, text | |
 | `recipe_versions` | recipe_id, snapshot (jsonb), source, created_by, created_at | Every saved change makes a snapshot, so the original import can always be restored. `source` is one of import, manual, ai_cleanup, chat. |
 | `tags`, `recipe_tags` | household_id, name (unique per household, ignoring case) | |
+| `recipe_pairings` | household_id, recipe_id, paired_recipe_id or tag | What a recipe goes with: one recipe, or every recipe with a tag (matched ignoring case, so new ones join) |
 | `fdc_foods` | fdc_id, description, data_type, nutrients (jsonb, per 100 g), portions (jsonb: label, amount, grams) | USDA foods we've used, cached for good. Shared by every household; it's public data. |
 | `food_matches` | food (the `pantryKey`: prep words dropped, so "chopped onion" is "onion"), fdc_id (null when nothing fit), grams (jsonb: what one of a unit weighs, by unit id or "each") | Which USDA food a name means, picked once (by the AI when there is one) and reused by every recipe and household |
 | `units` | name, abbreviation, aliases, kind (volume/weight/count), to_base | `to_base` converts to ml or g for safe unit conversion. Seeded at startup. |
-| `meal_plan_entries` | household_id, date, meal, position, recipe_id (null for a note), note, servings (null for the recipe's own), status, listed_at, pantry_used (jsonb) | `status` is planned, cooked or skipped. `listed_at` is set once its ingredients are on the list. `pantry_used` holds the pantry rows as they were before cooking it, to put back. |
+| `meal_plan_entries` | household_id, date, meal, position, recipe_id (null for a note), with_recipe_id (what it's made with), note, servings (null for the recipe's own), status, listed_at, pantry_used (jsonb) | `status` is planned, cooked or skipped. `listed_at` is set once its ingredients are on the list. `pantry_used` holds the pantry rows as they were before cooking it, to put back. |
 | `shopping_items` | household_id, key, name, quantity, unit_id, amount_text, section_id, checked, checked_at, source, recipes (jsonb), entries (jsonb) | One list per household. `key` merges the same food across recipes. `source` is plan, manual or weekly. `entries` are the planned meals it's for. |
 | `weekly_items` | household_id, name, amount, section_id | Every-week items, added with each week's plan |
 | `food_sections` | household_id, food, section_id | Remembers where the household moved a food, for next time |
@@ -135,6 +136,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Server | `GET`/`PUT /api/server/settings`, `GET /api/server/households`, `DELETE /api/server/households/:id` (server admin) |
 | Recipes | `GET/POST /api/recipes` (search with `q`; diet, tag and time filters and sorting happen in the browser), `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image`, `POST /api/recipes/:id/nutrition` (work it out now), `PUT /api/recipes/:id/diets` (corrections) |
 | Tags | `GET /api/recipes/tags`, `PATCH /api/recipes/tags/:name` (rename, merging into an existing tag), `DELETE /api/recipes/tags/:name` |
+| Pairings | `GET /api/recipes/:id/pairings` (the rules, the recipes they add up to, and what it's offered with), `POST /api/recipes/:id/pairings` (recipes or a tag), `DELETE /api/recipes/:id/pairings/:pairingId` |
 | Nutrition | `GET`/`POST /api/nutrition/library`, `POST /api/nutrition/library/:id/stop` (household admins); `GET`/`PUT /api/nutrition/settings`, `POST /api/nutrition/settings/test` (server admin, the USDA key) |
 | Versions | `GET /api/recipes/:id/versions`, `POST /api/recipes/:id/versions/:versionId/restore` |
 | Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (server admin, into their household): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
@@ -203,7 +205,7 @@ The AI never writes directly to recipes, the plan, the list or the pantry.
 - **Native histories:** each conversation keeps the provider's own messages (Claude's thinking blocks and tool calls, OpenAI's encrypted reasoning items), so it continues exactly. A conversation never switches provider.
 - **Claude:** adaptive thinking (not shown, but passed back between turns), medium effort, and the conversation prefix cached with `cache_control`. **OpenAI:** stateless Responses API (`store: false`) with encrypted reasoning passed back.
 - **Context goes with each message:** the recipe on screen and the scale it's shown at, or the week of the plan being viewed with what's planned and what in the pantry needs using soon, prepended in a `<context>` block. The person can drop it with one tap.
-- **Read tools:** `search_recipes`, `get_recipe`, `list_tags`, `get_meal_plan`, `get_shopping_list`, `get_pantry`.
+- **Read tools:** `search_recipes`, `get_recipe`, `list_tags`, `get_recipe_pairings`, `get_meal_plan`, `get_shopping_list`, `get_pantry`.
 - **Proposal tools** (each makes a card with buttons, nothing is saved until tapped):
   - `propose_new_recipe`: a recipe from the conversation
   - `propose_recipe_edit`: substitutions, scaling, notes; with a `variantName`, it can be saved as a new recipe instead of changing the original
@@ -268,6 +270,7 @@ The parser lives in the shared package, so the server and browser use the same c
 - It handles fractions, unicode fractions (½), ranges (2–3), and sizes in parentheses (`1 (14.5 oz) can`).
 - The original text is always kept. Display shows the line as written, swapping in the scaled quantity when you change servings.
 - **Grams:** each ingredient comes with `unitGrams`, what one of its unit weighs, worked out when the recipe is read (`nutrition/weights.ts`) so it always uses the latest matches. The order: the weight the line states ("(200 g)", spread over its amount so it scales), a weight unit, a can's size, a stick of butter, the shared baking table (`weights.ts`, grams per cup for about fifty staples), the matched USDA food's volume portions, then what the AI weighed before. "1 cup plus 2 tbsp" counts both. The same order weighs ingredients for nutrition.
+- **Pairings** (`pairings.ts`): a recipe with what it goes with is put together in the browser, not saved. The pairing is scaled to the same servings when both say how many they make (else a batch per batch), its lines and steps come first under its own heading, nutrition per serving is the two added up, and diet labels are the ones both share. The list and pantry use the same scaling for a planned meal's pairing (`services/meal-lines.ts`).
 - **Diet labels** (`diets.ts`) come from the ingredient lines when a recipe is read: each line is checked against groups (meat, fish, dairy, egg, gluten, nuts, honey), after taking out phrases that don't count ("vegetable broth", "corn tortillas", "peanut butter"). A diet is labeled only when no line rules it out. `diet_overrides` holds the household's corrections, which win.
 - When a food or unit isn't recognized, the line still saves. It just won't combine with other lines on lists or match the pantry.
 

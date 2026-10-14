@@ -5,7 +5,8 @@ import {
   type PlanEntry,
   type UpdatePlanEntryInput,
 } from "@mise/shared"
-import { and, asc, eq, gte, lte, max } from "drizzle-orm"
+import { and, asc, eq, gte, inArray, lte, max } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
 import type { Db } from "../db/client.ts"
@@ -17,6 +18,9 @@ import { restoreForMeal, useForMeal } from "./pantry.ts"
 
 type EntryRow = typeof mealPlanEntries.$inferSelect
 
+/** The recipe it's made with, joined a second time. */
+const withRecipes = alias(recipes, "with_recipes")
+
 const columns = {
   entry: mealPlanEntries,
   recipe: {
@@ -27,6 +31,13 @@ const columns = {
     totalMinutes: recipes.totalMinutes,
     servings: recipes.servings,
     nutrition: recipes.nutrition,
+  },
+  paired: {
+    id: withRecipes.id,
+    slug: withRecipes.slug,
+    name: withRecipes.name,
+    servings: withRecipes.servings,
+    nutrition: withRecipes.nutrition,
   },
 }
 
@@ -41,9 +52,26 @@ type Joined = {
     servings: number | null
     nutrition: Nutrition | null
   } | null
+  paired: {
+    id: string
+    slug: string
+    name: string
+    servings: number | null
+    nutrition: Nutrition | null
+  } | null
 }
 
-function toEntry({ entry, recipe }: Joined): PlanEntry {
+const planNutrition = (nutrition: Nutrition | null) =>
+  nutrition
+    ? {
+        calories: nutrition.calories,
+        protein: nutrition.protein,
+        carbohydrates: nutrition.carbohydrates,
+        fat: nutrition.fat,
+      }
+    : null
+
+function toEntry({ entry, recipe, paired }: Joined): PlanEntry {
   return {
     id: entry.id,
     date: entry.date,
@@ -57,16 +85,13 @@ function toEntry({ entry, recipe }: Joined): PlanEntry {
           thumbnailUrl: imageUrls(recipe.image).thumbnailUrl,
           totalMinutes: recipe.totalMinutes,
           servings: recipe.servings,
-          nutrition: recipe.nutrition
-            ? {
-                calories: recipe.nutrition.calories,
-                protein: recipe.nutrition.protein,
-                carbohydrates: recipe.nutrition.carbohydrates,
-                fat: recipe.nutrition.fat,
-              }
-            : null,
+          nutrition: planNutrition(recipe.nutrition),
         }
       : null,
+    with:
+      recipe && paired
+        ? { ...paired, nutrition: planNutrition(paired.nutrition) }
+        : null,
     note: entry.note,
     servings: entry.servings,
     status: entry.status,
@@ -80,6 +105,7 @@ function select(db: Db) {
     .select(columns)
     .from(mealPlanEntries)
     .leftJoin(recipes, eq(mealPlanEntries.recipeId, recipes.id))
+    .leftJoin(withRecipes, eq(mealPlanEntries.withRecipeId, withRecipes.id))
 }
 
 /** Plan entries from one date to another (both included), in order. */
@@ -160,9 +186,14 @@ export async function addEntry(
   const recipe = input.recipeId
     ? await findRecipeRow(db, householdId, input.recipeId)
     : null
+  const paired =
+    recipe && input.withRecipeId
+      ? await findRecipeRow(db, householdId, input.withRecipeId)
+      : null
   const [row] = await db
     .insert(mealPlanEntries)
     .values({
+      withRecipeId: paired?.id ?? null,
       householdId,
       date: input.date,
       meal: input.meal,
@@ -186,6 +217,9 @@ export async function updateEntry(
   const swapped = input.recipeId
     ? await findRecipeRow(db, householdId, input.recipeId)
     : null
+  const paired = input.withRecipeId
+    ? await findRecipeRow(db, householdId, input.withRecipeId)
+    : null
   const moved =
     (input.date && input.date !== current.date) ||
     (input.meal && input.meal !== current.meal)
@@ -197,11 +231,16 @@ export async function updateEntry(
       ...(input.servings !== undefined ? { servings: input.servings } : {}),
       ...(input.status ? { status: input.status } : {}),
       ...(input.note && !current.recipeId ? { note: input.note } : {}),
+      ...(input.withRecipeId !== undefined
+        ? { withRecipeId: paired?.id ?? null, listedAt: null }
+        : {}),
       // A different recipe isn't on the list yet, and starts at its own
       // servings unless they're given too.
       ...(swapped
         ? {
             recipeId: swapped.id,
+            // What went with the old recipe may not go with this one.
+            withRecipeId: paired?.id ?? null,
             note: null,
             servings: input.servings ?? null,
             listedAt: null,
@@ -233,10 +272,13 @@ export async function updateEntry(
   // Cooking a planned meal is the same as "I made this", and uses up its
   // ingredients.
   if (status === "cooked" && current.status !== "cooked" && current.recipeId) {
+    const made = [current.recipeId, current.withRecipeId].filter(
+      (id): id is string => Boolean(id)
+    )
     await db
       .update(recipes)
       .set({ lastMadeAt: new Date() })
-      .where(eq(recipes.id, current.recipeId))
+      .where(inArray(recipes.id, made))
     await cooked(db, householdId, current.id)
   }
   return getEntry(db, current.id)

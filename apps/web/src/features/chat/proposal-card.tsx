@@ -345,6 +345,12 @@ function AddCard({ proposal }: { proposal: Proposal }) {
               </span>
               <span className="min-w-0">
                 {meal.recipe?.name ?? meal.note}
+                {meal.with && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    with {meal.with.name}
+                  </span>
+                )}
                 {meal.servings && (
                   <span className="text-muted-foreground">
                     {" "}

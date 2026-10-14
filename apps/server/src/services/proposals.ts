@@ -281,7 +281,10 @@ export async function applyProposal(
             date: meal.date,
             meal: meal.meal,
             ...(meal.recipe
-              ? { recipeId: meal.recipe.id }
+              ? {
+                  recipeId: meal.recipe.id,
+                  withRecipeId: meal.with?.id ?? null,
+                }
               : { note: meal.note ?? "Meal" }),
             servings: meal.servings,
           },

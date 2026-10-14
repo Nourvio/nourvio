@@ -26,7 +26,7 @@ import {
 } from "./use-plan"
 
 type Slot = { date: string; meal: Meal }
-type Idea = Pick<MealSuggestion, "recipe" | "uses">
+type Idea = Pick<MealSuggestion, "recipe" | "with" | "uses">
 
 const slotKey = (slot: Slot) => `${slot.date}:${slot.meal}`
 
@@ -107,7 +107,17 @@ function FillWeek({
   const rows = slots.flatMap((slot) => {
     const key = slotKey(slot)
     const idea = key in changes ? changes[key] : fromServer.get(key)
-    return idea ? [{ ...slot, key, recipe: idea.recipe, uses: idea.uses }] : []
+    return idea
+      ? [
+          {
+            ...slot,
+            key,
+            recipe: idea.recipe,
+            with: idea.with,
+            uses: idea.uses,
+          },
+        ]
+      : []
   })
   const unfilled = slots.filter((slot) => {
     const key = slotKey(slot)
@@ -148,6 +158,7 @@ function FillWeek({
         date: row.date,
         meal: row.meal,
         recipeId: row.recipe.id,
+        withRecipeId: row.with?.id ?? null,
       })),
       {
         onSuccess: (added) => {
@@ -226,7 +237,15 @@ function FillWeek({
                 <span className="text-xs text-muted-foreground">
                   {dayName(row.date)} · {MEAL_NAMES[row.meal]}
                 </span>
-                <span className="truncate font-medium">{row.recipe.name}</span>
+                <span className="truncate font-medium">
+                  {row.recipe.name}
+                  {row.with && (
+                    <span className="font-normal text-muted-foreground">
+                      {" "}
+                      with {row.with.name}
+                    </span>
+                  )}
+                </span>
                 {row.uses.length > 0 ? (
                   <span className="truncate text-xs font-medium text-amber-700 dark:text-amber-400">
                     Uses up your {row.uses.join(", ").toLowerCase()}

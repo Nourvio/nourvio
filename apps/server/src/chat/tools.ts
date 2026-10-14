@@ -21,6 +21,7 @@ import { HttpError } from "../http.ts"
 import { toRecipeInput } from "../import/ai-extract.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
 import { listItems } from "../services/list.ts"
+import { getPairings } from "../services/pairings.ts"
 import { listPantry } from "../services/pantry.ts"
 import { listEntries } from "../services/plan.ts"
 import {
@@ -312,6 +313,35 @@ const tidyRecipe = tool({
   },
 })
 
+const getRecipePairings = tool({
+  name: "get_recipe_pairings",
+  description:
+    "What a recipe goes with (sauces, sides), as set by the household, and what it's offered with. Use it to plan a meal with a sauce, or to suggest one.",
+  input: z.object({ recipe: z.string().describe("The recipe's id or slug") }),
+  runningLabel: "Checking what goes with it",
+  async run(ctx, { recipe }) {
+    const found = await findRecipe(ctx, recipe)
+    if (!found) {
+      return {
+        output: "There's no recipe like that.",
+        label: "Couldn't find that recipe",
+        isError: true,
+      }
+    }
+    const { options, pairsWith } = await getPairings(
+      ctx.db,
+      ctx.householdId,
+      found.id
+    )
+    const list = (items: { name: string; slug: string }[]) =>
+      items.map((i) => `${i.name} (${i.slug})`).join(", ") || "nothing yet"
+    return {
+      output: `${found.name} goes with: ${list(options)}.\nIt's offered with: ${list(pairsWith)}.`,
+      label: `Checked what goes with ${found.name}`,
+    }
+  },
+})
+
 const getMealPlan = tool({
   name: "get_meal_plan",
   description:
@@ -374,6 +404,12 @@ const proposeMeals = tool({
             .string()
             .nullable()
             .describe("A recipe id or slug, or null with a note"),
+          with: z
+            .string()
+            .nullable()
+            .describe(
+              "A recipe id or slug it's made with, like a sauce it goes with (see get_recipe_pairings), or null"
+            ),
           note: z.string().nullable(),
           servings: z
             .number()
@@ -395,10 +431,15 @@ const proposeMeals = tool({
           missing.push(meal.recipe)
           continue
         }
+        const paired = meal.with ? await findRecipe(ctx, meal.with) : null
         resolved.push({
           date: meal.date,
           meal: meal.meal,
           recipe: { id: recipe.id, slug: recipe.slug, name: recipe.name },
+          with:
+            paired && paired.id !== recipe.id
+              ? { id: paired.id, slug: paired.slug, name: paired.name }
+              : null,
           note: null,
           servings: meal.servings && meal.servings > 0 ? meal.servings : null,
         })
@@ -407,6 +448,7 @@ const proposeMeals = tool({
           date: meal.date,
           meal: meal.meal,
           recipe: null,
+          with: null,
           note: meal.note.trim().slice(0, 200),
           servings: null,
         })
@@ -483,6 +525,7 @@ export const TOOLS = [
   searchRecipes,
   getRecipeTool,
   listTagsTool,
+  getRecipePairings,
   getMealPlan,
   getShoppingList,
   getPantry,
@@ -538,7 +581,7 @@ export function describePlan(entries: PlanEntry[]) {
   return entries
     .map((entry) => {
       const what = entry.recipe
-        ? `${entry.recipe.name} (${entry.recipe.slug}${entry.servings ? `, ${entry.servings} servings` : ""})`
+        ? `${entry.recipe.name} (${entry.recipe.slug}${entry.servings ? `, ${entry.servings} servings` : ""})${entry.with ? ` with ${entry.with.name} (${entry.with.slug})` : ""}`
         : `Note: ${entry.note}`
       const status = entry.status === "planned" ? "" : ` [${entry.status}]`
       return `${entry.date} ${entry.meal}: ${what}${status}`

@@ -425,6 +425,8 @@ export const mealPlanEntries = pgTable(
     listedAt: timestamp({ withTimezone: true }),
     /** Pantry rows as they were before cooking it used them, to put back. */
     pantryUsed: jsonb().$type<PantrySnapshot[]>(),
+    /** What it's made with: a sauce or side the recipe goes with. */
+    withRecipeId: uuid().references(() => recipes.id, { onDelete: "set null" }),
     createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

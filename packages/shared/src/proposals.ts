@@ -93,6 +93,8 @@ export type ProposedMeal = {
   date: string
   meal: Meal
   recipe: RecipeRef | null
+  /** What it's made with, like a sauce it goes with. */
+  with?: RecipeRef | null
   note: string | null
   servings: number | null
 }

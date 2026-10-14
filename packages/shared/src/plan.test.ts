@@ -50,6 +50,7 @@ describe("planTotals", () => {
           nutrition,
         }
       : null,
+    with: null,
     note: recipe ? null : "Eating out",
     servings: null,
     status,
@@ -74,6 +75,24 @@ describe("planTotals", () => {
       fat: 20,
       counted: 2,
       meals: 3,
+    })
+  })
+
+  test("counts what a meal is made with", () => {
+    const withSauce: PlanEntry = {
+      ...entry("planned", some),
+      with: {
+        id: "s",
+        slug: "s",
+        name: "Sauce",
+        servings: 4,
+        nutrition: { calories: 80, protein: 1, carbohydrates: 10, fat: 4 },
+      },
+    }
+    expect(planTotals([withSauce])).toMatchObject({
+      calories: 580,
+      fat: 24,
+      counted: 1,
     })
   })
 })

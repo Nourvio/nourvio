@@ -2,6 +2,15 @@ import { z } from "zod"
 
 import type { Nutrition } from "./recipes.ts"
 
+/** What a planned recipe is made with: "with Peanut Sauce". */
+export type PlanPairing = {
+  id: string
+  slug: string
+  name: string
+  servings: number | null
+  nutrition: PlanNutrition | null
+}
+
 /** The numbers the plan adds up, per serving. */
 export type PlanNutrition = Pick<
   Nutrition,
@@ -44,6 +53,8 @@ export type PlanEntry = {
     servings: number | null
     nutrition: PlanNutrition | null
   } | null
+  /** What it's made with, from what the recipe goes with ("with Peanut Sauce"). */
+  with: PlanPairing | null
   /** A note instead of a recipe ("leftovers", "eating out"). */
   note: string | null
   /** Null means the recipe's own servings. */
@@ -62,6 +73,8 @@ export const addPlanEntryInput = z
     date: isoDate,
     meal: z.enum(MEALS),
     recipeId: z.uuid().optional(),
+    /** What it's made with: a sauce or side it goes with. */
+    withRecipeId: z.uuid().nullable().optional(),
     note: z.string().trim().min(1).max(200).optional(),
     servings: servings.optional(),
   })
@@ -73,6 +86,8 @@ export type AddPlanEntryInput = z.input<typeof addPlanEntryInput>
 export const updatePlanEntryInput = z.object({
   /** Swap in another recipe ("suggest something else"). */
   recipeId: z.uuid().optional(),
+  /** What it's made with; null for nothing. */
+  withRecipeId: z.uuid().nullable().optional(),
   date: isoDate.optional(),
   meal: z.enum(MEALS).optional(),
   servings: servings.optional(),
@@ -133,6 +148,8 @@ export type MealSuggestion = {
   date: string
   meal: Meal
   recipe: Omit<NonNullable<PlanEntry["recipe"]>, "nutrition">
+  /** A sauce or side it goes with, picked to go with it. */
+  with: { id: string; slug: string; name: string } | null
   /** Pantry food it uses up that needs using soon. */
   uses: string[]
 }
@@ -144,6 +161,7 @@ export const addPlanEntriesInput = z.object({
         date: isoDate,
         meal: z.enum(MEALS),
         recipeId: z.uuid().optional(),
+        withRecipeId: z.uuid().nullable().optional(),
         note: z.string().trim().min(1).max(200).optional(),
         servings: z.number().positive().max(100).nullable().optional(),
       })
@@ -179,10 +197,17 @@ export function planTotals(entries: PlanEntry[]): PlanTotals {
     const nutrition = entry.recipe!.nutrition
     if (nutrition?.calories == null) continue
     counted++
-    totals.calories += nutrition.calories
-    totals.protein += nutrition.protein ?? 0
-    totals.carbohydrates += nutrition.carbohydrates ?? 0
-    totals.fat += nutrition.fat ?? 0
+    // A pairing is scaled to the same servings, so a serving of each.
+    const paired =
+      entry.with?.nutrition && entry.recipe!.servings && entry.with.servings
+        ? entry.with.nutrition
+        : null
+    for (const part of paired ? [nutrition, paired] : [nutrition]) {
+      totals.calories += part.calories ?? 0
+      totals.protein += part.protein ?? 0
+      totals.carbohydrates += part.carbohydrates ?? 0
+      totals.fat += part.fat ?? 0
+    }
   }
   return { ...totals, counted, meals: meals.length }
 }

@@ -40,6 +40,11 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
   - Search by name, description, tag or ingredient.
   - Filter by diet, tags (several at once, searchable, with counts) and time ("Under 30 min"), and sort by newest, name, rating, recently made or quickest. Filters show as chips you can remove, with "12 of 140 recipes", and live in the URL so a view can be bookmarked.
   - **Tags** can be renamed, merged (rename one to another's name) and deleted for the whole household, for tidying an imported library.
+- **Goes with** (mix and match): a recipe can go with sauces, sides and the like, so "chicken + rice" or "pasta" isn't saved a hundred times over:
+  - Pick particular recipes, or a whole tag ("any sauce"), so new ones join by themselves. A sauce shows what it pairs with.
+  - Tap a pairing on the recipe to see the two as one: the sauce's ingredients and steps first, each under its own heading, the sauce scaled to the servings, nutrition added up and only the diet labels both share. Cooking it walks through both, and the link can be shared.
+  - A pairing that becomes its own thing can be saved as a separate recipe.
+  - On the plan, a meal can be "Chicken + Rice with Peanut Sauce"; see Meal planning.
 - **Diet labels** (vegetarian, vegan, gluten-free, dairy-free, egg-free, nut-free) are worked out from the ingredients, with nothing to tag by hand:
   - Cautious on purpose: a label only shows when nothing in the ingredients rules it out. Plain "stock" might be chicken, soy sauce has wheat, "tortillas" are taken to be flour, and oats need to say gluten-free. Phrases like "vegetable broth", "corn tortillas", "peanut butter" and "butternut squash" are understood.
   - Each label says what ruled it out ("2 tbsp butter"), and the household can correct any recipe. Corrections stick when the recipe is edited.
@@ -108,6 +113,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
   - Breakfast, lunch and snacks only use recipes tagged for them. Dinner takes anything that isn't clearly another meal.
   - Re-roll any idea, or leave that meal empty, before adding them all.
 - **Suggest something else** on any planned meal swaps in another recipe, with an undo.
+- **With a sauce or side:** a planned meal can be made with something its recipe goes with ("Chicken + Rice with Peanut Sauce"), picked when planning from the recipe, from the meal's menu, or by Fill the week, which rotates through ones not had lately. The list, the pantry, cooking and the calories include both. Sauces and other parts of meals (anything paired with something, or tagged sauce, dressing, marinade and so on) aren't suggested as meals on their own.
 - Mark each planned meal **cooked** (same as "I made this") or **skipped**.
 - **The assistant** knows which week you're looking at. Ask it to fill the dinners or plan easy lunches, and it offers the meals as a card you add with one tap.
 - **Food that needs using comes first:** Fill the week gives each item under "Use soon" in the pantry a recipe that uses it, as early in the week as one fits, and says so ("Uses up your spinach"). A skipped meal doesn't count toward no-repeats, so it can come straight back.

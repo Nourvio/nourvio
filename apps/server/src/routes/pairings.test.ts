@@ -128,3 +128,148 @@ describe("pairings", () => {
     ).toBe(404)
   })
 })
+
+describe("pairings on the plan", () => {
+  let t: Awaited<ReturnType<typeof createTestAppWithAdmin>>
+  const ids: Record<string, string> = {}
+
+  beforeAll(async () => {
+    t = await createTestAppWithAdmin()
+    const recipes = [
+      {
+        name: "Chicken + Rice",
+        servings: 4,
+        tags: ["dinner"],
+        ingredients: ["1 lb chicken", "1 cup rice"],
+      },
+      {
+        name: "Teriyaki Sauce",
+        servings: 8,
+        tags: ["sauce"],
+        ingredients: ["1 cup soy sauce", "4 tbsp honey"],
+      },
+      {
+        name: "Peanut Sauce",
+        servings: 4,
+        tags: ["sauce"],
+        ingredients: ["1/2 cup peanut butter"],
+      },
+      {
+        name: "Chili",
+        servings: 4,
+        tags: ["dinner"],
+        ingredients: ["1 lb ground beef"],
+      },
+    ]
+    for (const recipe of recipes) {
+      ids[recipe.name] = (
+        await t.admin.post("/api/recipes", recipe)
+      ).body.recipe.id
+    }
+    await t.admin.post(`/api/recipes/${ids["Chicken + Rice"]}/pairings`, {
+      tag: "sauce",
+    })
+  })
+  afterAll(() => t.close())
+
+  test("plans a meal with something it goes with, and lists both", async () => {
+    const res = await t.admin.post("/api/plan/entries", {
+      date: "2026-11-02",
+      meal: "dinner",
+      recipeId: ids["Chicken + Rice"],
+      withRecipeId: ids["Teriyaki Sauce"],
+    })
+    expect(res.status).toBe(201)
+    expect(res.body.entry.with).toMatchObject({ name: "Teriyaki Sauce" })
+
+    await t.admin.post("/api/list/from-plan", {
+      from: "2026-11-02",
+      to: "2026-11-02",
+    })
+    const items = (await t.admin.get("/api/list")).body.items as {
+      name: string
+      amount: string
+      recipes: string[]
+    }[]
+    // The sauce makes 8 servings; half a batch goes with 4.
+    expect(items.find((i) => i.name === "soy sauce")).toMatchObject({
+      amount: "½ cup",
+      recipes: ["Teriyaki Sauce"],
+    })
+    expect(items.find((i) => i.name === "chicken")?.amount).toBe("1 lb")
+
+    // Changing what it's made with; null for nothing.
+    const changed = await t.admin.patch(
+      `/api/plan/entries/${res.body.entry.id}`,
+      {
+        withRecipeId: null,
+      }
+    )
+    expect(changed.body.entry.with).toBeNull()
+    expect(changed.body.entry.listed).toBe(false)
+  })
+
+  test("cooking it marks both made", async () => {
+    const entry = (
+      await t.admin.post("/api/plan/entries", {
+        date: "2026-11-03",
+        meal: "dinner",
+        recipeId: ids["Chicken + Rice"],
+        withRecipeId: ids["Peanut Sauce"],
+      })
+    ).body.entry
+    await t.admin.patch(`/api/plan/entries/${entry.id}`, { status: "cooked" })
+    const sauce = (await t.admin.get(`/api/recipes/${ids["Peanut Sauce"]}`))
+      .body.recipe
+    expect(sauce.lastMadeAt).not.toBeNull()
+  })
+
+  test("suggests a sauce with what goes with one, and never a sauce alone", async () => {
+    // Chicken + Rice was just cooked, so a pasta that goes with any sauce.
+    const pasta = (
+      await t.admin.post("/api/recipes", {
+        name: "Pasta",
+        servings: 4,
+        tags: ["dinner"],
+        ingredients: ["1 lb pasta"],
+      })
+    ).body.recipe
+    await t.admin.post(`/api/recipes/${pasta.id}/pairings`, { tag: "sauce" })
+    const slots = Array.from({ length: 5 }, (_, i) => ({
+      date: `2026-12-0${i + 1}`,
+      meal: "dinner",
+    }))
+    const res = await t.admin.post("/api/plan/suggest", { slots })
+    const suggestions = res.body.suggestions as {
+      recipe: { name: string }
+      with: { name: string } | null
+    }[]
+    expect(
+      suggestions.map((s) => s.recipe.name).filter((n) => n.includes("Sauce"))
+    ).toEqual([])
+    const withPasta = suggestions.find((s) => s.recipe.name === "Pasta")
+    expect(withPasta?.with?.name).toMatch(/Sauce$/)
+    expect(suggestions.find((s) => s.recipe.name === "Chili")?.with).toBeNull()
+  })
+
+  test("is per household", async () => {
+    await t.admin.put("/api/server/settings", { signupOpen: true })
+    const other = apiClient(t.app)
+    await other.post("/api/signup", {
+      displayName: "Dana",
+      username: "dana",
+      password: "a long enough password",
+      householdName: "Next Door",
+    })
+    const theirs = (
+      await other.post("/api/recipes", { name: "Toast", ingredients: [] })
+    ).body.recipe
+    const res = await other.post("/api/plan/entries", {
+      date: "2026-11-05",
+      meal: "dinner",
+      recipeId: theirs.id,
+      withRecipeId: ids["Teriyaki Sauce"],
+    })
+    expect(res.status).toBe(404)
+  })
+})

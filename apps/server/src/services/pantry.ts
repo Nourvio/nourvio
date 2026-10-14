@@ -28,7 +28,7 @@ import {
 import { HttpError } from "../http.ts"
 import { getHousehold } from "./households.ts"
 import { readAmount, sectionsFor } from "./food.ts"
-import { getRecipe } from "./recipes.ts"
+import { mealLines } from "./meal-lines.ts"
 
 type PantryRow = typeof pantryItems.$inferSelect
 
@@ -307,15 +307,8 @@ export async function useForMeal(
       )
     )
   if (!entry?.recipeId) return []
-  const recipe = await getRecipe(db, householdId, entry.recipeId)
-  const factor =
-    entry.servings && recipe.servings ? entry.servings / recipe.servings : 1
   const needs = combineLines(
-    recipe.ingredients.map((ingredient) => ({
-      text: ingredient.text,
-      factor,
-      source: recipe.name,
-    }))
+    await mealLines(db, householdId, { ...entry, recipeId: entry.recipeId })
   )
 
   const rows = await db

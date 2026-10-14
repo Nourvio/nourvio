@@ -289,7 +289,11 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                 Edit
               </Link>
             </Button>
-            <AddToPlanButton recipe={recipe} factor={factor} />
+            <AddToPlanButton
+              recipe={recipe}
+              factor={factor}
+              withRecipe={combined ? (paired.data ?? null) : null}
+            />
             <MoreMenu
               recipe={recipe}
               onTidyUp={() => setTidying(true)}

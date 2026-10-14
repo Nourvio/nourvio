@@ -17,6 +17,7 @@ import {
   recipeIngredients,
   recipes as recipesTable,
 } from "../db/schema.ts"
+import { pairingOptionsByRecipe } from "./pairings.ts"
 import { listPantry } from "./pantry.ts"
 import { listRecipes } from "./recipes.ts"
 
@@ -30,6 +31,8 @@ export type Suggestion = {
     RecipeSummary,
     "id" | "slug" | "name" | "thumbnailUrl" | "totalMinutes" | "servings"
   >
+  /** A sauce or side it goes with, picked to go with it. */
+  with: { id: string; slug: string; name: string } | null
   /** Pantry food it uses up that needs using soon. */
   uses: string[]
 }
@@ -43,6 +46,23 @@ const MEAL_TAGS: Record<Meal, string[]> = {
 
 const tagsOf = (recipe: RecipeSummary) =>
   recipe.tags.map((tag) => tag.toLowerCase())
+
+/** Tags for parts of a meal rather than meals: never suggested on their own. */
+const PART_TAGS = [
+  "sauce",
+  "sauces",
+  "dressing",
+  "dressings",
+  "condiment",
+  "condiments",
+  "marinade",
+  "seasoning",
+  "spice blend",
+  "spice mix",
+  "glaze",
+  "frosting",
+  "topping",
+]
 
 /**
  * Which recipes suit a meal. Breakfast, lunch and snacks only take recipes
@@ -119,7 +139,10 @@ export async function suggestMeals(
 
   const recipes = await listRecipes(db, householdId)
   const nearby = await db
-    .select({ recipeId: mealPlanEntries.recipeId })
+    .select({
+      recipeId: mealPlanEntries.recipeId,
+      withRecipeId: mealPlanEntries.withRecipeId,
+    })
     .from(mealPlanEntries)
     .where(
       and(
@@ -141,9 +164,20 @@ export async function suggestMeals(
   const madeLately = new Date(Date.now() - NO_REPEAT_DAYS * 86_400_000)
   const usesOf = await useSoonFoods(db, householdId)
 
+  // What goes with what. Anything offered with another recipe is a part of
+  // a meal (a sauce), not a meal.
+  const pairings = await pairingOptionsByRecipe(db, householdId)
+  const parts = new Set([...pairings.values()].flatMap((ids) => [...ids]))
+  const isPart = (recipe: RecipeSummary) =>
+    parts.has(recipe.id) || tagsOf(recipe).some((t) => PART_TAGS.includes(t))
+  const pairedLately = new Set(
+    nearby.flatMap((row) => (row.withRecipeId ? [row.withRecipeId] : []))
+  )
+
   const candidatesFor = (slot: { date: string; meal: Meal }) =>
     recipes.filter(
       (recipe) =>
+        !isPart(recipe) &&
         !used.has(dish(recipe.name)) &&
         fits(recipe, slot.meal) &&
         !(recipe.lastMadeAt && new Date(recipe.lastMadeAt) > madeLately)
@@ -185,6 +219,26 @@ export async function suggestMeals(
     if (recipe) choose(index, recipe)
   }
 
+  /** A sauce or side for it, one not had lately, different each night. */
+  const pickedWith = new Set<string>()
+  function pairWith(recipe: RecipeSummary) {
+    const options = [...(pairings.get(recipe.id) ?? [])].flatMap((id) => {
+      const option = byId.get(id)
+      return option ? [option] : []
+    })
+    if (!options.length) return null
+    const fresh = options.filter(
+      (o) => !pairedLately.has(o.id) && !pickedWith.has(o.id)
+    )
+    const option = pick(
+      fresh.length ? fresh : options,
+      (o) => (o.rating ? o.rating : 3),
+      random
+    )!
+    pickedWith.add(option.id)
+    return { id: option.id, slug: option.slug, name: option.name }
+  }
+
   return slots.flatMap((slot, index) => {
     const recipe = chosen.get(index)
     if (!recipe) return []
@@ -199,6 +253,7 @@ export async function suggestMeals(
           totalMinutes: recipe.totalMinutes,
           servings: recipe.servings,
         },
+        with: pairWith(recipe),
         uses: usesOf.recipe(recipe.id),
       },
     ]

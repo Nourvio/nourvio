@@ -29,9 +29,9 @@ import {
 } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
 import { readAmount, sectionsFor } from "./food.ts"
+import { mealLines } from "./meal-lines.ts"
 import { listPantry } from "./pantry.ts"
 import { getHousehold } from "./households.ts"
-import { getRecipe } from "./recipes.ts"
 
 type ItemRow = typeof shoppingItems.$inferSelect
 
@@ -252,6 +252,7 @@ export async function addFromPlan(
     .select({
       id: mealPlanEntries.id,
       recipeId: mealPlanEntries.recipeId,
+      withRecipeId: mealPlanEntries.withRecipeId,
       servings: mealPlanEntries.servings,
     })
     .from(mealPlanEntries)
@@ -268,17 +269,12 @@ export async function addFromPlan(
 
   const lines: ListLine[] = []
   for (const entry of entries) {
-    const recipe = await getRecipe(db, householdId, entry.recipeId!)
-    const factor =
-      entry.servings && recipe.servings ? entry.servings / recipe.servings : 1
-    for (const ingredient of recipe.ingredients) {
-      lines.push({
-        text: ingredient.text,
-        factor,
-        source: recipe.name,
-        entryId: entry.id,
-      })
-    }
+    lines.push(
+      ...(await mealLines(db, householdId, {
+        ...entry,
+        recipeId: entry.recipeId!,
+      }))
+    )
   }
 
   const onHand = new Set(household.onHand.map(foodKey))

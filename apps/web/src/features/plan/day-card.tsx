@@ -1,3 +1,4 @@
+import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
@@ -32,6 +33,7 @@ import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 import { dayName, monthDay } from "./dates"
+import { EntryPairingDialog } from "./entry-pairing-dialog"
 import {
   useRemovePlanEntry,
   useSuggestMeal,
@@ -150,7 +152,16 @@ function DayNutrition({ entries }: { entries: PlanEntry[] }) {
   )
 }
 
+/** The cook view for a planned meal, at its scale and with what it goes with. */
+function cookLink(slug: string, scale: number, withSlug?: string) {
+  const params = new URLSearchParams()
+  if (scale !== 1) params.set("scale", String(scale))
+  if (withSlug) params.set("with", withSlug)
+  return `/recipes/${slug}/cook${params.size ? `?${params}` : ""}`
+}
+
 function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
+  const [pairing, setPairing] = React.useState(false)
   const update = useUpdatePlanEntry()
   const remove = useRemovePlanEntry()
   const suggestOne = useSuggestMeal()
@@ -237,13 +248,19 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
       <div className="grid min-w-0 flex-1 gap-0.5">
         {recipe ? (
           <Link
-            to={`/recipes/${recipe.slug}`}
+            to={`/recipes/${recipe.slug}${entry.with ? `?with=${entry.with.slug}` : ""}`}
             className={cn(
               "truncate font-medium hover:underline",
               skipped && "text-muted-foreground line-through"
             )}
           >
             {recipe.name}
+            {entry.with && (
+              <span className="font-normal text-muted-foreground">
+                {" "}
+                with {entry.with.name}
+              </span>
+            )}
           </Link>
         ) : (
           <span
@@ -294,9 +311,7 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
         <DropdownMenuContent align="end" className="w-52">
           {recipe && (
             <DropdownMenuItem asChild>
-              <Link
-                to={`/recipes/${recipe.slug}/cook${scale !== 1 ? `?scale=${scale}` : ""}`}
-              >
+              <Link to={cookLink(recipe.slug, scale, entry.with?.slug)}>
                 <HugeiconsIcon icon={CookingPotIcon} strokeWidth={2} />
                 Start cooking
               </Link>
@@ -327,6 +342,11 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
               Back to planned
             </DropdownMenuItem>
           )}
+          {recipe && (
+            <DropdownMenuItem onSelect={() => setPairing(true)}>
+              {entry.with ? "Change what it goes with" : "Goes with…"}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onSelect={onEdit}>
             Move or change servings
           </DropdownMenuItem>
@@ -343,6 +363,10 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <EntryPairingDialog
+        entry={pairing ? entry : null}
+        onClose={() => setPairing(false)}
+      />
     </li>
   )
 }
