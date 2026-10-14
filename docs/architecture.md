@@ -43,6 +43,7 @@ All AI calls go from the server straight to Claude or OpenAI, using API keys you
 | Validation | Zod | The same schemas run on client and server |
 | AI | `@anthropic-ai/sdk` and `openai`, each provider's official SDK | Behind one small provider interface. See [AI](#ai). |
 | HTML parsing | cheerio | For recipe import |
+| Video | yt-dlp and ffmpeg, in the Docker image | For recipes from TikTok, YouTube and Instagram. See [integrations.md](integrations.md#video-links-tiktok-youtube-instagram). |
 | Tests | Vitest; Playwright for a few end-to-end flows | |
 | Extension | Chrome/Edge Manifest V3, built with Vite | Milestone 6 |
 | Package manager | npm workspaces | |
@@ -60,7 +61,7 @@ mise/
 │   │   ├── src/routes/          thin HTTP handlers
 │   │   ├── src/services/        all business logic (used by routes and AI tools)
 │   │   ├── src/ai/              provider interface, Claude + OpenAI providers, prompts, tools, jobs
-│   │   ├── src/import/          URL / text / photo / Mealie importers
+│   │   ├── src/import/          link / video / text / photo / Mealie importers
 │   │   └── src/db/              Drizzle schema, migrations, seed (units, sections)
 │   └── extension/           Walmart cart extension (milestone 6)
 ├── packages/

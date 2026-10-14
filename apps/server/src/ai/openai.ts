@@ -1,9 +1,11 @@
 import type { AiModel } from "@mise/shared"
-import OpenAI from "openai"
+import OpenAI, { toFile } from "openai"
 import { zodTextFormat } from "openai/helpers/zod"
 
 import { providerError } from "./errors.ts"
 import type { AiPart, AiProvider } from "./types.ts"
+
+const TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
 
 /** Models that make sense for chat and extraction, not audio, images or embeddings. */
 const CHAT_MODEL = /^(gpt-|o\d|chatgpt-)/
@@ -81,6 +83,25 @@ export function createOpenAiProvider(apiKey: string): AiProvider {
         throw providerError("openai", error)
       }
       return models.sort((a, b) => b.id.localeCompare(a.id))
+    },
+
+    async transcribe(audio, filename) {
+      try {
+        const result = await client.audio.transcriptions.create({
+          file: await toFile(audio, filename),
+          model: TRANSCRIBE_MODEL,
+        })
+        const usage =
+          result.usage?.type === "tokens"
+            ? {
+                inputTokens: result.usage.input_tokens,
+                outputTokens: result.usage.output_tokens,
+              }
+            : { inputTokens: 0, outputTokens: 0 }
+        return { text: result.text, model: TRANSCRIBE_MODEL, usage }
+      } catch (error) {
+        throw providerError("openai", error)
+      }
     },
   }
 }

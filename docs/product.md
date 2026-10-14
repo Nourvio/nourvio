@@ -39,7 +39,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
 | Way in | How it works |
 |---|---|
 | Link | Paste a URL. We read the structured recipe data most sites embed, and use AI when a site doesn't have it. Importing the same link twice offers the existing recipe instead. |
-| Video | Paste a TikTok, YouTube or Instagram link. We read the caption, the spoken words and, for short videos, frames from the video, and AI writes up the recipe. |
+| Video | Paste a TikTok, YouTube or Instagram link. We read the caption, the captions or spoken words (transcribing needs an OpenAI key) and, for short videos, frames from the video, and AI writes up the recipe. |
 | Text | Paste anything, like a ChatGPT answer or an email. AI turns it into a recipe. |
 | Photo | Take one or more photos of a cookbook page or a handwritten card. AI reads them. |
 | Manual | Type ingredients one per line and steps one per line. A line starting with `#` starts a section. |

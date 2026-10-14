@@ -9,6 +9,8 @@ if [ "$(id -u)" = "0" ]; then
   PGID="${PGID:-1000}"
   mkdir -p "$DATA_DIR"
   find "$DATA_DIR" \( ! -user "$PUID" -o ! -group "$PGID" \) -exec chown "$PUID:$PGID" {} +
+  # Let the app keep yt-dlp up to date in place.
+  if [ -d /opt/yt-dlp ]; then chown -R "$PUID:$PGID" /opt/yt-dlp; fi
   exec setpriv --reuid="$PUID" --regid="$PGID" --clear-groups "$@"
 fi
 

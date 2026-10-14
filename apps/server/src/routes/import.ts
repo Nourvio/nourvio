@@ -9,13 +9,14 @@ import { HttpError, readBody } from "../http.ts"
 import { extractRecipe, photosToParts } from "../import/ai-extract.ts"
 import { fetchPublic } from "../import/safe-fetch.ts"
 import { importFromUrl } from "../import/url.ts"
+import { systemVideoTools } from "../import/video-tools.ts"
 import { createRecipe } from "../services/recipes.ts"
 
 /** Four phone photos, with some room to spare. */
 const MAX_PHOTO_UPLOAD = 60 * 1024 * 1024
 
 export function importRoutes(
-  { db, fetcher = fetchPublic }: AppContext,
+  { db, fetcher = fetchPublic, videoTools = systemVideoTools }: AppContext,
   ai: AiService
 ) {
   const app = new Hono<AppEnv>()
@@ -27,6 +28,7 @@ export function importRoutes(
       userId: currentUser(c).id,
       fetcher,
       ai,
+      videoTools,
       force,
     })
     return c.json(result, result.duplicate ? 200 : 201)

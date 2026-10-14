@@ -5,6 +5,7 @@ import type { SetupCode } from "./auth/setup-code.ts"
 import type { Db } from "./db/client.ts"
 import { HttpError } from "./http.ts"
 import type { Fetcher } from "./import/safe-fetch.ts"
+import type { VideoTools } from "./import/video-tools.ts"
 import type { UserRow } from "./services/users.ts"
 
 /** What the app needs to run. Tests pass an in-memory database here. */
@@ -15,6 +16,8 @@ export type AppContext = {
   fetcher?: Fetcher
   /** How AI providers are built. Tests swap in a fake; defaults to the real SDKs. */
   aiFactory?: AiProviderFactory
+  /** yt-dlp and ffmpeg for video links. Tests swap in a fake. */
+  videoTools?: VideoTools
 }
 
 export type AppEnv = {

@@ -227,6 +227,35 @@ export function createAiService(
     return data
   }
 
+  /**
+   * Speech to text with whichever configured provider can do it (OpenAI).
+   * Returns null when none can.
+   */
+  async function transcribe(userId: string | null, audio: Buffer) {
+    const available = await keys()
+    for (const id of AI_PROVIDERS) {
+      const found = available[id]
+      if (!found) continue
+      const provider = factory(id, found.key)
+      if (!provider.transcribe) continue
+      const { text, model, usage } = await provider.transcribe(
+        audio,
+        "audio.mp3"
+      )
+      await db.insert(aiUsage).values({
+        userId,
+        provider: id,
+        model,
+        task: "import",
+        inputTokens: usage.inputTokens,
+        outputTokens: usage.outputTokens,
+        costUsd: estimateCost(model, usage.inputTokens, usage.outputTokens),
+      })
+      return text
+    }
+    return null
+  }
+
   /** Requests, tokens and rough cost by month and model, for the last six months. */
   async function usageSummary(): Promise<AiUsageRow[]> {
     const since = new Date()
@@ -261,6 +290,7 @@ export function createAiService(
     listModels,
     resolve,
     extract,
+    transcribe,
     usageSummary,
   }
 }

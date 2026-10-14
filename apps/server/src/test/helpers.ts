@@ -11,6 +11,7 @@ import * as schema from "../db/schema.ts"
 import { seedReferenceData } from "../db/seed.ts"
 import type { AiProviderFactory } from "../ai/types.ts"
 import type { Fetcher } from "../import/safe-fetch.ts"
+import type { VideoTools } from "../import/video-tools.ts"
 
 type App = ReturnType<typeof createApp>
 
@@ -18,7 +19,12 @@ type App = ReturnType<typeof createApp>
 export async function createTestApp({
   fetcher,
   aiFactory,
-}: { fetcher?: Fetcher; aiFactory?: AiProviderFactory } = {}) {
+  videoTools,
+}: {
+  fetcher?: Fetcher
+  aiFactory?: AiProviderFactory
+  videoTools?: VideoTools
+} = {}) {
   const client = new PGlite({ extensions: { pg_trgm } })
   const pglite = drizzle({ client, schema, casing: "snake_case" })
   await migrate(pglite, { migrationsFolder })
@@ -28,7 +34,7 @@ export async function createTestApp({
 
   const setupCode = new SetupCode()
   const code = setupCode.issue()
-  const app = createApp({ db, setupCode, fetcher, aiFactory })
+  const app = createApp({ db, setupCode, fetcher, aiFactory, videoTools })
   return { app, db, code, close: () => client.close() }
 }
 

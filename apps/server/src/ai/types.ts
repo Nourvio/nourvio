@@ -31,6 +31,11 @@ export interface AiProvider {
     request: ExtractRequest<T>
   ): Promise<ExtractResult<z.output<T>>>
   listModels(): Promise<AiModel[]>
+  /** Speech to text. Only OpenAI has this; Claude doesn't take audio. */
+  transcribe?(
+    audio: Buffer,
+    filename: string
+  ): Promise<{ text: string; model: string; usage: AiUsage }>
 }
 
 /** Builds a provider for a key. Tests pass a fake one in AppContext. */

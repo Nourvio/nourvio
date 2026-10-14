@@ -61,6 +61,10 @@ import {
 
 const MAX_PHOTOS = 4
 
+/** Same hosts the server sends to the video importer. */
+const VIDEO_LINK =
+  /^https?:\/\/([^/]+\.)?(tiktok\.com|youtube\.com|youtu\.be|instagram\.com|instagr\.am|facebook\.com|fb\.watch)(\/|$)/i
+
 function errorText(error: unknown, field?: string) {
   if (!error) return undefined
   if (error instanceof ApiError) {
@@ -150,6 +154,7 @@ function LinkImport({
   const canPaste =
     typeof navigator !== "undefined" && Boolean(navigator.clipboard?.readText)
   const error = errorText(importUrl.error, "url")
+  const isVideo = VIDEO_LINK.test(url.trim())
 
   function submit(force = false) {
     setDuplicate(null)
@@ -209,8 +214,9 @@ function LinkImport({
           <FieldError>{error}</FieldError>
         ) : (
           <FieldDescription>
-            Works with most recipe sites. TikTok, YouTube and Instagram links
-            are coming soon.
+            {importUrl.isPending && isVideo
+              ? "Watching the video. This can take a minute."
+              : "Works with most recipe sites, and with TikTok, YouTube and Instagram videos."}
           </FieldDescription>
         )}
       </Field>
@@ -258,7 +264,11 @@ function LinkImport({
         ) : (
           <Button type="submit" disabled={importUrl.isPending || !url.trim()}>
             {importUrl.isPending && <Spinner data-icon="inline-start" />}
-            {importUrl.isPending ? "Reading the page…" : "Import"}
+            {importUrl.isPending
+              ? isVideo
+                ? "Watching…"
+                : "Reading the page…"
+              : "Import"}
           </Button>
         )}
       </DialogFooter>

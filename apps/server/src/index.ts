@@ -6,6 +6,7 @@ import { config } from "./config.ts"
 import { createDb, waitForDatabase } from "./db/client.ts"
 import { runMigrations } from "./db/migrate.ts"
 import { seedReferenceData } from "./db/seed.ts"
+import { scheduleYtDlpUpdates } from "./import/video-tools.ts"
 import { countUsers } from "./services/users.ts"
 
 if (!config.databaseUrl) {
@@ -34,6 +35,9 @@ if ((await countUsers(db)) === 0) {
     ].join("\n")
   )
 }
+
+// In the Docker image, keep yt-dlp current. A local install is left alone.
+if (process.env.NODE_ENV === "production") scheduleYtDlpUpdates()
 
 const server = serve(
   {

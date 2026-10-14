@@ -28,23 +28,50 @@ RUN npm ci --omit=dev --workspace @mise/server --ignore-scripts
 # ---- Runtime ----
 FROM node:24-slim
 ARG MISE_VERSION=dev
+ARG TARGETARCH
 ENV NODE_ENV=production \
     PORT=3000 \
     DATA_DIR=/data \
-    MISE_VERSION=$MISE_VERSION
+    MISE_VERSION=$MISE_VERSION \
+    YTDLP_PATH=/opt/yt-dlp/yt-dlp
 WORKDIR /app
+
+# Tools, before the app so this layer stays cached between app updates:
+# - setpriv (util-linux), for the entrypoint to drop root
+# - ffmpeg, for frames and audio from recipe videos. A static build from
+#   BtbN/FFmpeg-Builds (linked from ffmpeg.org): Debian's package and its
+#   libraries would add about 900 MB.
+# - yt-dlp, which reads TikTok, YouTube and Instagram: the standalone nightly
+#   build, which yt-dlp recommends since it keeps up with site changes fastest.
+#   The app keeps it updated (see scheduleYtDlpUpdates), so the entrypoint
+#   hands /opt/yt-dlp to the app user.
+# Both downloads are checked against their releases' checksums.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends util-linux ca-certificates curl xz-utils \
+    && case "$TARGETARCH" in \
+         arm64) ytdlp=yt-dlp_linux_aarch64; ffmpeg=ffmpeg-master-latest-linuxarm64-gpl ;; \
+         *) ytdlp=yt-dlp_linux; ffmpeg=ffmpeg-master-latest-linux64-gpl ;; \
+       esac \
+    && mkdir -p /tmp/tools /opt/yt-dlp && cd /tmp/tools \
+    && curl -fsSLO "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/$ffmpeg.tar.xz" \
+    && curl -fsSLO "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/checksums.sha256" \
+    && grep " $ffmpeg.tar.xz\$" checksums.sha256 | sha256sum -c - \
+    && tar -xJf "$ffmpeg.tar.xz" --strip-components=2 -C /usr/local/bin "$ffmpeg/bin/ffmpeg" \
+    && curl -fsSLO "https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/$ytdlp" \
+    && curl -fsSLO "https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/SHA2-256SUMS" \
+    && grep " $ytdlp\$" SHA2-256SUMS | sha256sum -c - \
+    && install -m 755 "$ytdlp" /opt/yt-dlp/yt-dlp \
+    && cd / && rm -rf /tmp/tools \
+    && apt-get purge -y curl xz-utils && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/* \
+    && command -v setpriv && ffmpeg -version | head -n 1 && /opt/yt-dlp/yt-dlp --version
 
 COPY --from=deps /app/node_modules node_modules
 COPY packages/shared packages/shared
 COPY apps/server apps/server
 COPY --from=build /app/apps/web/dist apps/web/dist
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/mise-entrypoint
-# The entrypoint uses setpriv (util-linux) to drop root; install it if the base image lacks it.
-RUN (command -v setpriv >/dev/null || (apt-get update \
-      && apt-get install -y --no-install-recommends util-linux \
-      && rm -rf /var/lib/apt/lists/*)) \
-    && command -v setpriv \
-    && mkdir -p /data
+RUN mkdir -p /data
 
 EXPOSE 3000
 VOLUME /data

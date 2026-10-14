@@ -25,6 +25,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       MISE_SECRET: ${MISE_SECRET:-}
+      YTDLP_AUTO_UPDATE: ${YTDLP_AUTO_UPDATE:-true}
       USDA_API_KEY: ${USDA_API_KEY:-}
     ports:
       - "${MISE_PORT:-3000}:3000"

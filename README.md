@@ -79,6 +79,7 @@ Set these in `.env`, next to `compose.yaml`. Only `POSTGRES_PASSWORD` is require
 | `ANTHROPIC_API_KEY` | none | Claude API key. You can add it in the app under Settings instead; a key set here wins and can't be changed in the app. |
 | `OPENAI_API_KEY` | none | OpenAI API key, same as above |
 | `MISE_SECRET` | none | Encrypts API keys saved in the app. If empty, Mise creates a random one in `data/app/secret`. |
+| `YTDLP_AUTO_UPDATE` | `true` | Mise updates its copy of yt-dlp (which reads video links) at startup and weekly. Set to `false` to stop that. |
 | `USDA_API_KEY` | none | *Later.* FoodData Central key for calculated nutrition, free from [api.data.gov](https://api.data.gov/signup/) |
 | `TUNNEL_TOKEN` | none | Cloudflare Tunnel token, only if you enable the tunnel (below) |
 
@@ -101,6 +102,14 @@ Everything lives in `./data`, next to `compose.yaml`:
      docker compose exec db-backup pg_restore --clean --if-exists -d mise /backups/mise-YYYY-MM-DD.dump
      ```
   3. Start the `mise` container again.
+
+## Recipes from videos
+
+Paste a TikTok, YouTube or Instagram link like any other. Mise reads the caption, the captions or (with an OpenAI key) the spoken words, and for short videos a few frames, then AI writes up the recipe. This needs an AI key, and the tools (yt-dlp and ffmpeg) come with the image.
+
+**Instagram and the occasional YouTube video** want a signed-in session. To give Mise one, export a `cookies.txt` from a browser where you're signed in (a "Get cookies.txt" browser extension does this), and put it at `data/app/cookies.txt`. Use an account you don't mind being used this way; sites can limit accounts that fetch a lot.
+
+**When video links stop working,** it's usually because a site changed. Mise updates yt-dlp weekly; restarting the stack makes it check right away.
 
 ## Updating
 

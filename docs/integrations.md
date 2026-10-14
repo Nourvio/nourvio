@@ -24,12 +24,15 @@ What Mise connects to, what we learned about each service (researched October 20
 
 Plenty of recipes now live only in short videos. The recipe is usually split across the caption, what's said and what's shown on screen.
 
-- **yt-dlp** (in the Docker image) fetches the video's metadata without downloading the video: title, description (often the full recipe), thumbnail and captions where they exist.
-- **No captions?** If an OpenAI key is set, the audio is transcribed with OpenAI's transcription API. Claude has no audio input.
-- **Short videos** (a few minutes or less): ffmpeg pulls a handful of frames, which go to the AI as images, for on-screen text and amounts.
-- All of that goes to the same AI extraction as pasted text. The recipe's origin is `video`, the link is kept, and the thumbnail becomes the photo.
-- **Instagram** often needs a signed-in session. `YTDLP_COOKIES_FILE` can point at a cookies file exported from a browser.
-- yt-dlp breaks when sites change, so the image should be rebuilt now and then to pick up a new version.
+- **yt-dlp** (in the Docker image) reads the video's details without downloading it: title, description (often the full recipe), uploader, length, thumbnail and captions.
+- **Captions:** written captions in English (or the video's own language) first, then YouTube's automatic captions of what was actually said (`-orig`), never the machine-translated ones. They're turned into plain text without the repeats rolling captions have.
+- **No captions?** If an OpenAI key is set and the video is under 30 minutes, the audio is downloaded, squeezed to mono 32 kbps MP3 with ffmpeg, and transcribed with `gpt-4o-mini-transcribe`. Claude has no audio input.
+- **Short videos** (5 minutes or less, which covers TikTok, Reels and Shorts): a 480p copy is downloaded and ffmpeg pulls 8 frames spread across it, skipping the intro and outro. They go to the AI as images, for amounts shown on screen.
+- All of that goes to the same AI extraction as pasted text. The recipe's origin is `video`, the canonical link is kept (so a short link imported twice is caught), and the thumbnail becomes the photo.
+- **YouTube** needs a JavaScript runtime for yt-dlp these days. We pass `--js-runtimes node`, since Node is already in the image.
+- **Signed-in sessions:** Instagram often wants one, and YouTube sometimes asks to "confirm you're not a bot." A `cookies.txt` in the data folder (or `YTDLP_COOKIES_FILE`) is passed to yt-dlp.
+- **Keeping up:** yt-dlp breaks when sites change and gets fixed within days. The image installs the standalone build (checked against its release checksums), and the app runs yt-dlp's own updater at startup and weekly. `YTDLP_AUTO_UPDATE=false` turns that off.
+- **Safety:** only links to the video sites above go to yt-dlp. It runs without a shell, with `--ignore-config`, a 200 MB cap and time limits, and everything it downloads goes to a temporary folder that's deleted afterwards.
 
 ## Mealie (one-time migration)
 
