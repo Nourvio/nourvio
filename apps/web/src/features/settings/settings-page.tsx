@@ -1,5 +1,8 @@
 import * as React from "react"
-import { Link, useLocation } from "react-router"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import { MEAL_NAMES } from "@mise/shared"
+import { Link, useLocation, useSearchParams } from "react-router"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { ModeToggleGroup } from "@/components/theme/mode-toggle"
@@ -14,8 +17,13 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useCurrentUser } from "@/features/auth/current-user"
-import { cn } from "@/lib/utils"
+import { ExtensionCard } from "@/features/extension/extension-card"
+import { KrogerAppCard } from "@/features/shop/kroger-app-card"
+import { StoresCard } from "@/features/shop/stores-card"
+import { useShopStatus } from "@/features/shop/use-shop"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 import { AccountCard } from "./account-card"
 import { AiCard } from "./ai-card"
@@ -26,211 +34,349 @@ import { NutritionCard } from "./nutrition-card"
 import { NutritionLibraryCard } from "./nutrition-library-card"
 import { PhotosLibraryCard } from "./photos-library-card"
 import { ServerCard } from "./server-card"
+import { ListsCard, OnHandCard, WeeklyCard } from "./shopping-cards"
 import { TastesCard } from "./tastes-card"
-import { ExtensionCard } from "@/features/extension/extension-card"
-import { KrogerAppCard } from "@/features/shop/kroger-app-card"
-import { StoresCard } from "@/features/shop/stores-card"
 import { TidyUpCard } from "./tidy-up-card"
 import { useAiStatus } from "./use-ai"
+import { useHouseholdInfo } from "./use-household"
 
+type TabId = "you" | "household" | "shopping" | "library" | "server"
+
+const TABS: { id: TabId; label: string; blurb: string }[] = [
+  {
+    id: "you",
+    label: "You",
+    blurb: "Your account, how Mise looks, and the browser extension.",
+  },
+  {
+    id: "household",
+    label: "Household",
+    blurb:
+      "Who's in the household, what you eat, and how the week gets planned.",
+  },
+  {
+    id: "shopping",
+    label: "Shopping",
+    blurb: "Your lists, the stores they go to, and what's always on hand.",
+  },
+  {
+    id: "library",
+    label: "Library",
+    blurb: "Tools that work across every recipe.",
+  },
+  {
+    id: "server",
+    label: "This server",
+    blurb: "For the server admin: AI, connections, sign-up and Mealie.",
+  },
+]
+
+/** A page of settings: on a phone it opens on its own; on bigger screens it sits in its tab. */
 type Section = {
   id: string
   label: string
-  group: "You" | "Household" | "This server"
-  card: React.ReactNode
+  tab: TabId
+  /** How it's set up now, under its name in the phone's list. */
+  hint: string
+  /** Its cards, each with the id links point at (/settings#mealie). */
+  cards: { id: string; card: React.ReactNode }[]
 }
 
 /**
- * Settings, with a list of its sections down the side on wide screens that
- * follows along as you scroll. Links like /settings#mealie jump to a card.
+ * Settings: tabs of full-width cards on a tablet or computer, and on a
+ * phone a list of sections that each open on their own. Links to a card
+ * (/settings#mealie) open the tab or section it's in.
  */
 export function SettingsPage() {
-  const me = useCurrentUser()
-  const ai = useAiStatus()
+  const sections = useSections()
+  const isMobile = useIsMobile()
   const { hash } = useLocation()
-  const admin = me.role === "admin"
+  const target = hash
+    ? sections.find((section) =>
+        section.cards.some((card) => card.id === hash.slice(1))
+      )
+    : undefined
 
-  const candidates: (Section | false | undefined)[] = [
-    { id: "account", label: "Account", group: "You", card: <AccountCard /> },
-    {
-      id: "appearance",
-      label: "Appearance",
-      group: "You",
-      card: <AppearanceCard />,
-    },
-    {
-      id: "extension",
-      label: "Browser extension",
-      group: "You",
-      card: <ExtensionCard />,
-    },
-    {
-      id: "household",
-      label: "People",
-      group: "Household",
-      card: <HouseholdCard />,
-    },
-    {
-      id: "tastes",
-      label: "Tastes and rules",
-      group: "Household",
-      card: <TastesCard />,
-    },
-    {
-      id: "connections",
-      label: "Stores",
-      group: "Household",
-      card: <StoresCard />,
-    },
-    admin && {
-      id: "meal-plan",
-      label: "Meal plan",
-      group: "Household",
-      card: <MealPlanCard />,
-    },
-    admin &&
-      ai.data?.available && {
-        id: "tidying",
-        label: "Tidying up",
-        group: "Household",
-        card: <TidyUpCard />,
-      },
-    admin &&
-      (ai.data?.available || ai.data?.usda) && {
-        id: "nutrition",
-        label: "Nutrition",
-        group: "Household",
-        card: <NutritionLibraryCard />,
-      },
-    admin &&
-      ai.data?.available && {
-        id: "photos",
-        label: "Photos",
-        group: "Household",
-        card: <PhotosLibraryCard />,
-      },
-    me.isServerAdmin && {
-      id: "server",
-      label: "Sign-up and households",
-      group: "This server",
-      card: <ServerCard />,
-    },
-    me.isServerAdmin && {
-      id: "ai",
-      label: "AI",
-      group: "This server",
-      card: <AiCard />,
-    },
-    me.isServerAdmin && {
-      id: "kroger",
-      label: "Kroger",
-      group: "This server",
-      card: <KrogerAppCard />,
-    },
-    me.isServerAdmin && {
-      id: "nutrition-data",
-      label: "Nutrition data",
-      group: "This server",
-      card: <NutritionCard />,
-    },
-    me.isServerAdmin && {
-      id: "mealie",
-      label: "Mealie",
-      group: "This server",
-      card: <MealieCard />,
-    },
-  ]
-  const sections = candidates.filter((section): section is Section =>
-    Boolean(section)
-  )
-
-  const active = useActiveSection(sections.map((section) => section.id))
-
+  // Scroll a linked card into view once it's there.
   React.useEffect(() => {
-    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
-  }, [hash])
+    if (!hash) return
+    const timer = window.setTimeout(
+      () => document.getElementById(hash.slice(1))?.scrollIntoView(),
+      50
+    )
+    return () => window.clearTimeout(timer)
+  }, [hash, isMobile])
 
-  const groups = [...new Set(sections.map((section) => section.group))]
+  return isMobile ? (
+    <PhoneSettings sections={sections} target={target} />
+  ) : (
+    <TabbedSettings sections={sections} target={target} />
+  )
+}
+
+function TabbedSettings({
+  sections,
+  target,
+}: {
+  sections: Section[]
+  target: Section | undefined
+}) {
+  const [params, setParams] = useSearchParams()
+  const tabs = TABS.filter((tab) => sections.some((s) => s.tab === tab.id))
+  const asked = tabs.find((tab) => tab.id === params.get("tab"))
+  const current =
+    (target && tabs.find((tab) => tab.id === target.tab)) ?? asked ?? tabs[0]!
+
+  return (
+    <>
+      <PageHeader title="Settings" description={current.blurb} />
+      <Tabs
+        value={current.id}
+        onValueChange={(value) => setParams({ tab: value }, { replace: true })}
+        className="gap-6"
+      >
+        <TabsList>
+          {tabs.map((tab) => (
+            <TabsTrigger key={tab.id} value={tab.id}>
+              {tab.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {tabs.map((tab) => (
+          <TabsContent key={tab.id} value={tab.id} className="grid gap-6">
+            {sections
+              .filter((section) => section.tab === tab.id)
+              .flatMap((section) => section.cards)
+              .map(({ id, card }) => (
+                <section key={id} id={id} className="scroll-mt-20">
+                  {card}
+                </section>
+              ))}
+          </TabsContent>
+        ))}
+      </Tabs>
+    </>
+  )
+}
+
+function PhoneSettings({
+  sections,
+  target,
+}: {
+  sections: Section[]
+  target: Section | undefined
+}) {
+  const [params] = useSearchParams()
+  const open =
+    target ?? sections.find((section) => section.id === params.get("section"))
+
+  if (open) {
+    return (
+      <>
+        <Link
+          to="/settings"
+          className="mt-2 -mb-2 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-primary"
+        >
+          <HugeiconsIcon
+            icon={ArrowLeft01Icon}
+            strokeWidth={2}
+            className="size-4"
+          />
+          Settings
+        </Link>
+        <PageHeader title={open.label} />
+        <div className="grid gap-4">
+          {open.cards.map(({ id, card }) => (
+            <section key={id} id={id} className="scroll-mt-20">
+              {card}
+            </section>
+          ))}
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
       <PageHeader title="Settings" />
-      <div className="lg:grid lg:grid-cols-[200px_minmax(0,1fr)] lg:gap-10">
-        <nav
-          aria-label="Settings sections"
-          className="hidden lg:sticky lg:top-20 lg:block lg:self-start"
-        >
-          {groups.map((group) => (
-            <div key={group} className="mb-5">
-              <p className="mb-1 px-3 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                {group}
-              </p>
-              <ul className="grid gap-0.5">
-                {sections
-                  .filter((section) => section.group === group)
-                  .map((section) => (
-                    <li key={section.id}>
-                      <a
-                        href={`#${section.id}`}
-                        aria-current={
-                          section.id === active ? "location" : undefined
-                        }
-                        className={cn(
-                          "block rounded-lg px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground",
-                          section.id === active &&
-                            "bg-secondary font-medium text-foreground"
-                        )}
-                      >
-                        {section.label}
-                      </a>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          ))}
-        </nav>
-
-        <div className="grid min-w-0 gap-6">
-          {groups.map((group, index) => (
-            <React.Fragment key={group}>
-              {group === "This server" && (
-                <h2
-                  className={cn("text-xl font-semibold", index > 0 && "pt-4")}
-                >
-                  Running this server
-                </h2>
-              )}
-              {sections
-                .filter((section) => section.group === group)
-                .map((section) => (
-                  <section
-                    key={section.id}
-                    id={section.id}
-                    className="scroll-mt-20"
-                  >
-                    {section.card}
-                  </section>
+      <div className="grid gap-6">
+        {TABS.map((tab) => {
+          const inTab = sections.filter((section) => section.tab === tab.id)
+          if (!inTab.length) return null
+          return (
+            <section key={tab.id} className="grid gap-1.5">
+              <h2 className="px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                {tab.label}
+              </h2>
+              <ul className="divide-y overflow-hidden rounded-3xl border bg-card">
+                {inTab.map((section) => (
+                  <li key={section.id}>
+                    <Link
+                      to={`/settings?section=${section.id}`}
+                      className="flex min-h-14 items-center gap-3 px-4 py-2.5 active:bg-muted"
+                    >
+                      <span className="grid min-w-0 flex-1">
+                        <span className="font-medium">{section.label}</span>
+                        <span className="truncate text-sm text-muted-foreground">
+                          {section.hint}
+                        </span>
+                      </span>
+                      <HugeiconsIcon
+                        icon={ArrowRight01Icon}
+                        strokeWidth={2}
+                        className="size-4 text-muted-foreground"
+                      />
+                    </Link>
+                  </li>
                 ))}
-            </React.Fragment>
-          ))}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Style guide</CardTitle>
-              <CardDescription>
-                Every component in the current theme.
-              </CardDescription>
-              <CardAction>
-                <Button variant="outline" asChild>
-                  <Link to="/styleguide">Open</Link>
-                </Button>
-              </CardAction>
-            </CardHeader>
-          </Card>
-        </div>
+              </ul>
+            </section>
+          )
+        })}
       </div>
     </>
   )
+}
+
+/** Every section this person can see, with how each is set up now. */
+function useSections(): Section[] {
+  const me = useCurrentUser()
+  const ai = useAiStatus().data
+  const household = useHouseholdInfo().data
+  const kroger = useShopStatus().data?.kroger
+  const admin = me.role === "admin"
+  const withAi = Boolean(ai?.available)
+
+  const lists = household?.lists ?? []
+  const library = [
+    admin && withAi && { id: "tidying", card: <TidyUpCard /> },
+    admin &&
+      (withAi || ai?.usda) && {
+        id: "nutrition",
+        card: <NutritionLibraryCard />,
+      },
+    admin && withAi && { id: "photos", card: <PhotosLibraryCard /> },
+  ].filter((card): card is { id: string; card: React.ReactElement } =>
+    Boolean(card)
+  )
+  const avoid = household?.tastes.avoid.length ?? 0
+
+  const candidates: (Section | false)[] = [
+    {
+      id: "account",
+      label: "Account",
+      tab: "you",
+      hint: `${me.displayName} · password and sign-out`,
+      cards: [{ id: "account", card: <AccountCard /> }],
+    },
+    {
+      id: "appearance",
+      label: "Appearance",
+      tab: "you",
+      hint: "Light or dark, and the palette",
+      cards: [{ id: "appearance", card: <AppearanceCard /> }],
+    },
+    {
+      id: "extension",
+      label: "Browser extension",
+      tab: "you",
+      hint: "Import from any page, on a computer",
+      cards: [
+        { id: "extension", card: <ExtensionCard /> },
+        { id: "styleguide", card: <StyleGuideCard /> },
+      ],
+    },
+    {
+      id: "people",
+      label: "People",
+      tab: "household",
+      hint: household
+        ? `Everyone in ${household.name}`
+        : "Everyone in the household",
+      cards: [{ id: "household", card: <HouseholdCard /> }],
+    },
+    {
+      id: "tastes",
+      label: "Tastes and rules",
+      tab: "household",
+      hint: avoid
+        ? `${avoid} ${avoid === 1 ? "food" : "foods"} to avoid`
+        : "What you eat and don't",
+      cards: [{ id: "tastes", card: <TastesCard /> }],
+    },
+    admin && {
+      id: "meal-plan",
+      label: "Meal plan",
+      tab: "household",
+      hint: household
+        ? `${household.meals.map((meal) => MEAL_NAMES[meal]).join(", ")}${household.autoPlan.enabled ? " · plans itself" : ""}`
+        : "Meals and the weekly autopilot",
+      cards: [{ id: "meal-plan", card: <MealPlanCard /> }],
+    },
+    {
+      id: "shopping",
+      label: "Shopping",
+      tab: "shopping",
+      hint: [
+        lists.length > 1
+          ? lists.map((list) => list.name).join(" and ")
+          : "One list",
+        kroger?.linked && kroger.store ? `${kroger.store.banner} linked` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      cards: [
+        { id: "lists", card: <ListsCard /> },
+        { id: "connections", card: <StoresCard /> },
+        { id: "on-hand", card: <OnHandCard /> },
+        { id: "weekly", card: <WeeklyCard /> },
+      ],
+    },
+    library.length > 0 && {
+      id: "library",
+      label: "Library tools",
+      tab: "library",
+      hint: "Tidying up, nutrition and photos",
+      cards: library,
+    },
+    me.isServerAdmin && {
+      id: "signup",
+      label: "Sign-up and households",
+      tab: "server",
+      hint: "Who can join, and every household",
+      cards: [{ id: "server", card: <ServerCard /> }],
+    },
+    me.isServerAdmin && {
+      id: "ai",
+      label: "AI",
+      tab: "server",
+      hint: ai?.providers.length
+        ? `${ai.providers.map((p) => (p === "anthropic" ? "Claude" : "OpenAI")).join(" and ")} · models and spending`
+        : "Not set up yet",
+      cards: [{ id: "ai", card: <AiCard /> }],
+    },
+    me.isServerAdmin && {
+      id: "server-connections",
+      label: "Connections",
+      tab: "server",
+      hint: [
+        kroger?.ready ? "Kroger set up" : "Kroger not set up",
+        ai?.usda ? "USDA key added" : "no USDA key",
+      ].join(" · "),
+      cards: [
+        { id: "kroger", card: <KrogerAppCard /> },
+        { id: "nutrition-data", card: <NutritionCard /> },
+      ],
+    },
+    me.isServerAdmin && {
+      id: "mealie",
+      label: "Move from Mealie",
+      tab: "server",
+      hint: "A one-time import",
+      cards: [{ id: "mealie", card: <MealieCard /> }],
+    },
+  ]
+  return candidates.filter((section): section is Section => Boolean(section))
 }
 
 function AppearanceCard() {
@@ -258,63 +404,18 @@ function AppearanceCard() {
   )
 }
 
-/** The section being read: the last one whose top has scrolled past the top bar. */
-function useActiveSection(ids: string[]) {
-  const [active, setActive] = React.useState(ids[0] ?? null)
-  const key = ids.join(" ")
-
-  React.useEffect(() => {
-    const list = key.split(" ")
-    let frame = 0
-    // A section picked from the list stays lit until you scroll yourself,
-    // even when the page can't scroll far enough to bring it to the top.
-    let picked: string | null = null
-    function pick() {
-      const id = window.location.hash.slice(1)
-      if (!list.includes(id)) return
-      picked = id
-      setActive(id)
-    }
-    function unpick() {
-      picked = null
-    }
-    function update() {
-      frame = 0
-      if (picked) return
-      let current = list[0] ?? null
-      for (const id of list) {
-        const top = document.getElementById(id)?.getBoundingClientRect().top
-        if (top !== undefined && top <= 120) current = id
-      }
-      // At the very bottom, the last section counts even if it's short.
-      if (
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 4
-      ) {
-        current = list.at(-1) ?? current
-      }
-      setActive(current)
-    }
-    function onScroll() {
-      if (!frame) frame = requestAnimationFrame(update)
-    }
-    pick()
-    update()
-    const userScroll = ["wheel", "touchmove", "keydown", "pointerdown"]
-    window.addEventListener("scroll", onScroll, { passive: true })
-    window.addEventListener("resize", onScroll)
-    window.addEventListener("hashchange", pick)
-    for (const type of userScroll) {
-      window.addEventListener(type, unpick, { passive: true })
-    }
-    return () => {
-      window.removeEventListener("scroll", onScroll)
-      window.removeEventListener("resize", onScroll)
-      window.removeEventListener("hashchange", pick)
-      for (const type of userScroll) window.removeEventListener(type, unpick)
-      cancelAnimationFrame(frame)
-    }
-  }, [key])
-
-  return active
+function StyleGuideCard() {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Style guide</CardTitle>
+        <CardDescription>Every component in the current theme.</CardDescription>
+        <CardAction>
+          <Button variant="outline" asChild>
+            <Link to="/styleguide">Open</Link>
+          </Button>
+        </CardAction>
+      </CardHeader>
+    </Card>
+  )
 }

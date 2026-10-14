@@ -334,13 +334,13 @@ The parser lives in the shared package, so the server and browser use the same c
 | List | Shopping list grouped by section, with every-week items, always-on-hand items and a **Shop** menu: Send to Fry's (`/list/shop`: each item's Fry's product, packages, prices and sales, a total, then add to the cart) and Shop at Costco (`/list/costco`: each item linked to its Costco Same-Day search, `sameday.costco.com/store/costco/s?k=`) |
 | Pantry | Use soon (near use-by dates, and fresh leftovers from skipped meals), everything else by aisle, and always-on-hand items |
 | Chat | Available on every screen (see below) |
-| Settings | Your account and appearance; your household (members, invites, rename, tidying up, which meals to plan and the first day of the week); nutrition for the whole library; for the server admin, the server (sign-up, households), AI (keys, models, usage by household), the USDA key and the Mealie import; later the API token and plan rules |
+| Settings | Five tabs: **You** (account, appearance, browser extension), **Household** (people and invites, tastes and rules, meal plan and the weekly autopilot), **Shopping** (lists, stores, always on hand, every week), **Library** (tidying up, nutrition and photos for the whole library) and, for the server admin, **This server** (sign-up and households, AI, connections: Kroger and the USDA key, Mealie). On a tablet or computer the tab's cards stack full width (`?tab=`); on a phone it's a list of sections, each with how it's set up now, that open on their own (`?section=`). A link to a card (`/settings#mealie`) opens its tab or section |
 
 ### Layout
 
 - **Phone:** a bottom tab bar (Today, Recipes, Plan, List, Pantry) and a floating chat button. Chat opens as a full-height bottom drawer.
 - **iPad and desktop:** a sidebar for navigation. Chat opens as a side panel next to the recipe or cook view, so you can read and ask at the same time.
-- **Using a wide screen:** pages fill the width rather than keeping a phone-width column. Today, the List and the Pantry have a side column of panels (`components/layout/page-layout.tsx`: what's next and to use soon, how the shop is going and what it's for, Use soon and Always on hand). The List's and Pantry's aisles, and the Plan's days, flow into two or three columns like a paper planner. Settings has its sections listed down the side, following along as you scroll.
+- **Using a wide screen:** pages fill the width rather than keeping a phone-width column. Today, the List and the Pantry have a side column of panels (`components/layout/page-layout.tsx`: what's next and to use soon, how the shop is going and what it's for, Use soon and Always on hand). The List's and Pantry's aisles, and the Plan's days, flow into two or three columns like a paper planner.
 
 ### shadcn/ui components we expect to use
 
