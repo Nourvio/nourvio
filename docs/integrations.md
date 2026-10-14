@@ -1,0 +1,117 @@
+# Integrations
+
+What Mise connects to, what we learned about each service (researched October 2026), and how we'll use it.
+
+## Recipe sites
+
+- **Structured data first.** Most recipe sites embed a machine-readable copy of the recipe in the page, using the schema.org `Recipe` JSON-LD format. Mealie and the `recipe-scrapers` library read the same data. It gives us:
+  - name, image, servings and times
+  - ingredient lines
+  - steps, often with sections
+  - keywords and category
+  - sometimes nutrition
+- **AI fallback.** When a page has no recipe data, we send the page's text to Claude and get a structured draft back (see [architecture.md](architecture.md#structured-extraction)).
+- **Fetching.** We send a normal browser user agent, time out after 15 seconds, and cap pages at 5 MB. Some sites block automated requests. When that happens, the UI suggests pasting the text instead.
+- **Safety.** The server refuses to fetch private-network addresses (localhost, 10.x, 192.168.x and so on), and checks every redirect too.
+- **Images.** The recipe image is downloaded and stored under `/data/images`, so it survives the site changing.
+
+## Mealie (one-time migration)
+
+- **Using Mealie's REST API with an API token:**
+  - list recipes from the paginated `/api/recipes`
+  - fetch each one with `/api/recipes/{slug}`
+  - download images from `/api/media/recipes/{id}/images/original.webp`
+- **Mapping:**
+  - Ingredients carry `originalText`, quantity, unit, food, note and `title` (a section heading). We keep `originalText` as the raw line and use Mealie's foods and units to seed ours.
+  - Instructions carry `title` and `text`.
+  - Tags, categories, ratings and last-made dates come across too.
+- Check the endpoints against our Mealie version before building this.
+
+## AI providers (Claude and OpenAI)
+
+- **The server calls each provider directly through its official TypeScript SDK.** Anthropic uses `@anthropic-ai/sdk`. OpenAI uses `openai`, with the Responses API.
+- **Keys** come from `ANTHROPIC_API_KEY` / `OPENAI_API_KEY` or **Settings → AI**. They're stored encrypted and never leave the server. See [architecture.md](architecture.md#providers).
+- **Getting keys:** from Anthropic's developer console and from platform.openai.com.
+- **Billing:** both bill per token, separately from any ChatGPT Plus or Claude subscription. A ChatGPT subscription doesn't include API usage.
+- **Batch APIs:** both providers have one at about half price. Bulk cleanup of the library uses them.
+
+| Claude model | ID | Input / output per million tokens |
+|---|---|---|
+| Claude Opus 5.5 (Claude default) | `claude-opus-5-5` | $4 / $20 |
+| Claude Sonnet 5.5 | `claude-sonnet-5-5` | $2 / $10 |
+| Claude Haiku 5.5 | `claude-haiku-5-5` | $0.10 / $0.50 |
+
+- **OpenAI models and prices** change often, so Settings lists whatever models the key can use. Check OpenAI's pricing page before choosing one.
+- **Picking models:** Settings tracks spend by provider, model and task, so we can see where a cheaper model is good enough.
+
+## Nutrition
+
+1. **From the recipe site.** JSON-LD `NutritionInformation` (calories, proteinContent, fatContent and so on) is stored as-is, labeled "from site."
+2. **Calculated from ingredients** with [USDA FoodData Central](https://fdc.nal.usda.gov/api-guide/):
+   - It's free with an api.data.gov key (1,000 requests per hour by default).
+   - We use two endpoints: `/foods/search` and `/food/{fdcId}`.
+   - Each food is matched to an FDC entry once and saved as `foods.fdc_id`, with its nutrients per 100 g cached locally. That keeps API calls rare.
+   - Ingredient amounts are converted to grams. Weights convert directly. Volumes and counts use FDC's portion data (`foodPortions`, like "1 cup chopped = 160 g" or "1 medium = 110 g"), stored in `foods.grams_per_unit`.
+   - Per-serving totals are the sum divided by servings, labeled "calculated."
+3. **AI estimate** when matching fails, labeled "estimate."
+
+## Grocery ordering
+
+### Walmart (our store)
+
+**What exists:**
+- There's no public API that adds items to a shopper's cart.
+- Walmart's affiliate API is read-only: product data and links.
+- The Commerce API can complete transactions but needs business approval.
+
+([Zinc's overview](https://www.zinc.com/blog/walmart-api))
+
+**Plan: a browser extension** (Chrome/Edge, Manifest V3) that works inside our own logged-in Walmart session.
+
+1. Open walmart.com, signed in, and click the Mise extension.
+2. It fetches the current list from Mise, using the personal API token from Settings.
+3. Items already mapped to a product are added to the cart one at a time, with a short delay. Walmart rate-limits bursts with HTTP 429 errors.
+4. For unmapped items, the extension shows Walmart search results for the item. Pick one and the mapping is saved back to Mise (`store_products`), so it's only asked once.
+5. It ends with a summary: what was added, what was skipped, and estimated cost. Then you pick a pickup time and check out yourself.
+
+**Before the cart, AI translates amounts** into product quantities using our saved products. For example, 3 cups of chopped onion becomes 2 yellow onions.
+
+**Risks:**
+- The extension depends on how Walmart's site works, so it will break now and then and need fixes.
+- Automating a retailer's site is a gray area under their terms. This is low volume and on our own account.
+- **Fallback:** the List screen can always show plain product links.
+
+### Kroger family (if that's ever an option)
+
+Kroger's banners include King Soopers, Ralphs, Fred Meyer, Smith's, Fry's and Harris Teeter. They have an official public API ([developer.kroger.com](https://developer.kroger.com)):
+
+- product search and store locations
+- a cart endpoint that adds items to a shopper's cart after they sign in with OAuth (scope `cart.basic:write`)
+- no checkout endpoint; you finish in their app
+
+This would be much sturdier than the Walmart extension. ([API overview](https://jentic.com/apis/kroger), [example client](https://pypi.org/project/kroger-cart/))
+
+### Instacart
+
+The [Instacart Developer Platform](https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page) turns a list into a shareable link. You pick a store on Instacart and check out there. It covers most chains, but as far as we know not Walmart. It's an option for stores other than Walmart.
+
+## Considered and dropped: ChatGPT and Claude app connectors (MCP)
+
+We looked at letting the ChatGPT and Claude apps reach Mise through MCP (Model Context Protocol) connectors. We decided to call the providers' APIs from the server and keep the chat in the app instead. The reasons:
+
+- **Connectors need real login.** They connect over public HTTPS and only support OAuth or no auth. They can't send an API key, so Mise would have to act as its own OAuth server.
+- **ChatGPT might not be able to save anything.** OpenAI's help center lists write actions for custom connectors only on Business, Enterprise and Edu plans. On Plus, ChatGPT might only be able to read.
+- **In-app chat is a better fit.** It sits next to the recipe while cooking, knows the current screen, and works the same whatever subscription you have.
+
+If we ever want connectors, the same service layer and tool definitions could back an `/mcp` endpoint.
+
+## Sources
+
+- Mealie releases (feature reference): https://github.com/mealie-recipes/mealie/releases
+- Walmart APIs overview: https://www.zinc.com/blog/walmart-api
+- Kroger API: https://jentic.com/apis/kroger, https://pypi.org/project/kroger-cart/
+- Instacart Developer Platform: https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page
+- USDA FoodData Central API: https://fdc.nal.usda.gov/api-guide/
+- ChatGPT developer mode (connector research): https://developers.openai.com/api/docs/guides/developer-mode, https://help.openai.com/articles/12584461
+- ChatGPT connector auth: https://docs.atlan.com/product/capabilities/atlan-ai/how-tos/chatgpt-remote-mcp
+- Claude custom connectors: https://support.anthropic.com/en/articles/11503834-building-custom-connectors-via-remote-mcp-servers
