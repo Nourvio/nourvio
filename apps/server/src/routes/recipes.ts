@@ -1,10 +1,12 @@
-import { rateInput, recipeInput } from "@mise/shared"
+import { cleanupInput, rateInput, recipeInput } from "@mise/shared"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 
+import type { AiService } from "../ai/service.ts"
 import { requireUser } from "../auth/middleware.ts"
 import { currentUser, type AppContext, type AppEnv } from "../context.ts"
 import { HttpError, readBody } from "../http.ts"
+import { pendingProposalFor, proposeCleanup } from "../services/cleanup.ts"
 import { deleteImage, saveImage } from "../services/images.ts"
 import {
   createRecipe,
@@ -21,7 +23,7 @@ import {
 
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
-export function recipesRoutes({ db }: AppContext) {
+export function recipesRoutes({ db }: AppContext, ai: AiService) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
 
@@ -102,6 +104,20 @@ export function recipesRoutes({ db }: AppContext) {
     await deleteImage(row.image)
     return c.json({ recipe })
   })
+
+  /** Ask the AI to tidy the recipe. Returns its suggestions, or null if it's fine. */
+  app.post("/:id/cleanup", async (c) => {
+    const { sections } = await readBody(c, cleanupInput)
+    const proposal = await proposeCleanup(db, ai, c.req.param("id"), {
+      userId: currentUser(c).id,
+      sections,
+    })
+    return c.json({ proposal })
+  })
+
+  app.get("/:id/proposal", async (c) =>
+    c.json({ proposal: await pendingProposalFor(db, c.req.param("id")) })
+  )
 
   app.get("/:id/versions", async (c) =>
     c.json({ versions: await listVersions(db, c.req.param("id")) })

@@ -3,11 +3,17 @@ import { Hono } from "hono"
 
 import { requireAdmin, requireUser } from "../auth/middleware.ts"
 import type { AiService } from "../ai/service.ts"
-import type { AppEnv } from "../context.ts"
+import { currentUser, type AppContext, type AppEnv } from "../context.ts"
 import { readBody } from "../http.ts"
+import {
+  cancelCleanupJob,
+  countUntidied,
+  latestCleanupJob,
+  startCleanupJob,
+} from "../services/cleanup-jobs.ts"
 
 /** Whether AI can be used (everyone), and its settings (admins). */
-export function aiRoutes(ai: AiService) {
+export function aiRoutes({ db }: AppContext, ai: AiService) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
 
@@ -34,6 +40,22 @@ export function aiRoutes(ai: AiService) {
 
   app.get("/settings/usage", async (c) =>
     c.json({ usage: await ai.usageSummary() })
+  )
+
+  // Tidying the whole library.
+  app.get("/settings/cleanup-job", async (c) =>
+    c.json({
+      job: await latestCleanupJob(db),
+      untidied: await countUntidied(db),
+    })
+  )
+
+  app.post("/settings/cleanup-job", async (c) =>
+    c.json({ job: await startCleanupJob(db, ai, currentUser(c).id) }, 201)
+  )
+
+  app.post("/settings/cleanup-job/:id/cancel", async (c) =>
+    c.json({ job: await cancelCleanupJob(db, c.req.param("id")) })
   )
 
   return app

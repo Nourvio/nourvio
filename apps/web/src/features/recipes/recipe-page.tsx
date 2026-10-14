@@ -9,12 +9,19 @@ import {
   LinkSquare02Icon,
   MoreHorizontalIcon,
   PencilEdit02Icon,
+  SparklesIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import type { Nutrition, Recipe } from "@mise/shared"
 import { Link, useNavigate, useParams } from "react-router"
 import { toast } from "sonner"
 
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,6 +44,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { NotFoundPage } from "@/app/not-found-page"
+import { useAiStatus } from "@/features/settings/use-ai"
 import { ApiError } from "@/lib/api"
 
 import { formatMinutes, formatRelativeDate } from "./format"
@@ -44,6 +52,8 @@ import { groupBySection, IngredientList } from "./ingredient-list"
 import { RatingStars } from "./rating-stars"
 import { RecipeImage } from "./recipe-image"
 import { ServingsStepper } from "./servings-stepper"
+import { TidyUpDialog } from "./tidy-up-dialog"
+import { useRecipeProposal } from "./use-cleanup"
 import {
   useDeleteRecipe,
   useMarkMade,
@@ -74,6 +84,8 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   const [checked, setChecked] = React.useState<Set<string>>(new Set())
   const rate = useRateRecipe(recipe.id)
   const markMade = useMarkMade(recipe.id)
+  const proposal = useRecipeProposal(recipe.id)
+  const [tidying, setTidying] = React.useState(false)
 
   const toggle = (id: string) =>
     setChecked((current) => {
@@ -104,6 +116,25 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
         />
         Recipes
       </Link>
+
+      {proposal.data && (
+        <Alert>
+          <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
+          <AlertTitle>Tidy-up suggestions are ready</AlertTitle>
+          <AlertDescription>{proposal.data.summary}</AlertDescription>
+          <AlertAction>
+            <Button size="sm" onClick={() => setTidying(true)}>
+              Review
+            </Button>
+          </AlertAction>
+        </Alert>
+      )}
+      <TidyUpDialog
+        recipe={recipe}
+        pending={proposal.data}
+        open={tidying}
+        onOpenChange={setTidying}
+      />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-10">
         <RecipeImage
@@ -202,7 +233,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                 Edit
               </Link>
             </Button>
-            <MoreMenu recipe={recipe} />
+            <MoreMenu recipe={recipe} onTidyUp={() => setTidying(true)} />
           </div>
         </div>
       </div>
@@ -294,8 +325,15 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   )
 }
 
-function MoreMenu({ recipe }: { recipe: Recipe }) {
+function MoreMenu({
+  recipe,
+  onTidyUp,
+}: {
+  recipe: Recipe
+  onTidyUp: () => void
+}) {
   const navigate = useNavigate()
+  const ai = useAiStatus()
   const photo = useRecipePhoto(recipe.id)
   const deleteRecipe = useDeleteRecipe()
   const fileInput = React.useRef<HTMLInputElement>(null)
@@ -342,6 +380,12 @@ function MoreMenu({ recipe }: { recipe: Recipe }) {
           {recipe.imageUrl && (
             <DropdownMenuItem onSelect={() => photo.remove.mutate()}>
               Remove photo
+            </DropdownMenuItem>
+          )}
+          {ai.data?.available && (
+            <DropdownMenuItem onSelect={onTidyUp}>
+              <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
+              Tidy up
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>

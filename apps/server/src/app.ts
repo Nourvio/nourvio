@@ -20,6 +20,7 @@ import { authRoutes } from "./routes/auth.ts"
 import { imagesRoutes } from "./routes/images.ts"
 import { importRoutes } from "./routes/import.ts"
 import { meRoutes } from "./routes/me.ts"
+import { proposalsRoutes } from "./routes/proposals.ts"
 import { recipesRoutes } from "./routes/recipes.ts"
 import { setupRoutes } from "./routes/setup.ts"
 import { usersRoutes } from "./routes/users.ts"
@@ -75,10 +76,11 @@ export function createApp(ctx: AppContext) {
   app.route("/api/auth", authRoutes(ctx))
   app.route("/api/me", meRoutes(ctx))
   app.route("/api/users", usersRoutes(ctx))
-  app.route("/api/recipes", recipesRoutes(ctx))
+  app.route("/api/recipes", recipesRoutes(ctx, ai))
+  app.route("/api/proposals", proposalsRoutes(ctx))
   app.route("/api/images", imagesRoutes())
   app.route("/api/import", importRoutes(ctx, ai))
-  app.route("/api/ai", aiRoutes(ai))
+  app.route("/api/ai", aiRoutes(ctx, ai))
   app.all("/api/*", requireUser, (c) => c.json({ error: "Not found" }, 404))
 
   // ---- Web app ----

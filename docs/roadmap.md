@@ -31,7 +31,7 @@ Each milestone ends with something usable. Mealie keeps running until milestone 
 
 ## Milestone 1: Recipes and AI basics
 
-**Status:** in progress. Done so far: recipes, the recipe page, editor, cook view and version history; importing from recipe-site links, including links shared to the installed app; AI providers (keys, models, usage) with import from pasted text, photos and pages without recipe data; TikTok, YouTube and Instagram links. Next: cleanup and the Mealie import.
+**Status:** in progress. Done so far: recipes, the recipe page, editor, cook view and version history; importing from recipe-site links, including links shared to the installed app; AI providers (keys, models, usage) with import from pasted text, photos and pages without recipe data; TikTok, YouTube and Instagram links; Tidy up with section-by-section review, auto-tidy after import and library runs. Next: the Mealie import.
 
 - Recipe tables, CRUD, tags, rating, "I made this" and version history with restore
 - The shared ingredient parser, quantity scaling and fraction display
@@ -49,7 +49,7 @@ Each milestone ends with something usable. Mealie keeps running until milestone 
   - the Tidy up button, with options for ingredients, steps, tags, description and missing details
   - before/after proposals
   - a setting to run it automatically after import
-  - bulk cleanup as a background job through the batch APIs, feeding a Review queue
+  - bulk cleanup as a background job feeding a Review queue (the cheaper batch APIs come later)
 - Recipes grid, the recipe page and the servings scaler
 - Cook view: wake lock, step by step with swipe, ingredient checklist, highlighted step ingredients, inline timers
 - Nutrition shown when a site provides it

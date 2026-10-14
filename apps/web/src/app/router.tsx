@@ -14,6 +14,7 @@ import {
 } from "@/features/recipes/recipe-editor-page"
 import { RecipePage } from "@/features/recipes/recipe-page"
 import { RecipesPage } from "@/features/recipes/recipes-page"
+import { ReviewPage } from "@/features/recipes/review-page"
 import { SettingsPage } from "@/features/settings/settings-page"
 import { StyleguidePage } from "@/features/styleguide/styleguide-page"
 
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { path: "recipes/new", element: <NewRecipePage /> },
       { path: "recipes/:slug", element: <RecipePage /> },
       { path: "recipes/:slug/edit", element: <EditRecipePage /> },
+      { path: "review", element: <ReviewPage /> },
       { path: "plan", element: <PlanPage /> },
       { path: "list", element: <ListPage /> },
       { path: "pantry", element: <PantryPage /> },

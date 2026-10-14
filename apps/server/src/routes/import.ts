@@ -1,4 +1,9 @@
-import { importTextInput, importUrlInput } from "@mise/shared"
+import {
+  CLEANUP_SECTIONS,
+  importTextInput,
+  importUrlInput,
+  type ImportResult,
+} from "@mise/shared"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 
@@ -10,6 +15,7 @@ import { extractRecipe, photosToParts } from "../import/ai-extract.ts"
 import { fetchPublic } from "../import/safe-fetch.ts"
 import { importFromUrl } from "../import/url.ts"
 import { systemVideoTools } from "../import/video-tools.ts"
+import { proposeCleanup } from "../services/cleanup.ts"
 import { createRecipe } from "../services/recipes.ts"
 
 /** Four phone photos, with some room to spare. */
@@ -22,6 +28,20 @@ export function importRoutes(
   const app = new Hono<AppEnv>()
   app.use(requireUser)
 
+  /**
+   * With auto-cleanup on, tidy each new import in the background. The
+   * suggestions wait on the recipe page; a failure here doesn't matter.
+   */
+  async function afterImport(result: ImportResult, userId: string) {
+    if (result.duplicate || !(await ai.getSettings()).autoCleanup) return
+    void proposeCleanup(db, ai, result.recipe.id, {
+      userId,
+      sections: [...CLEANUP_SECTIONS],
+    }).catch((error: Error) =>
+      console.warn("Tidy-up after import failed:", error.message)
+    )
+  }
+
   app.post("/url", async (c) => {
     const { url, force } = await readBody(c, importUrlInput)
     const result = await importFromUrl(db, url, {
@@ -31,6 +51,7 @@ export function importRoutes(
       videoTools,
       force,
     })
+    await afterImport(result, currentUser(c).id)
     return c.json(result, result.duplicate ? 200 : 201)
   })
 
@@ -39,6 +60,7 @@ export function importRoutes(
     const userId = currentUser(c).id
     const input = await extractRecipe(ai, userId, [{ type: "text", text }])
     const recipe = await createRecipe(db, input, { origin: "text", userId })
+    await afterImport({ recipe, duplicate: false }, userId)
     return c.json({ recipe, duplicate: false }, 201)
   })
 
@@ -62,6 +84,7 @@ export function importRoutes(
       const userId = currentUser(c).id
       const input = await extractRecipe(ai, userId, parts)
       const recipe = await createRecipe(db, input, { origin: "photo", userId })
+      await afterImport({ recipe, duplicate: false }, userId)
       return c.json({ recipe, duplicate: false }, 201)
     }
   )

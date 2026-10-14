@@ -7,6 +7,7 @@ import { createDb, waitForDatabase } from "./db/client.ts"
 import { runMigrations } from "./db/migrate.ts"
 import { seedReferenceData } from "./db/seed.ts"
 import { scheduleYtDlpUpdates } from "./import/video-tools.ts"
+import { markInterruptedJobs } from "./services/cleanup-jobs.ts"
 import { countUsers } from "./services/users.ts"
 
 if (!config.databaseUrl) {
@@ -20,6 +21,7 @@ const { db, close } = createDb(config.databaseUrl)
 await waitForDatabase(db)
 await runMigrations(db)
 await seedReferenceData(db)
+await markInterruptedJobs(db)
 
 const setupCode = new SetupCode()
 if ((await countUsers(db)) === 0) {

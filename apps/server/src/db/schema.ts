@@ -2,7 +2,10 @@ import type {
   AiProviderId,
   AiTask,
   Appearance,
+  CleanupJob,
+  CleanupValues,
   Nutrition,
+  ProposalStatus,
   RecipeInput,
   RecipeOrigin,
   RecipeVersion,
@@ -236,3 +239,41 @@ export const aiUsage = pgTable(
   },
   (t) => [index().on(t.createdAt)]
 )
+
+/**
+ * A change the AI suggests, waiting for someone to apply or dismiss it. The
+ * AI never edits a recipe directly.
+ */
+export const proposals = pgTable(
+  "proposals",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    kind: text().$type<"cleanup">().notNull(),
+    recipeId: uuid()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    status: text().$type<ProposalStatus>().notNull(),
+    payload: jsonb()
+      .$type<{ summary: string; before: CleanupValues; after: CleanupValues }>()
+      .notNull(),
+    /** Set when part of a library run. */
+    jobId: uuid().references(() => aiJobs.id, { onDelete: "set null" }),
+    createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    resolvedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [index().on(t.recipeId, t.status), index().on(t.status, t.createdAt)]
+)
+
+/** Long-running AI work, such as tidying the whole library. */
+export const aiJobs = pgTable("ai_jobs", {
+  id: uuid().primaryKey().defaultRandom(),
+  kind: text().$type<"cleanup">().notNull(),
+  status: text().$type<CleanupJob["status"]>().notNull(),
+  total: integer().notNull(),
+  done: integer().notNull().default(0),
+  failed: integer().notNull().default(0),
+  createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+  createdAt: createdAt(),
+  finishedAt: timestamp({ withTimezone: true }),
+})

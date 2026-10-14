@@ -105,7 +105,7 @@ This lets the same onion add up across recipes, get subtracted by the pantry, an
 | `proposals` | kind, target_id, payload (jsonb), created_by (chat or cleanup), status | A pending change from the AI, waiting for you to apply or dismiss it (see [AI](#ai)) |
 | `chat_conversations`, `chat_messages` | provider, model, content (jsonb, in that provider's native format) | A conversation stays on the provider it started with, so it can resume exactly |
 | `ai_usage` | provider, model, task, input/output tokens, cost, created_at | Spend tracking in Settings |
-| `ai_jobs` | kind, status, progress, provider batch ids | Bulk work such as cleaning up the whole library |
+| `ai_jobs` | kind, status, total, done, failed | Long-running work such as tidying the whole library. A run cut short by a restart is marked "interrupted". |
 | `settings` | key, value (jsonb) | Includes AI settings. API keys are stored encrypted. |
 | `users`, `sessions`, `api_tokens` | | Login, and the extension's token |
 
@@ -133,8 +133,8 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Recipes | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image` |
 | Versions | `GET /api/recipes/:id/versions`, `POST /api/recipes/:id/versions/:versionId/restore` |
 | Import | `POST /api/import/url`, `/text`, `/photo`, `/mealie` |
-| AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal), `POST /api/recipes/cleanup` (bulk job) |
-| Proposals | `GET /api/proposals/:id`, `POST /api/proposals/:id/apply`, `POST /api/proposals/:id/dismiss` |
+| AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal, or null when there's nothing to change), `GET /api/recipes/:id/proposal`; library runs at `GET`/`POST /api/ai/settings/cleanup-job` and `POST …/cleanup-job/:id/cancel` (admin) |
+| Proposals | `GET /api/proposals` (pending), `POST /api/proposals/:id/apply` (chosen sections), `POST /api/proposals/:id/dismiss` |
 | Chat | `POST /api/chat` (streaming), `GET /api/chat/conversations`, `GET /api/chat/conversations/:id` |
 | Jobs | `GET /api/jobs/:id` |
 | Plan | `GET /api/plan?week=`, `POST/PUT/DELETE /api/plan/entries/:id`, `POST /api/plan/suggest` |
@@ -214,13 +214,19 @@ Imported recipes are often messy: odd formatting, run-on steps, "Enjoy!", no tag
 | Steps | Reworded to be short and clear, long steps split, filler and ads removed, nothing about the method changed |
 | Tags | Suggested from our existing tags first (to avoid near-duplicates like "weeknight" and "weeknights"), new tags only when nothing fits |
 | Description | A one- or two-sentence summary, if missing |
-| Missing details | Servings and times filled in when they can be worked out, marked as estimates |
-| Foods | Ingredients matched to foods, to help lists, the pantry and nutrition |
+| Missing details | Servings and times filled in when they can be worked out. Values already set are never changed. |
+| Foods | *Later, with the foods list (milestone 3).* Ingredients matched to foods, to help lists, the pantry and nutrition |
 
 **When it runs:**
 - **On demand:** a **Tidy up** button on any recipe, with checkboxes for the options above. You can also ask in chat.
 - **After import:** a setting to run it automatically. The proposal is waiting when the import finishes.
-- **In bulk:** over the whole library, for example right after the Mealie import. This is a background job with progress in `ai_jobs`. Bulk runs can use the provider's batch API, which costs half as much and usually finishes well within a day. The results arrive as a review queue of proposals.
+- **In bulk:** over every recipe that hasn't been tidied yet, for example right after the Mealie import. A background job, two recipes at a time, with progress in `ai_jobs`; it stops after three failures in a row (a bad key, no credit). The results arrive in the Review queue. *Later:* the providers' batch APIs, which cost half as much and usually finish well within a day.
+
+**How suggestions are kept honest:**
+- Only real changes become a proposal. An empty list from the model never wipes a section, and "nothing to change" is recorded too, so a library run skips that recipe next time.
+- Each section is applied or skipped on its own.
+- A section that's been edited since the suggestion was made is refused, not overwritten, and the message names it.
+- A new tidy-up replaces any earlier pending suggestions for the same recipe.
 
 The original is always kept. Every applied cleanup adds a version, and the first imported version can be restored.
 

@@ -5,8 +5,9 @@ import {
   CookBookIcon,
   Link01Icon,
   Search01Icon,
+  SparklesIcon,
 } from "@hugeicons/core-free-icons"
-import { useSearchParams } from "react-router"
+import { Link, useSearchParams } from "react-router"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,7 @@ import { comingSoon } from "@/lib/coming-soon"
 import { AddRecipeMenu } from "./add-recipe-menu"
 import { ImportDialog } from "./import-dialog"
 import { RecipeCard } from "./recipe-card"
+import { usePendingProposals } from "./use-cleanup"
 import { useImportDialog } from "./use-import"
 import { useRecipes, useTags } from "./use-recipes"
 
@@ -54,6 +56,7 @@ export function RecipesPage() {
   }, [q, setParams])
 
   const importDialog = useImportDialog()
+  const pendingReview = usePendingProposals().data?.length ?? 0
   const recipes = useRecipes({ q, tag })
   const tags = useTags()
   const filtering = Boolean(q || tag)
@@ -77,7 +80,23 @@ export function RecipesPage() {
       <PageHeader
         title="Recipes"
         description="Everything you cook, in one place."
-        actions={<AddRecipeMenu />}
+        actions={
+          <>
+            {pendingReview > 0 && (
+              <Button variant="outline" asChild>
+                <Link to="/review">
+                  <HugeiconsIcon
+                    icon={SparklesIcon}
+                    strokeWidth={2}
+                    data-icon="inline-start"
+                  />
+                  {pendingReview} to review
+                </Link>
+              </Button>
+            )}
+            <AddRecipeMenu />
+          </>
+        }
       />
       <ImportDialog />
 

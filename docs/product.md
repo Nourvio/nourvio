@@ -55,7 +55,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
 - remove filler ("Enjoy!", life stories, ads)
 - suggest tags, reusing the ones we already have
 - write a short description
-- fill in missing servings or times, marked as estimates
+- fill in missing servings or times (never changing ones you've set)
 
 You see a before/after preview and pick what to keep. Cleanup can also run automatically after every import, or over the whole library at once, for example right after moving from Mealie. The original version is always kept and can be restored.
 

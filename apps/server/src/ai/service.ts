@@ -36,6 +36,7 @@ type StoredAiSettings = {
   keys?: Partial<Record<AiProviderId, string>>
   defaultModel?: ModelRef | null
   taskModels?: Partial<Record<AiTask, ModelRef>>
+  autoCleanup?: boolean
 }
 
 export const defaultProviderFactory: AiProviderFactory = (id, apiKey) =>
@@ -108,6 +109,7 @@ export function createAiService(
       keys: keyStatus,
       defaultModel: stored.defaultModel ?? null,
       taskModels: stored.taskModels ?? {},
+      autoCleanup: stored.autoCleanup ?? false,
     }
   }
 
@@ -117,6 +119,7 @@ export function createAiService(
       keys: { ...stored.keys },
       defaultModel: stored.defaultModel ?? null,
       taskModels: { ...stored.taskModels },
+      autoCleanup: stored.autoCleanup ?? false,
     }
     for (const id of AI_PROVIDERS) {
       const key = input.keys?.[id]
@@ -125,6 +128,7 @@ export function createAiService(
       else next.keys![id] = encryptSecret(key)
     }
     if (input.defaultModel !== undefined) next.defaultModel = input.defaultModel
+    if (input.autoCleanup !== undefined) next.autoCleanup = input.autoCleanup
     for (const [task, ref] of Object.entries(input.taskModels ?? {})) {
       if (ref === undefined) continue
       if (ref === null) delete next.taskModels![task as AiTask]
