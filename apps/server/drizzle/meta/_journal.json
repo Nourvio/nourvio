@@ -15,6 +15,13 @@
       "when": 1791945160602,
       "tag": "0001_accounts_and_reference_data",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791948121939,
+      "tag": "0002_recipes",
+      "breakpoints": true
     }
   ]
 }

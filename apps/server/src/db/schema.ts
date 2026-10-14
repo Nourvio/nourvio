@@ -1,4 +1,12 @@
-import type { Appearance, Role } from "@mise/shared"
+import type {
+  Appearance,
+  Nutrition,
+  RecipeInput,
+  RecipeOrigin,
+  RecipeVersion,
+  Role,
+  UnitKind,
+} from "@mise/shared"
 import { sql } from "drizzle-orm"
 import {
   check,
@@ -6,9 +14,12 @@ import {
   integer,
   jsonb,
   pgTable,
+  primaryKey,
   real,
+  smallint,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core"
 
@@ -21,6 +32,8 @@ const updatedAt = () =>
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date())
+
+// ---- Accounts ----
 
 export const users = pgTable(
   "users",
@@ -63,9 +76,9 @@ export const settings = pgTable("settings", {
   updatedAt: updatedAt(),
 })
 
-export type UnitKind = "volume" | "weight" | "count"
+// ---- Reference data ----
 
-/** Units of measure. Seeded at startup from reference-data.ts. */
+/** Units of measure. Seeded at startup from @mise/shared. */
 export const units = pgTable(
   "units",
   {
@@ -92,3 +105,112 @@ export const storeSections = pgTable("store_sections", {
   name: text().notNull(),
   sortOrder: integer().notNull(),
 })
+
+// ---- Recipes ----
+
+export const recipes = pgTable(
+  "recipes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    slug: text().notNull().unique(),
+    name: text().notNull(),
+    description: text(),
+    /** Base name of the stored photo in DATA_DIR/images (`<name>.webp` and `<name>-thumb.webp`). */
+    image: text(),
+    sourceUrl: text(),
+    origin: text().$type<RecipeOrigin>().notNull().default("manual"),
+    /** Where an imported recipe came from, e.g. "mealie:<id>", so re-imports don't duplicate. */
+    externalRef: text().unique(),
+    servings: real(),
+    yieldText: text(),
+    prepMinutes: integer(),
+    cookMinutes: integer(),
+    totalMinutes: integer(),
+    notes: text(),
+    rating: smallint(),
+    nutrition: jsonb().$type<Nutrition>(),
+    lastMadeAt: timestamp({ withTimezone: true }),
+    createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check(
+      "recipes_rating_check",
+      sql`${t.rating} is null or ${t.rating} between 1 and 5`
+    ),
+    index("recipes_name_trgm_index").using("gin", sql`${t.name} gin_trgm_ops`),
+  ]
+)
+
+export const recipeIngredients = pgTable(
+  "recipe_ingredients",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    recipeId: uuid()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    position: integer().notNull(),
+    section: text(),
+    /** The line as written. Shown as-is; the parsed fields below are helpers. */
+    rawText: text().notNull(),
+    quantity: real(),
+    quantityMax: real(),
+    unitId: text().references(() => units.id, { onDelete: "set null" }),
+    food: text(),
+    note: text(),
+  },
+  (t) => [index().on(t.recipeId, t.position)]
+)
+
+export const recipeSteps = pgTable(
+  "recipe_steps",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    recipeId: uuid()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    position: integer().notNull(),
+    section: text(),
+    text: text().notNull(),
+  },
+  (t) => [index().on(t.recipeId, t.position)]
+)
+
+export const tags = pgTable(
+  "tags",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+  },
+  (t) => [uniqueIndex("tags_name_lower_index").on(sql`lower(${t.name})`)]
+)
+
+export const recipeTags = pgTable(
+  "recipe_tags",
+  {
+    recipeId: uuid()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    tagId: uuid()
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.recipeId, t.tagId] }), index().on(t.tagId)]
+)
+
+/** Every saved state of a recipe, so any change (including an AI cleanup) can be undone. */
+export const recipeVersions = pgTable(
+  "recipe_versions",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    recipeId: uuid()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    snapshot: jsonb().$type<RecipeInput>().notNull(),
+    source: text().$type<RecipeVersion["source"]>().notNull(),
+    createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.recipeId, t.createdAt)]
+)

@@ -15,9 +15,14 @@ import type { AppContext, AppEnv } from "./context.ts"
 import { pingDatabase } from "./db/client.ts"
 import { HttpError } from "./http.ts"
 import { authRoutes } from "./routes/auth.ts"
+import { imagesRoutes } from "./routes/images.ts"
 import { meRoutes } from "./routes/me.ts"
+import { recipesRoutes } from "./routes/recipes.ts"
 import { setupRoutes } from "./routes/setup.ts"
 import { usersRoutes } from "./routes/users.ts"
+
+/** Routes that accept photos, with their own upload size limit. */
+const UPLOAD_PATH = /^\/api\/(recipes\/[^/]+\/image|import\/photo)$/
 
 /**
  * Form posts from another site are refused. The page's own origin can differ
@@ -27,7 +32,9 @@ import { usersRoutes } from "./routes/users.ts"
 function isSameSite(origin: string, c: Context) {
   try {
     const { host } = new URL(origin)
-    if (host === c.req.header("host")) return true
+    if (host === c.req.header("host") || host === new URL(c.req.url).host) {
+      return true
+    }
     return config.publicUrl ? new URL(config.publicUrl).host === host : false
   } catch {
     return false
@@ -42,12 +49,13 @@ export function createApp(ctx: AppContext) {
 
   // ---- API ----
   app.use("/api/*", csrf({ origin: isSameSite }))
-  app.use(
-    "/api/*",
-    bodyLimit({
-      maxSize: 1024 * 1024,
-      onError: (c) => c.json({ error: "That request is too large" }, 413),
-    })
+  const jsonLimit = bodyLimit({
+    maxSize: 1024 * 1024,
+    onError: (c) => c.json({ error: "That request is too large" }, 413),
+  })
+  // Photo uploads set their own, larger limit on the route.
+  app.use("/api/*", (c, next) =>
+    UPLOAD_PATH.test(c.req.path) ? next() : jsonLimit(c, next)
   )
   app.use("/api/*", loadSession(ctx.db))
 
@@ -63,6 +71,8 @@ export function createApp(ctx: AppContext) {
   app.route("/api/auth", authRoutes(ctx))
   app.route("/api/me", meRoutes(ctx))
   app.route("/api/users", usersRoutes(ctx))
+  app.route("/api/recipes", recipesRoutes(ctx))
+  app.route("/api/images", imagesRoutes())
   app.all("/api/*", requireUser, (c) => c.json({ error: "Not found" }, 404))
 
   // ---- Web app ----

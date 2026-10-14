@@ -1,3 +1,6 @@
 export * from "./appearance.ts"
 export * from "./errors.ts"
+export * from "./ingredients.ts"
+export * from "./recipes.ts"
+export * from "./units.ts"
 export * from "./users.ts"

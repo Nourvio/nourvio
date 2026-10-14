@@ -6,6 +6,7 @@ import {
   Note01Icon,
   PencilEdit01Icon,
 } from "@hugeicons/core-free-icons"
+import { useNavigate } from "react-router"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -16,14 +17,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { comingSoon } from "@/lib/coming-soon"
 
-const ADD_OPTIONS = [
-  { label: "From a link", icon: Link01Icon },
-  { label: "Paste text", icon: Note01Icon },
-  { label: "From a photo", icon: Camera01Icon },
-  { label: "Type it in", icon: PencilEdit01Icon },
-]
-
 export function AddRecipeMenu() {
+  const navigate = useNavigate()
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -36,16 +32,23 @@ export function AddRecipeMenu() {
           Add recipe
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        {ADD_OPTIONS.map((option) => (
-          <DropdownMenuItem
-            key={option.label}
-            onSelect={() => comingSoon("Adding recipes", 1)}
-          >
-            <HugeiconsIcon icon={option.icon} strokeWidth={2} />
-            {option.label}
-          </DropdownMenuItem>
-        ))}
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem onSelect={() => comingSoon("Importing a link", 1)}>
+          <HugeiconsIcon icon={Link01Icon} strokeWidth={2} />
+          From a link or video
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => comingSoon("Importing text", 1)}>
+          <HugeiconsIcon icon={Note01Icon} strokeWidth={2} />
+          Paste text
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => comingSoon("Importing photos", 1)}>
+          <HugeiconsIcon icon={Camera01Icon} strokeWidth={2} />
+          From a photo
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => navigate("/recipes/new")}>
+          <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} />
+          Type it in
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   )

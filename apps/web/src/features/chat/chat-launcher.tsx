@@ -34,6 +34,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { cn } from "@/lib/utils"
 
 const SUGGESTIONS = [
   "No buttermilk, what can I use?",
@@ -45,14 +46,17 @@ const SUGGESTIONS = [
  * Floating chat button. Opens a bottom drawer on phones and a side panel on
  * iPad and desktop, so the recipe stays visible next to the conversation.
  */
-export function ChatLauncher() {
+export function ChatLauncher({ className }: { className?: string }) {
   const isMobile = useIsMobile()
 
   const trigger = (
     <Button
       size="icon-lg"
       aria-label="Open the cooking assistant"
-      className="fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 size-14 shadow-lg md:right-6 md:bottom-6"
+      className={cn(
+        "fixed right-4 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-30 size-14 shadow-lg md:right-6 md:bottom-6",
+        className
+      )}
     >
       <HugeiconsIcon
         icon={BubbleChatSparkIcon}

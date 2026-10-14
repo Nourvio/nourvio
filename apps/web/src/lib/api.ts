@@ -13,8 +13,20 @@ export class ApiError extends Error {
 }
 
 type Options = {
-  method?: "GET" | "POST" | "PATCH" | "DELETE"
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
   body?: unknown
+}
+
+/** Uploads a file (or several) as a multipart form, the way a browser form would. */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  const res = await fetch(`/api${path}`, {
+    method: "POST",
+    body: form,
+    credentials: "same-origin",
+  })
+  const data: unknown = await res.json().catch(() => null)
+  if (!res.ok) throw new ApiError(res.status, data as ApiErrorBody | null)
+  return data as T
 }
 
 /** Calls the Mise API (`/api` + path). Sends and receives JSON. */
