@@ -142,6 +142,17 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 **Done when:** a week planned by Fill the week respects the household's rules, a note left after cooking becomes a suggested edit, an ingredient can be swapped while cooking, the assistant imports a recipe it found online, and a recipe can be cooked start to finish without touching the screen.
 
+## Milestone 8: Autopilot and finding recipes
+
+**Status:** picked October 14, 2026; being built in this order, a commit for each. 1 is built.
+
+1. **Weekly autopilot:** on a day and time the household picks (Saturday morning, say), Mise fills the week ahead's empty meals by its rules and tastes (the free, rules-based Fill the week) and adds them to the shopping list. Today says "Next week is planned" to review. Settings has a "Run it now".
+2. **Starter collections:** hand-picked sets of well-loved recipes from free sites (Weeknight dinners, Chicken, Pasta, Soups, Vegetarian, Baking...), each checked to import, browsed with photos, imported one at a time or all at once.
+3. **Discover with AI:** pick or type a theme ("cozy fall soups") and the assistant finds a fresh set from good sites that fits the household, on a small model with web search.
+4. **Follow recipe sites:** follow sites with feeds and see their newest recipes to import.
+
+**Done when:** a week plans itself and its list without anyone opening the app, and a new household can fill its library from collections, discovery and followed sites without pasting a link.
+
 ## Later, maybe
 
 - Meaning-based recipe search with `pgvector` ("something cozy with chicken")

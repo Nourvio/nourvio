@@ -1,10 +1,12 @@
 import type {
+  AutoPlanRun,
   CreatedInvite,
   CreateUserInput,
   Household,
   HouseholdTastes,
   Invite,
   Role,
+  UpdateAutoPlanInput,
   UpdateHouseholdInput,
   UpdateUserInput,
   User,
@@ -93,6 +95,37 @@ export function useUpdateTastes() {
       }),
     onSuccess: ({ household }) =>
       queryClient.setQueryData(HOUSEHOLD_INFO_KEY, household),
+  })
+}
+
+/** Planning the week ahead by itself: the schedule. Household admins only. */
+export function useSaveAutoPlan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: UpdateAutoPlanInput) =>
+      api<{ household: Household }>("/household/autoplan", {
+        method: "PUT",
+        body: input,
+      }),
+    onSuccess: ({ household }) =>
+      queryClient.setQueryData(HOUSEHOLD_INFO_KEY, household),
+  })
+}
+
+/** Plans the week ahead right now, then the list. */
+export function useRunAutoPlan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      api<{ run: AutoPlanRun; household: Household }>(
+        "/household/autoplan/run",
+        { method: "POST" }
+      ),
+    onSuccess: ({ household }) => {
+      queryClient.setQueryData(HOUSEHOLD_INFO_KEY, household)
+      queryClient.invalidateQueries({ queryKey: ["plan"] })
+      queryClient.invalidateQueries({ queryKey: ["list"] })
+    },
   })
 }
 

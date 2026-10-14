@@ -1,11 +1,13 @@
 import { createHash, randomBytes } from "node:crypto"
 
 import {
+  DEFAULT_AUTO_PLAN,
   DEFAULT_MEALS,
   DEFAULT_ON_HAND,
   INVITE_DAYS,
   MEALS,
   NO_TASTES,
+  type AutoPlan,
   type Meal,
   type CreatedInvite,
   type Household,
@@ -55,6 +57,7 @@ function toHousehold(row: HouseholdRow): Household {
     weekStart: row.settings.weekStart ?? 0,
     onHand: row.settings.onHand ?? DEFAULT_ON_HAND,
     tastes: { ...NO_TASTES, ...row.settings.tastes },
+    autoPlan: { ...DEFAULT_AUTO_PLAN, ...row.settings.autoPlan },
   }
 }
 
@@ -79,6 +82,7 @@ export async function updateHousehold(
     weekStart?: 0 | 1
     onHand?: string[]
     tastes?: HouseholdTastes
+    autoPlan?: AutoPlan
   }
 ) {
   const [current] = await db
@@ -112,6 +116,7 @@ export async function updateHousehold(
             }
           : {}),
         ...(patch.tastes ? { tastes: patch.tastes } : {}),
+        ...(patch.autoPlan ? { autoPlan: patch.autoPlan } : {}),
       },
     })
     .where(eq(households.id, id))

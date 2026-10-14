@@ -1,6 +1,7 @@
 import {
   createInviteInput,
   householdTastesInput,
+  updateAutoPlanInput,
   updateHouseholdInput,
 } from "@mise/shared"
 import { Hono } from "hono"
@@ -13,6 +14,7 @@ import {
   type AppEnv,
 } from "../context.ts"
 import { readBody } from "../http.ts"
+import { planWeekAheadNow, saveAutoPlan } from "../services/autoplan.ts"
 import {
   createInvite,
   getHousehold,
@@ -42,6 +44,22 @@ export function householdRoutes({ db }: AppContext) {
     const tastes = await readBody(c, householdTastesInput)
     return c.json({
       household: await updateHousehold(db, currentHousehold(c), { tastes }),
+    })
+  })
+
+  /** Planning the week ahead by itself (household admins). */
+  app.put("/autoplan", requireAdmin, async (c) => {
+    const input = await readBody(c, updateAutoPlanInput)
+    return c.json({
+      household: await saveAutoPlan(db, currentHousehold(c), input),
+    })
+  })
+
+  app.post("/autoplan/run", requireAdmin, async (c) => {
+    const run = await planWeekAheadNow(db, currentHousehold(c))
+    return c.json({
+      run,
+      household: await getHousehold(db, currentHousehold(c)),
     })
   })
 

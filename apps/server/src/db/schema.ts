@@ -1,4 +1,5 @@
 import type {
+  AutoPlan,
   HouseholdTastes,
   WebRecipeLink,
   DietOverrides,
@@ -67,6 +68,7 @@ export const households = pgTable("households", {
       weekStart?: 0 | 1
       onHand?: string[]
       tastes?: HouseholdTastes
+      autoPlan?: AutoPlan
     }>()
     .notNull()
     .default({}),

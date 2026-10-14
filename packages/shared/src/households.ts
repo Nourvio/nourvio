@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { MEALS, type Meal } from "./plan.ts"
+import type { AutoPlan } from "./autoplan.ts"
 import type { HouseholdTastes } from "./tastes.ts"
 import {
   displayNameSchema,
@@ -27,6 +28,8 @@ export type Household = {
   onHand: string[]
   /** What the household eats and doesn't: suggestions and the assistant follow it. */
   tastes: HouseholdTastes
+  /** Planning the week ahead by itself. */
+  autoPlan: AutoPlan
 }
 
 export const householdNameSchema = z

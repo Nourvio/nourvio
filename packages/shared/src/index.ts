@@ -1,5 +1,6 @@
 export * from "./ai.ts"
 export * from "./appearance.ts"
+export * from "./autoplan.ts"
 export * from "./chat.ts"
 export * from "./cook-voice.ts"
 export * from "./diets.ts"

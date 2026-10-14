@@ -30,7 +30,12 @@ import { useList } from "@/features/list/use-list"
 import { soonLabel, urgency } from "@/features/pantry/soon"
 import { usePantry } from "@/features/pantry/use-pantry"
 import { cookLink } from "@/features/plan/cook-link"
-import { friendlyDay, fromIsoDate, today } from "@/features/plan/dates"
+import {
+  friendlyDay,
+  fromIsoDate,
+  today,
+  weekLabel,
+} from "@/features/plan/dates"
 import {
   useAddPlanEntry,
   usePlan,
@@ -106,6 +111,8 @@ export function HomePage() {
           {LONG_DATE.format(fromIsoDate(now))}
         </p>
       </header>
+
+      <AutoPlanNote />
 
       {libraryEmpty ? (
         <Welcome isServerAdmin={me.isServerAdmin} />
@@ -760,5 +767,65 @@ function Welcome({ isServerAdmin }: { isServerAdmin: boolean }) {
         )}
       </div>
     </section>
+  )
+}
+
+/** The week Mise planned by itself, to look over: shown for a few days after. */
+function AutoPlanNote() {
+  const household = useHouseholdInfo()
+  const last = household.data?.autoPlan.last
+  const key = last ? `mise.autoplanSeen.${last.at}` : null
+  const [seen, setSeen] = React.useState(() => {
+    try {
+      return key ? localStorage.getItem(key) === "1" : false
+    } catch {
+      return false
+    }
+  })
+  if (!last || !key || seen || last.planned === 0) return null
+  // Only while it's news: until that week is over, and for a few days at most.
+  if (
+    addDays(last.week, 6) < today() ||
+    addDays(last.at.slice(0, 10), 4) < today()
+  ) {
+    return null
+  }
+  return (
+    <div
+      role="status"
+      className="flex flex-wrap items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3"
+    >
+      <HugeiconsIcon
+        icon={SparklesIcon}
+        strokeWidth={2}
+        className="size-5 shrink-0 text-primary"
+      />
+      <p className="min-w-0 flex-1 text-sm">
+        <span className="font-medium">
+          Mise planned {weekLabel(last.week)} for you:
+        </span>{" "}
+        {last.planned} {last.planned === 1 ? "meal" : "meals"}
+        {last.listed ? `, and ${last.listed} things went on the list` : ""}.
+      </p>
+      <div className="flex gap-2">
+        <Button size="sm" asChild>
+          <Link to={`/plan?week=${last.week}`}>See the plan</Link>
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => {
+            try {
+              localStorage.setItem(key, "1")
+            } catch {
+              // Not remembered; it shows again next time.
+            }
+            setSeen(true)
+          }}
+        >
+          Got it
+        </Button>
+      </div>
+    </div>
   )
 }
