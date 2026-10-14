@@ -1,6 +1,9 @@
 import {
-  foodKey,
+  bakingDensity,
   HOW_MUCH,
+  pantryKey,
+  plusAmount,
+  statedGrams,
   parseIngredient,
   UNITS,
   type Unit,
@@ -16,13 +19,19 @@ export type Amount = {
   text: string
   /** The food: "garlic". */
   name: string
-  /** The food as matches are cached (see foodKey). */
+  /** The food as matches are cached: prep words dropped, so "chopped onion" is "onion" (see pantryKey). */
   key: string
   /** The middle of a range ("2-3" is 2.5). Null when there's no amount. */
   quantity: number | null
+  /** The amount as written (the bottom of a range), which display scales. */
+  written: number | null
   unit: Unit | undefined
   /** A pack size in the line, "1 (15 oz) can", in grams or millilitres. */
   size: { grams: number } | { ml: number } | null
+  /** What the recipe says the line weighs: "(200 g)". */
+  stated: number | null
+  /** A second amount added on: "plus 1 Tbsp.". */
+  plus: { quantity: number; unit: Unit } | null
 }
 
 /** Not worth counting: water, ice, and "salt to taste". */
@@ -44,13 +53,18 @@ export function readAmount(text: string): Amount | null {
       : parsed.quantityMax !== null
         ? (parsed.quantity + parsed.quantityMax) / 2
         : parsed.quantity
+  const plus = plusAmount(parsed.parts?.rest ?? "")
+  const plusUnit = plus ? UNIT_BY_ID.get(plus.unitId) : undefined
   return {
     text,
     name,
-    key: foodKey(name),
+    key: pantryKey(name),
     quantity,
+    written: parsed.quantity,
     unit: parsed.unitId ? UNIT_BY_ID.get(parsed.unitId) : undefined,
     size: packSize(parsed.parts?.between ?? ""),
+    stated: statedGrams(parsed.text)?.grams ?? null,
+    plus: plus && plusUnit ? { quantity: plus.quantity, unit: plusUnit } : null,
   }
 }
 
@@ -88,7 +102,7 @@ const PORTION_VOLUMES: [RegExp, number, string][] = [
 const NOT_A_PORTION = /\b(racc|nlea|serving|quantity not specified)\b/i
 
 /** Grams per millilitre, from a USDA volume portion; the line's own unit first. */
-function density(portions: FdcPortion[], unitId?: string) {
+export function density(portions: FdcPortion[], unitId?: string) {
   const found = portions.flatMap((portion) => {
     const label = portion.label.toLowerCase()
     const volume = PORTION_VOLUMES.find(([pattern]) => pattern.test(label))
@@ -146,7 +160,13 @@ export function gramsFor(
 ): number | null {
   const { quantity, unit } = amount
   if (quantity === null) return null
-  if (unit?.kind === "weight") return quantity * unit.toBase!
+  if (amount.stated) return amount.stated
+  // "1 cup plus 2 tbsp": the extra in the same kind of unit.
+  const extra =
+    amount.plus && amount.plus.unit.kind === unit?.kind
+      ? amount.plus.quantity * amount.plus.unit.toBase!
+      : 0
+  if (unit?.kind === "weight") return quantity * unit.toBase! + extra
   if (unit && TINY[unit.id]) return quantity * TINY[unit.id]!
 
   // "1 (15 oz) can": the can's own weight, or its volume by density.
@@ -157,8 +177,8 @@ export function gramsFor(
   }
 
   if (unit?.kind === "volume") {
-    const perMl = density(portions, unit.id)
-    if (perMl) return quantity * unit.toBase! * perMl
+    const perMl = bakingDensity(amount.name) ?? density(portions, unit.id)
+    if (perMl) return (quantity * unit.toBase! + extra) * perMl
   } else {
     const each = eachGrams(portions, amount)
     if (each) return quantity * each

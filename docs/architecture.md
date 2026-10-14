@@ -91,7 +91,7 @@ Everything a household owns carries its `household_id`, and every query is scope
 | `recipe_versions` | recipe_id, snapshot (jsonb), source, created_by, created_at | Every saved change makes a snapshot, so the original import can always be restored. `source` is one of import, manual, ai_cleanup, chat. |
 | `tags`, `recipe_tags` | household_id, name (unique per household, ignoring case) | |
 | `fdc_foods` | fdc_id, description, data_type, nutrients (jsonb, per 100 g), portions (jsonb: label, amount, grams) | USDA foods we've used, cached for good. Shared by every household; it's public data. |
-| `food_matches` | food (the `foodKey`), fdc_id (null when nothing fit), grams (jsonb: what one of a unit weighs, by unit id or "each") | Which USDA food a name means, picked once (by the AI when there is one) and reused by every recipe and household |
+| `food_matches` | food (the `pantryKey`: prep words dropped, so "chopped onion" is "onion"), fdc_id (null when nothing fit), grams (jsonb: what one of a unit weighs, by unit id or "each") | Which USDA food a name means, picked once (by the AI when there is one) and reused by every recipe and household |
 | `units` | name, abbreviation, aliases, kind (volume/weight/count), to_base | `to_base` converts to ml or g for safe unit conversion. Seeded at startup. |
 | `meal_plan_entries` | household_id, date, meal, position, recipe_id (null for a note), note, servings (null for the recipe's own), status, listed_at, pantry_used (jsonb) | `status` is planned, cooked or skipped. `listed_at` is set once its ingredients are on the list. `pantry_used` holds the pantry rows as they were before cooking it, to put back. |
 | `shopping_items` | household_id, key, name, quantity, unit_id, amount_text, section_id, checked, checked_at, source, recipes (jsonb), entries (jsonb) | One list per household. `key` merges the same food across recipes. `source` is plan, manual or weekly. `entries` are the planned meals it's for. |
@@ -266,6 +266,7 @@ The parser lives in the shared package, so the server and browser use the same c
 
 - It handles fractions, unicode fractions (½), ranges (2–3), and sizes in parentheses (`1 (14.5 oz) can`).
 - The original text is always kept. Display shows the line as written, swapping in the scaled quantity when you change servings.
+- **Grams:** each ingredient comes with `unitGrams`, what one of its unit weighs, worked out when the recipe is read (`nutrition/weights.ts`) so it always uses the latest matches. The order: the weight the line states ("(200 g)", spread over its amount so it scales), a weight unit, a can's size, a stick of butter, the shared baking table (`weights.ts`, grams per cup for about fifty staples), the matched USDA food's volume portions, then what the AI weighed before. "1 cup plus 2 tbsp" counts both. The same order weighs ingredients for nutrition.
 - When a food or unit isn't recognized, the line still saves. It just won't combine with other lines on lists or match the pantry.
 
 ## Auth

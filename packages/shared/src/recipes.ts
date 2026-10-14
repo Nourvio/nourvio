@@ -92,6 +92,8 @@ export type RecipeIngredient = {
   unitId: string | null
   food: string | null
   note: string | null
+  /** Grams for one of its unit, to show it in grams; null when it can't be weighed (or is a count, like eggs). */
+  unitGrams: number | null
 }
 
 export type RecipeStep = {

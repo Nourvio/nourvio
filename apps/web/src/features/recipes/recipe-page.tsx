@@ -56,6 +56,7 @@ import { RatingStars } from "./rating-stars"
 import { RecipeImage } from "./recipe-image"
 import { ServingsStepper } from "./servings-stepper"
 import { TidyUpDialog } from "./tidy-up-dialog"
+import { UnitToggle } from "./unit-toggle"
 import { useRecipeProposal } from "./use-cleanup"
 import {
   useDeleteRecipe,
@@ -258,6 +259,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               factor={factor}
               onChange={setFactor}
             />
+            <UnitToggle ingredients={recipe.ingredients} className="w-full" />
           </CardHeader>
           <CardContent>
             <IngredientList

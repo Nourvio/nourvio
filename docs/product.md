@@ -31,6 +31,10 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
   - a rating
   - nutrition
 - Scaling servings updates every quantity. US units show as fractions (1 ½ cups, not 1.5).
+- **Grams:** an "As written / Grams" switch on the recipe and in the cook view shows cups, spoons, ounces, sticks of butter and can sizes in grams, which is better for baking. It's remembered on each device and scales with servings.
+  - When the recipe gives its own weight ("1½ cups plus 1 Tbsp. (200 g) flour"), that's what's shown.
+  - Otherwise baking staples use the weights bakers go by (all-purpose flour 120 g a cup, packed brown sugar 213 g, butter 227 g), and other foods use USDA portions or what nutrition has learned.
+  - Counts like "2 eggs" stay as written, as does anything without a known weight.
 - "I made this" records when a recipe was cooked. This feeds the planner and the pantry.
 - Search by name, tag or ingredient.
 

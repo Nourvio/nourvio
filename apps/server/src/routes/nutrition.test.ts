@@ -163,10 +163,16 @@ describe("weighing ingredients", () => {
     ["1 1/2 lb chicken thighs", [], 680.388],
     ["1 onion, diced", onion, 110],
     ["2 cups chopped onion", onion, 320],
-    ["2 tbsp olive oil", FOODS[1]!.portions, 27],
+    // Baking staples (oil included) use the kitchen table before USDA portions.
+    ["2 tbsp olive oil", FOODS[1]!.portions, 27.25],
+    ["1 cup all-purpose flour", [], 120],
+    ["1 cup plus 2 tbsp all-purpose flour", [], 135],
+    // What the recipe says wins.
+    ["1½ cups plus 1 Tbsp. (200 g) all-purpose flour", [], 200],
+    ["¾ cup (1½ sticks; 169 g) unsalted butter", [], 169],
     ["3 cloves garlic", FOODS[3]!.portions, 9],
     ["1 (15 oz) can kidney beans", [], 425.243],
-    ["2-3 tbsp olive oil", FOODS[1]!.portions, 33.75],
+    ["2-3 tbsp olive oil", FOODS[1]!.portions, 34.06],
   ])("%s", (line, portions, grams) => {
     expect(gramsFor(readAmount(line)!, portions)).toBeCloseTo(grams, 2)
   })
@@ -309,6 +315,38 @@ describe("nutrition", () => {
     })
     expect((await workOut(second.id)).body.recipe.nutrition.calories).toBe(145)
     expect(ai.calls.pick).toBe(picks + 1)
+  })
+
+  test("knows what each line's unit weighs, for showing grams", async () => {
+    const cookies = await recipe({
+      name: "Cookies",
+      servings: 24,
+      ingredients: [
+        "2 1/4 cups all-purpose flour",
+        "1 tsp baking soda",
+        "1 stick butter, softened",
+        "3/4 cup packed brown sugar",
+        "2 large eggs",
+        "8 oz chocolate",
+        "1 (15 oz) can pumpkin",
+        "1 cup chopped onion",
+        "Salt to taste",
+      ],
+    })
+    const grams = cookies.ingredients.map((i) =>
+      i.unitGrams === null ? null : Math.round(i.unitGrams * 10) / 10
+    )
+    expect(grams).toEqual([
+      120, // a cup of flour, by the baking table
+      6, // a teaspoon of baking soda
+      113, // a stick of butter
+      213, // a cup of packed brown sugar
+      null, // eggs stay as written
+      28.3, // an ounce
+      425.2, // the can's size
+      160, // a cup of chopped onion, from USDA's portions (onion was matched earlier)
+      null,
+    ])
   })
 
   test("estimates when too much can't be counted", async () => {

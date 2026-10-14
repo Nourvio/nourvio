@@ -490,7 +490,7 @@ export const fdcFoods = pgTable("fdc_foods", {
  * household.
  */
 export const foodMatches = pgTable("food_matches", {
-  /** The food as lists match it (see foodKey). */
+  /** The food, with prep words dropped (see pantryKey). */
   food: text().primaryKey(),
   fdcId: integer(),
   /** Grams for one of a unit, by unit id or "each". */

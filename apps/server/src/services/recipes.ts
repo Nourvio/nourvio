@@ -37,6 +37,7 @@ import {
   tags,
 } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
+import { unitWeights } from "../nutrition/weights.ts"
 import { deleteImage, imageUrls } from "./images.ts"
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0]
@@ -273,6 +274,10 @@ export async function getRecipe(
       .orderBy(asc(recipeSteps.position)),
     tagsFor(db, [row.id]),
   ])
+  const weights = await unitWeights(
+    db,
+    ingredients.map((i) => i.rawText)
+  )
   return {
     ...toSummary(row, tagMap.get(row.id) ?? []),
     origin: row.origin,
@@ -283,7 +288,7 @@ export async function getRecipe(
     notes: row.notes,
     nutrition: row.nutrition,
     updatedAt: row.updatedAt.toISOString(),
-    ingredients: ingredients.map((i) => ({
+    ingredients: ingredients.map((i, index) => ({
       id: i.id,
       section: i.section,
       text: i.rawText,
@@ -292,6 +297,7 @@ export async function getRecipe(
       unitId: i.unitId,
       food: i.food,
       note: i.note,
+      unitGrams: weights[index] ?? null,
     })),
     steps: steps.map((s) => ({ id: s.id, section: s.section, text: s.text })),
   }

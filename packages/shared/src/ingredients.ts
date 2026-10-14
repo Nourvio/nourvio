@@ -1,4 +1,5 @@
 import { METRIC_UNIT_IDS, UNITS, type Unit } from "./units.ts"
+import { formatGrams } from "./weights.ts"
 
 const UNICODE_FRACTIONS: Record<string, string> = {
   "½": "1/2",
@@ -249,15 +250,70 @@ export function formatQuantity(value: number, { metric = false } = {}) {
  * ("1 1/2" → "1 ½"); word amounts ("a pinch") stay as written when unscaled.
  * Lines without an amount come back with an empty `amount`.
  */
+/**
+ * A weight in grams the recipe gives for the line itself: "(200 g)" in
+ * "1½ cups plus 1 Tbsp. (200 g) flour", or "(1½ sticks; 169 g)".
+ */
+export function statedGrams(
+  text: string
+): { grams: number; start: number; end: number } | null {
+  const match =
+    /\((?:[^()]*?[;,]\s*)?(\d+(?:\.\d+)?)\s*(?:g|grams?)\.?\s*\)/i.exec(text)
+  if (!match) return null
+  return {
+    grams: Number(match[1]),
+    start: match.index,
+    end: match.index + match[0].length,
+  }
+}
+
+/** "plus 1 Tbsp." right after an amount, as in "1½ cups plus 1 Tbsp. flour". */
+export function plusAmount(
+  rest: string
+): { quantity: number; unitId: string; length: number } | null {
+  const lead = /^\s*plus\s+/i.exec(rest)
+  if (!lead) return null
+  const parsed = parseIngredient(rest.slice(lead[0].length))
+  if (parsed.quantity === null || !parsed.unitId || !parsed.parts) return null
+  const { quantity, between, unit } = parsed.parts
+  const dot = /^\./.test(parsed.parts.rest) ? 1 : 0
+  return {
+    quantity: parsed.quantity,
+    unitId: parsed.unitId,
+    length:
+      lead[0].length + quantity.length + between.length + unit.length + dot,
+  }
+}
+
 export function formatIngredient(
   line: string,
-  factor = 1
+  factor = 1,
+  /** Grams for one of the line's unit, to show the amount in grams instead. */
+  unitGrams?: number | null
 ): { amount: string; rest: string } {
   const parsed = parseIngredient(line)
   if (parsed.quantity === null || !parsed.parts) {
     return { amount: "", rest: parsed.text }
   }
   const { parts } = parsed
+  if (unitGrams) {
+    let amount = formatGrams(parsed.quantity * factor * unitGrams)
+    if (parsed.quantityMax !== null) {
+      const top = formatGrams(parsed.quantityMax * factor * unitGrams)
+      amount = `${amount.slice(0, -2)}–${top}`
+    }
+    // Drop the other measures the line gives: "plus 1 Tbsp. (200 g)".
+    const restStart = parsed.text.length - parts.rest.length
+    const stated = statedGrams(parsed.text)
+    let rest = parts.rest
+    if (stated && stated.start >= restStart) {
+      rest = parsed.text.slice(stated.end)
+    } else if (!stated) {
+      const plus = plusAmount(rest)
+      if (plus) rest = rest.slice(plus.length)
+    }
+    return { amount, rest }
+  }
   if (factor === 1 && !/^\d/.test(parts.quantity)) {
     return {
       amount: parts.quantity + parts.between + parts.unit,

@@ -4,6 +4,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
+import { useUnitMode } from "./unit-toggle"
+
 /** Groups items by section, keeping their order. */
 export function groupBySection<T extends { section: string | null }>(
   items: T[]
@@ -21,11 +23,14 @@ export function groupBySection<T extends { section: string | null }>(
 export function IngredientText({
   text,
   factor = 1,
+  unitGrams,
 }: {
   text: string
   factor?: number
+  /** Show the amount in grams, from this many grams per unit. */
+  unitGrams?: number | null
 }) {
-  const { amount, rest } = formatIngredient(text, factor)
+  const { amount, rest } = formatIngredient(text, factor, unitGrams)
   return (
     <>
       {amount && <span className="font-semibold">{amount}</span>}
@@ -34,7 +39,10 @@ export function IngredientText({
   )
 }
 
-/** A checklist of ingredients, scaled by `factor`, with optional highlighting. */
+/**
+ * A checklist of ingredients, scaled by `factor`, with optional
+ * highlighting, as written or in grams (the remembered choice).
+ */
 export function IngredientList({
   ingredients,
   factor,
@@ -52,6 +60,8 @@ export function IngredientList({
   idPrefix?: string
   size?: "md" | "lg"
 }) {
+  const [mode] = useUnitMode()
+  const grams = mode === "grams"
   if (!ingredients.length) {
     return <p className="text-muted-foreground">No ingredients listed.</p>
   }
@@ -93,7 +103,11 @@ export function IngredientList({
                     )}
                   >
                     <span>
-                      <IngredientText text={ingredient.text} factor={factor} />
+                      <IngredientText
+                        text={ingredient.text}
+                        factor={factor}
+                        unitGrams={grams ? ingredient.unitGrams : null}
+                      />
                     </span>
                   </Label>
                 </li>

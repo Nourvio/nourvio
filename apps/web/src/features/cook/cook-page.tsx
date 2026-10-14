@@ -24,6 +24,7 @@ import { NotFoundPage } from "@/app/not-found-page"
 import { ChatLauncher } from "@/features/chat/chat-launcher"
 import { useChatScreen } from "@/features/chat/chat-provider"
 import { IngredientList } from "@/features/recipes/ingredient-list"
+import { UnitToggle } from "@/features/recipes/unit-toggle"
 import { useMarkMade, useRecipe } from "@/features/recipes/use-recipes"
 import { cn } from "@/lib/utils"
 
@@ -176,8 +177,9 @@ function CookView({ recipe }: { recipe: Recipe }) {
 
       <main className="grid flex-1 content-start gap-6 px-4 py-6 md:grid-cols-[minmax(0,300px)_minmax(0,1fr)] md:gap-10 md:px-8">
         <Card className="hidden h-fit md:flex">
-          <CardHeader>
+          <CardHeader className="grid gap-3">
             <CardTitle className="text-lg font-semibold">Ingredients</CardTitle>
+            <UnitToggle ingredients={recipe.ingredients} />
           </CardHeader>
           <CardContent>{ingredients}</CardContent>
         </Card>
@@ -268,8 +270,9 @@ function CookView({ recipe }: { recipe: Recipe }) {
             </Button>
           </DrawerTrigger>
           <DrawerContent className="max-h-[80svh]">
-            <DrawerHeader>
+            <DrawerHeader className="flex flex-row items-center justify-between gap-3">
               <DrawerTitle>Ingredients</DrawerTitle>
+              <UnitToggle ingredients={recipe.ingredients} />
             </DrawerHeader>
             <div className="overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               {ingredients}
