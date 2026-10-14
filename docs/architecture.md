@@ -149,35 +149,37 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 ### Providers
 
 - **Two providers, each through its official SDK.** Anthropic uses `@anthropic-ai/sdk`. OpenAI uses `openai`, with its Responses API.
-- **A small interface** in `apps/server/src/ai/providers/` hides the differences. It has four operations:
+- **A small interface** in `apps/server/src/ai/` hides the differences. Each provider implements:
 
 | Operation | What it does |
 |---|---|
-| `chat` | Streams a reply, with tools |
 | `extract` | Returns structured output from a Zod schema |
-| `listModels` | Lists the models available to the key |
-| `testKey` | Checks that a key works |
+| `listModels` | Lists the models available to the key (also how a key is tested) |
+| `chat` | *Milestone 2.* Streams a reply, with tools |
 
-- Features call this interface, never an SDK directly.
+- Features go through `ai/service.ts`, never an SDK directly. It picks the provider and model for the task, makes the call and records usage.
 - **Tools are defined once**, as Zod schemas, and converted to each provider's tool format.
 - **API keys:**
   - Keys come from environment variables (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`) or **Settings → AI**.
-  - An environment variable wins and shows in Settings as "set by environment."
-  - Keys saved in Settings are encrypted at rest with a key derived from `MISE_SECRET`.
+  - An environment variable wins and shows in Settings as "Set on the server."
+  - Keys saved in Settings are encrypted at rest (AES-256-GCM) with a key derived from `MISE_SECRET`, or from a random `data/app/secret` file if that isn't set. A database dump alone can't reveal them.
+  - A key is tested against the provider before it's saved.
   - Keys are never sent back to the browser. Settings shows only the last four characters, with a **Test** button.
   - Only admins can change AI settings.
 - **Models:**
-  - Settings has a default provider and model, picked from the provider's live model list.
-  - Each task can override that default: chat, import, cleanup, planning, shopping translation and nutrition estimates.
-  - The Claude default is Claude Opus 5.5 (`claude-opus-5-5`).
+  - Settings has a default model, picked from the providers' live model lists.
+  - Each task can override that default. So far: importing, tidying and the assistant; planning, shopping translation and nutrition estimates join later.
+  - With nothing picked, the defaults are Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6 Sol (`gpt-6-sol`).
+  - A pick whose provider has lost its key is skipped, so removing a key never breaks import.
 - **Claude specifics:**
-  - Adaptive thinking, with effort set per task (`low` for extraction and cleanup, `medium` for chat and planning).
-  - Server-side refusal fallback (`fallbacks: "default"`), which retries a mistaken safety decline on another model.
+  - Structured outputs through `messages.parse` with `zodOutputFormat`.
+  - Effort set per task (`low` for extraction and cleanup, `medium` for chat and planning).
   - The system prompt and tools are cached between turns.
+  - Not used: the beta server-side refusal fallback. It only matters when a model declines, which reading recipes doesn't trigger.
 - **OpenAI specifics:**
-  - Structured outputs use a JSON schema generated from the same Zod schema.
+  - Structured outputs through `responses.parse` with `zodTextFormat`, from the same Zod schema. Reasoning effort is `low` for extraction.
   - OpenAI applies prompt caching automatically.
-- **Spend:** every call records tokens and estimated cost in `ai_usage`. Settings shows totals by month, provider and task.
+- **Spend:** every call records tokens and estimated cost in `ai_usage`. The cost is worked out from a price table in the shared package when the call is made, so later price changes don't rewrite history. Settings shows totals by month and model.
 - **Without any key,** AI features are hidden and the rest of the app works.
 
 ### Proposals: how the AI changes things

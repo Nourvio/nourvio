@@ -24,6 +24,7 @@ services:
       PGID: ${PGID:-1000}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MISE_SECRET: ${MISE_SECRET:-}
       USDA_API_KEY: ${USDA_API_KEY:-}
     ports:
       - "${MISE_PORT:-3000}:3000"

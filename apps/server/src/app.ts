@@ -9,11 +9,13 @@ import { csrf } from "hono/csrf"
 import { HTTPException } from "hono/http-exception"
 import { secureHeaders } from "hono/secure-headers"
 
+import { createAiService } from "./ai/service.ts"
 import { loadSession, requireUser } from "./auth/middleware.ts"
 import { config } from "./config.ts"
 import type { AppContext, AppEnv } from "./context.ts"
 import { pingDatabase } from "./db/client.ts"
 import { HttpError } from "./http.ts"
+import { aiRoutes } from "./routes/ai.ts"
 import { authRoutes } from "./routes/auth.ts"
 import { imagesRoutes } from "./routes/images.ts"
 import { importRoutes } from "./routes/import.ts"
@@ -44,6 +46,7 @@ function isSameSite(origin: string, c: Context) {
 
 export function createApp(ctx: AppContext) {
   const app = new Hono<AppEnv>()
+  const ai = createAiService(ctx.db, ctx.aiFactory)
 
   app.use(secureHeaders())
   app.use(compress())
@@ -74,7 +77,8 @@ export function createApp(ctx: AppContext) {
   app.route("/api/users", usersRoutes(ctx))
   app.route("/api/recipes", recipesRoutes(ctx))
   app.route("/api/images", imagesRoutes())
-  app.route("/api/import", importRoutes(ctx))
+  app.route("/api/import", importRoutes(ctx, ai))
+  app.route("/api/ai", aiRoutes(ai))
   app.all("/api/*", requireUser, (c) => c.json({ error: "Not found" }, 404))
 
   // ---- Web app ----

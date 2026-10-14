@@ -2,9 +2,12 @@ import * as React from "react"
 import type { Recipe } from "@mise/shared"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  Add01Icon,
   Camera01Icon,
+  Cancel01Icon,
   Link01Icon,
   Note01Icon,
+  SparklesIcon,
 } from "@hugeicons/core-free-icons"
 import { Link, useNavigate } from "react-router"
 import { toast } from "sonner"
@@ -21,6 +24,7 @@ import {
 } from "@/components/ui/dialog"
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -38,16 +42,42 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import { useCurrentUser } from "@/features/auth/current-user"
+import { useAiStatus } from "@/features/settings/use-ai"
 import { ApiError } from "@/lib/api"
 
 import {
   findLink,
   useImportDialog,
+  useImportPhotos,
+  useImportText,
   useImportUrl,
   type ImportTab,
 } from "./use-import"
+
+const MAX_PHOTOS = 4
+
+function errorText(error: unknown, field?: string) {
+  if (!error) return undefined
+  if (error instanceof ApiError) {
+    return (field && error.fields[field]) || error.message
+  }
+  return "Couldn't reach Mise. Check your connection."
+}
+
+/** After an import: say so, close the dialog and open the recipe. */
+function useOpenImported(onDone: () => void) {
+  const navigate = useNavigate()
+  return (recipe: Recipe) => {
+    toast.success(`Added ${recipe.name}`)
+    onDone()
+    navigate(`/recipes/${recipe.slug}`)
+  }
+}
 
 /** Add a recipe from a link, pasted text or a photo. Opened with `?import=…`. */
 export function ImportDialog() {
@@ -65,7 +95,7 @@ export function ImportDialog() {
         <Tabs
           value={tab ?? "link"}
           onValueChange={(value) => open(value as ImportTab)}
-          className="gap-4"
+          className="min-w-0 gap-4"
         >
           <TabsList className="w-full">
             <TabsTrigger value="link">
@@ -90,18 +120,14 @@ export function ImportDialog() {
             />
           </TabsContent>
           <TabsContent value="text">
-            <NotYet
-              icon={Note01Icon}
-              title="Paste a recipe"
-              description="Soon: paste a recipe from a message, a note or anywhere else, and Mise will sort it into ingredients and steps."
-            />
+            <NeedsAi onDone={close}>
+              <TextImport onDone={close} />
+            </NeedsAi>
           </TabsContent>
           <TabsContent value="photo">
-            <NotYet
-              icon={Camera01Icon}
-              title="Snap a cookbook page"
-              description="Soon: take a photo of a cookbook page or a recipe card and Mise will read it for you."
-            />
+            <NeedsAi onDone={close}>
+              <PhotoImport onDone={close} />
+            </NeedsAi>
           </TabsContent>
         </Tabs>
       </DialogContent>
@@ -117,11 +143,13 @@ function LinkImport({
   onDone: () => void
 }) {
   const navigate = useNavigate()
+  const opened = useOpenImported(onDone)
   const importUrl = useImportUrl()
   const [url, setUrl] = React.useState(initialUrl)
   const [duplicate, setDuplicate] = React.useState<Recipe | null>(null)
   const canPaste =
     typeof navigator !== "undefined" && Boolean(navigator.clipboard?.readText)
+  const error = errorText(importUrl.error, "url")
 
   function submit(force = false) {
     setDuplicate(null)
@@ -129,13 +157,8 @@ function LinkImport({
       { url: url.trim(), force },
       {
         onSuccess: ({ recipe, duplicate }) => {
-          if (duplicate) {
-            setDuplicate(recipe)
-            return
-          }
-          toast.success(`Added ${recipe.name}`)
-          onDone()
-          navigate(`/recipes/${recipe.slug}`)
+          if (duplicate) setDuplicate(recipe)
+          else opened(recipe)
         },
       }
     )
@@ -149,13 +172,6 @@ function LinkImport({
       // The browser said no; typing still works.
     }
   }
-
-  const error =
-    importUrl.error instanceof ApiError
-      ? (importUrl.error.fields.url ?? importUrl.error.message)
-      : importUrl.error
-        ? "Couldn't reach Mise. Check your connection."
-        : undefined
 
   return (
     <form
@@ -250,24 +266,211 @@ function LinkImport({
   )
 }
 
-function NotYet({
-  icon,
-  title,
-  description,
+/** Text and photo import need an AI key. Explains how to get one set up. */
+function NeedsAi({
+  children,
+  onDone,
 }: {
-  icon: typeof Note01Icon
-  title: string
-  description: string
+  children: React.ReactNode
+  onDone: () => void
 }) {
+  const status = useAiStatus()
+  const me = useCurrentUser()
+  const isAdmin = me.role === "admin"
+
+  if (status.isPending) return <Skeleton className="h-48" />
+  if (status.data?.available) return children
   return (
     <Empty className="border border-dashed py-8">
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <HugeiconsIcon icon={icon} strokeWidth={2} />
+          <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
         </EmptyMedia>
-        <EmptyTitle>{title}</EmptyTitle>
-        <EmptyDescription>{description}</EmptyDescription>
+        <EmptyTitle>This needs AI</EmptyTitle>
+        <EmptyDescription>
+          {isAdmin ? "Add" : "Ask an admin to add"} a Claude or OpenAI key in
+          Settings, and Mise can read recipes from text and photos.
+        </EmptyDescription>
       </EmptyHeader>
+      {isAdmin && (
+        <EmptyContent>
+          <Button asChild>
+            <Link to="/settings" onClick={onDone}>
+              Set up AI
+            </Link>
+          </Button>
+        </EmptyContent>
+      )}
     </Empty>
+  )
+}
+
+function TextImport({ onDone }: { onDone: () => void }) {
+  const opened = useOpenImported(onDone)
+  const importText = useImportText()
+  const [text, setText] = React.useState("")
+  const error = errorText(importText.error, "text")
+
+  return (
+    <form
+      className="grid gap-4"
+      onSubmit={(event) => {
+        event.preventDefault()
+        importText.mutate(text, { onSuccess: ({ recipe }) => opened(recipe) })
+      }}
+    >
+      <Field data-invalid={error ? true : undefined}>
+        <FieldLabel htmlFor="import-text">Recipe</FieldLabel>
+        <Textarea
+          id="import-text"
+          autoFocus
+          rows={10}
+          className="max-h-[45dvh] min-h-40"
+          placeholder="Paste a recipe from a message, a note, ChatGPT or anywhere else"
+          value={text}
+          aria-invalid={error ? true : undefined}
+          onChange={(event) => setText(event.target.value)}
+        />
+        {error ? (
+          <FieldError>{error}</FieldError>
+        ) : (
+          <FieldDescription>
+            {importText.isPending
+              ? "This can take up to half a minute."
+              : "Mise sorts it into ingredients and steps."}
+          </FieldDescription>
+        )}
+      </Field>
+      <DialogFooter>
+        <Button
+          type="submit"
+          disabled={importText.isPending || text.trim().length < 20}
+        >
+          {importText.isPending && <Spinner data-icon="inline-start" />}
+          {importText.isPending ? "Reading the recipe…" : "Import"}
+        </Button>
+      </DialogFooter>
+    </form>
+  )
+}
+
+type Photo = { file: File; url: string }
+
+function PhotoImport({ onDone }: { onDone: () => void }) {
+  const opened = useOpenImported(onDone)
+  const importPhotos = useImportPhotos()
+  const inputRef = React.useRef<HTMLInputElement>(null)
+  const [photos, setPhotos] = React.useState<Photo[]>([])
+  const error = errorText(importPhotos.error)
+
+  // Free the previews' memory when the tab closes.
+  const latest = React.useRef(photos)
+  React.useEffect(() => {
+    latest.current = photos
+  }, [photos])
+  React.useEffect(
+    () => () => latest.current.forEach((p) => URL.revokeObjectURL(p.url)),
+    []
+  )
+
+  function add(files: FileList | null) {
+    const added = [...(files ?? [])]
+      .filter((file) => file.type.startsWith("image/"))
+      .slice(0, MAX_PHOTOS - photos.length)
+      .map((file) => ({ file, url: URL.createObjectURL(file) }))
+    setPhotos((current) => [...current, ...added])
+  }
+
+  function remove(photo: Photo) {
+    URL.revokeObjectURL(photo.url)
+    setPhotos((current) => current.filter((p) => p !== photo))
+  }
+
+  return (
+    <form
+      className="grid gap-4"
+      onSubmit={(event) => {
+        event.preventDefault()
+        importPhotos.mutate(
+          photos.map((p) => p.file),
+          { onSuccess: ({ recipe }) => opened(recipe) }
+        )
+      }}
+    >
+      <Field data-invalid={error ? true : undefined}>
+        <FieldLabel>Photos</FieldLabel>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="sr-only"
+          tabIndex={-1}
+          aria-hidden
+          onChange={(event) => {
+            add(event.target.files)
+            event.target.value = ""
+          }}
+        />
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {photos.map((photo, index) => (
+            <div
+              key={photo.url}
+              className="relative aspect-[3/4] overflow-hidden rounded-xl border bg-muted"
+            >
+              <img
+                src={photo.url}
+                alt={`Page ${index + 1}`}
+                className="size-full object-cover"
+              />
+              <Button
+                type="button"
+                size="icon-xs"
+                variant="secondary"
+                className="absolute top-1.5 right-1.5"
+                aria-label={`Remove page ${index + 1}`}
+                disabled={importPhotos.isPending}
+                onClick={() => remove(photo)}
+              >
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+              </Button>
+            </div>
+          ))}
+          {photos.length < MAX_PHOTOS && (
+            <button
+              type="button"
+              className="flex aspect-[3/4] flex-col items-center justify-center gap-2 rounded-xl border border-dashed p-3 text-center text-sm text-muted-foreground transition-colors hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-none disabled:opacity-50"
+              disabled={importPhotos.isPending}
+              onClick={() => inputRef.current?.click()}
+            >
+              <HugeiconsIcon
+                icon={photos.length ? Add01Icon : Camera01Icon}
+                strokeWidth={2}
+                className="size-6"
+              />
+              {photos.length ? "Add a page" : "Take or choose a photo"}
+            </button>
+          )}
+        </div>
+        {error ? (
+          <FieldError>{error}</FieldError>
+        ) : (
+          <FieldDescription>
+            {importPhotos.isPending
+              ? "This can take up to half a minute."
+              : `A cookbook page, a recipe card or a screenshot. Up to ${MAX_PHOTOS} photos for a recipe over several pages.`}
+          </FieldDescription>
+        )}
+      </Field>
+      <DialogFooter>
+        <Button
+          type="submit"
+          disabled={importPhotos.isPending || photos.length === 0}
+        >
+          {importPhotos.isPending && <Spinner data-icon="inline-start" />}
+          {importPhotos.isPending ? "Reading the recipe…" : "Import"}
+        </Button>
+      </DialogFooter>
+    </form>
   )
 }

@@ -131,4 +131,12 @@ export const importUrlInput = z.object({
   force: z.boolean().optional(),
 })
 
+export const importTextInput = z.object({
+  text: z
+    .string()
+    .trim()
+    .min(20, "Paste the whole recipe: ingredients and steps")
+    .max(50_000, "That's too long. Paste just the recipe."),
+})
+
 export type ImportResult = { recipe: Recipe; duplicate: boolean }

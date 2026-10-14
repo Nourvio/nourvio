@@ -1,5 +1,6 @@
 import type { Context } from "hono"
 
+import type { AiProviderFactory } from "./ai/types.ts"
 import type { SetupCode } from "./auth/setup-code.ts"
 import type { Db } from "./db/client.ts"
 import { HttpError } from "./http.ts"
@@ -12,6 +13,8 @@ export type AppContext = {
   setupCode: SetupCode
   /** How imports fetch web pages. Tests swap in a fake; defaults to fetchPublic. */
   fetcher?: Fetcher
+  /** How AI providers are built. Tests swap in a fake; defaults to the real SDKs. */
+  aiFactory?: AiProviderFactory
 }
 
 export type AppEnv = {

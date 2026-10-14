@@ -1,4 +1,6 @@
 import type {
+  AiProviderId,
+  AiTask,
   Appearance,
   Nutrition,
   RecipeInput,
@@ -213,4 +215,24 @@ export const recipeVersions = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index().on(t.recipeId, t.createdAt)]
+)
+
+// ---- AI ----
+
+/** One row per AI request, for the usage and cost summary in Settings. */
+export const aiUsage = pgTable(
+  "ai_usage",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: uuid().references(() => users.id, { onDelete: "set null" }),
+    provider: text().$type<AiProviderId>().notNull(),
+    model: text().notNull(),
+    task: text().$type<AiTask>().notNull(),
+    inputTokens: integer().notNull(),
+    outputTokens: integer().notNull(),
+    /** Worked out when the request was made, from the prices then. */
+    costUsd: real(),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.createdAt)]
 )

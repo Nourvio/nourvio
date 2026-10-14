@@ -2,7 +2,8 @@ import type { ImportResult } from "@mise/shared"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useSearchParams } from "react-router"
 
-import { api } from "@/lib/api"
+import { api, apiUpload } from "@/lib/api"
+import { shrinkImage } from "@/lib/shrink-image"
 
 import { RECIPES_KEY } from "./use-recipes"
 
@@ -56,16 +57,45 @@ export function useImportDialog() {
   return { tab, sharedLink, open, close }
 }
 
-export function useImportUrl() {
+/** Keeps the new recipe in the cache and refreshes the library. */
+function useImported() {
   const queryClient = useQueryClient()
+  return (result: ImportResult) => {
+    queryClient.setQueryData(["recipe", result.recipe.slug], result.recipe)
+    if (!result.duplicate) {
+      queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
+    }
+  }
+}
+
+export function useImportUrl() {
+  const onSuccess = useImported()
   return useMutation({
     mutationFn: (input: { url: string; force?: boolean }) =>
       api<ImportResult>("/import/url", { body: input }),
-    onSuccess: (result) => {
-      queryClient.setQueryData(["recipe", result.recipe.slug], result.recipe)
-      if (!result.duplicate) {
-        queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
+    onSuccess,
+  })
+}
+
+export function useImportText() {
+  const onSuccess = useImported()
+  return useMutation({
+    mutationFn: (text: string) =>
+      api<ImportResult>("/import/text", { body: { text } }),
+    onSuccess,
+  })
+}
+
+export function useImportPhotos() {
+  const onSuccess = useImported()
+  return useMutation({
+    mutationFn: async (photos: File[]) => {
+      const form = new FormData()
+      for (const photo of await Promise.all(photos.map(shrinkImage))) {
+        form.append("photos", photo)
       }
+      return apiUpload<ImportResult>("/import/photo", form)
     },
+    onSuccess,
   })
 }

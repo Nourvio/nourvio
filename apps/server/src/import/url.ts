@@ -1,11 +1,13 @@
 import type { ImportResult } from "@mise/shared"
 import { inArray } from "drizzle-orm"
 
+import type { AiService } from "../ai/service.ts"
 import type { Db } from "../db/client.ts"
 import { recipes } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
 import { saveImage } from "../services/images.ts"
 import { createRecipe, getRecipe } from "../services/recipes.ts"
+import { extractRecipe, pageText } from "./ai-extract.ts"
 import { extractRecipeFromHtml } from "./jsonld.ts"
 import type { Fetcher } from "./safe-fetch.ts"
 
@@ -69,13 +71,18 @@ export async function downloadImage(url: string | null, fetcher: Fetcher) {
 
 /**
  * Imports a recipe from a web page using the schema.org data most recipe
- * sites embed. If the link was imported before, returns that recipe instead,
- * unless `force` is set.
+ * sites embed, or AI reading the page when it has none. If the link was
+ * imported before, returns that recipe instead, unless `force` is set.
  */
 export async function importFromUrl(
   db: Db,
   rawUrl: string,
-  options: { userId: string; fetcher: Fetcher; force?: boolean }
+  options: {
+    userId: string
+    fetcher: Fetcher
+    ai: AiService
+    force?: boolean
+  }
 ): Promise<ImportResult> {
   const url = normalizeUrl(rawUrl)
   if (isVideoUrl(url)) {
@@ -96,16 +103,10 @@ export async function importFromUrl(
     if (existing) return { recipe: existing, duplicate: true }
   }
 
-  const extracted = extractRecipeFromHtml(
-    decodeHtml(page.body, page.contentType),
-    finalUrl
-  )
-  if (!extracted) {
-    throw new HttpError(
-      422,
-      "Couldn't find a recipe on that page. Try pasting the recipe text instead."
-    )
-  }
+  const html = decodeHtml(page.body, page.contentType)
+  const extracted =
+    extractRecipeFromHtml(html, finalUrl) ??
+    (await readWithAi(html, finalUrl, options))
 
   const image = await downloadImage(extracted.imageUrl, options.fetcher)
   const recipe = await createRecipe(db, extracted.input, {
@@ -114,4 +115,39 @@ export async function importFromUrl(
     image,
   })
   return { recipe, duplicate: false }
+}
+
+/** For pages without recipe data: AI reads the page's text. */
+async function readWithAi(
+  html: string,
+  pageUrl: string,
+  options: { userId: string; ai: AiService }
+) {
+  if (!(await options.ai.status()).available) {
+    throw new HttpError(
+      422,
+      "That page doesn't include recipe data Mise can read. With an AI key set up in Settings, Mise can read pages like this; for now, try pasting the recipe text."
+    )
+  }
+  const { text, image } = pageText(html)
+  const input = await extractRecipe(
+    options.ai,
+    options.userId,
+    [
+      {
+        type: "text",
+        text: `Web page: ${pageUrl}
+
+${text}`,
+      },
+    ],
+    pageUrl
+  )
+  let imageUrl: string | null = null
+  try {
+    imageUrl = image ? new URL(image, pageUrl).toString() : null
+  } catch {
+    // A broken og:image isn't worth failing over.
+  }
+  return { input, imageUrl }
 }

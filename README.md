@@ -76,8 +76,9 @@ Set these in `.env`, next to `compose.yaml`. Only `POSTGRES_PASSWORD` is require
 | `PUID` / `PGID` | `1000` | User and group that own `./data/app` on the host. The app drops to this user at startup instead of running as root. |
 | `BACKUP_KEEP_DAYS` | `14` | How many days of nightly backups to keep |
 | `PUBLIC_URL` | none | The address people use to reach Mise from outside, such as `https://mise.example.com`. Set it when you turn on the tunnel. |
-| `ANTHROPIC_API_KEY` | none | *Later.* Claude API key. It will also be possible to add it in the app's Settings. |
-| `OPENAI_API_KEY` | none | *Later.* OpenAI API key. It will also be possible to add it in the app's Settings. |
+| `ANTHROPIC_API_KEY` | none | Claude API key. You can add it in the app under Settings instead; a key set here wins and can't be changed in the app. |
+| `OPENAI_API_KEY` | none | OpenAI API key, same as above |
+| `MISE_SECRET` | none | Encrypts API keys saved in the app. If empty, Mise creates a random one in `data/app/secret`. |
 | `USDA_API_KEY` | none | *Later.* FoodData Central key for calculated nutrition, free from [api.data.gov](https://api.data.gov/signup/) |
 | `TUNNEL_TOKEN` | none | Cloudflare Tunnel token, only if you enable the tunnel (below) |
 
@@ -87,7 +88,7 @@ Everything lives in `./data`, next to `compose.yaml`:
 
 | Folder | What's in it |
 |---|---|
-| `data/app` | App files (recipe photos, keys) |
+| `data/app` | App files: recipe photos, and `secret`, which encrypts saved API keys. Back it up with the database. |
 | `data/postgres` | The database |
 | `data/backups` | Nightly database dumps (`mise-YYYY-MM-DD.dump`) |
 

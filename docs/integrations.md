@@ -10,7 +10,7 @@ What Mise connects to, what we learned about each service (researched October 20
   - steps, often with sections
   - keywords and category
   - sometimes nutrition
-- **AI fallback.** When a page has no recipe data, we send the page's text to Claude and get a structured draft back (see [architecture.md](architecture.md#structured-extraction)).
+- **AI fallback.** When a page has no recipe data, we send the page's readable text (navigation, scripts and footers removed) to the import model and get a structured draft back (see [architecture.md](architecture.md#structured-extraction)). The page's `og:image` becomes the photo.
 - **Fetching.** We send a normal browser user agent, time out after 15 seconds, and cap pages at 5 MB. Tracking parameters (`utm_*`, `fbclid` and so on) are dropped from the link first.
 - **Sites that block us.** Some big publishers refuse requests that don't look like a browser:
   - Node's default TLS handshake is on some blocklists, so we connect over HTTP/2 with a browser's cipher order. Bon Appétit and NYT Cooking work, and so do Allrecipes and Simply Recipes most of the time.
@@ -57,7 +57,13 @@ Plenty of recipes now live only in short videos. The recipe is usually split acr
 | Claude Sonnet 5.5 | `claude-sonnet-5-5` | $2 / $10 |
 | Claude Haiku 5.5 | `claude-haiku-5-5` | $0.10 / $0.50 |
 
-- **OpenAI models and prices** change often, so Settings lists whatever models the key can use. Check OpenAI's pricing page before choosing one.
+| OpenAI model | ID | Input / output per million tokens |
+|---|---|---|
+| GPT-6 Astra | `gpt-6-astra` | $10 / $50 |
+| GPT-6 Sol (OpenAI default) | `gpt-6-sol` | $2 / $10 |
+| GPT-6 Luna | `gpt-6-luna` | $0.10 / $0.50 |
+
+- **OpenAI models and prices** change often (GPT-6 Sol and Luna launched September 22, 2026), so Settings lists whatever models the key can use. Check OpenAI's pricing page before choosing one.
 - **Picking models:** Settings tracks spend by provider, model and task, so we can see where a cheaper model is good enough.
 
 ## Nutrition

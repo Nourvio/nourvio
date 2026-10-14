@@ -9,12 +9,16 @@ import type { Db } from "../db/client.ts"
 import { migrationsFolder } from "../db/migrate.ts"
 import * as schema from "../db/schema.ts"
 import { seedReferenceData } from "../db/seed.ts"
+import type { AiProviderFactory } from "../ai/types.ts"
 import type { Fetcher } from "../import/safe-fetch.ts"
 
 type App = ReturnType<typeof createApp>
 
 /** A fresh app on an in-memory Postgres (PGlite) with every migration applied. */
-export async function createTestApp({ fetcher }: { fetcher?: Fetcher } = {}) {
+export async function createTestApp({
+  fetcher,
+  aiFactory,
+}: { fetcher?: Fetcher; aiFactory?: AiProviderFactory } = {}) {
   const client = new PGlite({ extensions: { pg_trgm } })
   const pglite = drizzle({ client, schema, casing: "snake_case" })
   await migrate(pglite, { migrationsFolder })
@@ -24,7 +28,7 @@ export async function createTestApp({ fetcher }: { fetcher?: Fetcher } = {}) {
 
   const setupCode = new SetupCode()
   const code = setupCode.issue()
-  const app = createApp({ db, setupCode, fetcher })
+  const app = createApp({ db, setupCode, fetcher, aiFactory })
   return { app, db, code, close: () => client.close() }
 }
 

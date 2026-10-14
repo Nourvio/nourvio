@@ -31,7 +31,7 @@ Each milestone ends with something usable. Mealie keeps running until milestone 
 
 ## Milestone 1: Recipes and AI basics
 
-**Status:** in progress. Done so far: recipes, the recipe page, editor, cook view and version history; importing from recipe-site links, including links shared to the installed app. Next: AI providers, then text, photo and video import, cleanup and the Mealie import.
+**Status:** in progress. Done so far: recipes, the recipe page, editor, cook view and version history; importing from recipe-site links, including links shared to the installed app; AI providers (keys, models, usage) with import from pasted text, photos and pages without recipe data. Next: video links, cleanup and the Mealie import.
 
 - Recipe tables, CRUD, tags, rating, "I made this" and version history with restore
 - The shared ingredient parser, quantity scaling and fraction display

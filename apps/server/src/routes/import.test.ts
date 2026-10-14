@@ -126,7 +126,7 @@ describe("import from a link", () => {
       url: "https://food.example/blog-post",
     })
     expect(noRecipe.status).toBe(422)
-    expect(noRecipe.body.error).toMatch(/Couldn't find a recipe/)
+    expect(noRecipe.body.error).toMatch(/doesn't include recipe data/)
 
     const pdf = await t.admin.post("/api/import/url", {
       url: "https://food.example/file.pdf",
