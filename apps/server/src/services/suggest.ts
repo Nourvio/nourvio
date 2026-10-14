@@ -1,9 +1,12 @@
 import {
   addDays,
+  avoidedIn,
+  missingDiets,
   pantryKey,
   parseIngredient,
   toIsoDate,
   weekdayOf,
+  WEEKNIGHTS,
   whyUseSoon,
   type Meal,
   type RecipeSummary,
@@ -17,6 +20,7 @@ import {
   recipeIngredients,
   recipes as recipesTable,
 } from "../db/schema.ts"
+import { getHousehold } from "./households.ts"
 import { pairingOptionsByRecipe } from "./pairings.ts"
 import { listPantry } from "./pantry.ts"
 import { listRecipes } from "./recipes.ts"
@@ -162,7 +166,31 @@ export async function suggestMeals(
       .map((recipe) => dish(recipe.name))
   )
   const madeLately = new Date(Date.now() - NO_REPEAT_DAYS * 86_400_000)
-  const usesOf = await useSoonFoods(db, householdId)
+  const lines = await linesByRecipe(db, householdId)
+  const usesOf = await useSoonFoods(db, householdId, lines)
+
+  // The household's rules: foods nobody should get, diets every meal fits,
+  // and how long weeknight dinners can take.
+  const { tastes } = await getHousehold(db, householdId)
+  const ruledOut = new Set(
+    recipes
+      .filter(
+        (recipe) =>
+          missingDiets(recipe.diets, tastes.diets).length > 0 ||
+          avoidedIn(
+            (lines.get(recipe.id) ?? []).map((line) => line.rawText),
+            tastes.avoid,
+            recipe.diets
+          ).length > 0
+      )
+      .map((recipe) => recipe.id)
+  )
+  const tooLong = (recipe: RecipeSummary, slot: { date: string; meal: Meal }) =>
+    tastes.weeknightMinutes !== null &&
+    slot.meal === "dinner" &&
+    WEEKNIGHTS.includes(weekdayOf(slot.date)) &&
+    recipe.totalMinutes !== null &&
+    recipe.totalMinutes > tastes.weeknightMinutes
 
   // What goes with what. Anything offered with another recipe is a part of
   // a meal (a sauce), not a meal.
@@ -178,6 +206,8 @@ export async function suggestMeals(
     recipes.filter(
       (recipe) =>
         !isPart(recipe) &&
+        !ruledOut.has(recipe.id) &&
+        !tooLong(recipe, slot) &&
         !used.has(dish(recipe.name)) &&
         fits(recipe, slot.meal) &&
         !(recipe.lastMadeAt && new Date(recipe.lastMadeAt) > madeLately)
@@ -224,7 +254,7 @@ export async function suggestMeals(
   function pairWith(recipe: RecipeSummary) {
     const options = [...(pairings.get(recipe.id) ?? [])].flatMap((id) => {
       const option = byId.get(id)
-      return option ? [option] : []
+      return option && !ruledOut.has(option.id) ? [option] : []
     })
     if (!options.length) return null
     const fresh = options.filter(
@@ -264,7 +294,31 @@ export async function suggestMeals(
  * Pantry food that needs using soon, most urgent first, and which of it each
  * recipe would use.
  */
-async function useSoonFoods(db: Db, householdId: string) {
+type Line = { food: string | null; rawText: string }
+
+/** Every recipe's ingredient lines in the household, by recipe. */
+async function linesByRecipe(db: Db, householdId: string) {
+  const rows = await db
+    .select({
+      recipeId: recipeIngredients.recipeId,
+      food: recipeIngredients.food,
+      rawText: recipeIngredients.rawText,
+    })
+    .from(recipeIngredients)
+    .innerJoin(recipesTable, eq(recipeIngredients.recipeId, recipesTable.id))
+    .where(eq(recipesTable.householdId, householdId))
+  const byRecipe = new Map<string, Line[]>()
+  for (const row of rows) {
+    byRecipe.set(row.recipeId, [...(byRecipe.get(row.recipeId) ?? []), row])
+  }
+  return byRecipe
+}
+
+async function useSoonFoods(
+  db: Db,
+  householdId: string,
+  linesOf: Map<string, Line[]>
+) {
   const today = toIsoDate(new Date())
   const soon = (await listPantry(db, householdId))
     .map((item) => ({ item, why: whyUseSoon(item, today) }))
@@ -274,21 +328,14 @@ async function useSoonFoods(db: Db, householdId: string) {
   const byKey = new Map(foods.map((name) => [pantryKey(name), name]))
   const uses = new Map<string, string[]>()
   if (byKey.size) {
-    const lines = await db
-      .select({
-        recipeId: recipeIngredients.recipeId,
-        food: recipeIngredients.food,
-        rawText: recipeIngredients.rawText,
-      })
-      .from(recipeIngredients)
-      .innerJoin(recipesTable, eq(recipeIngredients.recipeId, recipesTable.id))
-      .where(eq(recipesTable.householdId, householdId))
-    for (const line of lines) {
-      const food = line.food ?? parseIngredient(line.rawText).food
-      const name = food ? byKey.get(pantryKey(food)) : undefined
-      if (!name) continue
-      const list = uses.get(line.recipeId) ?? []
-      if (!list.includes(name)) uses.set(line.recipeId, [...list, name])
+    for (const [recipeId, lines] of linesOf) {
+      for (const line of lines) {
+        const food = line.food ?? parseIngredient(line.rawText).food
+        const name = food ? byKey.get(pantryKey(food)) : undefined
+        if (!name) continue
+        const list = uses.get(recipeId) ?? []
+        if (!list.includes(name)) uses.set(recipeId, [...list, name])
+      }
     }
   }
   return { foods, recipe: (id: string) => uses.get(id) ?? [] }

@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { MEALS, type Meal } from "./plan.ts"
+import type { HouseholdTastes } from "./tastes.ts"
 import {
   displayNameSchema,
   passwordSchema,
@@ -24,6 +25,8 @@ export type Household = {
   weekStart: 0 | 1
   /** Always at home, so left off lists made from the plan. */
   onHand: string[]
+  /** What the household eats and doesn't: suggestions and the assistant follow it. */
+  tastes: HouseholdTastes
 }
 
 export const householdNameSchema = z

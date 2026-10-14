@@ -5,9 +5,11 @@ import {
   DEFAULT_ON_HAND,
   INVITE_DAYS,
   MEALS,
+  NO_TASTES,
   type Meal,
   type CreatedInvite,
   type Household,
+  type HouseholdTastes,
   type HouseholdSummary,
   type Invite,
   type InvitePreview,
@@ -52,6 +54,7 @@ function toHousehold(row: HouseholdRow): Household {
     meals: row.settings.meals ?? DEFAULT_MEALS,
     weekStart: row.settings.weekStart ?? 0,
     onHand: row.settings.onHand ?? DEFAULT_ON_HAND,
+    tastes: { ...NO_TASTES, ...row.settings.tastes },
   }
 }
 
@@ -75,6 +78,7 @@ export async function updateHousehold(
     meals?: Meal[]
     weekStart?: 0 | 1
     onHand?: string[]
+    tastes?: HouseholdTastes
   }
 ) {
   const [current] = await db
@@ -107,6 +111,7 @@ export async function updateHousehold(
               ].filter(Boolean),
             }
           : {}),
+        ...(patch.tastes ? { tastes: patch.tastes } : {}),
       },
     })
     .where(eq(households.id, id))

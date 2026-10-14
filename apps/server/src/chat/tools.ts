@@ -1,9 +1,13 @@
 import {
+  describeAvoided,
   DIETS,
   isoDate,
   MEALS,
+  tasteWarnings,
   toIsoDate,
+  WEEKNIGHT_MINUTES,
   whyUseSoon,
+  type HouseholdTastes,
   type Nutrition,
   type PantryItem,
   type PlanEntry,
@@ -20,6 +24,7 @@ import type { Db } from "../db/client.ts"
 import { HttpError } from "../http.ts"
 import { toRecipeInput } from "../import/ai-extract.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
+import { getHousehold } from "../services/households.ts"
 import { listItems } from "../services/list.ts"
 import { getPairings } from "../services/pairings.ts"
 import { listPantry } from "../services/pantry.ts"
@@ -32,6 +37,7 @@ import {
 } from "../services/proposals.ts"
 import {
   getRecipe,
+  ingredientTexts,
   listRecipes,
   listTags,
   toInput,
@@ -107,17 +113,33 @@ const searchRecipes = tool({
         tag: tag ?? undefined,
       })
     ).filter((recipe) => !diet || recipe.diets.includes(diet))
-    const results = found.slice(0, 20).map((recipe) => ({
-      id: recipe.id,
-      slug: recipe.slug,
-      name: recipe.name,
-      tags: recipe.tags,
-      diets: recipe.diets,
-      totalMinutes: recipe.totalMinutes,
-      servings: recipe.servings,
-      rating: recipe.rating,
-      lastMade: recipe.lastMadeAt?.slice(0, 10) ?? null,
-    }))
+    const top = found.slice(0, 20)
+    const { tastes } = await getHousehold(ctx.db, ctx.householdId)
+    const lines = await ingredientTexts(
+      ctx.db,
+      top.map((recipe) => recipe.id)
+    )
+    const results = top.map((recipe) => {
+      const warnings = tasteWarnings(
+        lines.get(recipe.id) ?? [],
+        recipe.diets,
+        tastes
+      )
+      return {
+        id: recipe.id,
+        slug: recipe.slug,
+        name: recipe.name,
+        tags: recipe.tags,
+        diets: recipe.diets,
+        totalMinutes: recipe.totalMinutes,
+        servings: recipe.servings,
+        rating: recipe.rating,
+        lastMade: recipe.lastMadeAt?.slice(0, 10) ?? null,
+        ...(warnings.length
+          ? { doesntSuitHousehold: warnings.map((w) => w.text) }
+          : {}),
+      }
+    })
     return {
       output: JSON.stringify({ total: found.length, results }),
       label: query
@@ -139,7 +161,10 @@ const getRecipeTool = tool({
     const recipe = await findRecipe(ctx, ref)
     if (!recipe) return notFound(ref)
     return {
-      output: describeRecipe(recipe),
+      output: describeRecipe(
+        recipe,
+        (await getHousehold(ctx.db, ctx.householdId)).tastes
+      ),
       label: `Read ${recipe.name}`,
     }
   },
@@ -521,6 +546,90 @@ const proposeListItems = tool({
   },
 })
 
+const proposeTastes = tool({
+  name: "propose_tastes",
+  description:
+    'Offer to remember something about what the household eats: a food someone doesn\'t eat or is allergic to, a diet every meal must fit, a time limit for weeknight dinners, or a note ("no fish on Mondays", "the kids like it mild"). Use it when they mention one in passing; it\'s added with one tap and followed from then on. Leave out what\'s already remembered.',
+  input: z.object({
+    summary: z.string().describe("One sentence for the card"),
+    avoid: z
+      .array(
+        z.object({
+          food: z
+            .string()
+            .describe('The food, short and general: "mushrooms", "peanuts"'),
+          who: z
+            .string()
+            .nullable()
+            .describe("Who doesn't eat it, or null for everyone"),
+          allergy: z.boolean(),
+        })
+      )
+      .describe("Foods to avoid; empty for none"),
+    diets: z
+      .array(z.enum(DIETS))
+      .describe("Diets every meal must fit; empty for none"),
+    weeknightMinutes: z
+      .number()
+      .nullable()
+      .describe(
+        `Most minutes a dinner Monday to Thursday can take (${WEEKNIGHT_MINUTES.join(", ")}...), or null to leave it as it is`
+      ),
+    notes: z
+      .array(z.string())
+      .describe("Anything else, as short sentences; empty for none"),
+  }),
+  runningLabel: "Noting that down",
+  async run(ctx, { summary, avoid, diets, weeknightMinutes, notes }) {
+    const tastes = {
+      avoid: avoid
+        .map((item) => ({
+          food: item.food.trim().toLowerCase().slice(0, 60),
+          who: item.who?.trim().slice(0, 40) || null,
+          allergy: item.allergy,
+        }))
+        .filter((item) => item.food),
+      diets,
+      ...(weeknightMinutes && weeknightMinutes >= 10 && weeknightMinutes <= 240
+        ? { weeknightMinutes: Math.round(weeknightMinutes) }
+        : {}),
+      notes: notes.map((note) => note.trim().slice(0, 200)).filter(Boolean),
+    }
+    const count =
+      tastes.avoid.length +
+      tastes.diets.length +
+      tastes.notes.length +
+      ("weeknightMinutes" in tastes ? 1 : 0)
+    if (!count) {
+      return {
+        output: "There was nothing to remember in that.",
+        label: "Nothing to note",
+        isError: true,
+      }
+    }
+    const proposal = await createProposal(ctx.db, {
+      householdId: ctx.householdId,
+      kind: "tastes",
+      recipeId: null,
+      payload: {
+        summary: summary.slice(0, 300),
+        before: {},
+        after: {},
+        tastes,
+      },
+      userId: ctx.userId,
+      conversationId: ctx.conversationId,
+    })
+    return {
+      output: PROPOSED,
+      label: tastes.avoid.length
+        ? `Offered to remember: ${tastes.avoid.map(describeAvoided).join(", ")}`
+        : "Offered to remember that",
+      proposal,
+    }
+  },
+})
+
 export const TOOLS = [
   searchRecipes,
   getRecipeTool,
@@ -534,6 +643,7 @@ export const TOOLS = [
   tidyRecipe,
   proposeMeals,
   proposeListItems,
+  proposeTastes,
 ] as Tool<z.ZodType>[]
 
 /** The tools as each provider's adapter wants them: name, description, JSON schema. */
@@ -590,7 +700,14 @@ export function describePlan(entries: PlanEntry[]) {
 }
 
 /** A recipe as the model reads it, with its id and slug for tools. */
-export function describeRecipe(recipe: Recipe) {
+export function describeRecipe(recipe: Recipe, tastes?: HouseholdTastes) {
+  const warnings = tastes
+    ? tasteWarnings(
+        recipe.ingredients.map((i) => i.text),
+        recipe.diets,
+        tastes
+      )
+    : []
   return [
     `id: ${recipe.id}`,
     `slug: ${recipe.slug}`,
@@ -601,6 +718,9 @@ export function describeRecipe(recipe: Recipe) {
       ? `Diet labels (from the ingredients, with the household's corrections): ${recipe.diets.join(", ")}`
       : null,
     recipe.nutrition ? describeNutrition(recipe.nutrition) : null,
+    warnings.length
+      ? `Doesn't suit the household: ${warnings.map((w) => w.text).join("; ")}`
+      : null,
   ]
     .filter(Boolean)
     .join("\n")

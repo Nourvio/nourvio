@@ -2,6 +2,7 @@ import type {
   CreatedInvite,
   CreateUserInput,
   Household,
+  HouseholdTastes,
   Invite,
   Role,
   UpdateHouseholdInput,
@@ -75,6 +76,20 @@ export function useUpdateHousehold() {
       api<{ household: Household }>("/household", {
         method: "PATCH",
         body: input,
+      }),
+    onSuccess: ({ household }) =>
+      queryClient.setQueryData(HOUSEHOLD_INFO_KEY, household),
+  })
+}
+
+/** The household's tastes and rules. Anyone in the household can change them. */
+export function useUpdateTastes() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (tastes: HouseholdTastes) =>
+      api<{ household: Household }>("/household/tastes", {
+        method: "PUT",
+        body: tastes,
       }),
     onSuccess: ({ household }) =>
       queryClient.setQueryData(HOUSEHOLD_INFO_KEY, household),

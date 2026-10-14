@@ -1,4 +1,8 @@
-import { createInviteInput, updateHouseholdInput } from "@mise/shared"
+import {
+  createInviteInput,
+  householdTastesInput,
+  updateHouseholdInput,
+} from "@mise/shared"
 import { Hono } from "hono"
 
 import { requireAdmin, requireUser } from "../auth/middleware.ts"
@@ -30,6 +34,14 @@ export function householdRoutes({ db }: AppContext) {
     const input = await readBody(c, updateHouseholdInput)
     return c.json({
       household: await updateHousehold(db, currentHousehold(c), input),
+    })
+  })
+
+  /** Tastes and rules: anyone in the household can change them. */
+  app.put("/tastes", async (c) => {
+    const tastes = await readBody(c, householdTastesInput)
+    return c.json({
+      household: await updateHousehold(db, currentHousehold(c), { tastes }),
     })
   })
 

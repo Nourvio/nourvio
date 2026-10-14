@@ -406,6 +406,24 @@ export async function listRecipes(
   )
 }
 
+/** Each recipe's ingredient lines, as written. */
+export async function ingredientTexts(db: Db, ids: string[]) {
+  const lines = new Map<string, string[]>()
+  if (!ids.length) return lines
+  const rows = await db
+    .select({
+      recipeId: recipeIngredients.recipeId,
+      text: recipeIngredients.rawText,
+    })
+    .from(recipeIngredients)
+    .where(inArray(recipeIngredients.recipeId, ids))
+    .orderBy(asc(recipeIngredients.position))
+  for (const row of rows) {
+    lines.set(row.recipeId, [...(lines.get(row.recipeId) ?? []), row.text])
+  }
+  return lines
+}
+
 /**
  * Diet labels worked out from each recipe's ingredients, remembered until the
  * recipe changes (saving ingredients always updates the recipe), so listing a

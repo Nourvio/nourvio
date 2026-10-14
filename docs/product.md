@@ -110,6 +110,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 
 ### 4. Meal planning
 
+- **Tastes and rules** (Settings, for anyone in the household): foods someone doesn't eat or is allergic to, diets every meal must fit, how long weeknight dinners can take, and notes for the assistant ("no fish on Mondays"). Fill the week, dinner ideas and the assistant follow them; a recipe that breaks one says so on its page (allergies in red). Mention one to the assistant in passing ("Jamie can't stand mushrooms") and it offers to remember it.
 - A week view, one day at a time. Each household picks which meals it plans (breakfast, lunch, dinner, snacks; dinner by default) and whether weeks start on Sunday or Monday. Empty meals shrink to small "+ Lunch" buttons, so a sparse week stays tidy.
 - Add a recipe to a meal, or a note instead ("leftovers", "eating out"). A recipe page has a Plan button too.
 - **Fill the week** suggests recipes for the empty meals, from today on:

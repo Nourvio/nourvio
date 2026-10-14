@@ -130,12 +130,23 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 **Done when:** after the first week's mappings, a week's list lands in the Walmart cart in about two minutes with only a few manual picks.
 
+## Milestone 7: A smarter assistant
+
+**Status:** picked October 14, 2026, and being built in this order, a commit for each. 1 is built.
+
+1. **Household tastes and rules:** foods to avoid (and who, and allergies), diets every meal must fit, a time limit for weeknight dinners, and notes for the assistant ("no fish on Mondays"). Fill the week, dinner ideas and the assistant follow them; recipes that break one say so; the assistant offers to remember new ones it hears.
+2. **"How did it go?" after cooking:** a rating and a note when cooking finishes. Notes show on the recipe and in cook mode next time, and the AI turns a note into a suggested edit to review.
+3. **Swap an ingredient:** "Out of this?" on any ingredient gives substitutes with amounts for that recipe, knowing what's in the pantry. Use one for tonight, or save it to the recipe.
+4. **Find recipes online:** the assistant can search the web for real recipes and offer each as a one-tap import.
+5. **Hands-free cook mode:** voice commands on the counter ("next", "back", "read it", "timer for 10 minutes", "how much garlic?"), with steps read aloud.
+
+**Done when:** a week planned by Fill the week respects the household's rules, a note left after cooking becomes a suggested edit, an ingredient can be swapped while cooking, the assistant imports a recipe it found online, and a recipe can be cooked start to finish without touching the screen.
+
 ## Later, maybe
 
 - Meaning-based recipe search with `pgvector` ("something cozy with chicken")
 - Offline reading in the cook view (a service worker)
 - Barcode scanning for the pantry
-- Hands-free voice in the cook view
 - Multiple shopping lists
 - Price tracking from Walmart summaries
 - A Kroger Cart API integration, if switching stores

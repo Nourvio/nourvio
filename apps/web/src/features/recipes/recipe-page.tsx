@@ -57,6 +57,7 @@ import { GoesWith } from "./goes-with"
 import { groupBySection, IngredientList } from "./ingredient-list"
 import { RatingStars } from "./rating-stars"
 import { RecipePhoto, useMakePhoto } from "./recipe-photo"
+import { TasteWarnings } from "./taste-warnings"
 import { ServingsStepper } from "./servings-stepper"
 import { TidyUpDialog } from "./tidy-up-dialog"
 import { UnitToggle } from "./unit-toggle"
@@ -234,6 +235,10 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             recipe={recipe}
             diets={combined?.diets}
             onEdit={() => setEditingDiets(true)}
+          />
+          <TasteWarnings
+            ingredients={ingredients}
+            diets={combined?.diets ?? recipe.diets}
           />
           <GoesWith
             recipe={recipe}

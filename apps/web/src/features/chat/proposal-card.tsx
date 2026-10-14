@@ -6,6 +6,8 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import {
+  describeAvoided,
+  DIET_NAMES,
   MEAL_NAMES,
   RECIPE_SECTION_NAMES,
   RECIPE_SECTIONS,
@@ -35,14 +37,133 @@ const KIND_LABELS: Record<Proposal["kind"], string> = {
   cleanup: "Tidy-up",
   plan_meals: "Meal plan",
   list_items: "Shopping list",
+  tastes: "Remember",
 }
 
 /** Something the assistant suggested, with buttons to save or apply it. */
 export function ProposalCard({ proposal }: { proposal: Proposal }) {
+  if (proposal.kind === "tastes") return <TastesCard proposal={proposal} />
   return proposal.kind === "plan_meals" || proposal.kind === "list_items" ? (
     <AddCard proposal={proposal} />
   ) : (
     <RecipeCard proposal={proposal} />
+  )
+}
+
+/** Something for the household to remember: a food to avoid, a diet, a note. */
+function TastesCard({ proposal }: { proposal: Proposal }) {
+  const chat = useChat()
+  const navigate = useNavigate()
+  const isMobile = useIsMobile()
+  const apply = useApplyProposal()
+  const dismiss = useDismissProposal()
+  const busy = apply.isPending || dismiss.isPending
+  const tastes = proposal.tastes ?? {}
+  const lines = [
+    ...(tastes.avoid ?? []).map(describeAvoided),
+    ...(tastes.diets?.length
+      ? [
+          `Every meal ${tastes.diets.map((d) => DIET_NAMES[d].toLowerCase()).join(" and ")}`,
+        ]
+      : []),
+    ...(tastes.weeknightMinutes
+      ? [`Weeknight dinners in ${tastes.weeknightMinutes} minutes or less`]
+      : []),
+    ...(tastes.notes ?? []),
+  ]
+
+  function open() {
+    if (isMobile) chat.setOpen(false)
+    navigate("/settings#tastes")
+  }
+
+  if (proposal.status !== "pending") {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-dashed px-3 py-2 text-sm text-muted-foreground">
+        {proposal.status === "applied" ? (
+          <>
+            <HugeiconsIcon
+              icon={Tick02Icon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
+            <span className="min-w-0 truncate">
+              Remembered in{" "}
+              <Link
+                to="/settings#tastes"
+                onClick={(event) => {
+                  event.preventDefault()
+                  open()
+                }}
+                className="font-medium text-foreground underline underline-offset-4"
+              >
+                tastes and rules
+              </Link>
+            </span>
+          </>
+        ) : (
+          <span>Not remembered</span>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid min-w-0 grid-cols-1 gap-3 rounded-2xl border bg-card p-3.5 text-card-foreground shadow-xs">
+      <div className="grid gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{KIND_LABELS.tastes}</Badge>
+          <span className="font-medium">For the household</span>
+        </div>
+        <p className="text-sm text-muted-foreground">{proposal.summary}</p>
+      </div>
+      <ul className="grid list-disc gap-1 pl-5 text-sm">
+        {lines.map((line) => (
+          <li key={line}>{line}</li>
+        ))}
+      </ul>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          disabled={busy}
+          onClick={() =>
+            apply.mutate(
+              { proposal },
+              {
+                onSuccess: ({ proposal: updated }) => {
+                  chat.updateProposal(updated)
+                  toast.success("Remembered", {
+                    description:
+                      "Fill the week and the assistant will follow it.",
+                  })
+                },
+                onError: (error) =>
+                  toast.error(
+                    error instanceof ApiError
+                      ? error.message
+                      : "Couldn't remember that"
+                  ),
+              }
+            )
+          }
+        >
+          {apply.isPending && <Spinner data-icon="inline-start" />}
+          Remember
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={busy}
+          onClick={() =>
+            dismiss.mutate(proposal, {
+              onSuccess: (updated) => chat.updateProposal(updated),
+            })
+          }
+        >
+          No thanks
+        </Button>
+      </div>
+    </div>
   )
 }
 

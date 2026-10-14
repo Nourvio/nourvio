@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import type { Meal } from "./plan.ts"
 import type { RecipeInput } from "./recipes.ts"
+import type { HouseholdTastes } from "./tastes.ts"
 
 /**
  * The parts of a recipe a suggested change can touch. Each one can be applied
@@ -76,6 +77,7 @@ export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number]
  * - new_recipe: a recipe worked out in chat, ready to save
  * - plan_meals: meals to add to the plan, from chat
  * - list_items: things to add to the shopping list, from chat
+ * - tastes: something for the household to remember, from chat
  */
 export const PROPOSAL_KINDS = [
   "cleanup",
@@ -83,6 +85,7 @@ export const PROPOSAL_KINDS = [
   "new_recipe",
   "plan_meals",
   "list_items",
+  "tastes",
 ] as const
 export type ProposalKind = (typeof PROPOSAL_KINDS)[number]
 
@@ -119,6 +122,8 @@ export type Proposal = {
   meals: ProposedMeal[] | null
   /** For list_items: lines as typed, "2 lb ground beef". */
   items: string[] | null
+  /** For tastes: what to add to the household's tastes and rules. */
+  tastes: Partial<HouseholdTastes> | null
   createdAt: string
 }
 

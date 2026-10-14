@@ -26,6 +26,7 @@ import { NutritionCard } from "./nutrition-card"
 import { NutritionLibraryCard } from "./nutrition-library-card"
 import { PhotosLibraryCard } from "./photos-library-card"
 import { ServerCard } from "./server-card"
+import { TastesCard } from "./tastes-card"
 import { TidyUpCard } from "./tidy-up-card"
 import { useAiStatus } from "./use-ai"
 
@@ -59,6 +60,12 @@ export function SettingsPage() {
       label: "People",
       group: "Household",
       card: <HouseholdCard />,
+    },
+    {
+      id: "tastes",
+      label: "Tastes and rules",
+      group: "Household",
+      card: <TastesCard />,
     },
     admin && {
       id: "meal-plan",

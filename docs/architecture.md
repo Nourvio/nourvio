@@ -83,7 +83,7 @@ Everything a household owns carries its `household_id`, and every query is scope
 
 | Table | Key columns | Purpose |
 |---|---|---|
-| `households` | name, settings (jsonb: auto-tidy, meals planned, first day of the week, always-on-hand items) | A household shares a library, plan, list and pantry. Deleting one removes everything in it. |
+| `households` | name, settings (jsonb: auto-tidy, meals planned, first day of the week, always-on-hand items, tastes and rules) | A household shares a library, plan, list and pantry. Deleting one removes everything in it. |
 | `invites` | household_id, token_hash, role, expires_at, used_at, used_by | Single-use invite links, good for a week. Only a hash of the token is stored, so the link can only be shown when it's made. |
 | `recipes` | id, household_id, slug (unique per household), name, description, image, image_ai (made by AI), source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), diet_overrides (jsonb), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
 | `recipe_ingredients` | recipe_id, position, section, raw_text, quantity, quantity_max, unit_id, food, note | `raw_text` is always kept and shown as written. The parsed fields drive scaling, lists and nutrition. |
@@ -132,7 +132,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 |---|---|
 | Auth | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`; first run `GET /api/setup/status`, `POST /api/setup` |
 | Joining | `GET`/`POST /api/join/:token` (invite links), `POST /api/signup` (when open) |
-| Household | `GET`/`PATCH /api/household`; invites `GET`/`POST /api/household/invites`, `DELETE /api/household/invites/:id`; members `GET`/`POST /api/users`, `PATCH`/`DELETE /api/users/:id` (household admins) |
+| Household | `GET`/`PATCH /api/household`, `PUT /api/household/tastes` (anyone in the household); invites `GET`/`POST /api/household/invites`, `DELETE /api/household/invites/:id`; members `GET`/`POST /api/users`, `PATCH`/`DELETE /api/users/:id` (household admins) |
 | Server | `GET`/`PUT /api/server/settings`, `GET /api/server/households`, `DELETE /api/server/households/:id` (server admin) |
 | Recipes | `GET/POST /api/recipes` (search with `q`; diet, tag and time filters and sorting happen in the browser), `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image`, `POST /api/recipes/:id/nutrition` (work it out now), `PUT /api/recipes/:id/diets` (corrections) |
 | Tags | `GET /api/recipes/tags`, `PATCH /api/recipes/tags/:name` (rename, merging into an existing tag), `DELETE /api/recipes/tags/:name` |
@@ -215,7 +215,9 @@ The AI never writes directly to recipes, the plan, the list or the pantry.
   - `tidy_recipe`: runs the regular tidy-up on a recipe
   - `propose_meals`: recipes (or notes) for days and meals, added to the plan in one tap
   - `propose_list_items`: lines for the shopping list
+  - `propose_tastes`: something for the household to remember (a food someone avoids or is allergic to, a diet, the weeknight time limit, a note), offered when it comes up in passing
   - *Later:* `propose_pantry_update`
+- **Tastes and rules** go in the system prompt, and search results and recipes say when one "doesn't suit the household" (`tasteWarnings` in `packages/shared/src/tastes.ts`), so the assistant follows them and treats allergies as strict.
 - **Failures:** a tool error goes back to the model as a result so it can recover. If the provider fails, nothing is saved and the message goes back in the box to resend. Stopping a reply keeps what had arrived.
 - Conversations are saved per person, listed newest first, and can be picked up again or deleted. Usage is recorded under the "chat" task.
 
@@ -274,6 +276,7 @@ The parser lives in the shared package, so the server and browser use the same c
 - The original text is always kept. Display shows the line as written, swapping in the scaled quantity when you change servings.
 - **Grams:** each ingredient comes with `unitGrams`, what one of its unit weighs, worked out when the recipe is read (`nutrition/weights.ts`) so it always uses the latest matches. The order: the weight the line states ("(200 g)", spread over its amount so it scales), a weight unit, a can's size, a stick of butter, the shared baking table (`weights.ts`, grams per cup for about fifty staples), the matched USDA food's volume portions, then what the AI weighed before. "1 cup plus 2 tbsp" counts both. The same order weighs ingredients for nutrition.
 - **Pairings** (`pairings.ts`): a recipe with what it goes with is put together in the browser, not saved. The pairing is scaled to the same servings when both say how many they make (else a batch per batch), its lines and steps come first under its own heading, nutrition per serving is the two added up, and diet labels are the ones both share. The list and pantry use the same scaling for a planned meal's pairing (`services/meal-lines.ts`).
+- **Tastes and rules** (`tastes.ts`): foods to avoid are matched as whole words, singular or plural ("mushroom" finds "cremini mushrooms"), except "nuts", "dairy", "gluten", "eggs" and "meat", which use the diet labels' careful check (pesto has nuts). Suggestions leave out recipes with an avoided food or missing a required diet, sauces included, and keep dinners Monday to Thursday within the time limit (a recipe with no time given is allowed).
 - **Diet labels** (`diets.ts`) come from the ingredient lines when a recipe is read: each line is checked against groups (meat, fish, dairy, egg, gluten, nuts, honey), after taking out phrases that don't count ("vegetable broth", "corn tortillas", "peanut butter"). A diet is labeled only when no line rules it out. `diet_overrides` holds the household's corrections, which win. Listing the library remembers each recipe's labels in memory until its `updated_at` changes (saving ingredients always updates the recipe), and reads only the columns a card needs, so a big library lists without reading every ingredient line each time.
 - **Kitchen timers** live in the browser outside any page (saved in localStorage), so they keep running and ringing anywhere in the app and survive a reload. The cook view also saves where you got to for 12 hours.
 - When a food or unit isn't recognized, the line still saves. It just won't combine with other lines on lists or match the pantry.

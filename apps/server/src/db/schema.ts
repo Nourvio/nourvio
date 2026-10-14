@@ -1,4 +1,5 @@
 import type {
+  HouseholdTastes,
   DietOverrides,
   AiProviderId,
   AiUsageTask,
@@ -64,6 +65,7 @@ export const households = pgTable("households", {
       meals?: Meal[]
       weekStart?: 0 | 1
       onHand?: string[]
+      tastes?: HouseholdTastes
     }>()
     .notNull()
     .default({}),
@@ -382,6 +384,7 @@ export const proposals = pgTable(
         variantName?: string | null
         meals?: ProposedMeal[]
         items?: string[]
+        tastes?: Partial<HouseholdTastes>
       }>()
       .notNull(),
     /** Set when part of a library run. */

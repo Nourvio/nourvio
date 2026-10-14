@@ -1,4 +1,5 @@
 import {
+  mergeTastes,
   RECIPE_SECTION_NAMES,
   RECIPE_SECTIONS,
   type ApplyProposalInput,
@@ -18,6 +19,7 @@ import { z } from "zod"
 import type { Db } from "../db/client.ts"
 import { proposals, recipes } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
+import { getHousehold, updateHousehold } from "./households.ts"
 import { addManualItem } from "./list.ts"
 import { addEntry } from "./plan.ts"
 import {
@@ -147,6 +149,7 @@ function toProposal({ proposal, recipe, result }: Joined): Proposal {
     result,
     meals: proposal.payload.meals ?? null,
     items: proposal.payload.items ?? null,
+    tastes: proposal.payload.tastes ?? null,
     createdAt: proposal.createdAt.toISOString(),
   }
 }
@@ -299,6 +302,11 @@ export async function applyProposal(
     for (const item of proposal.payload.items ?? []) {
       await addManualItem(db, householdId, item)
     }
+  } else if (proposal.kind === "tastes") {
+    const household = await getHousehold(db, householdId)
+    await updateHousehold(db, householdId, {
+      tastes: mergeTastes(household.tastes, proposal.payload.tastes ?? {}),
+    })
   } else if (proposal.kind === "new_recipe") {
     const draft = proposal.payload.draft
     if (!draft) throw new HttpError(400, "That suggestion has no recipe in it")
