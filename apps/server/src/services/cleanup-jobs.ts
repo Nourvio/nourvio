@@ -4,6 +4,8 @@ import { and, asc, count, desc, eq, notExists } from "drizzle-orm"
 import type { AiService } from "../ai/service.ts"
 import type { Db } from "../db/client.ts"
 import { aiJobs, proposals, recipes } from "../db/schema.ts"
+import { z } from "zod"
+
 import { HttpError } from "../http.ts"
 import { proposeCleanup } from "./cleanup.ts"
 
@@ -34,33 +36,36 @@ async function toJob(db: Db, row: JobRow): Promise<CleanupJob> {
   }
 }
 
-/** Recipes that have never been through a tidy-up, oldest first. */
-async function untidiedRecipeIds(db: Db) {
+/** The household's recipes that have never been through a tidy-up, oldest first. */
+async function untidiedRecipeIds(db: Db, householdId: string) {
   const rows = await db
     .select({ id: recipes.id })
     .from(recipes)
     .where(
-      notExists(
-        db
-          .select({ id: proposals.id })
-          .from(proposals)
-          .where(eq(proposals.recipeId, recipes.id))
+      and(
+        eq(recipes.householdId, householdId),
+        notExists(
+          db
+            .select({ id: proposals.id })
+            .from(proposals)
+            .where(eq(proposals.recipeId, recipes.id))
+        )
       )
     )
     .orderBy(asc(recipes.createdAt))
   return rows.map((row) => row.id)
 }
 
-export async function countUntidied(db: Db) {
-  return (await untidiedRecipeIds(db)).length
+export async function countUntidied(db: Db, householdId: string) {
+  return (await untidiedRecipeIds(db, householdId)).length
 }
 
-/** The most recent library run, if there's been one. */
-export async function latestCleanupJob(db: Db) {
+/** The household's most recent library run, if there's been one. */
+export async function latestCleanupJob(db: Db, householdId: string) {
   const [row] = await db
     .select()
     .from(aiJobs)
-    .where(eq(aiJobs.kind, "cleanup"))
+    .where(and(eq(aiJobs.kind, "cleanup"), eq(aiJobs.householdId, householdId)))
     .orderBy(desc(aiJobs.createdAt))
     .limit(1)
   return row ? toJob(db, row) : null
@@ -73,22 +78,30 @@ export async function latestCleanupJob(db: Db) {
 export async function startCleanupJob(
   db: Db,
   ai: AiService,
-  userId: string | null
+  actor: { userId: string; householdId: string }
 ) {
+  const { userId, householdId } = actor
   const [active] = await db
     .select({ id: aiJobs.id })
     .from(aiJobs)
-    .where(and(eq(aiJobs.kind, "cleanup"), eq(aiJobs.status, "running")))
+    .where(
+      and(
+        eq(aiJobs.kind, "cleanup"),
+        eq(aiJobs.householdId, householdId),
+        eq(aiJobs.status, "running")
+      )
+    )
   if (active) throw new HttpError(409, "A library tidy-up is already running")
   await ai.resolve("cleanup")
 
-  const ids = await untidiedRecipeIds(db)
+  const ids = await untidiedRecipeIds(db, householdId)
   if (!ids.length) {
     throw new HttpError(400, "Every recipe has already been tidied")
   }
   const [row] = await db
     .insert(aiJobs)
     .values({
+      householdId,
       kind: "cleanup",
       status: "running",
       total: ids.length,
@@ -110,7 +123,7 @@ export async function startCleanupJob(
       while (next < ids.length && !control.cancelled) {
         const id = ids[next++]!
         try {
-          await proposeCleanup(db, ai, id, {
+          await proposeCleanup(db, ai, householdId, id, {
             userId,
             sections: [...CLEANUP_SECTIONS],
             jobId: job.id,
@@ -153,12 +166,21 @@ export async function startCleanupJob(
   return toJob(db, job)
 }
 
-export async function cancelCleanupJob(db: Db, id: string) {
-  const control = running.get(id)
-  if (!control) throw new HttpError(404, "That run isn't going")
+export async function cancelCleanupJob(
+  db: Db,
+  householdId: string,
+  id: string
+) {
+  const [row] = z.uuid().safeParse(id).success
+    ? await db
+        .select()
+        .from(aiJobs)
+        .where(and(eq(aiJobs.id, id), eq(aiJobs.householdId, householdId)))
+    : []
+  const control = row && running.get(row.id)
+  if (!row || !control) throw new HttpError(404, "That run isn't going")
   control.cancelled = true
-  const [row] = await db.select().from(aiJobs).where(eq(aiJobs.id, id))
-  return toJob(db, row!)
+  return toJob(db, row)
 }
 
 /** After a restart, runs that were going can't continue; say so. */

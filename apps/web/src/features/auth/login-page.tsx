@@ -1,5 +1,5 @@
 import { loginInput } from "@mise/shared"
-import { Navigate, useNavigate, useSearchParams } from "react-router"
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router"
 
 import { TextField } from "@/components/form/text-field"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -72,6 +72,21 @@ export function LoginPage() {
           {login.isPending && <Spinner data-icon="inline-start" />}
           Sign in
         </Button>
+        <p className="text-center text-sm text-muted-foreground">
+          {setup.data?.signupOpen ? (
+            <>
+              New here?{" "}
+              <Link
+                to="/signup"
+                className="font-medium text-foreground underline underline-offset-4"
+              >
+                Create an account
+              </Link>
+            </>
+          ) : (
+            "New here? Ask someone in your household for an invite link."
+          )}
+        </p>
       </form>
     </AuthLayout>
   )

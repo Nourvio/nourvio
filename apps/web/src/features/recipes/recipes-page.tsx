@@ -168,8 +168,9 @@ export function RecipesPage() {
             </EmptyMedia>
             <EmptyTitle>No recipes yet</EmptyTitle>
             <EmptyDescription>
-              Paste a link from any recipe site or video, snap a photo of a
-              cookbook page, or bring over your Mealie library.
+              Paste a link from any recipe site or video, or snap a photo of a
+              cookbook page
+              {me.isServerAdmin ? ", or bring over your Mealie library" : ""}.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
@@ -182,7 +183,7 @@ export function RecipesPage() {
                 />
                 Import from a link
               </Button>
-              {me.role === "admin" && (
+              {me.isServerAdmin && (
                 <Button variant="outline" asChild>
                   <Link to="/settings#mealie">Move from Mealie</Link>
                 </Button>

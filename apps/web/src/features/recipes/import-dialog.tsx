@@ -286,7 +286,7 @@ function NeedsAi({
 }) {
   const status = useAiStatus()
   const me = useCurrentUser()
-  const isAdmin = me.role === "admin"
+  const runsServer = me.isServerAdmin
 
   if (status.isPending) return <Skeleton className="h-48" />
   if (status.data?.available) return children
@@ -298,11 +298,12 @@ function NeedsAi({
         </EmptyMedia>
         <EmptyTitle>This needs AI</EmptyTitle>
         <EmptyDescription>
-          {isAdmin ? "Add" : "Ask an admin to add"} a Claude or OpenAI key in
-          Settings, and Mise can read recipes from text and photos.
+          {runsServer ? "Add" : "Ask whoever runs this Mise to add"} a Claude or
+          OpenAI key in Settings, and Mise can read recipes from text and
+          photos.
         </EmptyDescription>
       </EmptyHeader>
-      {isAdmin && (
+      {runsServer && (
         <EmptyContent>
           <Button asChild>
             <Link to="/settings" onClick={onDone}>

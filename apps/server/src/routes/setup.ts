@@ -5,15 +5,25 @@ import { RateLimiter } from "../auth/rate-limit.ts"
 import { createSession, setSessionCookie } from "../auth/sessions.ts"
 import type { AppContext, AppEnv } from "../context.ts"
 import { clientIp, HttpError, readBody, tooManyAttempts } from "../http.ts"
-import { countUsers, createUser, toUser } from "../services/users.ts"
+import {
+  createHouseholdWithAdmin,
+  getServerSettings,
+} from "../services/households.ts"
+import { countUsers, toUser } from "../services/users.ts"
 
-/** First run: create the admin account using the setup code from the server log. */
+/**
+ * First run: create the first household and its admin, who also runs the
+ * server, using the setup code from the server log.
+ */
 export function setupRoutes({ db, setupCode }: AppContext) {
   const app = new Hono<AppEnv>()
   const attempts = new RateLimiter(10, 15 * 60 * 1000)
 
   app.get("/status", async (c) => {
-    const status: SetupStatus = { needsSetup: (await countUsers(db)) === 0 }
+    const status: SetupStatus = {
+      needsSetup: (await countUsers(db)) === 0,
+      signupOpen: (await getServerSettings(db)).signupOpen,
+    }
     return c.json(status)
   })
 
@@ -36,7 +46,10 @@ export function setupRoutes({ db, setupCode }: AppContext) {
     }
     setupCode.clear()
 
-    const user = await createUser(db, { ...input, role: "admin" })
+    const user = await createHouseholdWithAdmin(db, {
+      ...input,
+      isServerAdmin: true,
+    })
     const session = await createSession(db, user.id, c.req.header("user-agent"))
     setSessionCookie(c, session.token, session.expiresAt)
     return c.json({ user: toUser(user) }, 201)

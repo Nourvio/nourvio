@@ -105,15 +105,16 @@ apps/server/
 
 ### Accounts
 
-- **First account:** the first one is created with the setup code from the log (`/api/setup`) and is the admin.
-- **The rest of the household:** an admin adds them (`/api/users`).
+- **First account:** created with the setup code from the log (`/api/setup`), along with the first household. That person is the server admin and the household's admin.
+- **Everyone else:** joins by invite link (`/api/join/:token`), is added directly by a household admin (`/api/users`), or signs up and starts their own household (`/api/signup`, when the server admin allows it).
+- **Households:** services take the household id explicitly, and routes pass `currentHousehold(c)`. A new household-owned table needs a `household_id` and a test in `households.test.ts` showing another household can't reach it.
 - **Passwords:** hashed with scrypt.
 - **Sessions:**
   - The cookie holds a random token, and the database keeps only its SHA-256.
   - A session lasts 90 days from its last use and is extended at most once a day.
   - Changing or resetting a password signs out that person's other sessions.
 - **Rate limits** live in memory: 5 failed sign-ins per username and 20 per IP, per 15 minutes. The setup code allows 10 tries per IP.
-- **Middleware:** `loadSession` reads the cookie on every `/api` request. `requireUser` and `requireAdmin` guard routes.
+- **Middleware:** `loadSession` reads the cookie on every `/api` request. `requireUser`, `requireAdmin` (household admin) and `requireServerAdmin` guard routes.
 - **Appearance** (mode and palette) is saved on the user.
 
 ## Web app layout

@@ -20,9 +20,13 @@ import { AccountCard } from "./account-card"
 import { AiCard } from "./ai-card"
 import { HouseholdCard } from "./household-card"
 import { MealieCard } from "./mealie-card"
+import { ServerCard } from "./server-card"
+import { TidyUpCard } from "./tidy-up-card"
+import { useAiStatus } from "./use-ai"
 
 export function SettingsPage() {
   const me = useCurrentUser()
+  const ai = useAiStatus()
   const { hash } = useLocation()
 
   // Links like /settings#mealie jump to that card.
@@ -58,9 +62,16 @@ export function SettingsPage() {
         </Card>
 
         <HouseholdCard />
+        {me.role === "admin" && ai.data?.available && <TidyUpCard />}
 
-        {me.role === "admin" && <AiCard />}
-        {me.role === "admin" && <MealieCard />}
+        {me.isServerAdmin && (
+          <>
+            <h2 className="pt-4 text-xl font-semibold">Running this server</h2>
+            <ServerCard />
+            <AiCard />
+            <MealieCard />
+          </>
+        )}
 
         <Card>
           <CardHeader>

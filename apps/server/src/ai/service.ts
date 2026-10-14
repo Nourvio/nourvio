@@ -17,7 +17,7 @@ import { desc, eq, gte, sql } from "drizzle-orm"
 import type { z } from "zod"
 
 import type { Db } from "../db/client.ts"
-import { aiUsage, settings } from "../db/schema.ts"
+import { aiUsage, households, settings } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
 import { decryptSecret, encryptSecret } from "../secrets.ts"
 import { createAnthropicProvider } from "./anthropic.ts"
@@ -36,8 +36,10 @@ type StoredAiSettings = {
   keys?: Partial<Record<AiProviderId, string>>
   defaultModel?: ModelRef | null
   taskModels?: Partial<Record<AiTask, ModelRef>>
-  autoCleanup?: boolean
 }
+
+/** Who a request is for: their household's usage is recorded against the server's keys. */
+export type AiActor = { userId: string | null; householdId: string | null }
 
 export const defaultProviderFactory: AiProviderFactory = (id, apiKey) =>
   id === "anthropic"
@@ -109,7 +111,6 @@ export function createAiService(
       keys: keyStatus,
       defaultModel: stored.defaultModel ?? null,
       taskModels: stored.taskModels ?? {},
-      autoCleanup: stored.autoCleanup ?? false,
     }
   }
 
@@ -119,7 +120,6 @@ export function createAiService(
       keys: { ...stored.keys },
       defaultModel: stored.defaultModel ?? null,
       taskModels: { ...stored.taskModels },
-      autoCleanup: stored.autoCleanup ?? false,
     }
     for (const id of AI_PROVIDERS) {
       const key = input.keys?.[id]
@@ -128,7 +128,6 @@ export function createAiService(
       else next.keys![id] = encryptSecret(key)
     }
     if (input.defaultModel !== undefined) next.defaultModel = input.defaultModel
-    if (input.autoCleanup !== undefined) next.autoCleanup = input.autoCleanup
     for (const [task, ref] of Object.entries(input.taskModels ?? {})) {
       if (ref === undefined) continue
       if (ref === null) delete next.taskModels![task as AiTask]
@@ -207,20 +206,20 @@ export function createAiService(
     }
     throw new HttpError(
       400,
-      "AI isn't set up yet. An admin can add a Claude or OpenAI key in Settings."
+      "AI isn't set up yet. The server admin can add a Claude or OpenAI key in Settings."
     )
   }
 
   /** Runs a structured extraction for a task and records what it used. */
   async function extract<T extends z.ZodType>(
     task: AiTask,
-    userId: string | null,
+    actor: AiActor,
     request: Omit<ExtractRequest<T>, "model">
   ): Promise<z.output<T>> {
     const { provider, model } = await resolve(task)
     const { data, usage } = await provider.extract({ ...request, model })
     await db.insert(aiUsage).values({
-      userId,
+      ...actor,
       provider: provider.id,
       model,
       task,
@@ -235,7 +234,7 @@ export function createAiService(
    * Speech to text with whichever configured provider can do it (OpenAI).
    * Returns null when none can.
    */
-  async function transcribe(userId: string | null, audio: Buffer) {
+  async function transcribe(actor: AiActor, audio: Buffer) {
     const available = await keys()
     for (const id of AI_PROVIDERS) {
       const found = available[id]
@@ -247,7 +246,7 @@ export function createAiService(
         "audio.mp3"
       )
       await db.insert(aiUsage).values({
-        userId,
+        ...actor,
         provider: id,
         model,
         task: "import",
@@ -260,7 +259,10 @@ export function createAiService(
     return null
   }
 
-  /** Requests, tokens and rough cost by month and model, for the last six months. */
+  /**
+   * Requests, tokens and rough cost by month, household and model, for the
+   * last six months.
+   */
   async function usageSummary(): Promise<AiUsageRow[]> {
     const since = new Date()
     since.setMonth(since.getMonth() - 5, 1)
@@ -269,6 +271,7 @@ export function createAiService(
     const rows = await db
       .select({
         month,
+        household: households.name,
         provider: aiUsage.provider,
         model: aiUsage.model,
         requests: sql<number>`count(*)::int`,
@@ -277,8 +280,9 @@ export function createAiService(
         costUsd: sql<number | null>`sum(${aiUsage.costUsd})`,
       })
       .from(aiUsage)
+      .leftJoin(households, eq(aiUsage.householdId, households.id))
       .where(gte(aiUsage.createdAt, since))
-      .groupBy(month, aiUsage.provider, aiUsage.model)
+      .groupBy(month, households.name, aiUsage.provider, aiUsage.model)
       .orderBy(desc(month), desc(sql`count(*)`))
     return rows.map((row) => ({
       ...row,

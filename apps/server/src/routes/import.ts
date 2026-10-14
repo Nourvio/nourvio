@@ -8,9 +8,14 @@ import {
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 
-import { requireAdmin, requireUser } from "../auth/middleware.ts"
+import { requireServerAdmin, requireUser } from "../auth/middleware.ts"
 import type { AiService } from "../ai/service.ts"
-import { currentUser, type AppContext, type AppEnv } from "../context.ts"
+import {
+  currentHousehold,
+  currentUser,
+  type AppContext,
+  type AppEnv,
+} from "../context.ts"
 import { HttpError, readBody } from "../http.ts"
 import { extractRecipe, photosToParts } from "../import/ai-extract.ts"
 import {
@@ -22,6 +27,7 @@ import { fetchPublic } from "../import/safe-fetch.ts"
 import { importFromUrl } from "../import/url.ts"
 import { systemVideoTools } from "../import/video-tools.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
+import { getHousehold } from "../services/households.ts"
 import { createRecipe } from "../services/recipes.ts"
 
 /** Four phone photos, with some room to spare. */
@@ -43,35 +49,48 @@ export function importRoutes(
    * With auto-cleanup on, tidy each new import in the background. The
    * suggestions wait on the recipe page; a failure here doesn't matter.
    */
-  async function afterImport(result: ImportResult, userId: string) {
-    if (result.duplicate || !(await ai.getSettings()).autoCleanup) return
-    void proposeCleanup(db, ai, result.recipe.id, {
-      userId,
+  async function afterImport(
+    result: ImportResult,
+    actor: { userId: string; householdId: string }
+  ) {
+    if (result.duplicate) return
+    if (!(await getHousehold(db, actor.householdId)).autoCleanup) return
+    void proposeCleanup(db, ai, actor.householdId, result.recipe.id, {
+      userId: actor.userId,
       sections: [...CLEANUP_SECTIONS],
     }).catch((error: Error) =>
       console.warn("Tidy-up after import failed:", error.message)
     )
   }
 
+  const actorOf = (c: Parameters<typeof currentUser>[0]) => ({
+    userId: currentUser(c).id,
+    householdId: currentHousehold(c),
+  })
+
   app.post("/url", async (c) => {
     const { url, force } = await readBody(c, importUrlInput)
+    const actor = actorOf(c)
     const result = await importFromUrl(db, url, {
-      userId: currentUser(c).id,
+      ...actor,
       fetcher,
       ai,
       videoTools,
       force,
     })
-    await afterImport(result, currentUser(c).id)
+    await afterImport(result, actor)
     return c.json(result, result.duplicate ? 200 : 201)
   })
 
   app.post("/text", async (c) => {
     const { text } = await readBody(c, importTextInput)
-    const userId = currentUser(c).id
-    const input = await extractRecipe(ai, userId, [{ type: "text", text }])
-    const recipe = await createRecipe(db, input, { origin: "text", userId })
-    await afterImport({ recipe, duplicate: false }, userId)
+    const actor = actorOf(c)
+    const input = await extractRecipe(ai, actor, [{ type: "text", text }])
+    const recipe = await createRecipe(db, actor.householdId, input, {
+      origin: "text",
+      userId: actor.userId,
+    })
+    await afterImport({ recipe, duplicate: false }, actor)
     return c.json({ recipe, duplicate: false }, 201)
   })
 
@@ -92,34 +111,40 @@ export function importRoutes(
           files.map(async (file) => Buffer.from(await file.arrayBuffer()))
         )
       )
-      const userId = currentUser(c).id
-      const input = await extractRecipe(ai, userId, parts)
-      const recipe = await createRecipe(db, input, { origin: "photo", userId })
-      await afterImport({ recipe, duplicate: false }, userId)
+      const actor = actorOf(c)
+      const input = await extractRecipe(ai, actor, parts)
+      const recipe = await createRecipe(db, actor.householdId, input, {
+        origin: "photo",
+        userId: actor.userId,
+      })
+      await afterImport({ recipe, duplicate: false }, actor)
       return c.json({ recipe, duplicate: false }, 201)
     }
   )
 
-  // Moving from Mealie (admin only).
-  app.use("/mealie/*", requireAdmin)
-  app.use("/mealie", requireAdmin)
+  // Moving from Mealie, into the server admin's household. Server admin only,
+  // because it can reach the home network.
+  app.use("/mealie/*", requireServerAdmin)
+  app.use("/mealie", requireServerAdmin)
 
   app.post("/mealie/check", async (c) => {
     const { url, token } = await readBody(c, mealieConnectionInput)
-    return c.json(await checkMealie(db, url, token, mealieFetch))
+    return c.json(
+      await checkMealie(db, currentHousehold(c), url, token, mealieFetch)
+    )
   })
 
   app.post("/mealie", async (c) => {
     const { url, token } = await readBody(c, mealieConnectionInput)
     const job = await startMealieImport(db, url, token, {
-      userId: currentUser(c).id,
+      ...actorOf(c),
       fetcher: mealieFetch,
     })
     return c.json({ job }, 201)
   })
 
   app.get("/mealie/job", async (c) =>
-    c.json({ job: await latestMealieJob(db) })
+    c.json({ job: await latestMealieJob(db, currentHousehold(c)) })
   )
 
   return app

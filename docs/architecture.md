@@ -87,13 +87,17 @@ mise/
 
 This lets the same onion add up across recipes, get subtracted by the pantry, and map to a Walmart product.
 
+Everything a household owns carries its `household_id`, and every query is scoped by the signed-in person's household. Another household's recipe, photo, suggestion or member is a 404.
+
 | Table | Key columns | Purpose |
 |---|---|---|
-| `recipes` | id, slug, name, description, image, source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
+| `households` | name, settings (jsonb: auto-tidy) | A household shares a library (and later a plan, pantry and list). Deleting one removes everything in it. |
+| `invites` | household_id, token_hash, role, expires_at, used_at, used_by | Single-use invite links, good for a week. Only a hash of the token is stored, so the link can only be shown when it's made. |
+| `recipes` | id, household_id, slug (unique per household), name, description, image, source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
 | `recipe_ingredients` | recipe_id, position, section, raw_text, quantity, quantity_max, unit_id, food_id, note | `raw_text` is always kept and shown as written. The parsed fields drive scaling, lists and nutrition. |
 | `recipe_steps` | recipe_id, position, section, text | |
 | `recipe_versions` | recipe_id, snapshot (jsonb), source, created_by, created_at | Every saved change makes a snapshot, so the original import can always be restored. `source` is one of import, manual, ai_cleanup, chat. |
-| `tags`, `recipe_tags` | | |
+| `tags`, `recipe_tags` | household_id, name (unique per household, ignoring case) | |
 | `foods` | name, plural, store_section, is_staple, fdc_id, nutrition_per_100g (jsonb), grams_per_unit (jsonb) | `fdc_id` links to USDA data |
 | `units` | name, abbreviation, aliases, kind (volume/weight/count), to_base | `to_base` converts to ml or g for safe unit conversion. Seeded at startup. |
 | `meal_plan_entries` | date, meal, recipe_id (nullable), note, servings, status | `status` is planned, cooked or skipped |
@@ -104,10 +108,11 @@ This lets the same onion add up across recipes, get subtracted by the pantry, an
 | `store_products` | store, food_id, product_id, name, size, purchase_unit, last_price, preferred | The ingredient-to-Walmart-product mapping |
 | `proposals` | kind, target_id, payload (jsonb), created_by (chat or cleanup), status | A pending change from the AI, waiting for you to apply or dismiss it (see [AI](#ai)) |
 | `chat_conversations`, `chat_messages` | provider, model, content (jsonb, in that provider's native format) | A conversation stays on the provider it started with, so it can resume exactly |
-| `ai_usage` | provider, model, task, input/output tokens, cost, created_at | Spend tracking in Settings |
-| `ai_jobs` | kind, status, total, done, failed | Long-running work such as tidying the whole library. A run cut short by a restart is marked "interrupted". |
-| `settings` | key, value (jsonb) | Includes AI settings. API keys are stored encrypted. |
-| `users`, `sessions`, `api_tokens` | | Login, and the extension's token |
+| `ai_usage` | household_id, user_id, provider, model, task, input/output tokens, cost, created_at | Spend tracking per household, on the server's keys |
+| `ai_jobs` | household_id, kind, status, total, done, skipped, failed | Long-running work: tidying a household's library, or the Mealie import. A run cut short by a restart is marked "interrupted". |
+| `settings` | key, value (jsonb) | Server-wide: AI keys (encrypted) and models, and whether sign-up is open |
+| `users` | username (unique on the server), household_id, role (admin or member, in the household), is_server_admin | |
+| `sessions`, `api_tokens` | | Login, and the extension's token |
 
 ### Postgres features we use
 
@@ -129,11 +134,14 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 
 | Area | Endpoints |
 |---|---|
-| Auth | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` |
+| Auth | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me`; first run `GET /api/setup/status`, `POST /api/setup` |
+| Joining | `GET`/`POST /api/join/:token` (invite links), `POST /api/signup` (when open) |
+| Household | `GET`/`PATCH /api/household`; invites `GET`/`POST /api/household/invites`, `DELETE /api/household/invites/:id`; members `GET`/`POST /api/users`, `PATCH`/`DELETE /api/users/:id` (household admins) |
+| Server | `GET`/`PUT /api/server/settings`, `GET /api/server/households`, `DELETE /api/server/households/:id` (server admin) |
 | Recipes | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image` |
 | Versions | `GET /api/recipes/:id/versions`, `POST /api/recipes/:id/versions/:versionId/restore` |
-| Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (admin): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
-| AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal, or null when there's nothing to change), `GET /api/recipes/:id/proposal`; library runs at `GET`/`POST /api/ai/settings/cleanup-job` and `POST …/cleanup-job/:id/cancel` (admin) |
+| Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (server admin, into their household): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
+| AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal, or null when there's nothing to change), `GET /api/recipes/:id/proposal`; library runs at `GET`/`POST /api/ai/cleanup-job` and `POST /api/ai/cleanup-job/:id/cancel` (household admins) |
 | Proposals | `GET /api/proposals` (pending), `POST /api/proposals/:id/apply` (chosen sections), `POST /api/proposals/:id/dismiss` |
 | Chat | `POST /api/chat` (streaming), `GET /api/chat/conversations`, `GET /api/chat/conversations/:id` |
 | Jobs | `GET /api/jobs/:id` |
@@ -141,7 +149,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Lists | `GET /api/lists/current`, `POST /api/lists/from-plan`, `POST/PUT/DELETE /api/lists/:id/items/:itemId` |
 | Pantry | `GET/POST /api/pantry`, `PUT/DELETE /api/pantry/:id` |
 | Foods / units | `GET/POST /api/foods`, `GET /api/units` |
-| Settings | `GET/PUT /api/settings/ai`, `POST /api/settings/ai/test`, `GET /api/settings/ai/models?provider=` |
+| AI settings | `GET /api/ai/status` (everyone); `GET`/`PUT /api/ai/settings`, `POST /api/ai/settings/test`, `GET /api/ai/settings/models`, `GET /api/ai/settings/usage` (server admin) |
 | Store | `GET /api/store/walmart/list` (for the extension), `PUT /api/store/products/:foodId` |
 | Images | `GET /api/images/:file` |
 
@@ -166,7 +174,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
   - Keys saved in Settings are encrypted at rest (AES-256-GCM) with a key derived from `MISE_SECRET`, or from a random `data/app/secret` file if that isn't set. A database dump alone can't reveal them.
   - A key is tested against the provider before it's saved.
   - Keys are never sent back to the browser. Settings shows only the last four characters, with a **Test** button.
-  - Only admins can change AI settings.
+  - Only the server admin can change AI settings. Every household uses the same keys, and usage is recorded per household.
 - **Models:**
   - Settings has a default model, picked from the providers' live model lists.
   - Each task can override that default. So far: importing, tidying and the assistant; planning, shopping translation and nutrition estimates join later.
@@ -258,11 +266,16 @@ The parser lives in the shared package, so the server and browser use the same c
 
 ## Auth
 
-- **Accounts:** household members sign in with a username and password, hashed with scrypt.
+- **Accounts:** each person signs in with a username (unique on the server) and password, hashed with scrypt, and belongs to one household.
 - **Sessions:** 90-day session cookies, renewed as they're used, so the kitchen iPad stays signed in. They're `HttpOnly` and `SameSite=Lax`, plus `Secure` over HTTPS. The database stores only a hash of each token.
 - **Rate limiting:** 5 failed sign-ins per username and 20 per IP, per 15 minutes.
-- **First run:** the first account is created with a one-time setup code printed in the server log.
-- **Roles:** an admin manages members, AI settings and API keys.
+- **First run:** the first account, with the first household, is created with a one-time setup code printed in the server log. That person is the server admin.
+- **Joining:** invite links (192-bit random tokens, stored hashed, single use, 7 days) into a household; or open sign-up, off by default, which creates a new household. Both are rate limited per IP.
+- **Roles:**
+  - a household admin manages that household's members, invites and settings
+  - the server admin manages AI keys and models, sign-up, households and the Mealie import
+  - a household always keeps at least one admin
+- **Isolation:** every household-owned query filters by the signed-in person's household, photos included (a photo is served only if one of your household's recipes uses it). Tests cover each kind of data.
 - **Extension:** uses a personal API token created in Settings.
 - **Recipe import safety:** the server refuses to fetch private-network addresses. This stops someone from using the import feature to reach other machines on the home network.
 
@@ -281,7 +294,7 @@ The parser lives in the shared package, so the server and browser use the same c
 | List | Shopping list grouped by section, with Send to Walmart |
 | Pantry | On hand, use soon, leftovers to use, staples |
 | Chat | Available on every screen (see below) |
-| Settings | Household members, AI (keys, models, auto-cleanup, usage and cost), API token, plan rules |
+| Settings | Your account and appearance; your household (members, invites, rename, tidying up); for the server admin, the server (sign-up, households), AI (keys, models, usage by household) and the Mealie import; later the API token and plan rules |
 
 ### Layout
 

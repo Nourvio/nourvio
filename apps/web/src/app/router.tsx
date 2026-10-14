@@ -1,9 +1,11 @@
 import { createBrowserRouter, Navigate } from "react-router"
 
 import { AppShell } from "@/components/layout/app-shell"
+import { JoinPage } from "@/features/auth/join-page"
 import { LoginPage } from "@/features/auth/login-page"
 import { RequireAuth } from "@/features/auth/require-auth"
 import { SetupPage } from "@/features/auth/setup-page"
+import { SignupPage } from "@/features/auth/signup-page"
 import { CookPage } from "@/features/cook/cook-page"
 import { ListPage } from "@/features/list/list-page"
 import { PantryPage } from "@/features/pantry/pantry-page"
@@ -24,6 +26,8 @@ import { RouteError } from "./route-error"
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage />, errorElement: <RouteError /> },
   { path: "/setup", element: <SetupPage />, errorElement: <RouteError /> },
+  { path: "/signup", element: <SignupPage />, errorElement: <RouteError /> },
+  { path: "/join/:token", element: <JoinPage />, errorElement: <RouteError /> },
   {
     // Full screen, without the app's navigation, for cooking.
     path: "/recipes/:slug/cook",

@@ -2,7 +2,12 @@ import { applyProposalInput } from "@mise/shared"
 import { Hono } from "hono"
 
 import { requireUser } from "../auth/middleware.ts"
-import { currentUser, type AppContext, type AppEnv } from "../context.ts"
+import {
+  currentHousehold,
+  currentUser,
+  type AppContext,
+  type AppEnv,
+} from "../context.ts"
 import { readBody } from "../http.ts"
 import {
   applyProposal,
@@ -16,13 +21,14 @@ export function proposalsRoutes({ db }: AppContext) {
   app.use(requireUser)
 
   app.get("/", async (c) =>
-    c.json({ proposals: await listPendingProposals(db) })
+    c.json({ proposals: await listPendingProposals(db, currentHousehold(c)) })
   )
 
   app.post("/:id/apply", async (c) => {
     const { sections } = await readBody(c, applyProposalInput)
     const recipe = await applyProposal(
       db,
+      currentHousehold(c),
       c.req.param("id"),
       sections,
       currentUser(c).id
@@ -31,7 +37,7 @@ export function proposalsRoutes({ db }: AppContext) {
   })
 
   app.post("/:id/dismiss", async (c) => {
-    await dismissProposal(db, c.req.param("id"))
+    await dismissProposal(db, currentHousehold(c), c.req.param("id"))
     return c.body(null, 204)
   })
 

@@ -55,7 +55,10 @@ export function useSetup() {
       api<{ user: User }>("/setup", { body: input }),
     onSuccess: ({ user }) => {
       queryClient.setQueryData(SESSION_KEY, user)
-      queryClient.setQueryData(SETUP_STATUS_KEY, { needsSetup: false })
+      queryClient.setQueryData<SetupStatus>(SETUP_STATUS_KEY, (status) => ({
+        needsSetup: false,
+        signupOpen: status?.signupOpen ?? false,
+      }))
     },
   })
 }

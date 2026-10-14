@@ -21,6 +21,7 @@ describe("first-run setup", () => {
 
     expect((await api.get("/api/setup/status")).body).toEqual({
       needsSetup: true,
+      signupOpen: false,
     })
 
     const wrongCode = await api.post("/api/setup", {
@@ -37,12 +38,18 @@ describe("first-run setup", () => {
       code: t.code.toLowerCase().replaceAll("-", ""),
     })
     expect(res.status).toBe(201)
-    expect(res.body.user).toMatchObject({ username: "kyle", role: "admin" })
+    // The first person runs the server and is admin of the first household.
+    expect(res.body.user).toMatchObject({
+      username: "kyle",
+      role: "admin",
+      isServerAdmin: true,
+    })
     expect(res.body.user.passwordHash).toBeUndefined()
 
     expect((await api.get("/api/auth/me")).body.user.username).toBe("kyle")
     expect((await api.get("/api/setup/status")).body).toEqual({
       needsSetup: false,
+      signupOpen: false,
     })
 
     const again = await apiClient(t.app).post("/api/setup", {

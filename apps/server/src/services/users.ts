@@ -1,5 +1,5 @@
 import type { Appearance, Role, User } from "@mise/shared"
-import { asc, count, eq } from "drizzle-orm"
+import { and, asc, count, eq } from "drizzle-orm"
 
 import { hashPassword } from "../auth/passwords.ts"
 import type { Db } from "../db/client.ts"
@@ -13,7 +13,9 @@ export function toUser(row: UserRow): User {
     id: row.id,
     username: row.username,
     displayName: row.displayName,
+    householdId: row.householdId,
     role: row.role,
+    isServerAdmin: row.isServerAdmin,
     appearance: row.appearance,
     createdAt: row.createdAt.toISOString(),
   }
@@ -24,11 +26,12 @@ export async function countUsers(db: Db) {
   return row?.total ?? 0
 }
 
-export async function countAdmins(db: Db) {
+/** Admins in a household. Every household keeps at least one. */
+export async function countAdmins(db: Db, householdId: string) {
   const [row] = await db
     .select({ total: count() })
     .from(users)
-    .where(eq(users.role, "admin"))
+    .where(and(eq(users.householdId, householdId), eq(users.role, "admin")))
   return row?.total ?? 0
 }
 
@@ -46,8 +49,13 @@ export async function findUserById(db: Db, id: string) {
   return row
 }
 
-export async function listUsers(db: Db) {
-  return db.select().from(users).orderBy(asc(users.createdAt))
+/** Everyone in a household, oldest account first. */
+export async function listUsers(db: Db, householdId: string) {
+  return db
+    .select()
+    .from(users)
+    .where(eq(users.householdId, householdId))
+    .orderBy(asc(users.createdAt))
 }
 
 export async function createUser(
@@ -56,7 +64,9 @@ export async function createUser(
     username: string
     displayName: string
     password: string
+    householdId: string
     role: Role
+    isServerAdmin?: boolean
   }
 ) {
   if (await findUserByUsername(db, input.username)) {
@@ -70,7 +80,9 @@ export async function createUser(
       username: input.username.toLowerCase(),
       displayName: input.displayName,
       passwordHash: await hashPassword(input.password),
+      householdId: input.householdId,
       role: input.role,
+      isServerAdmin: input.isServerAdmin ?? false,
     })
     .returning()
   return row!

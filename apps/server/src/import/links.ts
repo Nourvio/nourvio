@@ -1,4 +1,4 @@
-import { inArray } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 
 import type { Db } from "../db/client.ts"
 import { recipes } from "../db/schema.ts"
@@ -40,14 +40,23 @@ export function isVideoUrl(url: string) {
   return VIDEO_HOSTS.test(new URL(url).hostname)
 }
 
-/** A recipe already imported from one of these links, if any. */
-export async function findBySourceUrl(db: Db, urls: string[]) {
+/** A recipe this household already imported from one of these links, if any. */
+export async function findBySourceUrl(
+  db: Db,
+  householdId: string,
+  urls: string[]
+) {
   const [row] = await db
     .select({ id: recipes.id })
     .from(recipes)
-    .where(inArray(recipes.sourceUrl, urls))
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        inArray(recipes.sourceUrl, urls)
+      )
+    )
     .limit(1)
-  return row ? getRecipe(db, row.id) : null
+  return row ? getRecipe(db, householdId, row.id) : null
 }
 
 /** Downloads and stores a recipe photo. A missing or broken photo isn't worth failing over. */

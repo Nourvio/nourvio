@@ -38,6 +38,7 @@ Each milestone ends with something usable. Mealie keeps running until milestone 
 - TikTok, YouTube and Instagram links
 - Tidy up with section-by-section review, auto-tidy after import and library runs
 - the Mealie import
+- several households per server, invite links and optional open sign-up
 
 What's left is checking the "done when" below with real keys and the real Mealie library.
 
@@ -133,10 +134,10 @@ What's left is checking the "done when" below with real keys and the real Mealie
 | # | Question | Recommendation | Affects |
 |---|---|---|---|
 | 1 | Is Walmart the long-term store, or is a Kroger-family store an option? | Walmart for now. Kroger would make milestone 6 much sturdier. | M6 |
-| 2 | One shared household login, or one account per person? | One per person. It costs about the same and records who changed what. | M0 |
+| 2 | One shared household login, or one account per person? | **Decided:** one account per person, joining by invite link. One server can host several households. | M0 |
 | 3 | Do you have a domain on Cloudflare for the tunnel? | Needed for the recommended setup | M0 |
 | 4 | Dinners only, or breakfast and lunch too? | Dinners by default, with other meals optional | M3 |
-| 5 | Should AI keys be shared by the household, or should each person bring their own? | One set for the household, managed by the admin | M1 |
+| 5 | Should AI keys be shared by the household, or should each person bring their own? | **Decided:** one set for the whole server, managed by the server admin, with usage shown per household. Per-household keys or spending caps could come later. | M1 |
 | 6 | Should cleanup run automatically on every import, or only when you tap Tidy up? | Off by default to start. Turn it on once the results are trusted. | M1 |
 | 7 | Public or private GitHub repo? | Either works. Private needs registry credentials on TrueNAS. | M0 |
 | 8 | How many recipes are in Mealie, and anything special in there (custom fields, categories you rely on)? | Check before building the importer | M1 |

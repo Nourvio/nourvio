@@ -43,6 +43,13 @@
       "when": 1791952410283,
       "tag": "0005_job_skipped",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791953992171,
+      "tag": "0006_households",
+      "breakpoints": true
     }
   ]
 }

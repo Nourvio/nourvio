@@ -36,3 +36,8 @@ export function currentUser(c: Context<AppEnv>) {
   if (!user) throw new HttpError(401, "Sign in to continue")
   return user
 }
+
+/** The signed-in user's household: everything they see and change is in it. */
+export function currentHousehold(c: Context<AppEnv>) {
+  return currentUser(c).householdId
+}

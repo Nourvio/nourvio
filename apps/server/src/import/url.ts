@@ -36,6 +36,7 @@ export async function importFromUrl(
   rawUrl: string,
   options: {
     userId: string
+    householdId: string
     fetcher: Fetcher
     ai: AiService
     videoTools: VideoTools
@@ -44,7 +45,7 @@ export async function importFromUrl(
 ): Promise<ImportResult> {
   const url = normalizeUrl(rawUrl)
   if (!options.force) {
-    const existing = await findBySourceUrl(db, [url])
+    const existing = await findBySourceUrl(db, options.householdId, [url])
     if (existing) return { recipe: existing, duplicate: true }
   }
   if (isVideoUrl(url)) {
@@ -57,7 +58,7 @@ export async function importFromUrl(
   }
   const finalUrl = normalizeUrl(page.url)
   if (!options.force && finalUrl !== url) {
-    const existing = await findBySourceUrl(db, [finalUrl])
+    const existing = await findBySourceUrl(db, options.householdId, [finalUrl])
     if (existing) return { recipe: existing, duplicate: true }
   }
 
@@ -67,7 +68,7 @@ export async function importFromUrl(
     (await readWithAi(html, finalUrl, options))
 
   const image = await downloadImage(extracted.imageUrl, options.fetcher)
-  const recipe = await createRecipe(db, extracted.input, {
+  const recipe = await createRecipe(db, options.householdId, extracted.input, {
     origin: "url",
     userId: options.userId,
     image,
@@ -79,7 +80,7 @@ export async function importFromUrl(
 async function readWithAi(
   html: string,
   pageUrl: string,
-  options: { userId: string; ai: AiService }
+  options: { userId: string; householdId: string; ai: AiService }
 ) {
   if (!(await options.ai.status()).available) {
     throw new HttpError(
@@ -90,7 +91,7 @@ async function readWithAi(
   const { text, image } = pageText(html)
   const input = await extractRecipe(
     options.ai,
-    options.userId,
+    { userId: options.userId, householdId: options.householdId },
     [{ type: "text", text: `Web page: ${pageUrl}\n\n${text}` }],
     pageUrl
   )

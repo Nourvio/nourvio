@@ -224,6 +224,7 @@ function toProposal(
 export async function proposeCleanup(
   db: Db,
   ai: AiService,
+  householdId: string,
   idOrSlug: string,
   options: {
     userId: string | null
@@ -231,9 +232,12 @@ export async function proposeCleanup(
     jobId?: string
   }
 ): Promise<Proposal | null> {
-  const recipe = await getRecipe(db, idOrSlug)
-  const existingTags = (await listTags(db)).slice(0, 150).map((t) => t.name)
-  const result = await ai.extract("cleanup", options.userId, {
+  const recipe = await getRecipe(db, householdId, idOrSlug)
+  const existingTags = (await listTags(db, householdId))
+    .slice(0, 150)
+    .map((t) => t.name)
+  const actor = { userId: options.userId, householdId }
+  const result = await ai.extract("cleanup", actor, {
     system: systemPrompt(options.sections, existingTags),
     parts: [{ type: "text", text: recipeText(toInput(recipe)) }],
     schema: cleanupResult,
@@ -276,21 +280,27 @@ const proposalColumns = {
   recipe: { id: recipes.id, slug: recipes.slug, name: recipes.name },
 }
 
-/** Proposals waiting for review, newest first. */
-export async function listPendingProposals(db: Db) {
+/** The household's proposals waiting for review, newest first. */
+export async function listPendingProposals(db: Db, householdId: string) {
   const rows = await db
     .select(proposalColumns)
     .from(proposals)
     .innerJoin(recipes, eq(proposals.recipeId, recipes.id))
-    .where(eq(proposals.status, "pending"))
+    .where(
+      and(eq(recipes.householdId, householdId), eq(proposals.status, "pending"))
+    )
     .orderBy(desc(proposals.createdAt))
     .limit(200)
   return rows.map((r) => toProposal(r.proposal, r.recipe))
 }
 
 /** The pending proposal for a recipe, if there is one. */
-export async function pendingProposalFor(db: Db, idOrSlug: string) {
-  const recipe = await findRecipeRow(db, idOrSlug)
+export async function pendingProposalFor(
+  db: Db,
+  householdId: string,
+  idOrSlug: string
+) {
+  const recipe = await findRecipeRow(db, householdId, idOrSlug)
   const [row] = await db
     .select()
     .from(proposals)
@@ -302,14 +312,14 @@ export async function pendingProposalFor(db: Db, idOrSlug: string) {
   return row ? toProposal(row, recipe) : null
 }
 
-async function findPending(db: Db, id: string) {
+async function findPending(db: Db, householdId: string, id: string) {
   const parsed = z.uuid().safeParse(id)
   const [row] = parsed.success
     ? await db
         .select(proposalColumns)
         .from(proposals)
         .innerJoin(recipes, eq(proposals.recipeId, recipes.id))
-        .where(eq(proposals.id, id))
+        .where(and(eq(proposals.id, id), eq(recipes.householdId, householdId)))
     : []
   if (!row) throw new HttpError(404, "Those suggestions don't exist")
   if (row.proposal.status !== "pending") {
@@ -324,18 +334,19 @@ async function findPending(db: Db, id: string) {
  */
 export async function applyProposal(
   db: Db,
+  householdId: string,
   id: string,
   sections: CleanupSection[],
   userId: string | null
 ) {
-  const { proposal } = await findPending(db, id)
+  const { proposal } = await findPending(db, householdId, id)
   const { before, after } = proposal.payload
   const chosen = sections.filter((section) => section in after)
   if (!chosen.length) {
     throw new HttpError(400, "None of those changes are in these suggestions")
   }
 
-  const recipe = await getRecipe(db, proposal.recipeId)
+  const recipe = await getRecipe(db, householdId, proposal.recipeId)
   const stale = chosen.filter(
     (section) =>
       JSON.stringify(currentValue(recipe, section)) !==
@@ -360,7 +371,7 @@ export async function applyProposal(
     else if (section === "tags") input.tags = after.tags
     else input[section] = after[section]
   }
-  const updated = await updateRecipe(db, recipe.id, input, {
+  const updated = await updateRecipe(db, householdId, recipe.id, input, {
     userId,
     source: "ai_cleanup",
   })
@@ -371,8 +382,8 @@ export async function applyProposal(
   return updated
 }
 
-export async function dismissProposal(db: Db, id: string) {
-  const { proposal } = await findPending(db, id)
+export async function dismissProposal(db: Db, householdId: string, id: string) {
+  const { proposal } = await findPending(db, householdId, id)
   await db
     .update(proposals)
     .set({ status: "dismissed", resolvedAt: new Date() })

@@ -58,7 +58,8 @@ Everything persistent is a bind mount under `./data`, next to the compose file, 
   - Changing or resetting a password signs out that person's other devices.
 - **Cross-site form posts** are refused unless they come from this site's own host or `PUBLIC_URL`.
 - **First-run setup code:** printed in the container logs, it stops a stranger from claiming a fresh install. It changes every restart and stops working once the first account exists.
-- **Admin-only:** managing people, and later the AI settings.
+- **Who can do what:** household admins manage their own household's people and invites; only the server admin manages AI keys, sign-up, other households and the Mealie import.
+- **Sign-up is off by default.** With the public tunnel on, open sign-up means anyone who finds the address can make an account (and a household that spends your AI keys), so prefer invite links.
 
 ## Getting to it from outside the house
 

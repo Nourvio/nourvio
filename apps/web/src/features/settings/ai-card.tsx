@@ -14,7 +14,6 @@ import {
   type AiUsageRow,
   type ModelRef,
 } from "@mise/shared"
-import { Link } from "react-router"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -47,15 +46,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
-import {
-  useCancelCleanupJob,
-  useCleanupJob,
-  useStartCleanupJob,
-} from "@/features/recipes/use-cleanup"
 import { ApiError } from "@/lib/api"
 
 import {
@@ -94,8 +86,9 @@ export function AiCard() {
         <CardTitle>AI</CardTitle>
         <CardDescription>
           Claude or OpenAI reads recipes from text, photos and videos, tidies
-          them up and powers the assistant. Each provider bills you per use,
-          separately from any ChatGPT or Claude subscription.
+          them up and powers the assistant, for every household on this server.
+          Each provider bills you per use, separately from any ChatGPT or Claude
+          subscription.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -121,8 +114,6 @@ export function AiCard() {
               <>
                 <FieldSeparator />
                 <ModelFields settings={settings.data} />
-                <FieldSeparator />
-                <CleanupFields settings={settings.data} />
                 <FieldSeparator />
                 <UsageSummary />
               </>
@@ -456,113 +447,6 @@ function ModelSelect({
   )
 }
 
-/** Tidying up: automatically after imports, and the whole library at once. */
-function CleanupFields({ settings }: { settings: AiSettings }) {
-  const update = useUpdateAiSettings()
-  const cleanup = useCleanupJob(true)
-  const start = useStartCleanupJob()
-  const cancel = useCancelCleanupJob()
-  const job = cleanup.data?.job
-  const running = job?.status === "running"
-  const untidied = cleanup.data?.untidied ?? 0
-
-  function fail(error: unknown) {
-    toast.error(error instanceof ApiError ? error.message : "Couldn't do that")
-  }
-
-  return (
-    <FieldSet>
-      <FieldLegend variant="label">Tidying up</FieldLegend>
-      <FieldGroup className="gap-5">
-        <Field orientation="horizontal">
-          <Checkbox
-            id="auto-cleanup"
-            checked={settings.autoCleanup}
-            disabled={update.isPending}
-            onCheckedChange={(on) =>
-              update.mutate({ autoCleanup: on === true }, { onError: fail })
-            }
-          />
-          <div className="grid gap-1">
-            <FieldLabel htmlFor="auto-cleanup">
-              Tidy up every new import
-            </FieldLabel>
-            <FieldDescription>
-              Suggestions wait on the recipe for you to review. Each one costs a
-              few cents.
-            </FieldDescription>
-          </div>
-        </Field>
-
-        <Field>
-          <FieldLabel>The whole library</FieldLabel>
-          {cleanup.isPending ? (
-            <Skeleton className="h-9" />
-          ) : running && job ? (
-            <div className="grid gap-2">
-              <Progress
-                value={((job.done + job.failed) / job.total) * 100}
-                aria-label="Tidy-up progress"
-              />
-              <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-                <span className="text-muted-foreground">
-                  {job.done + job.failed} of {job.total} recipes
-                  {job.proposals > 0 && ` · ${job.proposals} with suggestions`}
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  disabled={cancel.isPending}
-                  onClick={() => cancel.mutate(job.id, { onError: fail })}
-                >
-                  Stop
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                variant="outline"
-                disabled={start.isPending || untidied === 0}
-                onClick={() =>
-                  start.mutate(undefined, {
-                    onSuccess: ({ job }) =>
-                      toast.success(`Tidying ${job.total} recipes`, {
-                        description:
-                          "Suggestions collect in Review as they're ready.",
-                      }),
-                    onError: fail,
-                  })
-                }
-              >
-                {start.isPending && <Spinner data-icon="inline-start" />}
-                {untidied === 0
-                  ? "Everything's been tidied"
-                  : `Tidy ${untidied} ${untidied === 1 ? "recipe" : "recipes"}`}
-              </Button>
-              {job && job.proposals > 0 && (
-                <Button variant="link" className="px-0" asChild>
-                  <Link to="/review">
-                    Review {job.proposals}{" "}
-                    {job.proposals === 1 ? "suggestion" : "suggestions"}
-                  </Link>
-                </Button>
-              )}
-            </div>
-          )}
-          <FieldDescription>
-            {job?.status === "failed"
-              ? "The last run stopped because the AI kept failing. Check the key and try again."
-              : job?.status === "interrupted"
-                ? "The last run was cut short by a restart. Start it again to carry on."
-                : "Goes through recipes that haven't been tidied yet, in the background. You review the suggestions after."}
-          </FieldDescription>
-        </Field>
-      </FieldGroup>
-    </FieldSet>
-  )
-}
-
 const MONTH = new Intl.DateTimeFormat(undefined, {
   month: "long",
   year: "numeric",
@@ -609,11 +493,12 @@ function UsageSummary() {
                 </div>
                 {rows.map((row) => (
                   <div
-                    key={`${row.provider}:${row.model}`}
+                    key={`${row.household}:${row.provider}:${row.model}`}
                     className="flex justify-between gap-4 text-muted-foreground"
                   >
                     <span className="truncate">
-                      {row.model} · {row.requests}{" "}
+                      {row.household ?? "Removed household"} · {row.model} ·{" "}
+                      {row.requests}{" "}
                       {row.requests === 1 ? "request" : "requests"}
                     </span>
                     <span className="shrink-0 tabular-nums">

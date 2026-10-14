@@ -23,6 +23,7 @@ import {
   like,
   or,
   sql,
+  type SQL,
 } from "drizzle-orm"
 import { z } from "zod"
 
@@ -58,12 +59,22 @@ export function slugify(name: string) {
   )
 }
 
-async function uniqueSlug(tx: Db | Tx, name: string, excludeId?: string) {
+async function uniqueSlug(
+  tx: Db | Tx,
+  householdId: string,
+  name: string,
+  excludeId?: string
+) {
   const base = slugify(name)
   const taken = await tx
     .select({ slug: recipes.slug, id: recipes.id })
     .from(recipes)
-    .where(or(eq(recipes.slug, base), like(recipes.slug, `${base}-%`)))
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        or(eq(recipes.slug, base), like(recipes.slug, `${base}-%`))
+      )
+    )
   const used = new Set(
     taken.filter((row) => row.id !== excludeId).map((row) => row.slug)
   )
@@ -90,7 +101,12 @@ function columnsFrom(data: RecipeInputParsed) {
 }
 
 /** Replaces a recipe's ingredients, steps and tags with the ones in `data`. */
-async function writeContent(tx: Tx, recipeId: string, data: RecipeInputParsed) {
+async function writeContent(
+  tx: Tx,
+  householdId: string,
+  recipeId: string,
+  data: RecipeInputParsed
+) {
   await tx
     .delete(recipeIngredients)
     .where(eq(recipeIngredients.recipeId, recipeId))
@@ -140,15 +156,21 @@ async function writeContent(tx: Tx, recipeId: string, data: RecipeInputParsed) {
       .select()
       .from(tags)
       .where(
-        inArray(
-          sql`lower(${tags.name})`,
-          names.map((n) => n.toLowerCase())
+        and(
+          eq(tags.householdId, householdId),
+          inArray(
+            sql`lower(${tags.name})`,
+            names.map((n) => n.toLowerCase())
+          )
         )
       )
     const byName = new Map(existing.map((t) => [t.name.toLowerCase(), t.id]))
     for (const name of names) {
       if (!byName.has(name.toLowerCase())) {
-        const [created] = await tx.insert(tags).values({ name }).returning()
+        const [created] = await tx
+          .insert(tags)
+          .values({ householdId, name })
+          .returning()
         byName.set(name.toLowerCase(), created!.id)
       }
     }
@@ -214,20 +236,30 @@ function toSummary(row: RecipeRow, tagNames: string[]): RecipeSummary {
   }
 }
 
-export async function findRecipeRow(db: Db | Tx, idOrSlug: string) {
+/** A recipe in this household, by id or slug. Other households' recipes are a 404. */
+export async function findRecipeRow(
+  db: Db | Tx,
+  householdId: string,
+  idOrSlug: string
+) {
   const where = uuidSchema.safeParse(idOrSlug).success
     ? eq(recipes.id, idOrSlug)
     : eq(recipes.slug, idOrSlug)
-  const [row] = await db.select().from(recipes).where(where).limit(1)
+  const [row] = await db
+    .select()
+    .from(recipes)
+    .where(and(eq(recipes.householdId, householdId), where))
+    .limit(1)
   if (!row) throw new HttpError(404, "That recipe doesn't exist")
   return row
 }
 
 export async function getRecipe(
   db: Db | Tx,
+  householdId: string,
   idOrSlug: string
 ): Promise<Recipe> {
-  const row = await findRecipeRow(db, idOrSlug)
+  const row = await findRecipeRow(db, householdId, idOrSlug)
   const [ingredients, steps, tagMap] = await Promise.all([
     db
       .select()
@@ -267,9 +299,10 @@ export async function getRecipe(
 
 export async function listRecipes(
   db: Db,
+  householdId: string,
   { q, tag }: { q?: string; tag?: string } = {}
 ) {
-  const conditions = []
+  const conditions: (SQL | undefined)[] = [eq(recipes.householdId, householdId)]
   if (q?.trim()) {
     const pattern = `%${q.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`
     conditions.push(
@@ -321,7 +354,7 @@ export async function listRecipes(
   const rows = await db
     .select()
     .from(recipes)
-    .where(conditions.length ? and(...conditions) : undefined)
+    .where(and(...conditions))
     .orderBy(desc(recipes.createdAt))
   const tagMap = await tagsFor(
     db,
@@ -330,11 +363,12 @@ export async function listRecipes(
   return rows.map((row) => toSummary(row, tagMap.get(row.id) ?? []))
 }
 
-export async function listTags(db: Db): Promise<Tag[]> {
+export async function listTags(db: Db, householdId: string): Promise<Tag[]> {
   const rows = await db
     .select({ name: tags.name, count: count(recipeTags.recipeId) })
     .from(tags)
     .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
+    .where(eq(tags.householdId, householdId))
     .groupBy(tags.id, tags.name)
     .orderBy(desc(count(recipeTags.recipeId)), asc(tags.name))
   return rows
@@ -342,6 +376,7 @@ export async function listTags(db: Db): Promise<Tag[]> {
 
 export async function createRecipe(
   db: Db,
+  householdId: string,
   input: RecipeInput,
   options: {
     origin: RecipeOrigin
@@ -357,7 +392,8 @@ export async function createRecipe(
       .insert(recipes)
       .values({
         ...columnsFrom(data),
-        slug: await uniqueSlug(tx, data.name),
+        householdId,
+        slug: await uniqueSlug(tx, householdId, data.name),
         origin: options.origin,
         image: options.image ?? null,
         externalRef: options.externalRef ?? null,
@@ -365,10 +401,10 @@ export async function createRecipe(
         createdBy: options.userId,
       })
       .returning({ id: recipes.id })
-    await writeContent(tx, row!.id, data)
+    await writeContent(tx, householdId, row!.id, data)
     return row!.id
   })
-  const recipe = await getRecipe(db, id)
+  const recipe = await getRecipe(db, householdId, id)
   await db.insert(recipeVersions).values({
     recipeId: id,
     snapshot: toInput(recipe),
@@ -380,12 +416,13 @@ export async function createRecipe(
 
 export async function updateRecipe(
   db: Db,
+  householdId: string,
   idOrSlug: string,
   input: RecipeInput,
   options: { userId: string | null; source?: RecipeVersion["source"] }
 ) {
   const data = recipeInput.parse(input)
-  const current = await findRecipeRow(db, idOrSlug)
+  const current = await findRecipeRow(db, householdId, idOrSlug)
   await db.transaction(async (tx) => {
     await tx
       .update(recipes)
@@ -394,12 +431,12 @@ export async function updateRecipe(
         slug:
           data.name === current.name
             ? current.slug
-            : await uniqueSlug(tx, data.name, current.id),
+            : await uniqueSlug(tx, householdId, data.name, current.id),
       })
       .where(eq(recipes.id, current.id))
-    await writeContent(tx, current.id, data)
+    await writeContent(tx, householdId, current.id, data)
   })
-  const recipe = await getRecipe(db, current.id)
+  const recipe = await getRecipe(db, householdId, current.id)
   await db.insert(recipeVersions).values({
     recipeId: current.id,
     snapshot: toInput(recipe),
@@ -409,24 +446,33 @@ export async function updateRecipe(
   return recipe
 }
 
-export async function deleteRecipe(db: Db, idOrSlug: string) {
-  const row = await findRecipeRow(db, idOrSlug)
+export async function deleteRecipe(
+  db: Db,
+  householdId: string,
+  idOrSlug: string
+) {
+  const row = await findRecipeRow(db, householdId, idOrSlug)
   await db.delete(recipes).where(eq(recipes.id, row.id))
   await deleteImage(row.image)
 }
 
 export async function setRecipeFields(
   db: Db,
+  householdId: string,
   idOrSlug: string,
   fields: Partial<Pick<RecipeRow, "rating" | "lastMadeAt" | "image">>
 ) {
-  const row = await findRecipeRow(db, idOrSlug)
+  const row = await findRecipeRow(db, householdId, idOrSlug)
   await db.update(recipes).set(fields).where(eq(recipes.id, row.id))
-  return getRecipe(db, row.id)
+  return getRecipe(db, householdId, row.id)
 }
 
-export async function listVersions(db: Db, idOrSlug: string) {
-  const row = await findRecipeRow(db, idOrSlug)
+export async function listVersions(
+  db: Db,
+  householdId: string,
+  idOrSlug: string
+) {
+  const row = await findRecipeRow(db, householdId, idOrSlug)
   const versions = await db
     .select()
     .from(recipeVersions)
@@ -443,11 +489,12 @@ export async function listVersions(db: Db, idOrSlug: string) {
 
 export async function restoreVersion(
   db: Db,
+  householdId: string,
   idOrSlug: string,
   versionId: string,
   userId: string | null
 ) {
-  const row = await findRecipeRow(db, idOrSlug)
+  const row = await findRecipeRow(db, householdId, idOrSlug)
   const [version] = uuidSchema.safeParse(versionId).success
     ? await db
         .select()
@@ -460,7 +507,7 @@ export async function restoreVersion(
         )
     : []
   if (!version) throw new HttpError(404, "That version doesn't exist")
-  return updateRecipe(db, row.id, version.snapshot, {
+  return updateRecipe(db, householdId, row.id, version.snapshot, {
     userId,
     source: "restore",
   })

@@ -74,8 +74,6 @@ export type AiSettings = {
   keys: Record<AiProviderId, AiKeyStatus>
   defaultModel: ModelRef | null
   taskModels: Partial<Record<AiTask, ModelRef>>
-  /** Tidy every new import automatically; the suggestions wait for review. */
-  autoCleanup: boolean
 }
 
 const keyInput = z
@@ -101,7 +99,6 @@ export const updateAiSettingsInput = z.object({
     })
     .partial()
     .optional(),
-  autoCleanup: z.boolean().optional(),
 })
 export type UpdateAiSettingsInput = z.input<typeof updateAiSettingsInput>
 
@@ -123,6 +120,8 @@ export type AiStatus = {
 
 export type AiUsageRow = {
   month: string
+  /** Whose usage it was, on the server's keys. */
+  household: string | null
   provider: AiProviderId
   model: string
   requests: number

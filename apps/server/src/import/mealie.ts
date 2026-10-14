@@ -242,18 +242,24 @@ export function fromMealie(recipe: any): {
 
 const refFor = (id: string) => `mealie:${id}`
 
-async function importedIds(db: Db, ids: string[]) {
+async function importedIds(db: Db, householdId: string, ids: string[]) {
   if (!ids.length) return new Set<string>()
   const rows = await db
     .select({ ref: recipes.externalRef })
     .from(recipes)
-    .where(inArray(recipes.externalRef, ids.map(refFor)))
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        inArray(recipes.externalRef, ids.map(refFor))
+      )
+    )
   return new Set(rows.map((row) => row.ref!.slice("mealie:".length)))
 }
 
 /** Connects to Mealie and counts what there is to move. */
 export async function checkMealie(
   db: Db,
+  householdId: string,
   base: string,
   token: string,
   fetcher: MealieFetch
@@ -265,7 +271,12 @@ export async function checkMealie(
   const [already] = await db
     .select({ n: count() })
     .from(recipes)
-    .where(like(recipes.externalRef, "mealie:%"))
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        like(recipes.externalRef, "mealie:%")
+      )
+    )
   return {
     version: typeof about?.version === "string" ? about.version : null,
     total,
@@ -288,11 +299,11 @@ function toJob(row: JobRow): MealieJob {
   }
 }
 
-export async function latestMealieJob(db: Db) {
+export async function latestMealieJob(db: Db, householdId: string) {
   const [row] = await db
     .select()
     .from(aiJobs)
-    .where(eq(aiJobs.kind, "mealie"))
+    .where(and(eq(aiJobs.kind, "mealie"), eq(aiJobs.householdId, householdId)))
     .orderBy(desc(aiJobs.createdAt))
     .limit(1)
   return row ? toJob(row) : null
@@ -307,8 +318,9 @@ export async function startMealieImport(
   db: Db,
   base: string,
   token: string,
-  options: { userId: string; fetcher: MealieFetch }
+  options: { userId: string; householdId: string; fetcher: MealieFetch }
 ) {
+  const { householdId } = options
   const [active] = await db
     .select({ id: aiJobs.id })
     .from(aiJobs)
@@ -324,6 +336,7 @@ export async function startMealieImport(
   const [row] = await db
     .insert(aiJobs)
     .values({
+      householdId,
       kind: "mealie",
       status: "running",
       total,
@@ -352,7 +365,7 @@ export async function startMealieImport(
           const photo = await mealie.image(String(full.id)).catch(() => null)
           image = photo ? await saveImage(photo).catch(() => null) : null
         }
-        await createRecipe(db, input, {
+        await createRecipe(db, householdId, input, {
           origin: "mealie",
           userId: options.userId,
           image,
@@ -376,6 +389,7 @@ export async function startMealieImport(
         if (!Array.isArray(items) || !items.length) break
         const done = await importedIds(
           db,
+          householdId,
           items.map((item) => String(item.id))
         )
         const todo = items.filter((item) => !done.has(String(item.id)))

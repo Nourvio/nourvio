@@ -14,6 +14,7 @@ import type {
 } from "@mise/shared"
 import { sql } from "drizzle-orm"
 import {
+  boolean,
   check,
   index,
   integer,
@@ -40,6 +41,18 @@ const updatedAt = () =>
 
 // ---- Accounts ----
 
+/**
+ * A household shares a recipe library (and later a plan, pantry and list).
+ * Everything a household owns hangs off it and goes when it's deleted.
+ */
+export const households = pgTable("households", {
+  id: uuid().primaryKey().defaultRandom(),
+  name: text().notNull(),
+  settings: jsonb().$type<{ autoCleanup?: boolean }>().notNull().default({}),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+})
+
 export const users = pgTable(
   "users",
   {
@@ -47,7 +60,13 @@ export const users = pgTable(
     username: text().notNull().unique(),
     displayName: text().notNull(),
     passwordHash: text().notNull(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    /** Their role in the household. */
     role: text().$type<Role>().notNull().default("member"),
+    /** Runs the server: AI keys, sign-up, other households, the Mealie import. */
+    isServerAdmin: boolean().notNull().default(false),
     appearance: jsonb()
       .$type<Appearance>()
       .notNull()
@@ -55,7 +74,29 @@ export const users = pgTable(
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [check("users_role_check", sql`${t.role} in ('admin', 'member')`)]
+  (t) => [
+    check("users_role_check", sql`${t.role} in ('admin', 'member')`),
+    index().on(t.householdId),
+  ]
+)
+
+/** Single-use invite links into a household. Only a hash of the token is kept. */
+export const invites = pgTable(
+  "invites",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    tokenHash: text().notNull().unique(),
+    role: text().$type<Role>().notNull().default("member"),
+    createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    expiresAt: timestamp({ withTimezone: true }).notNull(),
+    usedAt: timestamp({ withTimezone: true }),
+    usedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+  },
+  (t) => [index().on(t.householdId)]
 )
 
 /** Login sessions. `id` is a SHA-256 of the cookie token, so a database leak can't be replayed. */
@@ -117,7 +158,11 @@ export const recipes = pgTable(
   "recipes",
   {
     id: uuid().primaryKey().defaultRandom(),
-    slug: text().notNull().unique(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    /** Unique within the household. */
+    slug: text().notNull(),
     name: text().notNull(),
     description: text(),
     /** Base name of the stored photo in DATA_DIR/images (`<name>.webp` and `<name>-thumb.webp`). */
@@ -125,7 +170,7 @@ export const recipes = pgTable(
     sourceUrl: text(),
     origin: text().$type<RecipeOrigin>().notNull().default("manual"),
     /** Where an imported recipe came from, e.g. "mealie:<id>", so re-imports don't duplicate. */
-    externalRef: text().unique(),
+    externalRef: text(),
     servings: real(),
     yieldText: text(),
     prepMinutes: integer(),
@@ -145,6 +190,12 @@ export const recipes = pgTable(
       sql`${t.rating} is null or ${t.rating} between 1 and 5`
     ),
     index("recipes_name_trgm_index").using("gin", sql`${t.name} gin_trgm_ops`),
+    uniqueIndex("recipes_household_slug_index").on(t.householdId, t.slug),
+    uniqueIndex("recipes_household_external_ref_index").on(
+      t.householdId,
+      t.externalRef
+    ),
+    index().on(t.householdId, t.createdAt),
   ]
 )
 
@@ -186,9 +237,17 @@ export const tags = pgTable(
   "tags",
   {
     id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
     name: text().notNull(),
   },
-  (t) => [uniqueIndex("tags_name_lower_index").on(sql`lower(${t.name})`)]
+  (t) => [
+    uniqueIndex("tags_household_name_lower_index").on(
+      t.householdId,
+      sql`lower(${t.name})`
+    ),
+  ]
 )
 
 export const recipeTags = pgTable(
@@ -227,6 +286,10 @@ export const aiUsage = pgTable(
   "ai_usage",
   {
     id: uuid().primaryKey().defaultRandom(),
+    /** Kept when a household goes, so the server's spending stays accurate. */
+    householdId: uuid().references(() => households.id, {
+      onDelete: "set null",
+    }),
     userId: uuid().references(() => users.id, { onDelete: "set null" }),
     provider: text().$type<AiProviderId>().notNull(),
     model: text().notNull(),
@@ -271,6 +334,9 @@ export const proposals = pgTable(
  */
 export const aiJobs = pgTable("ai_jobs", {
   id: uuid().primaryKey().defaultRandom(),
+  householdId: uuid()
+    .notNull()
+    .references(() => households.id, { onDelete: "cascade" }),
   kind: text().$type<"cleanup" | "mealie">().notNull(),
   status: text().$type<CleanupJob["status"]>().notNull(),
   total: integer().notNull(),

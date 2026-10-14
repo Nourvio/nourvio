@@ -21,6 +21,7 @@ export function SetupPage() {
     displayName: "",
     username: "",
     password: "",
+    householdName: "",
   })
 
   if (status.data && !status.data.needsSetup) {
@@ -40,7 +41,7 @@ export function SetupPage() {
   return (
     <AuthLayout
       title="Set up Mise"
-      description="Create the first account. You'll be the admin, and you can add the rest of the household afterwards."
+      description="Create the first account. You'll run this server and be the admin of your household; invite everyone else afterwards."
     >
       <form onSubmit={onSubmit} noValidate className="grid gap-6">
         <FieldGroup>
@@ -85,6 +86,14 @@ export function SetupPage() {
             description="At least 10 characters."
             error={form.errors.password}
             {...form.bind("password")}
+          />
+          <TextField
+            id="householdName"
+            label="Household name"
+            placeholder="The Johnsons"
+            description="Everyone you invite shares its recipes and plans."
+            error={form.errors.householdName}
+            {...form.bind("householdName")}
           />
         </FieldGroup>
         {form.formError && (

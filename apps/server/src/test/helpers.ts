@@ -100,7 +100,13 @@ export function apiClient(app: App) {
     return response
   }
 
+  /** A GET whose response isn't JSON, such as a photo. */
+  function raw(path: string) {
+    return app.request(path, { headers: cookie ? { cookie } : {} })
+  }
+
   return {
+    raw,
     get: (path: string) => request("GET", path),
     post: (path: string, body?: unknown) => request("POST", path, body),
     put: (path: string, body?: unknown) => request("PUT", path, body),
@@ -117,6 +123,7 @@ export const ADMIN = {
   displayName: "Kyle",
   username: "kyle",
   password: "correct horse battery",
+  householdName: "The Kitchen",
 }
 
 /** A test app whose first account (an admin) is already set up and signed in. */

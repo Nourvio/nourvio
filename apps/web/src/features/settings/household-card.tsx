@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Add01Icon, MoreHorizontalIcon } from "@hugeicons/core-free-icons"
 import {
   createUserInput,
+  householdNameSchema,
   passwordSchema,
   type Role,
   type User,
@@ -73,10 +74,13 @@ import { ApiError } from "@/lib/api"
 import { useForm } from "@/lib/form"
 import { initials } from "@/lib/initials"
 
+import { InviteDialog, PendingInvites } from "./invites"
 import {
   useAddMember,
   useHousehold,
+  useHouseholdInfo,
   useRemoveMember,
+  useUpdateHousehold,
   useUpdateMember,
 } from "./use-household"
 
@@ -84,24 +88,26 @@ export function HouseholdCard() {
   const me = useCurrentUser()
   const isAdmin = me.role === "admin"
   const household = useHousehold(isAdmin)
+  const info = useHouseholdInfo()
+  const name = info.data?.name ?? "Household"
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Household</CardTitle>
+        <CardTitle>{name}</CardTitle>
         <CardDescription>
           {isAdmin
-            ? "Everyone here shares the same recipes, plans and lists."
-            : "Everyone shares the same recipes, plans and lists. Ask an admin to add or remove people."}
+            ? "Your household. Everyone in it shares the same recipes, plans and lists."
+            : "Your household. Everyone in it shares the same recipes, plans and lists. Ask an admin to invite or remove people."}
         </CardDescription>
-        {isAdmin && (
+        {isAdmin && info.data && (
           <CardAction>
-            <AddMemberDialog />
+            <RenameHouseholdDialog name={info.data.name} />
           </CardAction>
         )}
       </CardHeader>
       {isAdmin && (
-        <CardContent>
+        <CardContent className="grid gap-5">
           {household.isPending ? (
             <div className="grid gap-3">
               <Skeleton className="h-14" />
@@ -122,9 +128,67 @@ export function HouseholdCard() {
               ))}
             </ItemGroup>
           )}
+          <PendingInvites />
+          <div className="flex flex-wrap gap-2">
+            <InviteDialog householdName={name} />
+            <AddMemberDialog />
+          </div>
         </CardContent>
       )}
     </Card>
+  )
+}
+
+function RenameHouseholdDialog({ name }: { name: string }) {
+  const [open, setOpen] = React.useState(false)
+  const update = useUpdateHousehold()
+  const form = useForm(z.object({ name: householdNameSchema }), { name })
+
+  function onOpenChange(next: boolean) {
+    setOpen(next)
+    if (next) form.setValues({ name })
+  }
+
+  function onSubmit(event: React.FormEvent) {
+    event.preventDefault()
+    const input = form.validate()
+    if (!input) return
+    update.mutate(input, {
+      onSuccess: () => {
+        setOpen(false)
+        toast.success("Household renamed")
+      },
+      onError: form.showError,
+    })
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          Rename
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-sm">
+        <form onSubmit={onSubmit} className="grid gap-5">
+          <DialogHeader>
+            <DialogTitle>Rename the household</DialogTitle>
+          </DialogHeader>
+          <TextField
+            id="household-name"
+            label="Name"
+            error={form.errors.name}
+            {...form.bind("name")}
+          />
+          <DialogFooter>
+            <Button type="submit" disabled={update.isPending}>
+              {update.isPending && <Spinner data-icon="inline-start" />}
+              Save
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -254,16 +318,17 @@ function AddMemberDialog() {
             strokeWidth={2}
             data-icon="inline-start"
           />
-          Add person
+          Add without a link
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <form onSubmit={onSubmit} noValidate className="grid gap-6">
           <DialogHeader>
-            <DialogTitle>Add someone to the household</DialogTitle>
+            <DialogTitle>Add someone directly</DialogTitle>
             <DialogDescription>
-              Give them the username and password. They can change the password
-              in Settings.
+              For someone who won't open an invite link, like a kid. You pick
+              their username and password, and they can change the password in
+              Settings.
             </DialogDescription>
           </DialogHeader>
           <FieldGroup>

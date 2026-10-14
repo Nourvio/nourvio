@@ -1,6 +1,6 @@
 # Mise
 
-A self-hosted meal planner with an AI cooking assistant built in. Recipes, weekly plans, a pantry, shopping lists, nutrition and Walmart pickup orders for one household, made to use from a phone or iPad while cooking.
+A self-hosted meal planner with an AI cooking assistant built in. Recipes, weekly plans, a pantry, shopping lists, nutrition and Walmart pickup orders for your household (and others you host), made to use from a phone or iPad while cooking.
 
 **Status:** early. Accounts, the app shell and the theme work. Recipes and the rest come next. See the [roadmap](docs/roadmap.md).
 
@@ -58,8 +58,10 @@ docker compose up -d --build
    account, and enter this setup code: ABCD-EFGH-JKMN
    ```
 
-3. Enter the code with your name, a username and a password (at least 10 characters). That account is the admin.
-4. Add everyone else under **Settings → Household**. Give each person a username and a starting password; they can change it in Settings.
+3. Enter the code with your name, a username, a password (at least 10 characters) and a name for your household. You'll run the server and be your household's admin.
+4. Invite everyone else from **Settings → your household → Invite someone**. Each link works once, for 7 days; the person opens it and makes their own account. (For someone who won't open a link, like a kid, **Add without a link** lets you pick their username and password.)
+
+**Other households.** One Mise can host several households, each with its own recipes and members, all using the server's AI keys. Invite someone as above and they join *your* household; to host another family, turn on **Settings → This server → Let anyone create an account**, and each sign-up starts a new household. Leave it off when the public link is on unless you need it, since anyone who finds the address could sign up. Settings → This server lists every household with its size and AI spending, and you can delete one.
 
 The code changes every time the app restarts until the first account exists, and it stops working after that. It's there so a stranger who reaches the page before you can't claim it.
 

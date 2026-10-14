@@ -63,8 +63,9 @@ export function MealieCard() {
       <CardHeader>
         <CardTitle>Move from Mealie</CardTitle>
         <CardDescription>
-          Bring over every recipe with its photo, rating and last-made date.
-          It's safe to run again: recipes already moved are skipped.
+          Bring every recipe into your household, with its photo, rating and
+          last-made date. It's safe to run again: recipes already moved are
+          skipped.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
@@ -190,7 +191,7 @@ function MealieProgress({
           {job.status !== "done" && " Run it again to pick up the rest."}
           {job.status === "done" &&
             job.imported > 0 &&
-            " Next, tidy them up from the AI section."}
+            " Next, tidy them up under Tidying up."}
         </p>
       </AlertDescription>
     </Alert>

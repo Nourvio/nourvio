@@ -35,7 +35,12 @@ export function AccountCard() {
         <CardTitle>Your account</CardTitle>
         <CardDescription>
           Signed in as {me.username}
-          {me.role === "admin" ? ", an admin" : ""}.
+          {me.isServerAdmin
+            ? ", who runs this server"
+            : me.role === "admin"
+              ? ", a household admin"
+              : ""}
+          .
         </CardDescription>
         <CardAction>
           <Button

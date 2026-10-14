@@ -35,9 +35,21 @@ export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
   await next()
 }
 
+/** An admin of their household: manages its members, invites and settings. */
 export const requireAdmin: MiddlewareHandler<AppEnv> = async (c, next) => {
   if (c.get("user")?.role !== "admin") {
-    throw new HttpError(403, "Only an admin can do that")
+    throw new HttpError(403, "Only a household admin can do that")
+  }
+  await next()
+}
+
+/** The person who runs the server: AI keys, sign-up, households, Mealie. */
+export const requireServerAdmin: MiddlewareHandler<AppEnv> = async (
+  c,
+  next
+) => {
+  if (!c.get("user")?.isServerAdmin) {
+    throw new HttpError(403, "Only the server admin can do that")
   }
   await next()
 }

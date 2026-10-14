@@ -1,6 +1,6 @@
 # Mise
 
-Mise is a self-hosted meal planner for one household, with an AI cooking assistant built in. It replaces Mealie and covers:
+Mise is a self-hosted meal planner for your household (and any others you host on the same server), with an AI cooking assistant built in. It replaces Mealie and covers:
 
 - recipes
 - weekly meal plans

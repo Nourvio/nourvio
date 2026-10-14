@@ -13,7 +13,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
 
 ## Who uses it
 
-- **One household.** Everyone shares one recipe library, plan, pantry and list.
+- **Households.** Everyone in a household shares one recipe library, plan, pantry and list. One server can host several households (say, yours and your parents'), each kept separate.
 - **While cooking:** a phone or iPad on the counter.
 - **While planning and editing:** any device, including a desktop.
 
@@ -150,14 +150,18 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 
 ### 10. Access
 
-- Login is required, and everyone in the household shares the same data. Whether that's one account per person or one shared login is [open question 2](roadmap.md#open-questions).
-- An admin manages household members and the AI settings (API keys and models).
+- Login is required: one account per person, in one household.
+- **Joining:** a household admin sends an invite link (single use, a week long), and the person makes their own account. Admins can also add someone directly with a username and password.
+- **Sign-up** is off by default. When the server admin turns it on, anyone who reaches Mise can create an account, which starts a new household.
+- **Household admins** invite, remove and reset people, rename the household and manage tidying up.
+- **The server admin** (whoever set Mise up) also manages the AI keys and models, sign-up, the list of households and the Mealie import. All households use the server's AI keys, and Settings shows each one's spending.
 - **Appearance is personal:** light, dark or follow the device, plus a choice of three palettes (Sage & Cream by default, Paprika & Linen, Cast Iron & Saffron). For now it's saved on each device. Once accounts exist it follows the person.
 - Reachable on the home network and from anywhere through a public URL.
 
 ## Out of scope for now
 
-- Hosting for other households, or sharing with them
+- Sharing recipes between households
+- Belonging to more than one household
 - Automatic checkout or payment
 - Native iOS or Android apps (the home-screen web app covers this)
 - Social features

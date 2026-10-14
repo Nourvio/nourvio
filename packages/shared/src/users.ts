@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import { appearanceSchema, type Appearance } from "./appearance.ts"
 
+/** A person's role in their household. Admins manage members and invites. */
 export const ROLES = ["admin", "member"] as const
 export type Role = (typeof ROLES)[number]
 
@@ -10,7 +11,10 @@ export type User = {
   id: string
   username: string
   displayName: string
+  householdId: string
   role: Role
+  /** Runs the server: AI keys, sign-up, other households, the Mealie import. */
+  isServerAdmin: boolean
   appearance: Appearance
   createdAt: string
 }
@@ -45,6 +49,11 @@ export const setupInput = z.object({
   displayName: displayNameSchema,
   username: usernameSchema,
   password: passwordSchema,
+  householdName: z
+    .string()
+    .trim()
+    .min(1, "Give the household a name")
+    .max(60, "Keep it under 60 characters"),
 })
 
 export const createUserInput = z.object({
@@ -77,4 +86,8 @@ export type UpdateUserInput = z.infer<typeof updateUserInput>
 export type UpdateMeInput = z.infer<typeof updateMeInput>
 export type ChangePasswordInput = z.infer<typeof changePasswordInput>
 
-export type SetupStatus = { needsSetup: boolean }
+export type SetupStatus = {
+  needsSetup: boolean
+  /** Anyone can create an account (and their own household). */
+  signupOpen: boolean
+}

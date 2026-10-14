@@ -3,7 +3,7 @@ import { load } from "cheerio"
 import sharp from "sharp"
 import { z } from "zod"
 
-import type { AiService } from "../ai/service.ts"
+import type { AiActor, AiService } from "../ai/service.ts"
 import type { AiPart } from "../ai/types.ts"
 import { HttpError } from "../http.ts"
 
@@ -116,11 +116,11 @@ export function toRecipeInput(
 /** Reads a recipe out of text and/or images with the import model. */
 export async function extractRecipe(
   ai: AiService,
-  userId: string,
+  actor: AiActor,
   parts: AiPart[],
   sourceUrl: string | null = null
 ) {
-  const data = await ai.extract("import", userId, {
+  const data = await ai.extract("import", actor, {
     system: EXTRACT_SYSTEM,
     parts,
     schema: extractedRecipe,

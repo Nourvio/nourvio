@@ -1,6 +1,7 @@
 export * from "./ai.ts"
 export * from "./appearance.ts"
 export * from "./errors.ts"
+export * from "./households.ts"
 export * from "./ingredients.ts"
 export * from "./mealie.ts"
 export * from "./proposals.ts"

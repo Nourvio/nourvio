@@ -94,14 +94,12 @@ export function useDismissProposal() {
   })
 }
 
-/** The latest library run and how many recipes are still untidied. Admin only. */
+/** The household's latest library run and how many recipes are still untidied. Household admins. */
 export function useCleanupJob(enabled: boolean) {
   return useQuery({
     queryKey: JOB_KEY,
     queryFn: () =>
-      api<{ job: CleanupJob | null; untidied: number }>(
-        "/ai/settings/cleanup-job"
-      ),
+      api<{ job: CleanupJob | null; untidied: number }>("/ai/cleanup-job"),
     enabled,
     // Check on a running job every few seconds.
     refetchInterval: (query) =>
@@ -113,7 +111,7 @@ export function useStartCleanupJob() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: () =>
-      api<{ job: CleanupJob }>("/ai/settings/cleanup-job", { method: "POST" }),
+      api<{ job: CleanupJob }>("/ai/cleanup-job", { method: "POST" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: JOB_KEY }),
   })
 }
@@ -122,7 +120,7 @@ export function useCancelCleanupJob() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (id: string) =>
-      api<{ job: CleanupJob }>(`/ai/settings/cleanup-job/${id}/cancel`, {
+      api<{ job: CleanupJob }>(`/ai/cleanup-job/${id}/cancel`, {
         method: "POST",
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: JOB_KEY }),

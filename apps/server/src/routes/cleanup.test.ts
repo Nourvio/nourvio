@@ -232,14 +232,14 @@ describe("tidying up recipes", () => {
   })
 
   test("tidies the whole library in the background", async () => {
-    const before = (await t.admin.get("/api/ai/settings/cleanup-job")).body
+    const before = (await t.admin.get("/api/ai/cleanup-job")).body
     // "Weeknight Pasta" is the only recipe never tidied.
     expect(before.untidied).toBe(1)
 
-    const started = await t.admin.post("/api/ai/settings/cleanup-job")
+    const started = await t.admin.post("/api/ai/cleanup-job")
     expect(started.status).toBe(201)
     const job = await until(async () => {
-      const { job } = (await t.admin.get("/api/ai/settings/cleanup-job")).body
+      const { job } = (await t.admin.get("/api/ai/cleanup-job")).body
       return job.status !== "running" && job
     })
     expect(job).toMatchObject({
@@ -250,7 +250,7 @@ describe("tidying up recipes", () => {
       proposals: 1,
     })
 
-    const again = await t.admin.post("/api/ai/settings/cleanup-job")
+    const again = await t.admin.post("/api/ai/cleanup-job")
     expect(again.status).toBe(400)
   })
 
@@ -259,9 +259,9 @@ describe("tidying up recipes", () => {
       await newChili(name)
     }
     ai.answer = new HttpError(502, "Claude didn't accept the API key")
-    await t.admin.post("/api/ai/settings/cleanup-job")
+    await t.admin.post("/api/ai/cleanup-job")
     const job = await until(async () => {
-      const { job } = (await t.admin.get("/api/ai/settings/cleanup-job")).body
+      const { job } = (await t.admin.get("/api/ai/cleanup-job")).body
       return job.status !== "running" && job
     })
     expect(job.status).toBe("failed")
@@ -281,7 +281,7 @@ describe("tidying up recipes", () => {
       username: "sam",
       password: "another long password",
     })
-    expect((await member.post("/api/ai/settings/cleanup-job")).status).toBe(403)
+    expect((await member.post("/api/ai/cleanup-job")).status).toBe(403)
     // But anyone can tidy a recipe.
     const chili = await newChili("Chili Six")
     expect(
@@ -290,7 +290,7 @@ describe("tidying up recipes", () => {
   })
 
   test("tidies new imports automatically when turned on", async () => {
-    await t.admin.put("/api/ai/settings", { autoCleanup: true })
+    await t.admin.patch("/api/household", { autoCleanup: true })
     const res = await t.admin.post("/api/import/text", {
       text: "Pasted soup: 1 onion. Make soup out of it.",
     })

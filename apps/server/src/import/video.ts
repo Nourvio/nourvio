@@ -39,13 +39,15 @@ export async function importFromVideo(
   url: string,
   options: {
     userId: string
+    householdId: string
     ai: AiService
     tools: VideoTools
     fetcher: Fetcher
     force?: boolean
   }
 ): Promise<ImportResult> {
-  const { ai, tools, fetcher, userId } = options
+  const { ai, tools, fetcher, userId, householdId } = options
+  const actor = { userId, householdId }
   const status = await ai.status()
   if (!status.available) {
     throw new HttpError(
@@ -57,7 +59,7 @@ export async function importFromVideo(
   const info = await tools.probe(url)
   const sourceUrl = normalizeUrl(info.url)
   if (!options.force && sourceUrl !== url) {
-    const existing = await findBySourceUrl(db, [sourceUrl])
+    const existing = await findBySourceUrl(db, householdId, [sourceUrl])
     if (existing) return { recipe: existing, duplicate: true }
   }
 
@@ -82,7 +84,7 @@ export async function importFromVideo(
       }
       if (wantTranscript) {
         transcript = await ai.transcribe(
-          userId,
+          actor,
           await tools.extractAudio(file, dir)
         )
       }
@@ -118,10 +120,10 @@ export async function importFromVideo(
     })),
     { type: "text", text },
   ]
-  const input = await extractRecipe(ai, userId, parts, sourceUrl)
+  const input = await extractRecipe(ai, actor, parts, sourceUrl)
 
   const image = await downloadImage(info.thumbnail, fetcher)
-  const recipe = await createRecipe(db, input, {
+  const recipe = await createRecipe(db, householdId, input, {
     origin: "video",
     userId,
     image,
