@@ -36,6 +36,8 @@ Set `POSTGRES_PASSWORD` in `.env`, then start it:
 docker compose up -d --build
 ```
 
+> **Docker Desktop on Windows:** Docker Compose 5 on Windows mistakes the GitHub URL for a folder path and fails with `failed to evaluate path "https://github.com/...`. Compose on Linux, which is what Dockge and Portainer use, builds from the URL fine. On Windows, clone the repo, set `MISE_BUILD_CONTEXT=.` in `.env`, and run the same command from the checkout.
+
 ### Check that it's running
 
 `http://<your-server>:3000/api/health` should return:
