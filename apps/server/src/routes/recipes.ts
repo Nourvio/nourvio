@@ -1,4 +1,4 @@
-import { cleanupInput, rateInput, recipeInput } from "@mise/shared"
+import { cleanupInput, isoDate, rateInput, recipeInput } from "@mise/shared"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 
@@ -12,6 +12,7 @@ import {
 } from "../context.ts"
 import { HttpError, readBody } from "../http.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
+import { markPlannedCooked } from "../services/plan.ts"
 import { pendingCleanupFor } from "../services/proposals.ts"
 import { deleteImage, saveImage } from "../services/images.ts"
 import {
@@ -91,18 +92,23 @@ export function recipesRoutes({ db }: AppContext, ai: AiService) {
     return c.body(null, 204)
   })
 
-  app.post("/:id/made", async (c) =>
-    c.json({
-      recipe: await setRecipeFields(
-        db,
-        currentHousehold(c),
-        c.req.param("id"),
-        {
-          lastMadeAt: new Date(),
-        }
-      ),
-    })
-  )
+  /** "I made this". With today's date, that day's planned meal counts as cooked. */
+  app.post("/:id/made", async (c) => {
+    const body: unknown = await c.req.json().catch(() => ({}))
+    const date = isoDate.safeParse((body as { date?: unknown }).date)
+    const recipe = await setRecipeFields(
+      db,
+      currentHousehold(c),
+      c.req.param("id"),
+      {
+        lastMadeAt: new Date(),
+      }
+    )
+    if (date.success) {
+      await markPlannedCooked(db, currentHousehold(c), recipe.id, date.data)
+    }
+    return c.json({ recipe })
+  })
 
   app.post(
     "/:id/image",

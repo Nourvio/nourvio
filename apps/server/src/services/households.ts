@@ -1,7 +1,10 @@
 import { createHash, randomBytes } from "node:crypto"
 
 import {
+  DEFAULT_MEALS,
   INVITE_DAYS,
+  MEALS,
+  type Meal,
   type CreatedInvite,
   type Household,
   type HouseholdSummary,
@@ -45,6 +48,8 @@ function toHousehold(row: HouseholdRow): Household {
     id: row.id,
     name: row.name,
     autoCleanup: row.settings.autoCleanup ?? false,
+    meals: row.settings.meals ?? DEFAULT_MEALS,
+    weekStart: row.settings.weekStart ?? 0,
   }
 }
 
@@ -62,7 +67,12 @@ export async function getHousehold(db: Db, id: string) {
 export async function updateHousehold(
   db: Db,
   id: string,
-  patch: { name?: string; autoCleanup?: boolean }
+  patch: {
+    name?: string
+    autoCleanup?: boolean
+    meals?: Meal[]
+    weekStart?: 0 | 1
+  }
 ) {
   const [current] = await db
     .select()
@@ -73,10 +83,19 @@ export async function updateHousehold(
     .update(households)
     .set({
       ...(patch.name ? { name: patch.name } : {}),
-      settings:
-        patch.autoCleanup === undefined
-          ? current.settings
-          : { ...current.settings, autoCleanup: patch.autoCleanup },
+      settings: {
+        ...current.settings,
+        ...(patch.autoCleanup === undefined
+          ? {}
+          : { autoCleanup: patch.autoCleanup }),
+        // Kept in day order, whatever order they were ticked in.
+        ...(patch.meals
+          ? { meals: MEALS.filter((meal) => patch.meals!.includes(meal)) }
+          : {}),
+        ...(patch.weekStart === undefined
+          ? {}
+          : { weekStart: patch.weekStart }),
+      },
     })
     .where(eq(households.id, id))
     .returning()

@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { MEALS, type Meal } from "./plan.ts"
 import {
   displayNameSchema,
   passwordSchema,
@@ -17,6 +18,10 @@ export type Household = {
   name: string
   /** Tidy every new import automatically; the suggestions wait for review. */
   autoCleanup: boolean
+  /** The meals the plan shows, in day order. */
+  meals: Meal[]
+  /** 0 for Sunday, 1 for Monday. */
+  weekStart: 0 | 1
 }
 
 export const householdNameSchema = z
@@ -28,6 +33,8 @@ export const householdNameSchema = z
 export const updateHouseholdInput = z.object({
   name: householdNameSchema.optional(),
   autoCleanup: z.boolean().optional(),
+  meals: z.array(z.enum(MEALS)).min(1, "Plan at least one meal").optional(),
+  weekStart: z.union([z.literal(0), z.literal(1)]).optional(),
 })
 export type UpdateHouseholdInput = z.infer<typeof updateHouseholdInput>
 

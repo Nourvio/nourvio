@@ -4,7 +4,9 @@ import type {
   Appearance,
   ChatPart,
   CleanupJob,
+  Meal,
   Nutrition,
+  PlanStatus,
   ProposalKind,
   ProposalStatus,
   RecipeInput,
@@ -18,6 +20,7 @@ import { sql } from "drizzle-orm"
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -50,7 +53,10 @@ const updatedAt = () =>
 export const households = pgTable("households", {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull(),
-  settings: jsonb().$type<{ autoCleanup?: boolean }>().notNull().default({}),
+  settings: jsonb()
+    .$type<{ autoCleanup?: boolean; meals?: Meal[]; weekStart?: 0 | 1 }>()
+    .notNull()
+    .default({}),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 })
@@ -347,6 +353,32 @@ export const proposals = pgTable(
     index().on(t.recipeId, t.status),
     index().on(t.householdId, t.status, t.createdAt),
   ]
+)
+
+// ---- Meal plan ----
+
+/** One recipe or note in a meal on a day. A meal can hold several (a main and a side). */
+export const mealPlanEntries = pgTable(
+  "meal_plan_entries",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    /** A calendar date in the household's own time. */
+    date: date({ mode: "string" }).notNull(),
+    meal: text().$type<Meal>().notNull(),
+    position: integer().notNull().default(0),
+    recipeId: uuid().references(() => recipes.id, { onDelete: "cascade" }),
+    note: text(),
+    /** Null means the recipe's own servings. */
+    servings: real(),
+    status: text().$type<PlanStatus>().notNull().default("planned"),
+    createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.householdId, t.date)]
 )
 
 // ---- Chat ----

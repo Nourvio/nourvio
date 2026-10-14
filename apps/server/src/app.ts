@@ -23,6 +23,7 @@ import { imagesRoutes } from "./routes/images.ts"
 import { importRoutes } from "./routes/import.ts"
 import { joinRoutes, signupRoutes } from "./routes/join.ts"
 import { meRoutes } from "./routes/me.ts"
+import { planRoutes } from "./routes/plan.ts"
 import { proposalsRoutes } from "./routes/proposals.ts"
 import { recipesRoutes } from "./routes/recipes.ts"
 import { serverRoutes } from "./routes/server.ts"
@@ -90,6 +91,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/server", serverRoutes(ctx))
   app.route("/api/recipes", recipesRoutes(ctx, ai))
   app.route("/api/proposals", proposalsRoutes(ctx))
+  app.route("/api/plan", planRoutes(ctx))
   app.route("/api/images", imagesRoutes(ctx))
   app.route("/api/import", importRoutes(ctx, ai))
   app.route("/api/ai", aiRoutes(ctx, ai))

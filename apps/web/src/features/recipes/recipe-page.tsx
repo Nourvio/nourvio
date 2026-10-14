@@ -45,6 +45,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { NotFoundPage } from "@/app/not-found-page"
 import { useChatScreen } from "@/features/chat/chat-provider"
+import { AddToPlanButton } from "@/features/plan/add-to-plan-dialog"
 import { useAiStatus } from "@/features/settings/use-ai"
 import { ApiError } from "@/lib/api"
 
@@ -235,6 +236,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                 Edit
               </Link>
             </Button>
+            <AddToPlanButton recipe={recipe} factor={factor} />
             <MoreMenu recipe={recipe} onTidyUp={() => setTidying(true)} />
           </div>
         </div>

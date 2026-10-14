@@ -19,6 +19,7 @@ import { useCurrentUser } from "@/features/auth/current-user"
 import { AccountCard } from "./account-card"
 import { AiCard } from "./ai-card"
 import { HouseholdCard } from "./household-card"
+import { MealPlanCard } from "./meal-plan-card"
 import { MealieCard } from "./mealie-card"
 import { ServerCard } from "./server-card"
 import { TidyUpCard } from "./tidy-up-card"
@@ -62,6 +63,7 @@ export function SettingsPage() {
         </Card>
 
         <HouseholdCard />
+        {me.role === "admin" && <MealPlanCard />}
         {me.role === "admin" && ai.data?.available && <TidyUpCard />}
 
         {me.isServerAdmin && (

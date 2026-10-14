@@ -57,6 +57,13 @@
       "when": 1791957112269,
       "tag": "0007_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791959428456,
+      "tag": "0008_meal_plan",
+      "breakpoints": true
     }
   ]
 }

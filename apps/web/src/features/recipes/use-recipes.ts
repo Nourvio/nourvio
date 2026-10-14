@@ -1,3 +1,4 @@
+import { toIsoDate } from "@mise/shared"
 import type {
   Recipe,
   RecipeInput,
@@ -98,13 +99,21 @@ export function useRateRecipe(id: string) {
   })
 }
 
+/** "I made this", today. A meal planned for today with this recipe counts as cooked. */
 export function useMarkMade(id: string) {
   const saved = useRecipeSaved()
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async () =>
-      (await api<{ recipe: Recipe }>(`/recipes/${id}/made`, { method: "POST" }))
-        .recipe,
-    onSuccess: saved,
+      (
+        await api<{ recipe: Recipe }>(`/recipes/${id}/made`, {
+          body: { date: toIsoDate(new Date()) },
+        })
+      ).recipe,
+    onSuccess: (recipe) => {
+      saved(recipe)
+      queryClient.invalidateQueries({ queryKey: ["plan"] })
+    },
   })
 }
 
