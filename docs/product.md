@@ -25,7 +25,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
   - a name, photo and description
 - **Photos:** imports keep the site's best photo (see [integrations.md](integrations.md#recipe-sites)). A recipe without one (typed in, pasted, from the assistant) can get one made by AI, with an OpenAI key:
   - All in one house style, so the library looks like one cookbook: a matte charcoal plate (or a dark bowl for soups, noodles and the like) on white marble, in soft daylight, at a 45° angle. The prompt names the dish, its description, what's in it and how it's finished.
-  - Made by itself for each new recipe that comes without a photo (the server admin can turn this off), with a "Make a photo" button on any recipe without one, and **Make N photos** in Settings for the rest of the library (about 5¢ each).
+  - Made by itself for each new recipe that comes without a photo (the server admin can turn this off), with a "Make a photo" button on any recipe without one, and **Make N photos** in Settings for the rest of the library (about 1¢ each).
   - Marked "AI photo" on the recipe, and never replaces a real one. Another go is in the recipe's menu.
   - servings and yield
   - prep, cook and total time

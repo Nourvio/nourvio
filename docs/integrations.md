@@ -76,7 +76,7 @@ Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x
 | GPT-6 Luna | `gpt-6-luna` | $0.10 / $0.50 |
 
 - **OpenAI models and prices** change often (GPT-6 Sol and Luna launched September 22, 2026), so Settings lists whatever models the key can use. Check OpenAI's pricing page before choosing one.
-- **Photos** for recipes without one are made by OpenAI's image models; Claude can't make pictures. Mise uses `gpt-image-2.5-flare` ("fast, high-quality everyday generation"), falling back to `gpt-image-2`, `gpt-image-1.5` and `gpt-image-1-mini` if a key can't use it. Images are billed per token ($5 per million text tokens in, $30 per million image tokens out); a 1536×1024 photo at medium quality comes to roughly 5¢. OpenAI may ask for the organization to be verified, and a new account needs credit, before it makes images. Both errors say so in the app.
+- **Photos** for recipes without one are made by OpenAI's image models; Claude can't make pictures. Mise uses `gpt-image-2.5-flare` ("fast, high-quality everyday generation"), falling back to `gpt-image-2`, `gpt-image-1.5` and `gpt-image-1-mini` if a key can't use it. Images are billed per token ($5 per million text tokens in, $30 per million image tokens out); a 1536×1024 photo at medium quality is about 340 image tokens, so roughly 1¢ (measured October 2026: 1.1–1.2¢ each). OpenAI may ask for the organization to be verified, and a new account needs credit, before it makes images. Both errors say so in the app.
 - **Picking models:** Settings tracks spend by provider, model and task, so we can see where a cheaper model is good enough.
 
 ## Nutrition
