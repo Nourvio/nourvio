@@ -185,15 +185,14 @@ Build order, a commit for each:
 - Offline reading in the cook view (a service worker)
 - Barcode scanning for the pantry
 - Multiple shopping lists
-- Price tracking from Walmart summaries
-- A Kroger Cart API integration, if switching stores
+- Price tracking, from the prices Fry's and Walmart show when sending the list
 - A ChatGPT/Claude app connector (MCP). We dropped this in favor of in-app chat, but the service layer would make it easy to add (see [integrations.md](integrations.md#considered-and-dropped-chatgpt-and-claude-app-connectors-mcp)).
 
 ## Open questions
 
 | # | Question | Recommendation | Affects |
 |---|---|---|---|
-| 1 | Which stores should connections cover? | **Decided:** Fry's (Kroger's official cart API), Costco through Instacart, and Walmart through the Mise extension. See milestone 6. | M6 |
+| 1 | Which stores should connections cover? | **Decided:** Fry's (Kroger's official cart API), Costco as links to Costco Same-Day (Instacart's API isn't open), and Walmart through the Mise extension. See milestone 6. | M6 |
 | 2 | One shared household login, or one account per person? | **Decided:** one account per person, joining by invite link. One server can host several households. | M0 |
 | 3 | Do you have a domain on Cloudflare for the tunnel? | Needed for the recommended setup | M0 |
 | 4 | Dinners only, or breakfast and lunch too? | **Decided:** each household picks; dinner by default, with breakfast, lunch and snacks optional | M3 |
