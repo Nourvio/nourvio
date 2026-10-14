@@ -1,4 +1,5 @@
 import type {
+  DietOverrides,
   AiProviderId,
   AiTask,
   Appearance,
@@ -196,6 +197,8 @@ export const recipes = pgTable(
     notes: text(),
     rating: smallint(),
     nutrition: jsonb().$type<Nutrition>(),
+    /** Corrections to the diet labels the ingredients suggest. */
+    dietOverrides: jsonb().$type<DietOverrides>().notNull().default({}),
     lastMadeAt: timestamp({ withTimezone: true }),
     createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),

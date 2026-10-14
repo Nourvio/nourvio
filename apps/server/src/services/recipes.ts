@@ -1,4 +1,6 @@
 import {
+  applyDietOverrides,
+  dietsFor,
   joinSections,
   parseIngredient,
   recipeInput,
@@ -221,7 +223,11 @@ async function tagsFor(db: Db | Tx, recipeIds: string[]) {
   return result
 }
 
-function toSummary(row: RecipeRow, tagNames: string[]): RecipeSummary {
+function toSummary(
+  row: RecipeRow,
+  tagNames: string[],
+  lines: string[]
+): RecipeSummary {
   return {
     id: row.id,
     slug: row.slug,
@@ -232,6 +238,7 @@ function toSummary(row: RecipeRow, tagNames: string[]): RecipeSummary {
     servings: row.servings,
     rating: row.rating,
     tags: tagNames,
+    diets: applyDietOverrides(dietsFor(lines), row.dietOverrides),
     lastMadeAt: row.lastMadeAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
   }
@@ -279,7 +286,11 @@ export async function getRecipe(
     ingredients.map((i) => i.rawText)
   )
   return {
-    ...toSummary(row, tagMap.get(row.id) ?? []),
+    ...toSummary(
+      row,
+      tagMap.get(row.id) ?? [],
+      ingredients.map((i) => i.rawText)
+    ),
     origin: row.origin,
     sourceUrl: row.sourceUrl,
     yieldText: row.yieldText,
@@ -287,6 +298,7 @@ export async function getRecipe(
     cookMinutes: row.cookMinutes,
     notes: row.notes,
     nutrition: row.nutrition,
+    dietOverrides: row.dietOverrides,
     updatedAt: row.updatedAt.toISOString(),
     ingredients: ingredients.map((i, index) => ({
       id: i.id,
@@ -362,11 +374,85 @@ export async function listRecipes(
     .from(recipes)
     .where(and(...conditions))
     .orderBy(desc(recipes.createdAt))
-  const tagMap = await tagsFor(
-    db,
-    rows.map((r) => r.id)
+  const ids = rows.map((r) => r.id)
+  const [tagMap, lines] = await Promise.all([
+    tagsFor(db, ids),
+    ingredientLines(db, ids),
+  ])
+  return rows.map((row) =>
+    toSummary(row, tagMap.get(row.id) ?? [], lines.get(row.id) ?? [])
   )
-  return rows.map((row) => toSummary(row, tagMap.get(row.id) ?? []))
+}
+
+/** Each recipe's ingredient lines, for working out diet labels. */
+async function ingredientLines(db: Db, ids: string[]) {
+  const lines = new Map<string, string[]>()
+  if (!ids.length) return lines
+  const rows = await db
+    .select({
+      recipeId: recipeIngredients.recipeId,
+      text: recipeIngredients.rawText,
+    })
+    .from(recipeIngredients)
+    .where(inArray(recipeIngredients.recipeId, ids))
+  for (const row of rows) {
+    lines.set(row.recipeId, [...(lines.get(row.recipeId) ?? []), row.text])
+  }
+  return lines
+}
+
+/** The household's tag by name, ignoring case. */
+async function findTag(db: Db, householdId: string, name: string) {
+  const [row] = await db
+    .select()
+    .from(tags)
+    .where(
+      and(
+        eq(tags.householdId, householdId),
+        eq(sql`lower(${tags.name})`, name.trim().toLowerCase())
+      )
+    )
+  return row ?? null
+}
+
+/**
+ * Renames a tag on every recipe. Renaming it to a tag that already exists
+ * merges the two ("dinners" into "Dinner").
+ */
+export async function renameTag(
+  db: Db,
+  householdId: string,
+  from: string,
+  to: string
+) {
+  const source = await findTag(db, householdId, from)
+  if (!source) throw new HttpError(404, "There's no tag by that name")
+  const name = to.trim()
+  const target = await findTag(db, householdId, name)
+  if (!target || target.id === source.id) {
+    await db.update(tags).set({ name }).where(eq(tags.id, source.id))
+    return
+  }
+  await db.transaction(async (tx) => {
+    const tagged = await tx
+      .select({ recipeId: recipeTags.recipeId })
+      .from(recipeTags)
+      .where(eq(recipeTags.tagId, source.id))
+    if (tagged.length) {
+      await tx
+        .insert(recipeTags)
+        .values(tagged.map((r) => ({ recipeId: r.recipeId, tagId: target.id })))
+        .onConflictDoNothing()
+    }
+    await tx.delete(tags).where(eq(tags.id, source.id))
+  })
+}
+
+/** Takes a tag off every recipe. */
+export async function deleteTag(db: Db, householdId: string, name: string) {
+  const tag = await findTag(db, householdId, name)
+  if (!tag) throw new HttpError(404, "There's no tag by that name")
+  await db.delete(tags).where(eq(tags.id, tag.id))
 }
 
 export async function listTags(db: Db, householdId: string): Promise<Tag[]> {
@@ -467,7 +553,10 @@ export async function setRecipeFields(
   householdId: string,
   idOrSlug: string,
   fields: Partial<
-    Pick<RecipeRow, "rating" | "lastMadeAt" | "image" | "nutrition">
+    Pick<
+      RecipeRow,
+      "rating" | "lastMadeAt" | "image" | "nutrition" | "dietOverrides"
+    >
   >
 ) {
   const row = await findRecipeRow(db, householdId, idOrSlug)

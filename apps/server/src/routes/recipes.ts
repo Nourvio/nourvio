@@ -1,4 +1,11 @@
-import { cleanupInput, isoDate, rateInput, recipeInput } from "@mise/shared"
+import {
+  cleanupInput,
+  isoDate,
+  rateInput,
+  recipeInput,
+  renameTagInput,
+  setDietsInput,
+} from "@mise/shared"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 
@@ -19,11 +26,13 @@ import { deleteImage, saveImage } from "../services/images.ts"
 import {
   createRecipe,
   deleteRecipe,
+  deleteTag,
   findRecipeRow,
   getRecipe,
   listRecipes,
   listTags,
   listVersions,
+  renameTag,
   restoreVersion,
   setRecipeFields,
   updateRecipe,
@@ -56,6 +65,18 @@ export function recipesRoutes(
     c.json({ tags: await listTags(db, currentHousehold(c)) })
   )
 
+  /** Renames a tag everywhere, merging it into one that already exists. */
+  app.patch("/tags/:name", async (c) => {
+    const { name } = await readBody(c, renameTagInput)
+    await renameTag(db, currentHousehold(c), c.req.param("name"), name)
+    return c.json({ tags: await listTags(db, currentHousehold(c)) })
+  })
+
+  app.delete("/tags/:name", async (c) => {
+    await deleteTag(db, currentHousehold(c), c.req.param("name"))
+    return c.json({ tags: await listTags(db, currentHousehold(c)) })
+  })
+
   app.post("/", async (c) => {
     const input = await readBody(c, recipeInput)
     const recipe = await createRecipe(db, currentHousehold(c), input, {
@@ -85,6 +106,18 @@ export function recipesRoutes(
       }
     )
     nutrition.afterSave(actorOf(c), recipe, previous)
+    return c.json({ recipe })
+  })
+
+  /** Corrections to the diet labels the ingredients suggest. */
+  app.put("/:id/diets", async (c) => {
+    const { overrides } = await readBody(c, setDietsInput)
+    const recipe = await setRecipeFields(
+      db,
+      currentHousehold(c),
+      c.req.param("id"),
+      { dietOverrides: overrides }
+    )
     return c.json({ recipe })
   })
 

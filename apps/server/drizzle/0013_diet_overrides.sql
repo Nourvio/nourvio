@@ -1,0 +1,1 @@
+ALTER TABLE "recipes" ADD COLUMN "diet_overrides" jsonb DEFAULT '{}'::jsonb NOT NULL;

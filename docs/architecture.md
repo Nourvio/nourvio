@@ -85,7 +85,7 @@ Everything a household owns carries its `household_id`, and every query is scope
 |---|---|---|
 | `households` | name, settings (jsonb: auto-tidy, meals planned, first day of the week, always-on-hand items) | A household shares a library, plan, list and pantry. Deleting one removes everything in it. |
 | `invites` | household_id, token_hash, role, expires_at, used_at, used_by | Single-use invite links, good for a week. Only a hash of the token is stored, so the link can only be shown when it's made. |
-| `recipes` | id, household_id, slug (unique per household), name, description, image, source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
+| `recipes` | id, household_id, slug (unique per household), name, description, image, source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), diet_overrides (jsonb), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
 | `recipe_ingredients` | recipe_id, position, section, raw_text, quantity, quantity_max, unit_id, food, note | `raw_text` is always kept and shown as written. The parsed fields drive scaling, lists and nutrition. |
 | `recipe_steps` | recipe_id, position, section, text | |
 | `recipe_versions` | recipe_id, snapshot (jsonb), source, created_by, created_at | Every saved change makes a snapshot, so the original import can always be restored. `source` is one of import, manual, ai_cleanup, chat. |
@@ -133,7 +133,8 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Joining | `GET`/`POST /api/join/:token` (invite links), `POST /api/signup` (when open) |
 | Household | `GET`/`PATCH /api/household`; invites `GET`/`POST /api/household/invites`, `DELETE /api/household/invites/:id`; members `GET`/`POST /api/users`, `PATCH`/`DELETE /api/users/:id` (household admins) |
 | Server | `GET`/`PUT /api/server/settings`, `GET /api/server/households`, `DELETE /api/server/households/:id` (server admin) |
-| Recipes | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image`, `POST /api/recipes/:id/nutrition` (work it out now) |
+| Recipes | `GET/POST /api/recipes` (search with `q`; diet, tag and time filters and sorting happen in the browser), `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image`, `POST /api/recipes/:id/nutrition` (work it out now), `PUT /api/recipes/:id/diets` (corrections) |
+| Tags | `GET /api/recipes/tags`, `PATCH /api/recipes/tags/:name` (rename, merging into an existing tag), `DELETE /api/recipes/tags/:name` |
 | Nutrition | `GET`/`POST /api/nutrition/library`, `POST /api/nutrition/library/:id/stop` (household admins); `GET`/`PUT /api/nutrition/settings`, `POST /api/nutrition/settings/test` (server admin, the USDA key) |
 | Versions | `GET /api/recipes/:id/versions`, `POST /api/recipes/:id/versions/:versionId/restore` |
 | Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (server admin, into their household): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
@@ -267,6 +268,7 @@ The parser lives in the shared package, so the server and browser use the same c
 - It handles fractions, unicode fractions (½), ranges (2–3), and sizes in parentheses (`1 (14.5 oz) can`).
 - The original text is always kept. Display shows the line as written, swapping in the scaled quantity when you change servings.
 - **Grams:** each ingredient comes with `unitGrams`, what one of its unit weighs, worked out when the recipe is read (`nutrition/weights.ts`) so it always uses the latest matches. The order: the weight the line states ("(200 g)", spread over its amount so it scales), a weight unit, a can's size, a stick of butter, the shared baking table (`weights.ts`, grams per cup for about fifty staples), the matched USDA food's volume portions, then what the AI weighed before. "1 cup plus 2 tbsp" counts both. The same order weighs ingredients for nutrition.
+- **Diet labels** (`diets.ts`) come from the ingredient lines when a recipe is read: each line is checked against groups (meat, fish, dairy, egg, gluten, nuts, honey), after taking out phrases that don't count ("vegetable broth", "corn tortillas", "peanut butter"). A diet is labeled only when no line rules it out. `diet_overrides` holds the household's corrections, which win.
 - When a food or unit isn't recognized, the line still saves. It just won't combine with other lines on lists or match the pantry.
 
 ## Auth
@@ -290,7 +292,7 @@ The parser lives in the shared package, so the server and browser use the same c
 
 | Screen | Purpose |
 |---|---|
-| Recipes | Grid with search and tag filters |
+| Recipes | Grid with search, diet, tag and time filters, sorting, and tag management |
 | Recipe | Detail page with a servings scaler, ingredients, steps, nutrition, and buttons for Cook, Edit, Tidy up, Made it and History |
 | Cook | Full-screen cooking view |
 | Add | Link, Text, Photo and Manual tabs |

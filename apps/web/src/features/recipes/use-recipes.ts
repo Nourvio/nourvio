@@ -1,5 +1,6 @@
 import { toIsoDate } from "@mise/shared"
 import type {
+  DietOverrides,
   Recipe,
   RecipeInput,
   RecipeSummary,
@@ -40,6 +41,34 @@ export function useTags() {
   return useQuery({
     queryKey: [...RECIPES_KEY, "tags"],
     queryFn: async () => (await api<{ tags: Tag[] }>("/recipes/tags")).tags,
+  })
+}
+
+/** Renames a tag everywhere; a name that exists already merges the two. */
+export function useRenameTag() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ from, to }: { from: string; to: string }) =>
+      api(`/recipes/tags/${encodeURIComponent(from)}`, {
+        method: "PATCH",
+        body: { name: to },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
+      queryClient.invalidateQueries({ queryKey: ["recipe"] })
+    },
+  })
+}
+
+export function useDeleteTag() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (name: string) =>
+      api(`/recipes/tags/${encodeURIComponent(name)}`, { method: "DELETE" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
+      queryClient.invalidateQueries({ queryKey: ["recipe"] })
+    },
   })
 }
 
@@ -100,6 +129,21 @@ export function useRateRecipe(id: string) {
 }
 
 /** "I made this", today. A meal planned for today with this recipe counts as cooked. */
+/** Corrections to the diet labels the ingredients suggest. */
+export function useSetDiets(id: string) {
+  const saved = useRecipeSaved()
+  return useMutation({
+    mutationFn: async (overrides: DietOverrides) =>
+      (
+        await api<{ recipe: Recipe }>(`/recipes/${id}/diets`, {
+          method: "PUT",
+          body: { overrides },
+        })
+      ).recipe,
+    onSuccess: saved,
+  })
+}
+
 /** Works out nutrition now: USDA data, or an AI estimate. */
 export function useWorkOutNutrition(id: string) {
   const saved = useRecipeSaved()

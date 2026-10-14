@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import type { Diet, DietOverrides } from "./diets.ts"
+
 export const ORIGINS = [
   "manual",
   "url",
@@ -113,6 +115,8 @@ export type RecipeSummary = {
   servings: number | null
   rating: number | null
   tags: string[]
+  /** Diet labels: what the ingredients suggest, with the household's corrections. */
+  diets: Diet[]
   lastMadeAt: string | null
   createdAt: string
 }
@@ -125,6 +129,8 @@ export type Recipe = RecipeSummary & {
   cookMinutes: number | null
   notes: string | null
   nutrition: Nutrition | null
+  /** The household's corrections to the diet labels. */
+  dietOverrides: DietOverrides
   ingredients: RecipeIngredient[]
   steps: RecipeStep[]
   updatedAt: string
@@ -159,3 +165,8 @@ export const importTextInput = z.object({
 })
 
 export type ImportResult = { recipe: Recipe; duplicate: boolean }
+
+export const renameTagInput = z.object({
+  /** A tag that already exists merges the two. */
+  name: z.string().trim().min(1, "Name the tag").max(60),
+})

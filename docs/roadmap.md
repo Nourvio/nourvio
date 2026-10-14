@@ -120,6 +120,8 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 ## Milestone 6: Walmart
 
+**Status:** parked (October 2026). The focus is polishing the app itself first. The plan below stands if it comes back.
+
 - Store product mappings (food → Walmart product) managed in Mise
 - AI translation of list amounts into product quantities
 - A Manifest V3 extension: fetch the list, add mapped items, pick and save unmapped items, show a summary

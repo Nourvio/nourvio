@@ -1,4 +1,5 @@
 import {
+  DIETS,
   isoDate,
   MEALS,
   toIsoDate,
@@ -88,22 +89,29 @@ const PROPOSED =
 const searchRecipes = tool({
   name: "search_recipes",
   description:
-    "Search the household's recipe library by words (name, description, ingredients, tags) and/or one tag. Returns up to 20 matches with ids. Use null for both to list recent recipes.",
+    "Search the household's recipe library by words (name, description, ingredients, tags), one tag, and/or a diet label (worked out from the ingredients). Returns up to 20 matches with ids. Use null for all three to list recent recipes.",
   input: z.object({
     query: z.string().nullable().describe('Words to look for, like "chicken"'),
     tag: z.string().nullable().describe("Only recipes with this tag"),
+    diet: z
+      .enum(DIETS)
+      .nullable()
+      .describe("Only recipes with this diet label"),
   }),
   runningLabel: "Searching recipes",
-  async run(ctx, { query, tag }) {
-    const found = await listRecipes(ctx.db, ctx.householdId, {
-      q: query ?? undefined,
-      tag: tag ?? undefined,
-    })
+  async run(ctx, { query, tag, diet }) {
+    const found = (
+      await listRecipes(ctx.db, ctx.householdId, {
+        q: query ?? undefined,
+        tag: tag ?? undefined,
+      })
+    ).filter((recipe) => !diet || recipe.diets.includes(diet))
     const results = found.slice(0, 20).map((recipe) => ({
       id: recipe.id,
       slug: recipe.slug,
       name: recipe.name,
       tags: recipe.tags,
+      diets: recipe.diets,
       totalMinutes: recipe.totalMinutes,
       servings: recipe.servings,
       rating: recipe.rating,
@@ -546,6 +554,9 @@ export function describeRecipe(recipe: Recipe) {
     recipeText(toInput(recipe)),
     recipe.rating ? `Rating: ${recipe.rating}/5` : null,
     recipe.lastMadeAt ? `Last made: ${recipe.lastMadeAt.slice(0, 10)}` : null,
+    recipe.diets.length
+      ? `Diet labels (from the ingredients, with the household's corrections): ${recipe.diets.join(", ")}`
+      : null,
     recipe.nutrition ? describeNutrition(recipe.nutrition) : null,
   ]
     .filter(Boolean)

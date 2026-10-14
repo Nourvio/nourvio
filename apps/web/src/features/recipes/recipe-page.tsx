@@ -5,6 +5,7 @@ import {
   CookingPotIcon,
   Delete02Icon,
   HistoryIcon,
+  LeafIcon,
   ImageAdd01Icon,
   LinkSquare02Icon,
   MoreHorizontalIcon,
@@ -50,6 +51,7 @@ import { AddToPlanButton } from "@/features/plan/add-to-plan-dialog"
 import { useAiStatus } from "@/features/settings/use-ai"
 import { ApiError } from "@/lib/api"
 
+import { DietBadges, DietDialog } from "./diet-labels"
 import { formatMinutes, formatRelativeDate } from "./format"
 import { groupBySection, IngredientList } from "./ingredient-list"
 import { RatingStars } from "./rating-stars"
@@ -97,6 +99,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   const markMade = useMarkMade(recipe.id)
   const proposal = useRecipeProposal(recipe.id)
   const [tidying, setTidying] = React.useState(false)
+  const [editingDiets, setEditingDiets] = React.useState(false)
 
   const toggle = (id: string) =>
     setChecked((current) => {
@@ -206,6 +209,12 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               ))}
             </div>
           )}
+          <DietBadges recipe={recipe} onEdit={() => setEditingDiets(true)} />
+          <DietDialog
+            recipe={recipe}
+            open={editingDiets}
+            onOpenChange={setEditingDiets}
+          />
           <div className="flex flex-wrap gap-2 pt-2">
             <Button size="lg" asChild>
               <Link to={cookLink}>
@@ -245,7 +254,11 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               </Link>
             </Button>
             <AddToPlanButton recipe={recipe} factor={factor} />
-            <MoreMenu recipe={recipe} onTidyUp={() => setTidying(true)} />
+            <MoreMenu
+              recipe={recipe}
+              onTidyUp={() => setTidying(true)}
+              onDiets={() => setEditingDiets(true)}
+            />
           </div>
         </div>
       </div>
@@ -341,9 +354,11 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
 function MoreMenu({
   recipe,
   onTidyUp,
+  onDiets,
 }: {
   recipe: Recipe
   onTidyUp: () => void
+  onDiets: () => void
 }) {
   const navigate = useNavigate()
   const ai = useAiStatus()
@@ -401,6 +416,10 @@ function MoreMenu({
               Tidy up
             </DropdownMenuItem>
           )}
+          <DropdownMenuItem onSelect={onDiets}>
+            <HugeiconsIcon icon={LeafIcon} strokeWidth={2} />
+            Diet labels
+          </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => setHistoryOpen(true)}>
             <HugeiconsIcon icon={HistoryIcon} strokeWidth={2} />
             History

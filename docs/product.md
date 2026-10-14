@@ -36,7 +36,14 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
   - Otherwise baking staples use the weights bakers go by (all-purpose flour 120 g a cup, packed brown sugar 213 g, butter 227 g), and other foods use USDA portions or what nutrition has learned.
   - Counts like "2 eggs" stay as written, as does anything without a known weight.
 - "I made this" records when a recipe was cooked. This feeds the planner and the pantry.
-- Search by name, tag or ingredient.
+- **Finding recipes in a big library:**
+  - Search by name, description, tag or ingredient.
+  - Filter by diet, tags (several at once, searchable, with counts) and time ("Under 30 min"), and sort by newest, name, rating, recently made or quickest. Filters show as chips you can remove, with "12 of 140 recipes", and live in the URL so a view can be bookmarked.
+  - **Tags** can be renamed, merged (rename one to another's name) and deleted for the whole household, for tidying an imported library.
+- **Diet labels** (vegetarian, vegan, gluten-free, dairy-free, egg-free, nut-free) are worked out from the ingredients, with nothing to tag by hand:
+  - Cautious on purpose: a label only shows when nothing in the ingredients rules it out. Plain "stock" might be chicken, soy sauce has wheat, "tortillas" are taken to be flour, and oats need to say gluten-free. Phrases like "vegetable broth", "corn tortillas", "peanut butter" and "butternut squash" are understood.
+  - Each label says what ruled it out ("2 tbsp butter"), and the household can correct any recipe. Corrections stick when the recipe is edited.
+  - Shown on the recipe as links to similar recipes, and available as a filter and to the assistant.
 
 ### 2. Adding recipes
 

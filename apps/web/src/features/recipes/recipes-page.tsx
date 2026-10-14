@@ -1,10 +1,8 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  Cancel01Icon,
   CookBookIcon,
   Link01Icon,
-  Search01Icon,
   SparklesIcon,
 } from "@hugeicons/core-free-icons"
 import { Link, useSearchParams } from "react-router"
@@ -20,14 +18,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupButton,
-  InputGroupInput,
-} from "@/components/ui/input-group"
 import { Skeleton } from "@/components/ui/skeleton"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useCurrentUser } from "@/features/auth/current-user"
 
 import { AddRecipeMenu } from "./add-recipe-menu"
@@ -35,46 +26,43 @@ import { ImportDialog } from "./import-dialog"
 import { RecipeCard } from "./recipe-card"
 import { usePendingProposals } from "./use-cleanup"
 import { useImportDialog } from "./use-import"
-import { useRecipes, useTags } from "./use-recipes"
+import { RecipeFilterBar } from "./recipe-filter-bar"
+import {
+  filterRecipes,
+  readFilters,
+  sortRecipes,
+  writeFilters,
+  type RecipeFilters,
+} from "./recipe-filters"
+import { useRecipes } from "./use-recipes"
 
+/**
+ * The library: search (on the server, through ingredients too), then diet,
+ * tag and time filters and sorting here, instantly. Everything is in the
+ * URL.
+ */
 export function RecipesPage() {
   const [params, setParams] = useSearchParams()
-  const tag = params.get("tag") ?? ""
-  const [search, setSearch] = React.useState(params.get("q") ?? "")
+  const filters = readFilters(params)
+  const [search, setSearch] = React.useState(filters.q)
   const q = useDebounced(search.trim(), 250)
 
   React.useEffect(() => {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        if (q) next.set("q", q)
-        else next.delete("q")
-        return next
-      },
-      { replace: true }
-    )
+    setParams((current) => writeFilters(current, { q }), { replace: true })
   }, [q, setParams])
 
   const me = useCurrentUser()
   const importDialog = useImportDialog()
   const pendingReview = usePendingProposals().data?.length ?? 0
-  const recipes = useRecipes({ q, tag })
-  const tags = useTags()
-  const filtering = Boolean(q || tag)
+  const recipes = useRecipes({ q })
+  const all = recipes.data ?? []
+  const shown = sortRecipes(filterRecipes(all, filters), filters.sort)
 
-  function setTag(value: string) {
-    setParams(
-      (current) => {
-        const next = new URLSearchParams(current)
-        if (value) next.set("tag", value)
-        else next.delete("tag")
-        return next
-      },
-      { replace: true }
-    )
+  function change(next: Partial<RecipeFilters>) {
+    setParams((current) => writeFilters(current, next), { replace: true })
   }
 
-  const libraryEmpty = !filtering && recipes.data?.length === 0
+  const libraryEmpty = !q && recipes.data?.length === 0
 
   return (
     <>
@@ -102,48 +90,14 @@ export function RecipesPage() {
       <ImportDialog />
 
       {!libraryEmpty && (
-        <div className="mb-6 grid gap-3">
-          <InputGroup className="max-w-md">
-            <InputGroupAddon>
-              <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
-            </InputGroupAddon>
-            <InputGroupInput
-              type="search"
-              placeholder="Search recipes, ingredients or tags"
-              aria-label="Search recipes"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            {search && (
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  size="icon-xs"
-                  aria-label="Clear search"
-                  onClick={() => setSearch("")}
-                >
-                  <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-                </InputGroupButton>
-              </InputGroupAddon>
-            )}
-          </InputGroup>
-          {tags.data && tags.data.length > 0 && (
-            <ToggleGroup
-              type="single"
-              variant="outline"
-              size="sm"
-              value={tag}
-              onValueChange={setTag}
-              aria-label="Filter by tag"
-              className="flex-wrap justify-start"
-            >
-              {tags.data.slice(0, 14).map((t) => (
-                <ToggleGroupItem key={t.name} value={t.name}>
-                  {t.name}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          )}
-        </div>
+        <RecipeFilterBar
+          filters={filters}
+          search={search}
+          onSearch={setSearch}
+          onChange={change}
+          shown={shown}
+          total={all.length}
+        />
       )}
 
       {recipes.isPending ? (
@@ -191,13 +145,25 @@ export function RecipesPage() {
             </div>
           </EmptyContent>
         </Empty>
-      ) : recipes.data.length === 0 ? (
-        <p className="py-10 text-center text-muted-foreground">
-          Nothing matches that. Try another word or tag.
-        </p>
+      ) : shown.length === 0 ? (
+        <div className="grid justify-items-center gap-3 py-10 text-center">
+          <p className="text-muted-foreground">
+            Nothing matches that. Try another word or fewer filters.
+          </p>
+          {(filters.tags.length > 0 ||
+            filters.diets.length > 0 ||
+            filters.time) && (
+            <Button
+              variant="outline"
+              onClick={() => change({ tags: [], diets: [], time: null })}
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {recipes.data.map((recipe) => (
+          {shown.map((recipe) => (
             <RecipeCard key={recipe.id} recipe={recipe} />
           ))}
         </div>
