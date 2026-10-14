@@ -15,6 +15,7 @@ import { HttpError } from "../http.ts"
 import { extractRecipeFromHtml } from "../import/jsonld.ts"
 import { inLibrary, isVideoUrl, normalizeUrl } from "../import/links.ts"
 import type { Fetcher } from "../import/safe-fetch.ts"
+import { decodeHtml } from "../import/url.ts"
 import { getHousehold } from "./households.ts"
 
 type Found = StarterRecipe & { why: string }
@@ -85,15 +86,6 @@ const offered = z.object({
 })
 type Offered = z.output<typeof offered>["recipes"][number]
 
-function decode(body: Buffer, contentType: string) {
-  const charset = contentType.match(/charset=["']?([\w-]+)/i)?.[1]
-  try {
-    return new TextDecoder(charset ?? "utf-8").decode(body)
-  } catch {
-    return body.toString("utf8")
-  }
-}
-
 /**
  * Opens a recipe the assistant offered and reads it as Mise would on import.
  * Null when the page won't open or isn't a recipe Mise can read.
@@ -111,7 +103,7 @@ async function check(fetcher: Fetcher, pick: Offered): Promise<Found | null> {
     if (page.contentType && !/html|xml/i.test(page.contentType)) return null
     const finalUrl = normalizeUrl(page.url)
     const recipe = extractRecipeFromHtml(
-      decode(page.body, page.contentType),
+      decodeHtml(page.body, page.contentType),
       finalUrl
     )
     if (!recipe) return null

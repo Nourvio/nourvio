@@ -16,7 +16,7 @@ import type { Fetcher } from "./safe-fetch.ts"
 import { importFromVideo } from "./video.ts"
 import type { VideoTools } from "./video-tools.ts"
 
-function decodeHtml(body: Buffer, contentType: string) {
+export function decodeHtml(body: Buffer, contentType: string) {
   const charset = contentType.match(/charset=["']?([\w-]+)/i)?.[1]
   try {
     return new TextDecoder(charset ?? "utf-8").decode(body)

@@ -2,7 +2,8 @@ import { eq } from "drizzle-orm"
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 
-import { discoveries, invites } from "../db/schema.ts"
+import { discoveries, followedSites, invites } from "../db/schema.ts"
+import { itemKey } from "../services/sites.ts"
 import { apiClient, createTestAppWithAdmin } from "../test/helpers.ts"
 
 const SOUP = {
@@ -168,6 +169,38 @@ describe("households", () => {
       expect(
         (await neighbor.raw(`/api/discover/${found!.id}/0/image`)).status
       ).toBe(404)
+    })
+
+    test("followed sites", async () => {
+      const household = (await t.admin.get("/api/household")).body.household
+      const post = "https://cook.example/soup/"
+      const [site] = await t.db
+        .insert(followedSites)
+        .values({
+          householdId: household.id,
+          name: "Cook Example",
+          siteUrl: "https://cook.example/",
+          feedUrl: "https://cook.example/feed/",
+          items: [
+            {
+              url: post,
+              title: "Soup",
+              image: "https://cook.example/soup.jpg",
+              minutes: 30,
+              publishedAt: null,
+              recipe: true,
+            },
+          ],
+        })
+        .returning()
+      expect((await t.admin.get("/api/sites")).body.sites).toHaveLength(1)
+      expect((await neighbor.get("/api/sites")).body.sites).toEqual([])
+      expect(
+        (await neighbor.raw(`/api/sites/${site!.id}/image/${itemKey(post)}`))
+          .status
+      ).toBe(404)
+      expect((await neighbor.delete(`/api/sites/${site!.id}`)).status).toBe(404)
+      expect((await t.admin.get("/api/sites")).body.sites).toHaveLength(1)
     })
 
     test("each household has its own slugs and tag spellings", async () => {

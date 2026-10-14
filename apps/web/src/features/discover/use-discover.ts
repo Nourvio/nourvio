@@ -2,6 +2,7 @@ import * as React from "react"
 import type {
   BrowseCollection,
   Discovery,
+  FollowedSite,
   FoundRecipe,
   ImportResult,
 } from "@mise/shared"
@@ -14,6 +15,7 @@ import { api, ApiError } from "@/lib/api"
 
 export const COLLECTIONS_KEY = ["collections"] as const
 export const DISCOVER_KEY = ["discover"] as const
+export const SITES_KEY = ["sites"] as const
 
 export function useCollections() {
   return useQuery({
@@ -61,6 +63,56 @@ export function useStartDiscovery() {
   })
 }
 
+/** Followed sites, checked every few seconds while new posts are being opened. */
+export function useSites() {
+  return useQuery({
+    queryKey: SITES_KEY,
+    queryFn: async () => (await api<{ sites: FollowedSite[] }>("/sites")).sites,
+    refetchInterval: (query) =>
+      query.state.data?.some((site) => site.checking) ? 4000 : false,
+  })
+}
+
+export function useFollowSite() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (url: string) =>
+      (await api<{ site: FollowedSite }>("/sites", { body: { url } })).site,
+    onSuccess: (site) => {
+      queryClient.setQueryData<FollowedSite[]>(SITES_KEY, (current) =>
+        [...(current ?? []), site].sort((a, b) => a.name.localeCompare(b.name))
+      )
+      toast.success(`Following ${site.name}`)
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof ApiError ? error.message : "Couldn't follow that site"
+      )
+    },
+  })
+}
+
+export function useUnfollowSite() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (site: FollowedSite) => {
+      await api(`/sites/${site.id}`, { method: "DELETE" })
+      return site
+    },
+    onSuccess: (site) => {
+      queryClient.setQueryData<FollowedSite[]>(SITES_KEY, (current) =>
+        (current ?? []).filter((item) => item.id !== site.id)
+      )
+      toast.success(`Stopped following ${site.name}`)
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof ApiError ? error.message : "Couldn't unfollow that"
+      )
+    },
+  })
+}
+
 /**
  * Importing recipes found on the web, one or several in a row, keeping
  * track of which are on their way. Browsing lists refresh after, so cards
@@ -79,7 +131,7 @@ export function useImportFound() {
     queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
     queryClient.invalidateQueries({ queryKey: COLLECTIONS_KEY })
     queryClient.invalidateQueries({ queryKey: DISCOVER_KEY })
-    queryClient.invalidateQueries({ queryKey: ["sites"] })
+    queryClient.invalidateQueries({ queryKey: SITES_KEY })
   }, [queryClient])
 
   async function importOne(recipe: FoundRecipe) {
@@ -134,6 +186,7 @@ export function useImportFound() {
       // Keep the cards up to date as they arrive.
       queryClient.invalidateQueries({ queryKey: COLLECTIONS_KEY })
       queryClient.invalidateQueries({ queryKey: DISCOVER_KEY })
+      queryClient.invalidateQueries({ queryKey: SITES_KEY })
     }
     setProgress(null)
     refresh()

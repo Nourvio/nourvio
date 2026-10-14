@@ -36,6 +36,7 @@ import { proposalsRoutes } from "./routes/proposals.ts"
 import { recipesRoutes } from "./routes/recipes.ts"
 import { serverRoutes } from "./routes/server.ts"
 import { setupRoutes } from "./routes/setup.ts"
+import { sitesRoutes } from "./routes/sites.ts"
 import { usersRoutes } from "./routes/users.ts"
 
 /** Routes that accept photos, with their own upload size limit. */
@@ -108,6 +109,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/photos", photosRoutes(photos))
   app.route("/api/collections", collectionsRoutes(ctx))
   app.route("/api/discover", discoverRoutes(ctx, ai))
+  app.route("/api/sites", sitesRoutes(ctx))
   app.route("/api/plan", planRoutes(ctx))
   app.route("/api/list", listRoutes(ctx))
   app.route("/api/pantry", pantryRoutes(ctx))

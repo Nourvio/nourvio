@@ -12,13 +12,14 @@ import { useAiStatus } from "@/features/settings/use-ai"
 import { NotFoundPage } from "@/app/not-found-page"
 
 import { DiscoverWithAi } from "./discover-ai"
+import { FollowSites } from "./discover-sites"
 import { FoundRecipeCard } from "./found-recipe-card"
 import { useCollections, useImportFound } from "./use-discover"
 
-const TABS = ["collections", "ai"] as const
+const TABS = ["collections", "ai", "sites"] as const
 type Tab = (typeof TABS)[number]
 
-/** Find recipes: hand-picked collections, or recipes the assistant finds. */
+/** Find recipes: hand-picked collections, recipes the assistant finds, and followed sites. */
 export function DiscoverPage() {
   const ai = useAiStatus()
   const [params, setParams] = useSearchParams()
@@ -35,34 +36,36 @@ export function DiscoverPage() {
         title="Find recipes"
         description={
           withAi
-            ? "Start from hand-picked collections of well-loved recipes, or have the assistant find some for whatever you're in the mood for."
-            : "Hand-picked collections of well-loved recipes. Import the ones you like, or a whole collection at once."
+            ? "Start from hand-picked collections, have the assistant find recipes for whatever you're in the mood for, or follow your favorite sites."
+            : "Start from hand-picked collections of well-loved recipes, or follow your favorite sites."
         }
       />
-      {withAi ? (
-        <Tabs
-          value={tab}
-          onValueChange={(value) =>
-            setParams(value === "collections" ? {} : { tab: value }, {
-              replace: true,
-            })
-          }
-          className="gap-6"
-        >
-          <TabsList>
-            <TabsTrigger value="collections">Collections</TabsTrigger>
-            <TabsTrigger value="ai">Discover with AI</TabsTrigger>
-          </TabsList>
-          <TabsContent value="collections">
-            <Collections />
-          </TabsContent>
+      <Tabs
+        value={tab}
+        onValueChange={(value) =>
+          setParams(value === "collections" ? {} : { tab: value }, {
+            replace: true,
+          })
+        }
+        className="gap-6"
+      >
+        <TabsList>
+          <TabsTrigger value="collections">Collections</TabsTrigger>
+          {withAi && <TabsTrigger value="ai">Discover with AI</TabsTrigger>}
+          <TabsTrigger value="sites">Sites</TabsTrigger>
+        </TabsList>
+        <TabsContent value="collections">
+          <Collections />
+        </TabsContent>
+        {withAi && (
           <TabsContent value="ai">
             <DiscoverWithAi />
           </TabsContent>
-        </Tabs>
-      ) : (
-        <Collections />
-      )}
+        )}
+        <TabsContent value="sites">
+          <FollowSites />
+        </TabsContent>
+      </Tabs>
     </>
   )
 }

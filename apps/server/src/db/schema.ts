@@ -413,6 +413,39 @@ export const discoveries = pgTable(
   (t) => [index().on(t.householdId, t.createdAt)]
 )
 
+/** A post in a followed site's feed; `recipe` is null until Mise opens it. */
+export type SiteItem = {
+  url: string
+  title: string
+  image: string | null
+  minutes: number | null
+  publishedAt: string | null
+  recipe: boolean | null
+}
+
+/** A recipe site the household follows (Find recipes → Sites). */
+export const followedSites = pgTable(
+  "followed_sites",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    siteUrl: text().notNull(),
+    feedUrl: text().notNull(),
+    /** Newest posts, the recipes among them kept as the feed moves on. */
+    items: jsonb().$type<SiteItem[]>().notNull().default([]),
+    /** Posts that weren't recipes, so they aren't opened again. */
+    skipped: jsonb().$type<string[]>().notNull().default([]),
+    /** When the feed was last read. */
+    checkedAt: timestamp({ withTimezone: true }),
+    error: text(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex().on(t.householdId, t.feedUrl)]
+)
+
 /**
  * A change the AI suggests, waiting for someone to apply or dismiss it. The
  * AI never edits a recipe directly.

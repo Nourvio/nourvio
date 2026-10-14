@@ -144,7 +144,7 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 ## Milestone 8: Autopilot and finding recipes
 
-**Status:** picked October 14, 2026; being built in this order, a commit for each. 1 to 3 are built.
+**Status:** built October 14, 2026, a commit for each, in this order. Live checks: a collection recipe imported (and removed again), an AI search for cozy soups found eight importable recipes in 26 seconds for about 6¢, and following RecipeTin Eats turned its four newest posts into recipes. The weekly autopilot wasn't run live, so it didn't change the real plan; tests cover it.
 
 1. **Weekly autopilot:** on a day and time the household picks (Saturday morning, say), Mise fills the week ahead's empty meals by its rules and tastes (the free, rules-based Fill the week) and adds them to the shopping list. Today says "Next week is planned" to review. Settings has a "Run it now".
 2. **Starter collections:** hand-picked sets of well-loved recipes from free sites (Weeknight dinners, Chicken, Pasta, Soups, Vegetarian, Baking...), each checked to import, browsed with photos, imported one at a time or all at once.
