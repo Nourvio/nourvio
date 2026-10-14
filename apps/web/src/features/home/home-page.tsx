@@ -723,7 +723,7 @@ function Welcome({ isServerAdmin }: { isServerAdmin: boolean }) {
   const steps = [
     {
       title: "Add your recipes",
-      text: "Paste a link from any recipe site or video, or snap a cookbook page.",
+      text: "Start from a hand-picked collection, paste a link from any recipe site, or snap a cookbook page.",
     },
     {
       title: "Plan the week",
@@ -758,6 +758,9 @@ function Welcome({ isServerAdmin }: { isServerAdmin: boolean }) {
       </ol>
       <div className="flex flex-wrap gap-2">
         <Button size="lg" asChild>
+          <Link to="/discover">Browse collections</Link>
+        </Button>
+        <Button size="lg" variant="outline" asChild>
           <Link to="/recipes?import=link">Add a recipe</Link>
         </Button>
         {isServerAdmin && (

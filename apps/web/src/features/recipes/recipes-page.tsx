@@ -1,6 +1,7 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  Compass01Icon,
   CookBookIcon,
   Link01Icon,
   SparklesIcon,
@@ -101,6 +102,18 @@ export function RecipesPage() {
                 </Link>
               </Button>
             )}
+            {!libraryEmpty && (
+              <Button variant="outline" asChild>
+                <Link to="/discover">
+                  <HugeiconsIcon
+                    icon={Compass01Icon}
+                    strokeWidth={2}
+                    data-icon="inline-start"
+                  />
+                  Find recipes
+                </Link>
+              </Button>
+            )}
             <AddRecipeMenu />
           </>
         }
@@ -140,14 +153,27 @@ export function RecipesPage() {
             </EmptyMedia>
             <EmptyTitle>No recipes yet</EmptyTitle>
             <EmptyDescription>
-              Paste a link from any recipe site or video, or snap a photo of a
-              cookbook page
+              Start from a hand-picked collection, paste a link from any recipe
+              site or video, or snap a photo of a cookbook page
               {me.isServerAdmin ? ", or bring over your Mealie library" : ""}.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
             <div className="flex flex-wrap justify-center gap-2">
-              <Button onClick={() => importDialog.open("link")}>
+              <Button asChild>
+                <Link to="/discover">
+                  <HugeiconsIcon
+                    icon={Compass01Icon}
+                    strokeWidth={2}
+                    data-icon="inline-start"
+                  />
+                  Browse collections
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => importDialog.open("link")}
+              >
                 <HugeiconsIcon
                   icon={Link01Icon}
                   strokeWidth={2}

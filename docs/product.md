@@ -68,6 +68,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
 | Manual | Type ingredients one per line and steps one per line. A line starting with `#` starts a section. |
 | Chat | Ask the assistant to save what you just worked out together (see 3). |
 | Mealie | A one-time import of the whole existing Mealie library, with images. |
+| Collections | **Find recipes** (Recipes, or Add recipe → Browse collections) has hand-picked collections of well-loved recipes from free sites: Weeknight wins, Chicken, Pasta and noodles, Soups and stews, Vegetarian mains, Comfort classics, Baking, Cookies and bars, and Breakfast. Each was checked to import cleanly. Browse them with photos, import one at a time, or **Import all** (one after another, so no site is hit all at once). Recipes already in the library say so and link to it. |
 
 **Sharing in.** On Android, the installed app shows up in the share sheet, so a recipe page or a TikTok can be sent straight to Mise. iPhones don't let web apps do that; copy the link and use **Paste** in the import dialog (or an iOS Shortcut that opens `/recipes?url=…`).
 

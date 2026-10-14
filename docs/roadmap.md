@@ -144,7 +144,7 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 ## Milestone 8: Autopilot and finding recipes
 
-**Status:** picked October 14, 2026; being built in this order, a commit for each. 1 is built.
+**Status:** picked October 14, 2026; being built in this order, a commit for each. 1 and 2 are built.
 
 1. **Weekly autopilot:** on a day and time the household picks (Saturday morning, say), Mise fills the week ahead's empty meals by its rules and tastes (the free, rules-based Fill the week) and adds them to the shopping list. Today says "Next week is planned" to review. Settings has a "Run it now".
 2. **Starter collections:** hand-picked sets of well-loved recipes from free sites (Weeknight dinners, Chicken, Pasta, Soups, Vegetarian, Baking...), each checked to import, browsed with photos, imported one at a time or all at once.

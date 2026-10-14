@@ -7,6 +7,7 @@ import { RequireAuth } from "@/features/auth/require-auth"
 import { SetupPage } from "@/features/auth/setup-page"
 import { SignupPage } from "@/features/auth/signup-page"
 import { CookPage } from "@/features/cook/cook-page"
+import { CollectionPage, DiscoverPage } from "@/features/discover/discover-page"
 import { HomePage } from "@/features/home/home-page"
 import { ListPage } from "@/features/list/list-page"
 import { PantryPage } from "@/features/pantry/pantry-page"
@@ -75,6 +76,8 @@ export const router = createBrowserRouter([
           { path: "recipes/:slug", element: <RecipePage /> },
           { path: "recipes/:slug/edit", element: <EditRecipePage /> },
           { path: "review", element: <ReviewPage /> },
+          { path: "discover", element: <DiscoverPage /> },
+          { path: "discover/:id", element: <CollectionPage /> },
           { path: "plan", element: <PlanPage /> },
           { path: "list", element: <ListPage /> },
           { path: "pantry", element: <PantryPage /> },

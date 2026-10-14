@@ -2,6 +2,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
   Camera01Icon,
+  Compass01Icon,
   Globe02Icon,
   Link01Icon,
   Note01Icon,
@@ -14,6 +15,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
@@ -56,6 +58,11 @@ export function AddRecipeMenu() {
         <DropdownMenuItem onSelect={() => navigate("/recipes/new")}>
           <HugeiconsIcon icon={PencilEdit01Icon} strokeWidth={2} />
           Type it in
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={() => navigate("/discover")}>
+          <HugeiconsIcon icon={Compass01Icon} strokeWidth={2} />
+          Browse collections
         </DropdownMenuItem>
         {ai.data?.available && (
           <DropdownMenuItem
