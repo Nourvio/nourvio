@@ -31,6 +31,8 @@ Each milestone ends with something usable. Mealie keeps running until milestone 
 
 ## Milestone 1: Recipes and AI basics
 
+**Status:** in progress. Done so far: recipes, the recipe page, editor, cook view and version history; importing from recipe-site links, including links shared to the installed app. Next: AI providers, then text, photo and video import, cleanup and the Mealie import.
+
 - Recipe tables, CRUD, tags, rating, "I made this" and version history with restore
 - The shared ingredient parser, quantity scaling and fraction display
 - **AI providers:**
@@ -39,6 +41,7 @@ Each milestone ends with something usable. Mealie keeps running until milestone 
   - usage and cost tracking
 - **Import:**
   - From a URL: JSON-LD first, then AI fallback, with the image downloaded
+  - From TikTok, YouTube and Instagram links: caption, transcript and frames, read by AI
   - From pasted text and photos, using AI
   - Manual entry
   - Mealie, with images

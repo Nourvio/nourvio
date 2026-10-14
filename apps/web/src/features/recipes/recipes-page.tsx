@@ -30,7 +30,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { comingSoon } from "@/lib/coming-soon"
 
 import { AddRecipeMenu } from "./add-recipe-menu"
+import { ImportDialog } from "./import-dialog"
 import { RecipeCard } from "./recipe-card"
+import { useImportDialog } from "./use-import"
 import { useRecipes, useTags } from "./use-recipes"
 
 export function RecipesPage() {
@@ -51,6 +53,7 @@ export function RecipesPage() {
     )
   }, [q, setParams])
 
+  const importDialog = useImportDialog()
   const recipes = useRecipes({ q, tag })
   const tags = useTags()
   const filtering = Boolean(q || tag)
@@ -76,6 +79,7 @@ export function RecipesPage() {
         description="Everything you cook, in one place."
         actions={<AddRecipeMenu />}
       />
+      <ImportDialog />
 
       {!libraryEmpty && (
         <div className="mb-6 grid gap-3">
@@ -150,7 +154,7 @@ export function RecipesPage() {
           </EmptyHeader>
           <EmptyContent>
             <div className="flex flex-wrap justify-center gap-2">
-              <Button onClick={() => comingSoon("Importing from a link", 1)}>
+              <Button onClick={() => importDialog.open("link")}>
                 <HugeiconsIcon
                   icon={Link01Icon}
                   strokeWidth={2}

@@ -38,12 +38,15 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
 
 | Way in | How it works |
 |---|---|
-| Link | Paste a URL. We read the structured recipe data most sites embed, and use AI when a site doesn't have it. |
+| Link | Paste a URL. We read the structured recipe data most sites embed, and use AI when a site doesn't have it. Importing the same link twice offers the existing recipe instead. |
+| Video | Paste a TikTok, YouTube or Instagram link. We read the caption, the spoken words and, for short videos, frames from the video, and AI writes up the recipe. |
 | Text | Paste anything, like a ChatGPT answer or an email. AI turns it into a recipe. |
 | Photo | Take one or more photos of a cookbook page or a handwritten card. AI reads them. |
 | Manual | Type ingredients one per line and steps one per line. A line starting with `#` starts a section. |
 | Chat | Ask the assistant to save what you just worked out together (see 3). |
 | Mealie | A one-time import of the whole existing Mealie library, with images. |
+
+**Sharing in.** On Android, the installed app shows up in the share sheet, so a recipe page or a TikTok can be sent straight to Mise. iPhones don't let web apps do that; copy the link and use **Paste** in the import dialog (or an iOS Shortcut that opens `/recipes?url=…`).
 
 **Cleaning up.** Imported recipes are often messy. A **Tidy up** button, or a request in chat, has the AI:
 

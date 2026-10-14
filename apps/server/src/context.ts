@@ -3,12 +3,15 @@ import type { Context } from "hono"
 import type { SetupCode } from "./auth/setup-code.ts"
 import type { Db } from "./db/client.ts"
 import { HttpError } from "./http.ts"
+import type { Fetcher } from "./import/safe-fetch.ts"
 import type { UserRow } from "./services/users.ts"
 
 /** What the app needs to run. Tests pass an in-memory database here. */
 export type AppContext = {
   db: Db
   setupCode: SetupCode
+  /** How imports fetch web pages. Tests swap in a fake; defaults to fetchPublic. */
+  fetcher?: Fetcher
 }
 
 export type AppEnv = {

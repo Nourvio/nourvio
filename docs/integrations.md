@@ -11,9 +11,25 @@ What Mise connects to, what we learned about each service (researched October 20
   - keywords and category
   - sometimes nutrition
 - **AI fallback.** When a page has no recipe data, we send the page's text to Claude and get a structured draft back (see [architecture.md](architecture.md#structured-extraction)).
-- **Fetching.** We send a normal browser user agent, time out after 15 seconds, and cap pages at 5 MB. Some sites block automated requests. When that happens, the UI suggests pasting the text instead.
-- **Safety.** The server refuses to fetch private-network addresses (localhost, 10.x, 192.168.x and so on), and checks every redirect too.
-- **Images.** The recipe image is downloaded and stored under `/data/images`, so it survives the site changing.
+- **Fetching.** We send a normal browser user agent, time out after 15 seconds, and cap pages at 5 MB. Tracking parameters (`utm_*`, `fbclid` and so on) are dropped from the link first.
+- **Sites that block us.** Some big publishers refuse requests that don't look like a browser:
+  - Node's default TLS handshake is on some blocklists, so we connect over HTTP/2 with a browser's cipher order. Bon Appétit and NYT Cooking work, and so do Allrecipes and Simply Recipes most of the time.
+  - Sites behind a JavaScript challenge (Budget Bytes, for one) refuse even curl. We stop there and don't try to get around it.
+  - When a site blocks us, the UI suggests pasting the text instead. A later option is a bookmarklet that sends the page from your own browser, which is already past the check.
+- **Duplicates.** Importing a link that's already in the library (also checked after redirects) returns the existing recipe, with a choice to import a copy anyway.
+- **Safety.** The server refuses to fetch private-network addresses (localhost, 10.x, 192.168.x, link-local, carrier NAT and IPv6 equivalents). It resolves names itself and checks every address and every redirect, so a public name pointing at a private address is refused too.
+- **Images.** The recipe image is downloaded and stored under `/data/images`, so it survives the site changing. A broken image doesn't fail the import.
+
+## Video links (TikTok, YouTube, Instagram)
+
+Plenty of recipes now live only in short videos. The recipe is usually split across the caption, what's said and what's shown on screen.
+
+- **yt-dlp** (in the Docker image) fetches the video's metadata without downloading the video: title, description (often the full recipe), thumbnail and captions where they exist.
+- **No captions?** If an OpenAI key is set, the audio is transcribed with OpenAI's transcription API. Claude has no audio input.
+- **Short videos** (a few minutes or less): ffmpeg pulls a handful of frames, which go to the AI as images, for on-screen text and amounts.
+- All of that goes to the same AI extraction as pasted text. The recipe's origin is `video`, the link is kept, and the thumbnail becomes the photo.
+- **Instagram** often needs a signed-in session. `YTDLP_COOKIES_FILE` can point at a cookies file exported from a browser.
+- yt-dlp breaks when sites change, so the image should be rebuilt now and then to pick up a new version.
 
 ## Mealie (one-time migration)
 

@@ -49,6 +49,7 @@ export function slugify(name: string) {
       .normalize("NFKD")
       .replace(/[̀-ͯ]/g, "")
       .toLowerCase()
+      .replace(/['’]/g, "")
       .replace(/&/g, " and ")
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "")

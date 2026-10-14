@@ -16,6 +16,7 @@ import { pingDatabase } from "./db/client.ts"
 import { HttpError } from "./http.ts"
 import { authRoutes } from "./routes/auth.ts"
 import { imagesRoutes } from "./routes/images.ts"
+import { importRoutes } from "./routes/import.ts"
 import { meRoutes } from "./routes/me.ts"
 import { recipesRoutes } from "./routes/recipes.ts"
 import { setupRoutes } from "./routes/setup.ts"
@@ -73,6 +74,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/users", usersRoutes(ctx))
   app.route("/api/recipes", recipesRoutes(ctx))
   app.route("/api/images", imagesRoutes())
+  app.route("/api/import", importRoutes(ctx))
   app.all("/api/*", requireUser, (c) => c.json({ error: "Not found" }, 404))
 
   // ---- Web app ----

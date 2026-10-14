@@ -15,10 +15,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { comingSoon } from "@/lib/coming-soon"
+
+import { useImportDialog } from "./use-import"
 
 export function AddRecipeMenu() {
   const navigate = useNavigate()
+  const importDialog = useImportDialog()
 
   return (
     <DropdownMenu>
@@ -33,15 +35,15 @@ export function AddRecipeMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
-        <DropdownMenuItem onSelect={() => comingSoon("Importing a link", 1)}>
+        <DropdownMenuItem onSelect={() => importDialog.open("link")}>
           <HugeiconsIcon icon={Link01Icon} strokeWidth={2} />
           From a link or video
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => comingSoon("Importing text", 1)}>
+        <DropdownMenuItem onSelect={() => importDialog.open("text")}>
           <HugeiconsIcon icon={Note01Icon} strokeWidth={2} />
           Paste text
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => comingSoon("Importing photos", 1)}>
+        <DropdownMenuItem onSelect={() => importDialog.open("photo")}>
           <HugeiconsIcon icon={Camera01Icon} strokeWidth={2} />
           From a photo
         </DropdownMenuItem>

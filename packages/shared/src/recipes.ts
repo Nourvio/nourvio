@@ -124,3 +124,11 @@ export type Tag = { name: string; count: number }
 export const rateInput = z.object({
   rating: z.number().int().min(1).max(5).nullable(),
 })
+
+export const importUrlInput = z.object({
+  url: z.string().trim().min(1, "Paste a link to a recipe").max(2000),
+  /** Import again even if a recipe from this link already exists. */
+  force: z.boolean().optional(),
+})
+
+export type ImportResult = { recipe: Recipe; duplicate: boolean }

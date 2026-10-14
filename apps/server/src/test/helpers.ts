@@ -9,11 +9,12 @@ import type { Db } from "../db/client.ts"
 import { migrationsFolder } from "../db/migrate.ts"
 import * as schema from "../db/schema.ts"
 import { seedReferenceData } from "../db/seed.ts"
+import type { Fetcher } from "../import/safe-fetch.ts"
 
 type App = ReturnType<typeof createApp>
 
 /** A fresh app on an in-memory Postgres (PGlite) with every migration applied. */
-export async function createTestApp() {
+export async function createTestApp({ fetcher }: { fetcher?: Fetcher } = {}) {
   const client = new PGlite({ extensions: { pg_trgm } })
   const pglite = drizzle({ client, schema, casing: "snake_case" })
   await migrate(pglite, { migrationsFolder })
@@ -23,7 +24,7 @@ export async function createTestApp() {
 
   const setupCode = new SetupCode()
   const code = setupCode.issue()
-  const app = createApp({ db, setupCode })
+  const app = createApp({ db, setupCode, fetcher })
   return { app, db, code, close: () => client.close() }
 }
 
@@ -99,8 +100,10 @@ export const ADMIN = {
 }
 
 /** A test app whose first account (an admin) is already set up and signed in. */
-export async function createTestAppWithAdmin() {
-  const test = await createTestApp()
+export async function createTestAppWithAdmin(
+  options: Parameters<typeof createTestApp>[0] = {}
+) {
+  const test = await createTestApp(options)
   const admin = apiClient(test.app)
   const res = await admin.post("/api/setup", { ...ADMIN, code: test.code })
   if (res.status !== 201) throw new Error(`Setup failed: ${res.status}`)
