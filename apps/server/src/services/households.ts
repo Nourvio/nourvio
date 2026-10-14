@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto"
 
 import {
   DEFAULT_MEALS,
+  DEFAULT_ON_HAND,
   INVITE_DAYS,
   MEALS,
   type Meal,
@@ -50,6 +51,7 @@ function toHousehold(row: HouseholdRow): Household {
     autoCleanup: row.settings.autoCleanup ?? false,
     meals: row.settings.meals ?? DEFAULT_MEALS,
     weekStart: row.settings.weekStart ?? 0,
+    onHand: row.settings.onHand ?? DEFAULT_ON_HAND,
   }
 }
 
@@ -72,6 +74,7 @@ export async function updateHousehold(
     autoCleanup?: boolean
     meals?: Meal[]
     weekStart?: 0 | 1
+    onHand?: string[]
   }
 ) {
   const [current] = await db
@@ -95,6 +98,15 @@ export async function updateHousehold(
         ...(patch.weekStart === undefined
           ? {}
           : { weekStart: patch.weekStart }),
+        ...(patch.onHand
+          ? {
+              onHand: [
+                ...new Set(
+                  patch.onHand.map((item) => item.trim().toLowerCase())
+                ),
+              ].filter(Boolean),
+            }
+          : {}),
       },
     })
     .where(eq(households.id, id))

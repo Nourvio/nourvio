@@ -22,6 +22,8 @@ export type Household = {
   meals: Meal[]
   /** 0 for Sunday, 1 for Monday. */
   weekStart: 0 | 1
+  /** Always at home, so left off lists made from the plan. */
+  onHand: string[]
 }
 
 export const householdNameSchema = z
@@ -35,6 +37,7 @@ export const updateHouseholdInput = z.object({
   autoCleanup: z.boolean().optional(),
   meals: z.array(z.enum(MEALS)).min(1, "Plan at least one meal").optional(),
   weekStart: z.union([z.literal(0), z.literal(1)]).optional(),
+  onHand: z.array(z.string().trim().min(1).max(60)).max(200).optional(),
 })
 export type UpdateHouseholdInput = z.infer<typeof updateHouseholdInput>
 

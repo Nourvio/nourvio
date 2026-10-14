@@ -191,6 +191,11 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
             </span>
           )}
           {skipped && <span className="font-medium">Skipped</span>}
+          {entry.listed && entry.status === "planned" && (
+            <span title="Its ingredients are on the shopping list">
+              On the list ·
+            </span>
+          )}
           {recipe &&
             [
               servings && `${servings} servings`,

@@ -40,6 +40,8 @@ export type PlanEntry = {
   /** Null means the recipe's own servings. */
   servings: number | null
   status: PlanStatus
+  /** Its ingredients have been added to the shopping list. */
+  listed: boolean
 }
 
 const servings = z.number().positive().max(100).nullable()

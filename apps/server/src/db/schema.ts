@@ -4,6 +4,7 @@ import type {
   Appearance,
   ChatPart,
   CleanupJob,
+  ListSource,
   Meal,
   Nutrition,
   PlanStatus,
@@ -13,6 +14,7 @@ import type {
   RecipeOrigin,
   RecipeValues,
   RecipeVersion,
+  StoreSectionId,
   Role,
   UnitKind,
 } from "@mise/shared"
@@ -54,7 +56,12 @@ export const households = pgTable("households", {
   id: uuid().primaryKey().defaultRandom(),
   name: text().notNull(),
   settings: jsonb()
-    .$type<{ autoCleanup?: boolean; meals?: Meal[]; weekStart?: 0 | 1 }>()
+    .$type<{
+      autoCleanup?: boolean
+      meals?: Meal[]
+      weekStart?: 0 | 1
+      onHand?: string[]
+    }>()
     .notNull()
     .default({}),
   createdAt: createdAt(),
@@ -155,7 +162,7 @@ export const units = pgTable(
 
 /** Aisles for grouping the shopping list. Seeded at startup from reference-data.ts. */
 export const storeSections = pgTable("store_sections", {
-  id: text().primaryKey(),
+  id: text().$type<StoreSectionId>().primaryKey(),
   name: text().notNull(),
   sortOrder: integer().notNull(),
 })
@@ -374,11 +381,82 @@ export const mealPlanEntries = pgTable(
     /** Null means the recipe's own servings. */
     servings: real(),
     status: text().$type<PlanStatus>().notNull().default("planned"),
+    /** When its ingredients went on the shopping list, so they're only added once. */
+    listedAt: timestamp({ withTimezone: true }),
     createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [index().on(t.householdId, t.date)]
+)
+
+// ---- Shopping list ----
+
+/** The household's shopping list: one list for now. */
+export const shoppingItems = pgTable(
+  "shopping_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    /** The normalized thing to buy (see foodKey), so later adds merge into it. */
+    key: text().notNull(),
+    name: text().notNull(),
+    quantity: real(),
+    unitId: text().references(() => units.id, { onDelete: "set null" }),
+    /** A free-text amount ("2 × 12-pack") when it isn't a number and unit. */
+    amountText: text(),
+    sectionId: text()
+      .$type<StoreSectionId>()
+      .notNull()
+      .default("other")
+      .references(() => storeSections.id),
+    checked: boolean().notNull().default(false),
+    checkedAt: timestamp({ withTimezone: true }),
+    source: text().$type<ListSource>().notNull(),
+    /** Recipe names it's for. */
+    recipes: jsonb().$type<string[]>().notNull().default([]),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.householdId, t.checked)]
+)
+
+/** Bought every week, whatever's planned (Diet Pepsi). Added with the plan. */
+export const weeklyItems = pgTable(
+  "weekly_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    amount: text(),
+    sectionId: text()
+      .$type<StoreSectionId>()
+      .notNull()
+      .default("other")
+      .references(() => storeSections.id),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.householdId)]
+)
+
+/** Where the household shops for a food, learned when they move an item. */
+export const foodSections = pgTable(
+  "food_sections",
+  {
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    food: text().notNull(),
+    sectionId: text()
+      .$type<StoreSectionId>()
+      .notNull()
+      .references(() => storeSections.id),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.food] })]
 )
 
 // ---- Chat ----

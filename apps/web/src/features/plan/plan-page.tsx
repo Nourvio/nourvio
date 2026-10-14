@@ -1,6 +1,10 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  ShoppingBasket01Icon,
+} from "@hugeicons/core-free-icons"
 import {
   addDays,
   DEFAULT_MEALS,
@@ -14,6 +18,7 @@ import { useSearchParams } from "react-router"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AddFromPlanDialog } from "@/features/list/add-from-plan-dialog"
 import { useHouseholdInfo } from "@/features/settings/use-household"
 
 import { AddEntryDialog } from "./add-entry-dialog"
@@ -41,6 +46,7 @@ export function PlanPage() {
     meal: Meal
   } | null>(null)
   const [editing, setEditing] = React.useState<PlanEntry | null>(null)
+  const [listing, setListing] = React.useState(false)
 
   function goTo(week: string) {
     setParams(
@@ -69,6 +75,16 @@ export function PlanPage() {
       <PageHeader
         title="Plan"
         description={`${label ? `${label}, ` : ""}${weekLabel(start)}`}
+        actions={
+          <Button variant="outline" onClick={() => setListing(true)}>
+            <HugeiconsIcon
+              icon={ShoppingBasket01Icon}
+              strokeWidth={2}
+              data-icon="inline-start"
+            />
+            Add to list
+          </Button>
+        }
       />
 
       <div className="grid max-w-3xl gap-4">
@@ -122,6 +138,11 @@ export function PlanPage() {
       </div>
 
       <AddEntryDialog slot={adding} onClose={() => setAdding(null)} />
+      <AddFromPlanDialog
+        open={listing}
+        onOpenChange={setListing}
+        initialWeek={start}
+      />
       <EditEntryDialog
         entry={editing}
         meals={meals}

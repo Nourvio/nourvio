@@ -58,6 +58,7 @@ function toEntry({ entry, recipe }: Joined): PlanEntry {
     note: entry.note,
     servings: entry.servings,
     status: entry.status,
+    listed: entry.listedAt !== null,
   }
 }
 
