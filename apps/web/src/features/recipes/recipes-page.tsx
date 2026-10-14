@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/input-group"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { comingSoon } from "@/lib/coming-soon"
+import { useCurrentUser } from "@/features/auth/current-user"
 
 import { AddRecipeMenu } from "./add-recipe-menu"
 import { ImportDialog } from "./import-dialog"
@@ -55,6 +55,7 @@ export function RecipesPage() {
     )
   }, [q, setParams])
 
+  const me = useCurrentUser()
   const importDialog = useImportDialog()
   const pendingReview = usePendingProposals().data?.length ?? 0
   const recipes = useRecipes({ q, tag })
@@ -181,12 +182,11 @@ export function RecipesPage() {
                 />
                 Import from a link
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => comingSoon("Moving from Mealie", 1)}
-              >
-                Move from Mealie
-              </Button>
+              {me.role === "admin" && (
+                <Button variant="outline" asChild>
+                  <Link to="/settings#mealie">Move from Mealie</Link>
+                </Button>
+              )}
             </div>
           </EmptyContent>
         </Empty>

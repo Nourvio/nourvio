@@ -265,14 +265,19 @@ export const proposals = pgTable(
   (t) => [index().on(t.recipeId, t.status), index().on(t.status, t.createdAt)]
 )
 
-/** Long-running AI work, such as tidying the whole library. */
+/**
+ * Long-running background work: tidying the whole library, or moving
+ * recipes over from Mealie.
+ */
 export const aiJobs = pgTable("ai_jobs", {
   id: uuid().primaryKey().defaultRandom(),
-  kind: text().$type<"cleanup">().notNull(),
+  kind: text().$type<"cleanup" | "mealie">().notNull(),
   status: text().$type<CleanupJob["status"]>().notNull(),
   total: integer().notNull(),
   done: integer().notNull().default(0),
   failed: integer().notNull().default(0),
+  /** Already there, so left alone (Mealie import). */
+  skipped: integer().notNull().default(0),
   createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
   createdAt: createdAt(),
   finishedAt: timestamp({ withTimezone: true }),

@@ -103,6 +103,10 @@ Everything lives in `./data`, next to `compose.yaml`:
      ```
   3. Start the `mise` container again.
 
+## Moving from Mealie
+
+In **Settings → Move from Mealie**, enter Mealie's address as the Mise server sees it (for example `http://192.168.1.20:9000`) and an API token from Mealie (your profile → API Tokens). **Connect** shows how many recipes there are; **Move** brings them over with photos, ratings and last-made dates. Running it again skips recipes already moved. Afterwards, **Settings → AI → Tidy up the whole library** can clean them up.
+
 ## Recipes from videos
 
 Paste a TikTok, YouTube or Instagram link like any other. Mise reads the caption, the captions or (with an OpenAI key) the spoken words, and for short videos a few frames, then AI writes up the recipe. This needs an AI key, and the tools (yt-dlp and ffmpeg) come with the image.

@@ -78,7 +78,7 @@ export async function startCleanupJob(
   const [active] = await db
     .select({ id: aiJobs.id })
     .from(aiJobs)
-    .where(eq(aiJobs.status, "running"))
+    .where(and(eq(aiJobs.kind, "cleanup"), eq(aiJobs.status, "running")))
   if (active) throw new HttpError(409, "A library tidy-up is already running")
   await ai.resolve("cleanup")
 

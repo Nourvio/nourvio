@@ -4,6 +4,7 @@ import type { AiProviderFactory } from "./ai/types.ts"
 import type { SetupCode } from "./auth/setup-code.ts"
 import type { Db } from "./db/client.ts"
 import { HttpError } from "./http.ts"
+import type { MealieFetch } from "./import/mealie.ts"
 import type { Fetcher } from "./import/safe-fetch.ts"
 import type { VideoTools } from "./import/video-tools.ts"
 import type { UserRow } from "./services/users.ts"
@@ -18,6 +19,8 @@ export type AppContext = {
   aiFactory?: AiProviderFactory
   /** yt-dlp and ffmpeg for video links. Tests swap in a fake. */
   videoTools?: VideoTools
+  /** How the Mealie importer reaches Mealie. Tests swap in a fake. */
+  mealieFetch?: MealieFetch
 }
 
 export type AppEnv = {

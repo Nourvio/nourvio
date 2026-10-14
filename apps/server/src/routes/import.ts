@@ -1,5 +1,6 @@
 import {
   CLEANUP_SECTIONS,
+  mealieConnectionInput,
   importTextInput,
   importUrlInput,
   type ImportResult,
@@ -7,11 +8,16 @@ import {
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 
-import { requireUser } from "../auth/middleware.ts"
+import { requireAdmin, requireUser } from "../auth/middleware.ts"
 import type { AiService } from "../ai/service.ts"
 import { currentUser, type AppContext, type AppEnv } from "../context.ts"
 import { HttpError, readBody } from "../http.ts"
 import { extractRecipe, photosToParts } from "../import/ai-extract.ts"
+import {
+  checkMealie,
+  latestMealieJob,
+  startMealieImport,
+} from "../import/mealie.ts"
 import { fetchPublic } from "../import/safe-fetch.ts"
 import { importFromUrl } from "../import/url.ts"
 import { systemVideoTools } from "../import/video-tools.ts"
@@ -22,7 +28,12 @@ import { createRecipe } from "../services/recipes.ts"
 const MAX_PHOTO_UPLOAD = 60 * 1024 * 1024
 
 export function importRoutes(
-  { db, fetcher = fetchPublic, videoTools = systemVideoTools }: AppContext,
+  {
+    db,
+    fetcher = fetchPublic,
+    videoTools = systemVideoTools,
+    mealieFetch = fetch,
+  }: AppContext,
   ai: AiService
 ) {
   const app = new Hono<AppEnv>()
@@ -87,6 +98,28 @@ export function importRoutes(
       await afterImport({ recipe, duplicate: false }, userId)
       return c.json({ recipe, duplicate: false }, 201)
     }
+  )
+
+  // Moving from Mealie (admin only).
+  app.use("/mealie/*", requireAdmin)
+  app.use("/mealie", requireAdmin)
+
+  app.post("/mealie/check", async (c) => {
+    const { url, token } = await readBody(c, mealieConnectionInput)
+    return c.json(await checkMealie(db, url, token, mealieFetch))
+  })
+
+  app.post("/mealie", async (c) => {
+    const { url, token } = await readBody(c, mealieConnectionInput)
+    const job = await startMealieImport(db, url, token, {
+      userId: currentUser(c).id,
+      fetcher: mealieFetch,
+    })
+    return c.json({ job }, 201)
+  })
+
+  app.get("/mealie/job", async (c) =>
+    c.json({ job: await latestMealieJob(db) })
   )
 
   return app

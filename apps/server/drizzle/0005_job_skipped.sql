@@ -1,0 +1,1 @@
+ALTER TABLE "ai_jobs" ADD COLUMN "skipped" integer DEFAULT 0 NOT NULL;

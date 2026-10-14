@@ -70,7 +70,7 @@ export function parseDuration(value: unknown): number | null {
   return total > 0 ? Math.round(total) : null
 }
 
-function parseYield(value: unknown) {
+export function parseYield(value: unknown) {
   const texts = asArray(value).map(cleanText).filter(Boolean)
   let servings: number | null = null
   let yieldText: string | null = null

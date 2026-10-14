@@ -36,15 +36,20 @@ Plenty of recipes now live only in short videos. The recipe is usually split acr
 
 ## Mealie (one-time migration)
 
-- **Using Mealie's REST API with an API token:**
-  - list recipes from the paginated `/api/recipes`
-  - fetch each one with `/api/recipes/{slug}`
-  - download images from `/api/media/recipes/{id}/images/original.webp`
+Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x and 2.x and tested against fixtures of both shapes; it still needs a first run against the real library.
+
+- **Mealie's REST API, with an API token** (made in Mealie under your profile → API Tokens). The token is used for the run and never saved.
+  - `/api/app/about` for the version, to check the connection
+  - the paginated `/api/recipes` (50 at a time), then `/api/recipes/{slug}` for each
+  - photos from `/api/media/recipes/{id}/images/original.webp`
+- **It reaches the home network.** Mealie usually lives there, so unlike recipe-site imports this skips the private-address block. That's why it's admin only, and it only ever calls the address that was typed in.
 - **Mapping:**
-  - Ingredients carry `originalText`, quantity, unit, food, note and `title` (a section heading). We keep `originalText` as the raw line and use Mealie's foods and units to seed ours.
-  - Instructions carry `title` and `text`.
-  - Tags, categories, ratings and last-made dates come across too.
-- Check the endpoints against our Mealie version before building this.
+  - Ingredients: Mealie's formatted `display` line, else `originalText`, else `note` (where unparsed lines live). A `title` starts a section.
+  - Steps: `title` starts a section; `text` becomes one step.
+  - Servings from `recipeServings` (2.x) or the yield text; times from `prepTime`, `performTime` (Mealie's cook time; `cookTime` in older versions) and `totalTime`, whether they're "1 hour 30 minutes" or ISO durations.
+  - Tags and categories both become tags; rating (rounded), source link, notes, nutrition and last-made date come across.
+  - Each recipe remembers its Mealie id (`external_ref`), so running it again skips what's already here.
+- **Later:** seeding our foods and units from Mealie's, when the foods list arrives (milestone 3).
 
 ## AI providers (Claude and OpenAI)
 

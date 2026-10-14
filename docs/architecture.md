@@ -132,7 +132,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Auth | `POST /api/auth/login`, `POST /api/auth/logout`, `GET /api/auth/me` |
 | Recipes | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image` |
 | Versions | `GET /api/recipes/:id/versions`, `POST /api/recipes/:id/versions/:versionId/restore` |
-| Import | `POST /api/import/url`, `/text`, `/photo`, `/mealie` |
+| Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (admin): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
 | AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal, or null when there's nothing to change), `GET /api/recipes/:id/proposal`; library runs at `GET`/`POST /api/ai/settings/cleanup-job` and `POST …/cleanup-job/:id/cancel` (admin) |
 | Proposals | `GET /api/proposals` (pending), `POST /api/proposals/:id/apply` (chosen sections), `POST /api/proposals/:id/dismiss` |
 | Chat | `POST /api/chat` (streaming), `GET /api/chat/conversations`, `GET /api/chat/conversations/:id` |

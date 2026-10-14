@@ -1,4 +1,5 @@
-import { Link } from "react-router"
+import * as React from "react"
+import { Link, useLocation } from "react-router"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { ModeToggleGroup } from "@/components/theme/mode-toggle"
@@ -18,9 +19,16 @@ import { useCurrentUser } from "@/features/auth/current-user"
 import { AccountCard } from "./account-card"
 import { AiCard } from "./ai-card"
 import { HouseholdCard } from "./household-card"
+import { MealieCard } from "./mealie-card"
 
 export function SettingsPage() {
   const me = useCurrentUser()
+  const { hash } = useLocation()
+
+  // Links like /settings#mealie jump to that card.
+  React.useEffect(() => {
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView()
+  }, [hash])
 
   return (
     <>
@@ -52,6 +60,7 @@ export function SettingsPage() {
         <HouseholdCard />
 
         {me.role === "admin" && <AiCard />}
+        {me.role === "admin" && <MealieCard />}
 
         <Card>
           <CardHeader>
