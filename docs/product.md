@@ -89,30 +89,36 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 
 ### 4. Meal planning
 
-- A week view. Dinners by default, with breakfast, lunch and snacks optional.
-- Add a recipe to a day, or add a note instead ("leftovers", "eating out").
-- **Suggest the week:**
-  - Rules, such as "quick recipes on weeknights," "no repeats within 14 days," or "favor high ratings."
-  - An AI mode that also weighs the pantry, food that needs using soon, skipped meals and what we like.
-- Re-roll one day's suggestion without touching the rest.
+- A week view, one day at a time. Each household picks which meals it plans (breakfast, lunch, dinner, snacks; dinner by default) and whether weeks start on Sunday or Monday. Empty meals shrink to small "+ Lunch" buttons, so a sparse week stays tidy.
+- Add a recipe to a meal, or a note instead ("leftovers", "eating out"). A recipe page has a Plan button too.
+- **Fill the week** suggests recipes for the empty meals, from today on:
+  - No repeats: nothing planned or made within two weeks, and a recipe and its versions ("Pancakes (dairy-free)") count as one dish.
+  - Favors high ratings, recipes not tried yet, recipes tagged for the meal, and quick dinners on weeknights.
+  - Breakfast, lunch and snacks only use recipes tagged for them. Dinner takes anything that isn't clearly another meal.
+  - Re-roll any idea, or leave that meal empty, before adding them all.
+- **Suggest something else** on any planned meal swaps in another recipe, with an undo.
 - Mark each planned meal **cooked** (same as "I made this") or **skipped**.
+- **The assistant** knows which week you're looking at. Ask it to fill the dinners or plan easy lunches, and it offers the meals as a card you add with one tap.
+- *Later:* saved plan rules, and suggestions that weigh the pantry and food that needs using soon.
 
 ### 5. Shopping list
 
-- **Generated from the week's plan:**
-  - The same ingredient is combined across recipes ("1 onion" + "2 onions" → 3 onions).
-  - Units are converted when it's safe.
-  - Anything in the pantry is subtracted.
-- Grouped by store section: produce, dairy, meat, pantry and so on.
-- Add manual items ("paper towels").
-- Check items off while shopping. Checked items move into the pantry.
-- Send the list to the store (see 7).
-- One main list to start. More lists can come later if needed.
+- **Add from the plan:** a week's planned meals (the ones not added yet) go on the list, scaled to their servings.
+  - The same ingredient is combined across recipes ("1 onion" + "2 onions" → 3 onions), converting units when it's safe.
+  - **Always on hand** items (salt, pepper, oil, water and so on; the household edits the list) are left off.
+  - Each planned meal shows "On the list" once its ingredients are added.
+- **Every week** items (Diet Pepsi, bananas) go on with each week's plan, or with one tap from the List page.
+- Grouped by store section: produce, meat, dairy, bakery, canned goods and so on. Moving an item to another section is remembered for next time.
+- Add anything by typing it ("2 lb ground beef", "paper towels").
+- Check items off while shopping. They move to "In the cart" until cleared.
+- The assistant can offer items to add, as a card.
+- *Later:* the pantry is subtracted, checked items move into the pantry (milestone 4), and the list goes to the store (see 7).
+- One list per household. More lists can come later if needed.
 
 ### 6. Pantry
 
 - **Amounts can be rough:** "2 lb", "half a bag", or just "have it".
-- **Staples** like salt, oil and flour are assumed to be on hand. They only go on the list when marked low or out.
+- **Always on hand** items like salt, oil and flour are assumed to be there. They only go on the list when marked low or out.
 - **Bought** items flow in from the shopping list.
 - **Cooked** meals take their ingredients out. It's approximate, and easy to correct.
 - **Skipped meals:** food bought for a planned meal that wasn't cooked stays in the pantry, tagged with the meal it was bought for. Next week's suggestions try to use it.
@@ -172,7 +178,7 @@ Mealie is AGPL, so we reuse its ideas and behavior, not its code. Features worth
 
 - Importing from a URL by reading the recipe data sites embed (the schema.org Recipe format)
 - Recipe scaling
-- Meal plan rules (by tag, category or rating) and re-rolling a single day
+- Meal plan suggestions (by tag or rating) and re-rolling a single day
 - "I made this" and the last-made date
 - Foods and units as shared lists, so the same ingredient adds up across recipes
 - Shopping list sections by store aisle (Mealie calls them labels)

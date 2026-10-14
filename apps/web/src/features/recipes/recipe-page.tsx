@@ -83,7 +83,12 @@ export function RecipePage() {
 
 function RecipeView({ recipe }: { recipe: Recipe }) {
   const [factor, setFactor] = React.useState(1)
-  useChatScreen({ recipeId: recipe.id, recipeName: recipe.name, scale: factor })
+  useChatScreen({
+    kind: "recipe",
+    recipeId: recipe.id,
+    recipeName: recipe.name,
+    scale: factor,
+  })
   const [checked, setChecked] = React.useState<Set<string>>(new Set())
   const rate = useRateRecipe(recipe.id)
   const markMade = useMarkMade(recipe.id)

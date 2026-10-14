@@ -1,4 +1,12 @@
-import type { Proposal, Recipe, RecipeValues } from "@mise/shared"
+import {
+  isoDate,
+  MEALS,
+  type PlanEntry,
+  type Proposal,
+  type ProposedMeal,
+  type Recipe,
+  type RecipeValues,
+} from "@mise/shared"
 import { z } from "zod"
 
 import type { AiService } from "../ai/service.ts"
@@ -7,6 +15,8 @@ import type { Db } from "../db/client.ts"
 import { HttpError } from "../http.ts"
 import { toRecipeInput } from "../import/ai-extract.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
+import { listItems } from "../services/list.ts"
+import { listEntries } from "../services/plan.ts"
 import {
   cleanLines,
   createProposal,
@@ -289,13 +299,172 @@ const tidyRecipe = tool({
   },
 })
 
+const getMealPlan = tool({
+  name: "get_meal_plan",
+  description:
+    "The household's meal plan between two dates (YYYY-MM-DD, up to 62 days): each day's meals with their recipe or note, servings and whether it was cooked or skipped.",
+  input: z.object({ from: isoDate, to: isoDate }),
+  runningLabel: "Checking the plan",
+  async run(ctx, { from, to }) {
+    const entries = await listEntries(ctx.db, ctx.householdId, from, to)
+    return { output: describePlan(entries), label: "Checked the plan" }
+  },
+})
+
+const getShoppingList = tool({
+  name: "get_shopping_list",
+  description:
+    "What's on the household's shopping list, by aisle, and what's checked off.",
+  input: z.object({}),
+  runningLabel: "Checking the list",
+  async run(ctx) {
+    const items = await listItems(ctx.db, ctx.householdId)
+    const lines = items.map(
+      (item) =>
+        `${item.checked ? "[got] " : ""}${item.name}${item.amount ? ` (${item.amount})` : ""} [${item.sectionId}]`
+    )
+    return {
+      output: lines.length ? lines.join("\n") : "The list is empty.",
+      label: "Checked the list",
+    }
+  },
+})
+
+const proposeMeals = tool({
+  name: "propose_meals",
+  description:
+    'Offer meals to add to the plan. The person sees a card and adds them with one tap. Use recipe ids or slugs from the library, or a note ("Leftovers", "Eating out") instead of a recipe.',
+  input: z.object({
+    summary: z
+      .string()
+      .describe(
+        'One sentence for the card, like "Quick dinners for Monday to Thursday."'
+      ),
+    meals: z
+      .array(
+        z.object({
+          date: isoDate,
+          meal: z.enum(MEALS),
+          recipe: z
+            .string()
+            .nullable()
+            .describe("A recipe id or slug, or null with a note"),
+          note: z.string().nullable(),
+          servings: z
+            .number()
+            .nullable()
+            .describe("Null for the recipe's own servings"),
+        })
+      )
+      .min(1)
+      .max(28),
+  }),
+  runningLabel: "Planning meals",
+  async run(ctx, { summary, meals }) {
+    const resolved: ProposedMeal[] = []
+    const missing: string[] = []
+    for (const meal of meals) {
+      if (meal.recipe) {
+        const recipe = await findRecipe(ctx, meal.recipe)
+        if (!recipe) {
+          missing.push(meal.recipe)
+          continue
+        }
+        resolved.push({
+          date: meal.date,
+          meal: meal.meal,
+          recipe: { id: recipe.id, slug: recipe.slug, name: recipe.name },
+          note: null,
+          servings: meal.servings && meal.servings > 0 ? meal.servings : null,
+        })
+      } else if (meal.note?.trim()) {
+        resolved.push({
+          date: meal.date,
+          meal: meal.meal,
+          recipe: null,
+          note: meal.note.trim().slice(0, 200),
+          servings: null,
+        })
+      }
+    }
+    if (!resolved.length) {
+      return {
+        output: `None of those recipes are in the library${missing.length ? ` (${missing.join(", ")})` : ""}. Search first.`,
+        label: "Couldn't plan those",
+        isError: true,
+      }
+    }
+    const proposal = await createProposal(ctx.db, {
+      householdId: ctx.householdId,
+      kind: "plan_meals",
+      recipeId: null,
+      payload: {
+        summary: summary.slice(0, 300),
+        before: {},
+        after: {},
+        meals: resolved,
+      },
+      userId: ctx.userId,
+      conversationId: ctx.conversationId,
+    })
+    return {
+      output: `${PROPOSED}${missing.length ? ` Not found, so left out: ${missing.join(", ")}.` : ""}`,
+      label: `Suggested ${resolved.length} ${resolved.length === 1 ? "meal" : "meals"}`,
+      proposal,
+    }
+  },
+})
+
+const proposeListItems = tool({
+  name: "propose_list_items",
+  description:
+    'Offer things to add to the shopping list, each as a line like "2 lb ground beef" or "paper towels". The person adds them with one tap.',
+  input: z.object({
+    summary: z.string().describe("One sentence for the card"),
+    items: z.array(z.string()).min(1).max(40),
+  }),
+  runningLabel: "Writing a list",
+  async run(ctx, { summary, items }) {
+    const lines = items.map((item) => item.trim().slice(0, 200)).filter(Boolean)
+    if (!lines.length) {
+      return {
+        output: "Those were all blank.",
+        label: "Couldn't add those",
+        isError: true,
+      }
+    }
+    const proposal = await createProposal(ctx.db, {
+      householdId: ctx.householdId,
+      kind: "list_items",
+      recipeId: null,
+      payload: {
+        summary: summary.slice(0, 300),
+        before: {},
+        after: {},
+        items: lines,
+      },
+      userId: ctx.userId,
+      conversationId: ctx.conversationId,
+    })
+    return {
+      output: PROPOSED,
+      label: `Suggested ${lines.length} ${lines.length === 1 ? "item" : "items"} for the list`,
+      proposal,
+    }
+  },
+})
+
 export const TOOLS = [
   searchRecipes,
   getRecipeTool,
   listTagsTool,
+  getMealPlan,
+  getShoppingList,
   proposeNewRecipe,
   proposeRecipeEdit,
   tidyRecipe,
+  proposeMeals,
+  proposeListItems,
 ] as Tool<z.ZodType>[]
 
 /** The tools as each provider's adapter wants them: name, description, JSON schema. */
@@ -309,6 +478,20 @@ export function toolSpecs(): ChatToolSpec[] {
 
 export function findTool(name: string) {
   return TOOLS.find((t) => t.name === name)
+}
+
+/** A plan, day by day, as the model reads it. */
+export function describePlan(entries: PlanEntry[]) {
+  if (!entries.length) return "Nothing planned."
+  return entries
+    .map((entry) => {
+      const what = entry.recipe
+        ? `${entry.recipe.name} (${entry.recipe.slug}${entry.servings ? `, ${entry.servings} servings` : ""})`
+        : `Note: ${entry.note}`
+      const status = entry.status === "planned" ? "" : ` [${entry.status}]`
+      return `${entry.date} ${entry.meal}: ${what}${status}`
+    })
+    .join("\n")
 }
 
 /** A recipe as the model reads it, with its id and slug for tools. */

@@ -13,11 +13,28 @@ import { api, ApiError } from "@/lib/api"
 
 import { CHAT_KEY } from "./use-chat-queries"
 
-/** What's on screen, so "this recipe" means something to the assistant. */
-export type ScreenContext = {
-  recipeId: string
-  recipeName: string
-  scale: number
+/**
+ * What's on screen, so "this recipe" or "this week" means something to the
+ * assistant.
+ */
+export type ScreenContext =
+  | { kind: "recipe"; recipeId: string; recipeName: string; scale: number }
+  | { kind: "week"; weekStart: string; weekLabel: string }
+
+/** Which thing is on screen; scaling a recipe is still the same recipe. */
+const screenId = (screen: ScreenContext | null) =>
+  !screen
+    ? ""
+    : screen.kind === "recipe"
+      ? `recipe:${screen.recipeId}`
+      : `week:${screen.weekStart}`
+
+/** What a message was about, after "About": "Pancakes" or "the plan for Oct 12 – 18". */
+export function screenLabel(screen: ScreenContext, withScale = false) {
+  if (screen.kind === "week") return `the plan for ${screen.weekLabel}`
+  return withScale && screen.scale !== 1
+    ? `${screen.recipeName} (×${screen.scale})`
+    : screen.recipeName
 }
 
 type ChatState = {
@@ -34,7 +51,7 @@ type ChatState = {
 type ChatApi = ChatState & {
   setOpen(open: boolean): void
   setDraft(draft: string): void
-  /** The recipe (or nothing) on screen, set by pages. */
+  /** The recipe or week (or nothing) on screen, set by pages. */
   screen: ScreenContext | null
   setScreen(screen: ScreenContext | null): void
   /** Whether to send the screen along; reset when the screen changes. */
@@ -118,7 +135,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const setScreen = React.useCallback((next: ScreenContext | null) => {
     setScreenState((current) => {
-      if (current?.recipeId !== next?.recipeId) setUseScreen(true)
+      if (screenId(current) !== screenId(next)) setUseScreen(true)
       return next
     })
   }, [])
@@ -129,10 +146,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       if (!text || abortRef.current) return
       const abort = new AbortController()
       abortRef.current = abort
-      const context =
-        screen && useScreen
-          ? { recipeId: screen.recipeId, scale: screen.scale }
-          : null
+      const shown = useScreen ? screen : null
+      const context = !shown
+        ? null
+        : shown.kind === "recipe"
+          ? { recipeId: shown.recipeId, scale: shown.scale }
+          : { weekStart: shown.weekStart }
       const now = new Date().toISOString()
       setState((s) => ({
         ...s,
@@ -145,7 +164,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
             id: `pending-${now}`,
             role: "user",
             parts: [{ type: "text", text }],
-            contextLabel: context ? (screen?.recipeName ?? null) : null,
+            contextLabel: shown ? screenLabel(shown) : null,
             createdAt: now,
           },
           {
@@ -304,9 +323,7 @@ export function useChat() {
 /** Tells the assistant what's on screen while this component is mounted. */
 export function useChatScreen(screen: ScreenContext | null) {
   const { setScreen } = useChat()
-  const key = screen
-    ? `${screen.recipeId}:${screen.scale}:${screen.recipeName}`
-    : ""
+  const key = JSON.stringify(screen)
   React.useEffect(() => {
     setScreen(screen)
     return () => setScreen(null)

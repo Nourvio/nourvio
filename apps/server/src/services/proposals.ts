@@ -18,6 +18,8 @@ import { z } from "zod"
 import type { Db } from "../db/client.ts"
 import { proposals, recipes } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
+import { addManualItem } from "./list.ts"
+import { addEntry } from "./plan.ts"
 import {
   createRecipe,
   findRecipeRow,
@@ -143,6 +145,8 @@ function toProposal({ proposal, recipe, result }: Joined): Proposal {
     draft: proposal.payload.draft ?? null,
     variantName: proposal.payload.variantName ?? null,
     result,
+    meals: proposal.payload.meals ?? null,
+    items: proposal.payload.items ?? null,
     createdAt: proposal.createdAt.toISOString(),
   }
 }
@@ -263,11 +267,36 @@ export async function applyProposal(
   id: string,
   options: ApplyProposalInput,
   userId: string | null
-): Promise<{ recipe: Recipe; proposal: Proposal }> {
+): Promise<{ recipe: Recipe | null; proposal: Proposal }> {
   const { proposal } = await findPending(db, householdId, id)
-  let recipe: Recipe
+  let recipe: Recipe | null = null
 
-  if (proposal.kind === "new_recipe") {
+  if (proposal.kind === "plan_meals") {
+    for (const meal of proposal.payload.meals ?? []) {
+      try {
+        await addEntry(
+          db,
+          householdId,
+          {
+            date: meal.date,
+            meal: meal.meal,
+            ...(meal.recipe
+              ? { recipeId: meal.recipe.id }
+              : { note: meal.note ?? "Meal" }),
+            servings: meal.servings,
+          },
+          userId
+        )
+      } catch (error) {
+        // A recipe deleted since the suggestion: skip that one meal.
+        if (!(error instanceof HttpError && error.status === 404)) throw error
+      }
+    }
+  } else if (proposal.kind === "list_items") {
+    for (const item of proposal.payload.items ?? []) {
+      await addManualItem(db, householdId, item)
+    }
+  } else if (proposal.kind === "new_recipe") {
     const draft = proposal.payload.draft
     if (!draft) throw new HttpError(400, "That suggestion has no recipe in it")
     recipe = await createRecipe(db, householdId, draft, {
@@ -321,7 +350,7 @@ export async function applyProposal(
     .set({
       status: "applied",
       resolvedAt: new Date(),
-      resultRecipeId: recipe.id,
+      resultRecipeId: recipe?.id ?? null,
     })
     .where(eq(proposals.id, proposal.id))
   const [updated] = await selectProposals(db).where(

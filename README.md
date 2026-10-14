@@ -2,7 +2,7 @@
 
 A self-hosted meal planner with an AI cooking assistant built in. Recipes, weekly plans, a pantry, shopping lists, nutrition and Walmart pickup orders for your household (and others you host), made to use from a phone or iPad while cooking.
 
-**Status:** early. Accounts, the app shell and the theme work. Recipes and the rest come next. See the [roadmap](docs/roadmap.md).
+**Status:** usable day to day. Recipes (imported from links, videos, text, photos or Mealie), AI tidy-ups, the assistant, households with invites, the meal plan and the shopping list all work. The pantry, nutrition and Walmart come next. See the [roadmap](docs/roadmap.md).
 
 ## Run it with Docker Compose
 

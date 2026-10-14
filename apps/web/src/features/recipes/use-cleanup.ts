@@ -7,6 +7,8 @@ import type {
 } from "@mise/shared"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
+import { LIST_KEY } from "@/features/list/use-list"
+import { PLAN_KEY } from "@/features/plan/use-plan"
 import { api } from "@/lib/api"
 
 import { RECIPES_KEY } from "./use-recipes"
@@ -63,6 +65,12 @@ function useResolved() {
     }
     queryClient.invalidateQueries({ queryKey: PROPOSALS_KEY })
     queryClient.invalidateQueries({ queryKey: JOB_KEY })
+    if (proposal.status === "applied" && proposal.kind === "plan_meals") {
+      queryClient.invalidateQueries({ queryKey: PLAN_KEY })
+    }
+    if (proposal.status === "applied" && proposal.kind === "list_items") {
+      queryClient.invalidateQueries({ queryKey: LIST_KEY })
+    }
     if (recipe) {
       queryClient.setQueryData(["recipe", recipe.slug], recipe)
       queryClient.setQueryData(["recipe", recipe.id], recipe)
@@ -76,7 +84,8 @@ function useResolved() {
 
 /**
  * Applies a proposal: the chosen sections of a change (to the recipe, or as
- * a new recipe with `asNew`), or a new recipe as a whole.
+ * a new recipe with `asNew`), a new recipe as a whole, or meals or items to
+ * add (with no recipe back).
  */
 export function useApplyProposal() {
   const resolved = useResolved()
@@ -90,11 +99,12 @@ export function useApplyProposal() {
       sections?: RecipeSection[]
       asNew?: boolean
     }) =>
-      api<{ recipe: Recipe; proposal: Proposal }>(
+      api<{ recipe: Recipe | null; proposal: Proposal }>(
         `/proposals/${proposal.id}/apply`,
         { body: { sections, asNew } }
       ),
-    onSuccess: ({ recipe, proposal }) => resolved(proposal, recipe),
+    onSuccess: ({ recipe, proposal }) =>
+      resolved(proposal, recipe ?? undefined),
   })
 }
 

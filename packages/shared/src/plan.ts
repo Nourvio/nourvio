@@ -60,6 +60,8 @@ export const addPlanEntryInput = z
 export type AddPlanEntryInput = z.input<typeof addPlanEntryInput>
 
 export const updatePlanEntryInput = z.object({
+  /** Swap in another recipe ("suggest something else"). */
+  recipeId: z.uuid().optional(),
   date: isoDate.optional(),
   meal: z.enum(MEALS).optional(),
   servings: servings.optional(),
@@ -104,3 +106,36 @@ export function toIsoDate(date: Date) {
   const d = String(date.getDate()).padStart(2, "0")
   return `${y}-${m}-${d}`
 }
+
+export const suggestMealsInput = z.object({
+  /** The empty meals to fill. */
+  slots: z
+    .array(z.object({ date: isoDate, meal: z.enum(MEALS) }))
+    .min(1)
+    .max(40),
+  /** Recipes not to suggest, like the ones being replaced. */
+  exclude: z.array(z.uuid()).max(100).optional(),
+})
+export type SuggestMealsInput = z.infer<typeof suggestMealsInput>
+
+export type MealSuggestion = {
+  date: string
+  meal: Meal
+  recipe: NonNullable<PlanEntry["recipe"]>
+}
+
+export const addPlanEntriesInput = z.object({
+  entries: z
+    .array(
+      z.object({
+        date: isoDate,
+        meal: z.enum(MEALS),
+        recipeId: z.uuid().optional(),
+        note: z.string().trim().min(1).max(200).optional(),
+        servings: z.number().positive().max(100).nullable().optional(),
+      })
+    )
+    .min(1)
+    .max(50),
+})
+export type AddPlanEntriesInput = z.infer<typeof addPlanEntriesInput>

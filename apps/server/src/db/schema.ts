@@ -9,6 +9,7 @@ import type {
   Nutrition,
   PlanStatus,
   ProposalKind,
+  ProposedMeal,
   ProposalStatus,
   RecipeInput,
   RecipeOrigin,
@@ -340,6 +341,8 @@ export const proposals = pgTable(
         after: RecipeValues
         draft?: RecipeInput
         variantName?: string | null
+        meals?: ProposedMeal[]
+        items?: string[]
       }>()
       .notNull(),
     /** Set when part of a library run. */

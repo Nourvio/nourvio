@@ -1,4 +1,10 @@
-import { addPlanEntryInput, isoDate, updatePlanEntryInput } from "@mise/shared"
+import {
+  addPlanEntriesInput,
+  addPlanEntryInput,
+  isoDate,
+  suggestMealsInput,
+  updatePlanEntryInput,
+} from "@mise/shared"
 import { Hono } from "hono"
 
 import { requireUser } from "../auth/middleware.ts"
@@ -15,6 +21,7 @@ import {
   listEntries,
   updateEntry,
 } from "../services/plan.ts"
+import { suggestMeals } from "../services/suggest.ts"
 
 /** The household's meal plan. */
 export function planRoutes({ db }: AppContext) {
@@ -44,6 +51,29 @@ export function planRoutes({ db }: AppContext) {
       currentUser(c).id
     )
     return c.json({ entry }, 201)
+  })
+
+  /** Several at once, such as an accepted week of suggestions. */
+  app.post("/entries/batch", async (c) => {
+    const { entries } = await readBody(c, addPlanEntriesInput)
+    const added = []
+    for (const entry of entries) {
+      if (Boolean(entry.recipeId) === Boolean(entry.note)) continue
+      added.push(
+        await addEntry(db, currentHousehold(c), entry, currentUser(c).id)
+      )
+    }
+    return c.json({ entries: added }, 201)
+  })
+
+  /** Recipe ideas for empty meals; nothing is added until they're accepted. */
+  app.post("/suggest", async (c) => {
+    const { slots, exclude } = await readBody(c, suggestMealsInput)
+    return c.json({
+      suggestions: await suggestMeals(db, currentHousehold(c), slots, {
+        exclude,
+      }),
+    })
   })
 
   app.patch("/entries/:id", async (c) => {

@@ -91,7 +91,7 @@ Everything a household owns carries its `household_id`, and every query is scope
 
 | Table | Key columns | Purpose |
 |---|---|---|
-| `households` | name, settings (jsonb: auto-tidy) | A household shares a library (and later a plan, pantry and list). Deleting one removes everything in it. |
+| `households` | name, settings (jsonb: auto-tidy, meals planned, first day of the week, always-on-hand items) | A household shares a library, plan and list (and later a pantry). Deleting one removes everything in it. |
 | `invites` | household_id, token_hash, role, expires_at, used_at, used_by | Single-use invite links, good for a week. Only a hash of the token is stored, so the link can only be shown when it's made. |
 | `recipes` | id, household_id, slug (unique per household), name, description, image, source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
 | `recipe_ingredients` | recipe_id, position, section, raw_text, quantity, quantity_max, unit_id, food_id, note | `raw_text` is always kept and shown as written. The parsed fields drive scaling, lists and nutrition. |
@@ -100,13 +100,14 @@ Everything a household owns carries its `household_id`, and every query is scope
 | `tags`, `recipe_tags` | household_id, name (unique per household, ignoring case) | |
 | `foods` | name, plural, store_section, is_staple, fdc_id, nutrition_per_100g (jsonb), grams_per_unit (jsonb) | `fdc_id` links to USDA data |
 | `units` | name, abbreviation, aliases, kind (volume/weight/count), to_base | `to_base` converts to ml or g for safe unit conversion. Seeded at startup. |
-| `meal_plan_entries` | date, meal, recipe_id (nullable), note, servings, status | `status` is planned, cooked or skipped |
-| `plan_rules` | name, days, meal, tag filters, no_repeat_days, prefer_rating | Drives automatic suggestions |
-| `shopping_lists` | name, week_of, created_at | |
-| `shopping_list_items` | list_id, food_id, text, quantity, unit_id, store_section, checked, for_entries (jsonb), store_product_id | `for_entries` records which planned meals an item was bought for |
+| `meal_plan_entries` | household_id, date, meal, position, recipe_id (null for a note), note, servings (null for the recipe's own), status, listed_at | `status` is planned, cooked or skipped. `listed_at` is set once its ingredients are on the list. |
+| `shopping_items` | household_id, key, name, quantity, unit_id, amount_text, section_id, checked, checked_at, source, recipes (jsonb) | One list per household. `key` merges the same food across recipes. `source` is plan, manual or weekly. |
+| `weekly_items` | household_id, name, amount, section_id | Every-week items, added with each week's plan |
+| `food_sections` | household_id, food, section_id | Remembers where the household moved a food, for next time |
+| `plan_rules` | name, days, meal, tag filters, no_repeat_days, prefer_rating | *Later.* Saved rules for suggestions. |
 | `pantry_items` | food_id, quantity, unit_id, status, bought_at, use_by, reserved_for_entry_id | `status` is have, low or out |
 | `store_products` | store, food_id, product_id, name, size, purchase_unit, last_price, preferred | The ingredient-to-Walmart-product mapping |
-| `proposals` | household_id, kind (cleanup, recipe_edit, new_recipe), recipe_id (null for a new recipe), payload (jsonb: summary, before/after sections, draft, variant name), status, job_id, conversation_id, result_recipe_id | A pending change from the AI, waiting for you to apply or dismiss it (see [AI](#ai)) |
+| `proposals` | household_id, kind (cleanup, recipe_edit, new_recipe, plan_meals, list_items), recipe_id (null when there isn't one), payload (jsonb: summary, before/after sections, draft, variant name, meals, items), status, job_id, conversation_id, result_recipe_id | A pending change from the AI, waiting for you to apply or dismiss it (see [AI](#ai)) |
 | `chat_conversations` | household_id, user_id, title, provider, model | Private to the person who started it. Stays on the provider and model it started with, so it can resume exactly. |
 | `chat_messages` | conversation_id, position, role, parts (jsonb: text, tool activity and proposal ids, for display), native (jsonb: the provider's own messages), context_label | One user message, or one whole assistant reply (which can span several model calls and tool uses) |
 | `ai_usage` | household_id, user_id, provider, model, task, input/output tokens, cost, created_at | Spend tracking per household, on the server's keys |
@@ -123,6 +124,8 @@ Everything a household owns carries its `household_id`, and every query is scope
 - **Later:** `pgvector` for meaning-based search ("something cozy with chicken"). That needs the `pgvector/pgvector:pg18` image instead of `postgres:18`, with no other changes.
 
 ### How skipped meals work
+
+*Planned for milestone 4, with the pantry.*
 
 1. Generating a list from the plan records, on each item, which planned meals it's for (`for_entries`).
 2. Checking an item off moves it into the pantry, reserved for those meals.
@@ -146,8 +149,8 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Proposals | `GET /api/proposals` (pending), `POST /api/proposals/:id/apply` (chosen sections), `POST /api/proposals/:id/dismiss` |
 | Chat | `POST /api/chat` (reply streams as server-sent events: conversation, text, tool, proposal, done, error), `GET /api/chat/conversations`, `GET`/`DELETE /api/chat/conversations/:id` |
 | Jobs | `GET /api/jobs/:id` |
-| Plan | `GET /api/plan?week=`, `POST/PUT/DELETE /api/plan/entries/:id`, `POST /api/plan/suggest` |
-| Lists | `GET /api/lists/current`, `POST /api/lists/from-plan`, `POST/PUT/DELETE /api/lists/:id/items/:itemId` |
+| Plan | `GET /api/plan?from=&to=` (up to 62 days), `POST /api/plan/entries`, `POST /api/plan/entries/batch`, `PATCH`/`DELETE /api/plan/entries/:id` (a new `recipeId` swaps the recipe), `POST /api/plan/suggest` (ideas for empty meals, with `exclude`) |
+| List | `GET /api/list`, `POST /api/list/items`, `PATCH`/`DELETE /api/list/items/:id`, `POST /api/list/clear-checked`, `POST /api/list/from-plan`, `PUT /api/list/on-hand`; every-week items `GET`/`POST /api/list/weekly`, `PATCH`/`DELETE /api/list/weekly/:id`, `POST /api/list/weekly/add-to-list` |
 | Pantry | `GET/POST /api/pantry`, `PUT/DELETE /api/pantry/:id` |
 | Foods / units | `GET/POST /api/foods`, `GET /api/units` |
 | AI settings | `GET /api/ai/status` (everyone); `GET`/`PUT /api/ai/settings`, `POST /api/ai/settings/test`, `GET /api/ai/settings/models`, `GET /api/ai/settings/usage` (server admin) |
@@ -178,7 +181,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
   - Only the server admin can change AI settings. Every household uses the same keys, and usage is recorded per household.
 - **Models:**
   - Settings has a default model, picked from the providers' live model lists.
-  - Each task can override that default. So far: importing, tidying and the assistant; planning, shopping translation and nutrition estimates join later.
+  - Each task can override that default. So far: importing, tidying and the assistant (which also plans meals); shopping translation and nutrition estimates join later.
   - With nothing picked, the defaults are Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6 Sol (`gpt-6-sol`).
   - A pick whose provider has lost its key is skipped, so removing a key never breaks import.
 - **Claude specifics:**
@@ -206,13 +209,15 @@ The AI never writes directly to recipes, the plan, the list or the pantry.
 - **An agent loop on the server** (`apps/server/src/chat/`): each provider's adapter streams one model call and returns any tool calls; the loop runs the tools, feeds the results back, and repeats (up to 8 rounds). Everything streams to the browser as server-sent events, including a tool's activity line as soon as the model starts writing its input.
 - **Native histories:** each conversation keeps the provider's own messages (Claude's thinking blocks and tool calls, OpenAI's encrypted reasoning items), so it continues exactly. A conversation never switches provider.
 - **Claude:** adaptive thinking (not shown, but passed back between turns), medium effort, and the conversation prefix cached with `cache_control`. **OpenAI:** stateless Responses API (`store: false`) with encrypted reasoning passed back.
-- **Context goes with each message:** the recipe on screen and the scale it's shown at, prepended in a `<context>` block. The person can drop it with one tap. *Later:* the week being viewed and a pantry summary.
-- **Read tools:** `search_recipes`, `get_recipe`, `list_tags`. *Later:* `get_meal_plan`, `get_pantry`.
+- **Context goes with each message:** the recipe on screen and the scale it's shown at, or the week of the plan being viewed with what's planned, prepended in a `<context>` block. The person can drop it with one tap. *Later:* a pantry summary.
+- **Read tools:** `search_recipes`, `get_recipe`, `list_tags`, `get_meal_plan`, `get_shopping_list`. *Later:* `get_pantry`.
 - **Proposal tools** (each makes a card with buttons, nothing is saved until tapped):
   - `propose_new_recipe`: a recipe from the conversation
   - `propose_recipe_edit`: substitutions, scaling, notes; with a `variantName`, it can be saved as a new recipe instead of changing the original
   - `tidy_recipe`: runs the regular tidy-up on a recipe
-  - *Later:* `propose_plan_changes`, `propose_list_items`, `propose_pantry_update`
+  - `propose_meals`: recipes (or notes) for days and meals, added to the plan in one tap
+  - `propose_list_items`: lines for the shopping list
+  - *Later:* `propose_pantry_update`
 - **Failures:** a tool error goes back to the model as a result so it can recover. If the provider fails, nothing is saved and the message goes back in the box to resend. Stopping a reply keeps what had arrived.
 - Conversations are saved per person, listed newest first, and can be picked up again or deleted. Usage is recorded under the "chat" task.
 
@@ -245,7 +250,7 @@ The original is always kept. Every applied cleanup adds a version, and the first
 ### Other AI jobs
 
 - **Structured extraction (import):** turns a web page without recipe data, pasted text, or photos into a recipe draft. The draft's ingredient lines and steps go through the same parser as everything else.
-- **Week suggestions:** the rules pick candidate recipes. Then the AI ranks and fills the week, weighing the pantry, leftovers, use-by dates and preferences.
+- **Week suggestions:** today, Fill the week is rules only (no AI), and the assistant can plan meals in chat. *Later:* the rules pick candidates and the AI ranks them, weighing the pantry, leftovers, use-by dates and preferences.
 - **Shopping translation:** turns combined recipe amounts into product quantities, using our saved Walmart products.
 - **Nutrition fallback:** an estimate when USDA matching fails, always labeled as an estimate.
 
@@ -294,11 +299,11 @@ The parser lives in the shared package, so the server and browser use the same c
 | Cook | Full-screen cooking view |
 | Add | Link, Text, Photo and Manual tabs |
 | Review | A queue of AI proposals waiting for you, such as bulk cleanup results |
-| Plan | Week view with Suggest week, re-roll and mark cooked/skipped |
-| List | Shopping list grouped by section, with Send to Walmart |
+| Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, and Add to list |
+| List | Shopping list grouped by section, with every-week items, always-on-hand items and (later) Send to Walmart |
 | Pantry | On hand, use soon, leftovers to use, staples |
 | Chat | Available on every screen (see below) |
-| Settings | Your account and appearance; your household (members, invites, rename, tidying up); for the server admin, the server (sign-up, households), AI (keys, models, usage by household) and the Mealie import; later the API token and plan rules |
+| Settings | Your account and appearance; your household (members, invites, rename, tidying up, which meals to plan and the first day of the week); for the server admin, the server (sign-up, households), AI (keys, models, usage by household) and the Mealie import; later the API token and plan rules |
 
 ### Layout
 

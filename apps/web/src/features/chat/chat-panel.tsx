@@ -37,7 +37,7 @@ import { formatRelativeDate } from "@/features/recipes/format"
 import { useAiStatus } from "@/features/settings/use-ai"
 import { cn } from "@/lib/utils"
 
-import { useChat } from "./chat-provider"
+import { screenLabel, useChat } from "./chat-provider"
 import { Markdown } from "./markdown"
 import { ProposalCard } from "./proposal-card"
 import { useConversations, useDeleteConversation } from "./use-chat-queries"
@@ -53,6 +53,13 @@ const FOR_RECIPE = [
   "Make this dairy-free",
   "Halve this recipe",
   "What goes well with this?",
+]
+
+const FOR_WEEK = [
+  "Fill in the dinners I haven't planned",
+  "Quick dinners for the weeknights",
+  "Something I haven't made in a while",
+  "What else should I pick up this week?",
 ]
 
 /** The assistant: a conversation, or the list of past ones. */
@@ -158,7 +165,7 @@ function NeedsAi() {
 
 function Welcome() {
   const chat = useChat()
-  const forRecipe = chat.screen && chat.useScreen
+  const screen = chat.useScreen ? chat.screen : null
   return (
     <Empty className="flex-1">
       <EmptyHeader>
@@ -166,18 +173,26 @@ function Welcome() {
           <HugeiconsIcon icon={BubbleChatSparkIcon} strokeWidth={2} />
         </EmptyMedia>
         <EmptyTitle>
-          {forRecipe
-            ? `Ask about ${chat.screen!.recipeName}`
-            : "What's cooking?"}
+          {screen?.kind === "recipe"
+            ? `Ask about ${screen.recipeName}`
+            : screen?.kind === "week"
+              ? "Plan the week together"
+              : "What's cooking?"}
         </EmptyTitle>
         <EmptyDescription>
-          Ask for ideas, swap an ingredient, or work out a new recipe. Anything
-          worth keeping comes with a button to save it.
+          {screen?.kind === "week"
+            ? "Ask for ideas for the empty meals, or what to buy. Anything worth keeping comes with a button to add it."
+            : "Ask for ideas, swap an ingredient, or work out a new recipe. Anything worth keeping comes with a button to save it."}
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
         <div className="flex flex-wrap justify-center gap-2">
-          {(forRecipe ? FOR_RECIPE : GENERAL).map((suggestion) => (
+          {(screen?.kind === "recipe"
+            ? FOR_RECIPE
+            : screen?.kind === "week"
+              ? FOR_WEEK
+              : GENERAL
+          ).map((suggestion) => (
             <Button
               key={suggestion}
               variant="outline"
@@ -325,14 +340,17 @@ function Composer() {
       {chat.screen && chat.useScreen && (
         <div className="flex w-fit max-w-full items-center gap-1 rounded-full bg-muted py-0.5 pr-1 pl-3 text-xs text-muted-foreground">
           <span className="truncate">
-            About {chat.screen.recipeName}
-            {chat.screen.scale !== 1 && ` (×${chat.screen.scale})`}
+            About {screenLabel(chat.screen, true)}
           </span>
           <Button
             variant="ghost"
             size="icon-xs"
             className="size-5 rounded-full"
-            aria-label="Don't send this recipe with my message"
+            aria-label={
+              chat.screen.kind === "recipe"
+                ? "Don't send this recipe with my message"
+                : "Don't send this week's plan with my message"
+            }
             onClick={() => chat.setUseScreen(false)}
           >
             <HugeiconsIcon

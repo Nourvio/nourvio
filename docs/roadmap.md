@@ -82,11 +82,14 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 ## Milestone 3: Meal plan and shopping list
 
-- Week view: add a recipe or note, mark cooked or skipped
-- Plan rules, rules-based "Suggest week," and re-roll
-- AI plan suggestions, with plan proposals in chat
-- Generating the list from the plan: combine ingredients, convert units, group by store section
-- Manual items, check-off, and list proposals in chat
+**Status:** built. Tested in the browser: planning dinners and notes, Fill the week with re-roll, swapping a planned meal, adding a week to the list (combined amounts, every-week items, always-on-hand left off) and checking items off. The assistant filled a week's dinners from the Plan page with Claude.
+
+- Week view: add a recipe or note, mark cooked or skipped, with the household choosing its meals and first day of the week
+- Rules-based "Fill the week," re-roll, and "Suggest something else"
+- The assistant reads the plan and list, knows the week on screen, and proposes meals and list items as cards
+- Adding a week to the list: combine ingredients, convert units, group by store section, leave out always-on-hand items
+- Every-week items, typed items, check-off, and remembered sections
+- *Moved later:* saved plan rules and AI-ranked week suggestions (once the pantry gives them something to weigh)
 
 **Done when:** a full week is planned and shopped from the generated list. This is the point where Mise replaces Mealie day to day.
 
@@ -138,7 +141,7 @@ What's left is checking the "done when" below with real keys and the real Mealie
 | 1 | Is Walmart the long-term store, or is a Kroger-family store an option? | Walmart for now. Kroger would make milestone 6 much sturdier. | M6 |
 | 2 | One shared household login, or one account per person? | **Decided:** one account per person, joining by invite link. One server can host several households. | M0 |
 | 3 | Do you have a domain on Cloudflare for the tunnel? | Needed for the recommended setup | M0 |
-| 4 | Dinners only, or breakfast and lunch too? | Dinners by default, with other meals optional | M3 |
+| 4 | Dinners only, or breakfast and lunch too? | **Decided:** each household picks; dinner by default, with breakfast, lunch and snacks optional | M3 |
 | 5 | Should AI keys be shared by the household, or should each person bring their own? | **Decided:** one set for the whole server, managed by the server admin, with usage shown per household. Per-household keys or spending caps could come later. | M1 |
 | 6 | Should cleanup run automatically on every import, or only when you tap Tidy up? | Off by default to start. Turn it on once the results are trusted. | M1 |
 | 7 | Public or private GitHub repo? | Either works. Private needs registry credentials on TrueNAS. | M0 |

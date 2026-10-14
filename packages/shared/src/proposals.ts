@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import type { Meal } from "./plan.ts"
 import type { RecipeInput } from "./recipes.ts"
 
 /**
@@ -73,11 +74,28 @@ export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number]
  * - cleanup: a tidy-up of a recipe (Tidy up, auto-tidy, library runs, chat)
  * - recipe_edit: a change suggested in chat, such as a substitution
  * - new_recipe: a recipe worked out in chat, ready to save
+ * - plan_meals: meals to add to the plan, from chat
+ * - list_items: things to add to the shopping list, from chat
  */
-export const PROPOSAL_KINDS = ["cleanup", "recipe_edit", "new_recipe"] as const
+export const PROPOSAL_KINDS = [
+  "cleanup",
+  "recipe_edit",
+  "new_recipe",
+  "plan_meals",
+  "list_items",
+] as const
 export type ProposalKind = (typeof PROPOSAL_KINDS)[number]
 
 type RecipeRef = { id: string; slug: string; name: string }
+
+/** A meal a plan_meals proposal would add. */
+export type ProposedMeal = {
+  date: string
+  meal: Meal
+  recipe: RecipeRef | null
+  note: string | null
+  servings: number | null
+}
 
 export type Proposal = {
   id: string
@@ -95,6 +113,10 @@ export type Proposal = {
   variantName: string | null
   /** The recipe created or changed when it was applied. */
   result: RecipeRef | null
+  /** For plan_meals. */
+  meals: ProposedMeal[] | null
+  /** For list_items: lines as typed, "2 lb ground beef". */
+  items: string[] | null
   createdAt: string
 }
 

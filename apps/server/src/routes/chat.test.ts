@@ -295,6 +295,141 @@ describe("chat", () => {
     })
   })
 
+  test("plans meals and adds to the list, for the week on screen", async () => {
+    const week = "2026-10-12"
+    await t.admin.post("/api/plan/entries", {
+      date: week,
+      meal: "dinner",
+      note: "Tacos out",
+    })
+    chat.state.script = [
+      {
+        tools: [
+          {
+            id: "p1",
+            name: "get_meal_plan",
+            input: { from: week, to: "2026-10-18" },
+          },
+          { id: "p2", name: "get_shopping_list", input: {} },
+        ],
+      },
+      {
+        tools: [
+          {
+            id: "p3",
+            name: "propose_meals",
+            input: {
+              summary: "Pancakes Tuesday, leftovers Wednesday.",
+              meals: [
+                {
+                  date: "2026-10-13",
+                  meal: "breakfast",
+                  recipe: pancakes.slug,
+                  note: null,
+                  servings: 2,
+                },
+                {
+                  date: "2026-10-14",
+                  meal: "dinner",
+                  recipe: null,
+                  note: "Leftovers",
+                  servings: null,
+                },
+                {
+                  date: "2026-10-15",
+                  meal: "dinner",
+                  recipe: "not-a-recipe",
+                  note: null,
+                  servings: null,
+                },
+              ],
+            },
+          },
+          {
+            id: "p4",
+            name: "propose_list_items",
+            input: {
+              summary: "Drinks and paper towels.",
+              items: ["Diet Pepsi", "paper towels", " "],
+            },
+          },
+        ],
+      },
+      { text: "Two cards above." },
+    ]
+    const { events } = await send({
+      message: "Plan the rest of my week",
+      context: { weekStart: week },
+    })
+
+    // The model saw the week on screen, then read the plan and the list.
+    const first = chat.state.seen.at(-3)!
+    const userMessage = JSON.stringify(first.history.at(-1))
+    expect(userMessage).toContain("meal plan for 2026-10-12 to 2026-10-18")
+    expect(userMessage).toContain("2026-10-12 dinner: Note: Tacos out")
+    const reads = JSON.stringify(chat.state.seen.at(-2)!.history.slice(-1))
+    expect(reads).toContain("Tacos out")
+    expect(reads).toContain("The list is empty.")
+    const left = JSON.stringify(chat.state.seen.at(-1)!.history.slice(-1))
+    expect(left).toContain("Not found, so left out: not-a-recipe")
+
+    const labels = events.flatMap((e) =>
+      e.type === "tool" && e.status !== "running" ? [e.label] : []
+    )
+    expect(labels).toEqual([
+      "Checked the plan",
+      "Checked the list",
+      "Suggested 2 meals",
+      "Suggested 2 items for the list",
+    ])
+    const started = events[0]
+    if (started?.type !== "conversation") throw new Error("no conversation")
+    const saved = await t.admin.get(
+      `/api/chat/conversations/${started.conversation.id}`
+    )
+    expect(saved.body.conversation.messages[0].contextLabel).toBe(
+      "the plan for Oct 12 – 18"
+    )
+
+    const [meals, items] = events.flatMap((e) =>
+      e.type === "proposal" ? [e.proposal] : []
+    )
+    expect(meals).toMatchObject({
+      kind: "plan_meals",
+      recipe: null,
+      meals: [
+        { meal: "breakfast", recipe: { slug: pancakes.slug }, servings: 2 },
+        { meal: "dinner", recipe: null, note: "Leftovers" },
+      ],
+    })
+    expect(items).toMatchObject({
+      kind: "list_items",
+      items: ["Diet Pepsi", "paper towels"],
+    })
+
+    const applied = await t.admin.post(`/api/proposals/${meals!.id}/apply`, {})
+    expect(applied.status).toBe(200)
+    expect(applied.body.recipe).toBeNull()
+    expect(applied.body.proposal.status).toBe("applied")
+    const plan = await t.admin.get(`/api/plan?from=${week}&to=2026-10-18`)
+    expect(
+      plan.body.entries.map(
+        (e: { date: string; recipe: { name: string } | null; note: string }) =>
+          `${e.date} ${e.recipe?.name ?? e.note}`
+      )
+    ).toEqual([
+      "2026-10-12 Tacos out",
+      "2026-10-13 Buttermilk Pancakes",
+      "2026-10-14 Leftovers",
+    ])
+
+    await t.admin.post(`/api/proposals/${items!.id}/apply`, {})
+    const list = await t.admin.get("/api/list")
+    expect(
+      list.body.items.map((item: { name: string }) => item.name).sort()
+    ).toEqual(["Diet Pepsi", "paper towels"])
+  })
+
   test("tells the model when a tool goes wrong, and carries on", async () => {
     chat.state.script = [
       { tools: [{ id: "c4", name: "get_recipe", input: { recipe: "nope" } }] },

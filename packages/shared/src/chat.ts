@@ -1,14 +1,20 @@
 import { z } from "zod"
 
 import type { AiProviderId } from "./ai.ts"
+import { isoDate } from "./plan.ts"
 import type { Proposal } from "./proposals.ts"
 
-/** What's on screen when a message is sent, so "this recipe" means something. */
+/**
+ * What's on screen when a message is sent, so "this recipe" or "this week"
+ * means something.
+ */
 export const chatContextSchema = z
   .object({
-    recipeId: z.uuid(),
+    recipeId: z.uuid().optional(),
     /** The servings multiplier the recipe is shown at. */
     scale: z.number().positive().max(100).optional(),
+    /** The first day of the week the plan is showing. */
+    weekStart: isoDate.optional(),
   })
   .nullable()
   .optional()

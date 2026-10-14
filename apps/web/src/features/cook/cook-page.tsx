@@ -57,7 +57,12 @@ function CookView({ recipe }: { recipe: Recipe }) {
   const screenOn = useWakeLock()
   const markMade = useMarkMade(recipe.id)
   const swipe = React.useRef<{ x: number; y: number } | null>(null)
-  useChatScreen({ recipeId: recipe.id, recipeName: recipe.name, scale: factor })
+  useChatScreen({
+    kind: "recipe",
+    recipeId: recipe.id,
+    recipeName: recipe.name,
+    scale: factor,
+  })
 
   const steps = recipe.steps
   const step = steps[index]

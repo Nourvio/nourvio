@@ -6,6 +6,7 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import {
+  MEAL_NAMES,
   RECIPE_SECTION_NAMES,
   RECIPE_SECTIONS,
   type Proposal,
@@ -16,6 +17,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Spinner } from "@/components/ui/spinner"
+import { shortDayName } from "@/features/plan/dates"
 import { formatMinutes } from "@/features/recipes/format"
 import { SectionDiff } from "@/features/recipes/proposal-review"
 import {
@@ -31,10 +33,21 @@ const KIND_LABELS: Record<Proposal["kind"], string> = {
   new_recipe: "New recipe",
   recipe_edit: "Suggested change",
   cleanup: "Tidy-up",
+  plan_meals: "Meal plan",
+  list_items: "Shopping list",
 }
 
-/** A change the assistant suggested, with buttons to save or apply it. */
+/** Something the assistant suggested, with buttons to save or apply it. */
 export function ProposalCard({ proposal }: { proposal: Proposal }) {
+  return proposal.kind === "plan_meals" || proposal.kind === "list_items" ? (
+    <AddCard proposal={proposal} />
+  ) : (
+    <RecipeCard proposal={proposal} />
+  )
+}
+
+/** A new recipe or a change to one. */
+function RecipeCard({ proposal }: { proposal: Proposal }) {
   const chat = useChat()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
@@ -66,6 +79,7 @@ export function ProposalCard({ proposal }: { proposal: Proposal }) {
       {
         onSuccess: ({ recipe, proposal: updated }) => {
           chat.updateProposal(updated)
+          if (!recipe) return
           toast.success(
             proposal.kind === "new_recipe" || asNew
               ? `Saved ${recipe.name}`
@@ -233,6 +247,145 @@ export function ProposalCard({ proposal }: { proposal: Proposal }) {
             )}
           </>
         )}
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={busy}
+          onClick={() =>
+            dismiss.mutate(proposal, {
+              onSuccess: (updated) => chat.updateProposal(updated),
+              onError,
+            })
+          }
+        >
+          Dismiss
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/** Meals for the plan or items for the list, added with one tap. */
+function AddCard({ proposal }: { proposal: Proposal }) {
+  const chat = useChat()
+  const navigate = useNavigate()
+  const isMobile = useIsMobile()
+  const apply = useApplyProposal()
+  const dismiss = useDismissProposal()
+  const busy = apply.isPending || dismiss.isPending
+  const forPlan = proposal.kind === "plan_meals"
+  const meals = proposal.meals ?? []
+  const items = proposal.items ?? []
+  const count = forPlan ? meals.length : items.length
+  const what = forPlan
+    ? `${count} ${count === 1 ? "meal" : "meals"}`
+    : `${count} ${count === 1 ? "item" : "items"}`
+  const where = forPlan
+    ? `/plan${meals[0] ? `?week=${meals[0].date}` : ""}`
+    : "/list"
+
+  function open() {
+    if (isMobile) chat.setOpen(false)
+    navigate(where)
+  }
+
+  function onError(error: unknown) {
+    toast.error(
+      error instanceof ApiError ? error.message : "Couldn't add those"
+    )
+  }
+
+  if (proposal.status !== "pending") {
+    return (
+      <div className="flex items-center gap-2 rounded-xl border border-dashed px-3 py-2 text-sm text-muted-foreground">
+        {proposal.status === "applied" ? (
+          <>
+            <HugeiconsIcon
+              icon={Tick02Icon}
+              strokeWidth={2}
+              className="size-4 shrink-0"
+            />
+            <span className="min-w-0 truncate">
+              Added {what} to the{" "}
+              <Link
+                to={where}
+                onClick={(event) => {
+                  event.preventDefault()
+                  open()
+                }}
+                className="font-medium text-foreground underline underline-offset-4"
+              >
+                {forPlan ? "plan" : "list"}
+              </Link>
+            </span>
+          </>
+        ) : (
+          <span>Dismissed: {what}</span>
+        )}
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid min-w-0 grid-cols-1 gap-3 rounded-2xl border bg-card p-3.5 text-card-foreground shadow-xs">
+      <div className="grid gap-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="secondary">{KIND_LABELS[proposal.kind]}</Badge>
+          <span className="font-medium">{what}</span>
+        </div>
+        <p className="text-sm text-muted-foreground">{proposal.summary}</p>
+      </div>
+
+      {forPlan ? (
+        <ul className="grid gap-1.5 text-sm">
+          {meals.map((meal, i) => (
+            <li key={i} className="flex min-w-0 gap-2">
+              <span className="w-28 shrink-0 text-muted-foreground">
+                {shortDayName(meal.date)} · {MEAL_NAMES[meal.meal]}
+              </span>
+              <span className="min-w-0">
+                {meal.recipe?.name ?? meal.note}
+                {meal.servings && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {meal.servings} servings
+                  </span>
+                )}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ul className="ml-5 grid list-disc gap-1 text-sm">
+          {items.map((item, i) => (
+            <li key={i}>{item}</li>
+          ))}
+        </ul>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          disabled={busy}
+          onClick={() =>
+            apply.mutate(
+              { proposal },
+              {
+                onSuccess: ({ proposal: updated }) => {
+                  chat.updateProposal(updated)
+                  toast.success(
+                    `Added ${what} to the ${forPlan ? "plan" : "list"}`,
+                    { action: { label: "Open", onClick: open } }
+                  )
+                },
+                onError,
+              }
+            )
+          }
+        >
+          {apply.isPending && <Spinner data-icon="inline-start" />}
+          {forPlan ? "Add to plan" : "Add to list"}
+        </Button>
         <Button
           size="sm"
           variant="ghost"

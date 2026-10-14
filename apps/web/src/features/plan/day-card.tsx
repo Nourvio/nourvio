@@ -4,6 +4,7 @@ import {
   CookingPotIcon,
   MoreHorizontalIcon,
   Note01Icon,
+  RefreshIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { MEAL_NAMES, MEALS, type Meal, type PlanEntry } from "@mise/shared"
@@ -25,7 +26,11 @@ import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 import { dayName, monthDay } from "./dates"
-import { useRemovePlanEntry, useUpdatePlanEntry } from "./use-plan"
+import {
+  useRemovePlanEntry,
+  useSuggestMeal,
+  useUpdatePlanEntry,
+} from "./use-plan"
 
 /**
  * One day of the plan. Meals with something planned are listed in order;
@@ -125,6 +130,7 @@ export function DayCard({
 function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
   const update = useUpdatePlanEntry()
   const remove = useRemovePlanEntry()
+  const suggestOne = useSuggestMeal()
   const { recipe } = entry
   const servings = entry.servings ?? recipe?.servings ?? null
   const scale =
@@ -141,6 +147,45 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
           toast.error(
             error instanceof ApiError ? error.message : "Couldn't save that"
           ),
+      }
+    )
+  }
+
+  /** Swaps in another recipe that suits the meal, with an undo. */
+  function swap() {
+    if (!recipe) return
+    const onError = (error: unknown) =>
+      toast.error(
+        error instanceof ApiError ? error.message : "Couldn't swap that"
+      )
+    suggestOne.mutate(
+      { slots: [{ date: entry.date, meal: entry.meal }], exclude: [recipe.id] },
+      {
+        onSuccess: ([next]) => {
+          if (!next) {
+            toast("No other ideas for this one. More recipes, more variety.")
+            return
+          }
+          update.mutate(
+            { id: entry.id, recipeId: next.recipe.id },
+            {
+              onSuccess: () =>
+                toast.success(`Swapped in ${next.recipe.name}`, {
+                  action: {
+                    label: "Undo",
+                    onClick: () =>
+                      update.mutate({
+                        id: entry.id,
+                        recipeId: recipe.id,
+                        servings: entry.servings ?? undefined,
+                      }),
+                  },
+                }),
+              onError,
+            }
+          )
+        },
+        onError,
       }
     )
   }
@@ -224,6 +269,12 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
                 <HugeiconsIcon icon={CookingPotIcon} strokeWidth={2} />
                 Start cooking
               </Link>
+            </DropdownMenuItem>
+          )}
+          {recipe && entry.status === "planned" && (
+            <DropdownMenuItem onSelect={swap}>
+              <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} />
+              Suggest something else
             </DropdownMenuItem>
           )}
           {entry.status !== "cooked" && recipe && (

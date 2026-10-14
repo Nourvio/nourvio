@@ -170,6 +170,9 @@ export async function updateEntry(
   input: UpdatePlanEntryInput
 ) {
   const current = await findEntry(db, householdId, id)
+  const swapped = input.recipeId
+    ? await findRecipeRow(db, householdId, input.recipeId)
+    : null
   const moved =
     (input.date && input.date !== current.date) ||
     (input.meal && input.meal !== current.meal)
@@ -181,6 +184,17 @@ export async function updateEntry(
       ...(input.servings !== undefined ? { servings: input.servings } : {}),
       ...(input.status ? { status: input.status } : {}),
       ...(input.note && !current.recipeId ? { note: input.note } : {}),
+      // A different recipe isn't on the list yet, and starts at its own
+      // servings unless they're given too.
+      ...(swapped
+        ? {
+            recipeId: swapped.id,
+            note: null,
+            servings: input.servings ?? null,
+            listedAt: null,
+            status: "planned" as const,
+          }
+        : {}),
       // Moving to another meal puts it at the end there.
       ...(moved
         ? {

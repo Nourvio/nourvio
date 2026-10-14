@@ -4,6 +4,7 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
   ShoppingBasket01Icon,
+  SparklesIcon,
 } from "@hugeicons/core-free-icons"
 import {
   addDays,
@@ -18,6 +19,7 @@ import { useSearchParams } from "react-router"
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useChatScreen } from "@/features/chat/chat-provider"
 import { AddFromPlanDialog } from "@/features/list/add-from-plan-dialog"
 import { useHouseholdInfo } from "@/features/settings/use-household"
 
@@ -25,6 +27,7 @@ import { AddEntryDialog } from "./add-entry-dialog"
 import { today, weekLabel } from "./dates"
 import { DayCard } from "./day-card"
 import { EditEntryDialog } from "./edit-entry-dialog"
+import { FillWeekDialog } from "./fill-week-dialog"
 import { usePlan } from "./use-plan"
 
 /** The week's meals, one day at a time. `?week=` holds the week's first day. */
@@ -47,6 +50,8 @@ export function PlanPage() {
   } | null>(null)
   const [editing, setEditing] = React.useState<PlanEntry | null>(null)
   const [listing, setListing] = React.useState(false)
+  const [filling, setFilling] = React.useState(false)
+  useChatScreen({ kind: "week", weekStart: start, weekLabel: weekLabel(start) })
 
   function goTo(week: string) {
     setParams(
@@ -76,14 +81,28 @@ export function PlanPage() {
         title="Plan"
         description={`${label ? `${label}, ` : ""}${weekLabel(start)}`}
         actions={
-          <Button variant="outline" onClick={() => setListing(true)}>
-            <HugeiconsIcon
-              icon={ShoppingBasket01Icon}
-              strokeWidth={2}
-              data-icon="inline-start"
-            />
-            Add to list
-          </Button>
+          <>
+            <Button
+              variant="outline"
+              disabled={!plan.data || !household.data}
+              onClick={() => setFilling(true)}
+            >
+              <HugeiconsIcon
+                icon={SparklesIcon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+              Fill the week
+            </Button>
+            <Button variant="outline" onClick={() => setListing(true)}>
+              <HugeiconsIcon
+                icon={ShoppingBasket01Icon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+              Add to list
+            </Button>
+          </>
         }
       />
 
@@ -138,6 +157,13 @@ export function PlanPage() {
       </div>
 
       <AddEntryDialog slot={adding} onClose={() => setAdding(null)} />
+      <FillWeekDialog
+        open={filling}
+        onOpenChange={setFilling}
+        days={days}
+        meals={meals}
+        entries={plan.data ?? []}
+      />
       <AddFromPlanDialog
         open={listing}
         onOpenChange={setListing}
