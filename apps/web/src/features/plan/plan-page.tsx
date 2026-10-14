@@ -119,8 +119,8 @@ export function PlanPage() {
         }
       />
 
-      <div className="grid max-w-3xl gap-4">
-        <div className="flex items-center justify-between gap-2">
+      <div className="grid gap-4">
+        <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="icon"
@@ -129,14 +129,9 @@ export function PlanPage() {
           >
             <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
           </Button>
-          <div className="flex items-center gap-2">
-            <span className="font-medium">{weekLabel(start)}</span>
-            {start !== thisWeek && (
-              <Button variant="ghost" size="sm" onClick={() => goTo(thisWeek)}>
-                This week
-              </Button>
-            )}
-          </div>
+          <span className="min-w-32 text-center font-medium">
+            {weekLabel(start)}
+          </span>
           <Button
             variant="outline"
             size="icon"
@@ -145,27 +140,38 @@ export function PlanPage() {
           >
             <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
           </Button>
+          {start !== thisWeek && (
+            <Button variant="ghost" size="sm" onClick={() => goTo(thisWeek)}>
+              This week
+            </Button>
+          )}
         </div>
 
         {plan.isPending || household.isPending ? (
-          Array.from({ length: 3 }, (_, i) => (
-            <Skeleton key={i} className="h-36 rounded-2xl" />
-          ))
+          <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton key={i} className="h-36 rounded-2xl" />
+            ))}
+          </div>
         ) : plan.isError ? (
           <p className="text-muted-foreground">Couldn't load the plan.</p>
         ) : (
-          days.map((date) => (
-            <DayCard
-              key={date}
-              date={date}
-              isToday={date === now}
-              isPast={date < now}
-              meals={meals}
-              entries={plan.data.filter((entry) => entry.date === date)}
-              onAdd={(meal) => setAdding({ date, meal })}
-              onEdit={setEditing}
-            />
-          ))
+          // Like a paper planner: the week runs down each column, then across.
+          <div className="gap-4 lg:columns-2 2xl:columns-3">
+            {days.map((date) => (
+              <div key={date} className="mb-4 break-inside-avoid">
+                <DayCard
+                  date={date}
+                  isToday={date === now}
+                  isPast={date < now}
+                  meals={meals}
+                  entries={plan.data.filter((entry) => entry.date === date)}
+                  onAdd={(meal) => setAdding({ date, meal })}
+                  onEdit={setEditing}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

@@ -1,7 +1,6 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
-  ArrowRight01Icon,
   CookBookIcon,
   CookingPotIcon,
   Note01Icon,
@@ -23,6 +22,7 @@ import {
 import { Link } from "react-router"
 import { toast } from "sonner"
 
+import { Panel, SectionHeading } from "@/components/layout/page-layout"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCurrentUser } from "@/features/auth/current-user"
@@ -545,13 +545,7 @@ function UseSoon() {
     .sort((a, b) => urgency(a.soon!) - urgency(b.soon!))
   if (!soon.length) return null
   return (
-    <section
-      aria-labelledby="use-soon-heading"
-      className="grid gap-3 rounded-3xl border bg-card p-5 text-card-foreground"
-    >
-      <SectionHeading id="use-soon-heading" to="/pantry" link="Pantry">
-        Use soon
-      </SectionHeading>
+    <Panel title="Use soon" to="/pantry" link="Pantry" tone="warn">
       <ul className="grid gap-2.5">
         {soon.slice(0, 5).map(({ item, soon }) => (
           <li key={item.id} className="flex items-start gap-3">
@@ -584,7 +578,7 @@ function UseSoon() {
           And {soon.length - 5} more in the pantry.
         </p>
       )}
-    </section>
+    </Panel>
   )
 }
 
@@ -593,13 +587,7 @@ function ListCard() {
   const list = useList()
   const left = (list.data ?? []).filter((item) => !item.checked)
   return (
-    <section
-      aria-labelledby="list-heading"
-      className="grid gap-3 rounded-3xl border bg-card p-5 text-card-foreground"
-    >
-      <SectionHeading id="list-heading" to="/list" link="Open">
-        Shopping list
-      </SectionHeading>
+    <Panel title="Shopping list" to="/list" link="Open">
       {list.isPending ? (
         <Skeleton className="h-12" />
       ) : left.length === 0 ? (
@@ -623,7 +611,7 @@ function ListCard() {
           </p>
         </div>
       )}
-    </section>
+    </Panel>
   )
 }
 
@@ -720,39 +708,6 @@ function Shelf({
         ))}
       </ul>
     </section>
-  )
-}
-
-function SectionHeading({
-  id,
-  children,
-  to,
-  link,
-}: {
-  id: string
-  children: React.ReactNode
-  to?: string
-  link?: string
-}) {
-  return (
-    <div className="flex items-baseline justify-between gap-3">
-      <h2 id={id} className="text-xl font-semibold tracking-tight">
-        {children}
-      </h2>
-      {to && link && (
-        <Link
-          to={to}
-          className="flex items-center gap-0.5 text-sm font-medium text-primary hover:underline"
-        >
-          {link}
-          <HugeiconsIcon
-            icon={ArrowRight01Icon}
-            strokeWidth={2}
-            className="size-4"
-          />
-        </Link>
-      )}
-    </div>
   )
 }
 

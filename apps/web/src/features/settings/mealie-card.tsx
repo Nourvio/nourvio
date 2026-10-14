@@ -59,7 +59,7 @@ export function MealieCard() {
   const toMove = found ? found.total - found.alreadyImported : 0
 
   return (
-    <Card id="mealie">
+    <Card>
       <CardHeader>
         <CardTitle>Move from Mealie</CardTitle>
         <CardDescription>

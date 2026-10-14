@@ -11,6 +11,7 @@ import { STORE_SECTIONS, type ShoppingItem } from "@mise/shared"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/layout/page-header"
+import { Panel, WithAside } from "@/components/layout/page-layout"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import {
@@ -34,6 +35,7 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -46,6 +48,7 @@ import {
   useList,
   usePutAway,
   useUpdateListItem,
+  useWeeklyItems,
 } from "./use-list"
 
 /** The household's shopping list, in store order, with checked items at the bottom. */
@@ -145,7 +148,17 @@ export function ListPage() {
         }
       />
 
-      <div className="grid max-w-2xl gap-6">
+      <WithAside
+        aside={
+          <ListAside
+            items={items}
+            putting={putAway.isPending}
+            onPutAway={putAwayChecked}
+            onWeekly={() => setWeekly(true)}
+            onOnHand={() => setOnHand(true)}
+          />
+        }
+      >
         <QuickAdd />
 
         {list.isPending ? (
@@ -179,22 +192,28 @@ export function ListPage() {
           </Empty>
         ) : (
           <>
-            {sections.map((section) => (
-              <section key={section.id} className="grid gap-1">
-                <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  {section.name}
-                </h2>
-                <ul className="divide-y rounded-2xl border bg-card">
-                  {section.items.map((item) => (
-                    <ItemRow
-                      key={item.id}
-                      item={item}
-                      onEdit={() => setEditing(item)}
-                    />
-                  ))}
-                </ul>
-              </section>
-            ))}
+            {/* Aisles side by side when there's room, each kept whole. */}
+            <div className="gap-x-6 md:columns-2">
+              {sections.map((section) => (
+                <section
+                  key={section.id}
+                  className="mb-6 grid break-inside-avoid gap-1"
+                >
+                  <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    {section.name}
+                  </h2>
+                  <ul className="divide-y rounded-2xl border bg-card">
+                    {section.items.map((item) => (
+                      <ItemRow
+                        key={item.id}
+                        item={item}
+                        onEdit={() => setEditing(item)}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
             {!toGet.length && (
               <div className="grid justify-items-center gap-3 py-4 text-center">
                 <p className="text-muted-foreground">
@@ -245,12 +264,117 @@ export function ListPage() {
             )}
           </>
         )}
-      </div>
+      </WithAside>
 
       <AddFromPlanDialog open={fromPlan} onOpenChange={setFromPlan} />
       <WeeklyItemsDialog open={weekly} onOpenChange={setWeekly} />
       <OnHandDialog open={onHand} onOpenChange={setOnHand} />
       <EditItemDialog item={editing} onClose={() => setEditing(null)} />
+    </>
+  )
+}
+
+/** Beside the list: how the shop is going, what it's for, and what comes every week. */
+function ListAside({
+  items,
+  putting,
+  onPutAway,
+  onWeekly,
+  onOnHand,
+}: {
+  items: ShoppingItem[]
+  putting: boolean
+  onPutAway: () => void
+  onWeekly: () => void
+  onOnHand: () => void
+}) {
+  const weekly = useWeeklyItems()
+  const got = items.filter((item) => item.checked).length
+  const left = items.length - got
+  const meals = new Map<string, number>()
+  for (const item of items) {
+    for (const name of item.recipes) meals.set(name, (meals.get(name) ?? 0) + 1)
+  }
+  const forMeals = [...meals].sort((a, b) => b[1] - a[1])
+  return (
+    <>
+      {items.length > 0 && (
+        <Panel title="This shop">
+          <p className="font-heading text-3xl font-semibold">
+            {left}{" "}
+            <span className="font-sans text-base font-normal text-muted-foreground">
+              left to get
+            </span>
+          </p>
+          <Progress
+            value={(got / items.length) * 100}
+            aria-label="In the cart"
+          />
+          <p className="text-sm text-muted-foreground">
+            {got} of {items.length} in the cart
+          </p>
+          {got > 0 && (
+            <Button
+              className="justify-self-start"
+              disabled={putting}
+              onClick={onPutAway}
+            >
+              <HugeiconsIcon
+                icon={FridgeIcon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+              Put {got} away
+            </Button>
+          )}
+        </Panel>
+      )}
+      {forMeals.length > 0 && (
+        <Panel title="For these meals" to="/plan" link="Plan">
+          <ul className="grid gap-1.5 text-sm">
+            {forMeals.slice(0, 8).map(([name, count]) => (
+              <li key={name} className="flex items-baseline gap-3">
+                <span className="min-w-0 flex-1 truncate">{name}</span>
+                <span className="shrink-0 text-muted-foreground tabular-nums">
+                  {count} {count === 1 ? "item" : "items"}
+                </span>
+              </li>
+            ))}
+          </ul>
+          {forMeals.length > 8 && (
+            <p className="text-xs text-muted-foreground">
+              And {forMeals.length - 8} more.
+            </p>
+          )}
+        </Panel>
+      )}
+      <Panel
+        title="Every week"
+        action={
+          <Button variant="ghost" size="sm" onClick={onWeekly}>
+            Edit
+          </Button>
+        }
+      >
+        {weekly.data?.length ? (
+          <p className="text-sm text-muted-foreground first-letter:uppercase">
+            {weekly.data.map((item) => item.name).join(", ")}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Things you buy whatever's planned, like milk or coffee, come along
+            with each week's meals.
+          </p>
+        )}
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto justify-self-start px-0"
+          onClick={onOnHand}
+        >
+          Always on hand
+        </Button>
+      </Panel>
     </>
   )
 }

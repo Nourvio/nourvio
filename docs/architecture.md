@@ -315,6 +315,7 @@ The parser lives in the shared package, so the server and browser use the same c
 
 - **Phone:** a bottom tab bar (Today, Recipes, Plan, List, Pantry) and a floating chat button. Chat opens as a full-height bottom drawer.
 - **iPad and desktop:** a sidebar for navigation. Chat opens as a side panel next to the recipe or cook view, so you can read and ask at the same time.
+- **Using a wide screen:** pages fill the width rather than keeping a phone-width column. Today, the List and the Pantry have a side column of panels (`components/layout/page-layout.tsx`: what's next and to use soon, how the shop is going and what it's for, Use soon and Always on hand). The List's and Pantry's aisles, and the Plan's days, flow into two or three columns like a paper planner. Settings has its sections listed down the side, following along as you scroll.
 
 ### shadcn/ui components we expect to use
 

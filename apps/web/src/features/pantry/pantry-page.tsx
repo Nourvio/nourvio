@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/layout/page-header"
+import { Panel, WithAside } from "@/components/layout/page-layout"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -106,7 +107,29 @@ export function PantryPage() {
         }
       />
 
-      <div className="grid max-w-2xl gap-6">
+      <WithAside
+        aside={
+          <>
+            {soon.length > 0 && (
+              <Panel title="Use soon" tone="warn" className="hidden lg:grid">
+                <ul className="-mx-2 divide-y">
+                  {soon.map(({ item, soon }) => (
+                    <PantryRow
+                      key={item.id}
+                      item={item}
+                      soon={soon}
+                      onEdit={() => setEditing(item)}
+                      onUsedUp={() => usedUp(item)}
+                      onToList={() => toList(item.name)}
+                    />
+                  ))}
+                </ul>
+              </Panel>
+            )}
+            <AlwaysOnHand onEdit={() => setOnHand(true)} onLow={toList} />
+          </>
+        }
+      >
         <QuickAdd />
 
         {pantry.isPending ? (
@@ -133,7 +156,7 @@ export function PantryPage() {
         ) : (
           <>
             {soon.length > 0 && (
-              <section className="grid gap-1">
+              <section className="grid gap-1 lg:hidden">
                 <h2 className="text-xs font-medium tracking-wide text-amber-700 uppercase dark:text-amber-400">
                   Use soon
                 </h2>
@@ -151,30 +174,34 @@ export function PantryPage() {
                 </ul>
               </section>
             )}
-            {sections.map((section) => (
-              <section key={section.id} className="grid gap-1">
-                <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  {section.name}
-                </h2>
-                <ul className="divide-y rounded-2xl border bg-card">
-                  {section.rows.map(({ item }) => (
-                    <PantryRow
-                      key={item.id}
-                      item={item}
-                      soon={null}
-                      onEdit={() => setEditing(item)}
-                      onUsedUp={() => usedUp(item)}
-                      onToList={() => toList(item.name)}
-                    />
-                  ))}
-                </ul>
-              </section>
-            ))}
+            {/* Aisles side by side when there's room, each kept whole. */}
+            <div className="gap-x-6 md:columns-2">
+              {sections.map((section) => (
+                <section
+                  key={section.id}
+                  className="mb-6 grid break-inside-avoid gap-1"
+                >
+                  <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                    {section.name}
+                  </h2>
+                  <ul className="divide-y rounded-2xl border bg-card">
+                    {section.rows.map(({ item }) => (
+                      <PantryRow
+                        key={item.id}
+                        item={item}
+                        soon={null}
+                        onEdit={() => setEditing(item)}
+                        onUsedUp={() => usedUp(item)}
+                        onToList={() => toList(item.name)}
+                      />
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </div>
           </>
         )}
-
-        <AlwaysOnHand onEdit={() => setOnHand(true)} onLow={toList} />
-      </div>
+      </WithAside>
 
       <EditPantryDialog
         item={editing}
@@ -284,15 +311,14 @@ function AlwaysOnHand({
   const household = useHouseholdInfo()
   const onHand = household.data?.onHand ?? DEFAULT_ON_HAND
   return (
-    <section className="grid gap-2">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Always on hand
-        </h2>
+    <Panel
+      title="Always on hand"
+      action={
         <Button variant="ghost" size="sm" onClick={onEdit}>
           Edit
         </Button>
-      </div>
+      }
+    >
       <p className="text-sm text-muted-foreground">
         Left off lists made from the plan. Tap one when it runs low to add it to
         the list.
@@ -317,7 +343,7 @@ function AlwaysOnHand({
           </Button>
         ))}
       </div>
-    </section>
+    </Panel>
   )
 }
 
