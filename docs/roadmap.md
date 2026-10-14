@@ -4,26 +4,28 @@ Each milestone ends with something usable. Mealie keeps running until milestone 
 
 ## Milestone 0: Foundation
 
-**Done:**
-- The npm workspace, with `apps/web` and `apps/server`
+**Status:** built and tested locally. All that's left is deploying it on the home server and checking the "done when" below.
+
+- The npm workspace: `apps/web`, `apps/server` and `packages/shared`
 - Vite, React and shadcn/ui (Radix, Maia style), Tailwind v4
 - Three palettes in light and dark, checked for contrast
-- The app shell: sidebar on iPad and desktop, tabs on phone, chat launcher, Settings
+- The app shell: sidebar on iPad and desktop, tabs on phone, chat launcher, account menu
 - Placeholder pages and the `/styleguide` page
 - A Hono server that serves the web app and `/api/health` (with a Postgres check)
-- A Dockerfile, plus a compose stack (app, Postgres, nightly backup, optional tunnel) that builds straight from GitHub
-- GitHub Actions: typecheck, lint, format, contrast and build checks, plus a Docker build
-
-**To do:**
-- Add `packages/shared` to the workspace
 - Postgres and Drizzle:
   - migrations run at startup
   - the `pg_trgm` extension
   - seeded units and store sections
-  - PGlite for tests
-- Accounts, sessions, the admin role, the first-run setup code, and login rate limiting
-- Save each person's appearance (mode and palette) to their account instead of only on the device
-- A web app manifest and home-screen icons. The favicon already exists.
+  - tests on PGlite
+- Accounts:
+  - the first-run setup code
+  - sign-in with rate limiting, and 90-day sessions
+  - the admin role, and adding, removing and resetting household members
+  - changing your own name and password
+- Each person's appearance (mode and palette) saved to their account
+- A web app manifest and home-screen icons
+- A Dockerfile, plus a compose stack (app, Postgres, nightly backup, optional tunnel) that builds straight from GitHub
+- GitHub Actions: typecheck, lint, format, contrast, tests and build checks, plus a Docker build
 
 **Done when:** you can sign in at the public URL from a phone, through the tunnel, and see the empty app shell running in Dockge on the home server. A nightly dump should appear in `data/backups`.
 

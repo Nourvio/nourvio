@@ -10,7 +10,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY apps/server/package.json apps/server/
+COPY packages/shared/package.json packages/shared/
 RUN npm ci
+COPY packages/shared packages/shared
 COPY apps/web apps/web
 RUN npm run build -w @mise/web
 
@@ -20,6 +22,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY apps/server/package.json apps/server/
+COPY packages/shared/package.json packages/shared/
 RUN npm ci --omit=dev --workspace @mise/server --ignore-scripts
 
 # ---- Runtime ----
@@ -32,6 +35,7 @@ ENV NODE_ENV=production \
 WORKDIR /app
 
 COPY --from=deps /app/node_modules node_modules
+COPY packages/shared packages/shared
 COPY apps/server apps/server
 COPY --from=build /app/apps/web/dist apps/web/dist
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/mise-entrypoint
@@ -44,7 +48,7 @@ RUN (command -v setpriv >/dev/null || (apt-get update \
 
 EXPOSE 3000
 VOLUME /data
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
   CMD ["node", "-e", "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
 
 ENTRYPOINT ["mise-entrypoint"]

@@ -250,8 +250,9 @@ The parser lives in the shared package, so the server and browser use the same c
 ## Auth
 
 - **Accounts:** household members sign in with a username and password, hashed with scrypt.
-- **Sessions:** long-lived session cookies, set `HttpOnly`, `Secure` and `SameSite=Lax`, so the kitchen iPad stays signed in.
-- **Rate limiting:** login attempts are rate-limited.
+- **Sessions:** 90-day session cookies, renewed as they're used, so the kitchen iPad stays signed in. They're `HttpOnly` and `SameSite=Lax`, plus `Secure` over HTTPS. The database stores only a hash of each token.
+- **Rate limiting:** 5 failed sign-ins per username and 20 per IP, per 15 minutes.
+- **First run:** the first account is created with a one-time setup code printed in the server log.
 - **Roles:** an admin manages members, AI settings and API keys.
 - **Extension:** uses a personal API token created in Settings.
 - **Recipe import safety:** the server refuses to fetch private-network addresses. This stops someone from using the import feature to reach other machines on the home network.

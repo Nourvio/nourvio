@@ -2,7 +2,7 @@
 
 A self-hosted meal planner with an AI cooking assistant built in. Recipes, weekly plans, a pantry, shopping lists, nutrition and Walmart pickup orders for one household, made to use from a phone or iPad while cooking.
 
-**Status:** early. The app shell, theme and server skeleton are in place; recipes and the rest come next. See the [roadmap](docs/roadmap.md).
+**Status:** early. Accounts, the app shell and the theme work. Recipes and the rest come next. See the [roadmap](docs/roadmap.md).
 
 ## Run it with Docker Compose
 
@@ -48,6 +48,21 @@ docker compose up -d --build
 
 `"database": "unavailable"` means the app can't reach Postgres. Check the `db` container's logs.
 
+### First run: create your account
+
+1. Open the app. It asks for a **setup code**.
+2. Find the code in the app's log. In Dockge, open the `mise` container's logs; with the CLI, run `docker compose logs mise`. Look for:
+
+   ```
+   Welcome to Mise. Open the app to create the first
+   account, and enter this setup code: ABCD-EFGH-JKMN
+   ```
+
+3. Enter the code with your name, a username and a password (at least 10 characters). That account is the admin.
+4. Add everyone else under **Settings → Household**. Give each person a username and a starting password; they can change it in Settings.
+
+The code changes every time the app restarts until the first account exists, and it stops working after that. It's there so a stranger who reaches the page before you can't claim it.
+
 ## Settings
 
 Set these in `.env`, next to `compose.yaml`. Only `POSTGRES_PASSWORD` is required. Settings marked *later* belong to features that haven't shipped yet; it's safe to set them now.
@@ -60,7 +75,7 @@ Set these in `.env`, next to `compose.yaml`. Only `POSTGRES_PASSWORD` is require
 | `MISE_BUILD_CONTEXT` | `https://github.com/kjohnson2719/mise.git#main` | What to build. End it with `#<branch>`, `#<tag>` or `#<commit>`, or set it to `.` to build from a local checkout. |
 | `PUID` / `PGID` | `1000` | User and group that own `./data/app` on the host. The app drops to this user at startup instead of running as root. |
 | `BACKUP_KEEP_DAYS` | `14` | How many days of nightly backups to keep |
-| `PUBLIC_URL` | none | *Later.* The address people use to reach Mise, such as `https://mise.example.com` |
+| `PUBLIC_URL` | none | The address people use to reach Mise from outside, such as `https://mise.example.com`. Set it when you turn on the tunnel. |
 | `ANTHROPIC_API_KEY` | none | *Later.* Claude API key. It will also be possible to add it in the app's Settings. |
 | `OPENAI_API_KEY` | none | *Later.* OpenAI API key. It will also be possible to add it in the app's Settings. |
 | `USDA_API_KEY` | none | *Later.* FoodData Central key for calculated nutrition, free from [api.data.gov](https://api.data.gov/signup/) |
@@ -107,14 +122,18 @@ The compose file includes a [Cloudflare Tunnel](https://developers.cloudflare.co
 4. Delete the `profiles: ["tunnel"]` line from the `cloudflared` service and redeploy. With the CLI you can run `docker compose --profile tunnel up -d` instead.
 5. Set `PUBLIC_URL` to the hostname.
 
-Mise doesn't have logins yet. Keep it off the public internet until accounts arrive (see the [roadmap](docs/roadmap.md)).
+Everything except the sign-in and setup pages needs a login, and repeated wrong passwords lock that username for 15 minutes. Create your account (above) before you turn the tunnel on, and give everyone a password that isn't used anywhere else.
 
 ## Developing
 
-You need Node 24. Docker is optional; it's only for the local Postgres.
+You need Node 24 and Docker (for a local Postgres).
 
 ```bash
 npm install
+```
+
+```bash
+cp .env.example .env
 ```
 
 ```bash
@@ -125,9 +144,10 @@ npm run db:up
 npm run dev
 ```
 
-- `npm run db:up` starts a local Postgres.
-- `npm run dev` starts the web app on http://localhost:5173 and the API on :3000. Vite forwards `/api` to the API.
-- Copy `.env.example` to `.env` first if you want the API to connect to the local database.
+- `.env` gives the API its `DATABASE_URL`. The example already points at the local database.
+- `npm run db:up` starts that local Postgres in Docker.
+- `npm run dev` starts the web app on http://localhost:5173 and the API on :3000. Vite forwards `/api` to the API. The setup code prints in the same terminal.
+- `npm test` runs the server tests against an in-memory Postgres, so it doesn't need Docker.
 
 More in [docs/development.md](docs/development.md).
 

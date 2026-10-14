@@ -47,13 +47,18 @@ Everything persistent is a bind mount under `./data`, next to the compose file, 
 - **Not root:** the app runs as an unprivileged user.
 - **Recipe import can't reach the home network.** The server won't fetch private-network addresses (see [integrations.md](integrations.md#recipe-sites)).
 - **Secrets stay server-side:** API keys live only in the server's environment or, encrypted, in the database. They're never sent to the browser.
-- **Not public yet.** **Until accounts exist (milestone 0), Mise has no login. Keep it on the home network.**
-- **Once accounts exist:**
-  - Every route except `/api/health` and the login pages needs a session or an API token.
-  - Login attempts are rate-limited and passwords are hashed with scrypt.
-  - Cookies are `Secure`, `HttpOnly` and `SameSite=Lax`.
-  - AI settings are admin-only.
-  - A first-run **setup code** printed in the container logs stops a stranger from claiming a fresh install.
+- **Logins:**
+  - Every API route except `/api/health`, setup and sign-in needs a session.
+  - Passwords are hashed with scrypt.
+  - Five wrong passwords lock that username for 15 minutes, and one IP gets 20 tries per 15 minutes across all usernames.
+- **Sessions:**
+  - A session cookie is `HttpOnly`, `SameSite=Lax`, and `Secure` whenever the request arrived over HTTPS (the tunnel sets `X-Forwarded-Proto`).
+  - It lasts 90 days from its last use.
+  - The database stores only a SHA-256 of each session token.
+  - Changing or resetting a password signs out that person's other devices.
+- **Cross-site form posts** are refused unless they come from this site's own host or `PUBLIC_URL`.
+- **First-run setup code:** printed in the container logs, it stops a stranger from claiming a fresh install. It changes every restart and stops working once the first account exists.
+- **Admin-only:** managing people, and later the AI settings.
 
 ## Getting to it from outside the house
 

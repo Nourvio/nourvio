@@ -2,7 +2,8 @@ import * as React from "react"
 
 import type { Palette } from "./palettes"
 
-export type Mode = "light" | "dark" | "system"
+export type { Mode } from "@mise/shared"
+import type { Mode } from "@mise/shared"
 
 export type ThemeContextValue = {
   mode: Mode

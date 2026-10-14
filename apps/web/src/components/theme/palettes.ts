@@ -1,4 +1,7 @@
-export type Palette = "sage" | "paprika" | "castiron"
+import type { PaletteName } from "@mise/shared"
+
+/** The palette names live in @mise/shared, because accounts save them too. */
+export type Palette = PaletteName
 
 export type PaletteOption = {
   value: Palette

@@ -22,6 +22,7 @@ jobs:
       - run: npm run lint
       - run: npm run format:check
       - run: npm run check:contrast -w @mise/web
+      - run: npm test
       - run: npm run build
 
   # Makes sure the image still builds, the same way compose.yaml builds it.
