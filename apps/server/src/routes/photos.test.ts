@@ -110,7 +110,7 @@ describe("AI photos", () => {
     expect(prompt).toContain("chicken thighs")
     expect(prompt).not.toContain("kosher salt")
     expect(prompt).toContain("serve over rice")
-    expect(prompt).toContain("charcoal-black stoneware plate")
+    expect(prompt).toContain("matte charcoal-black stoneware: a plate")
     expect(prompt).toContain("white Carrara marble")
 
     // Counted against the server's spending, with a cost.

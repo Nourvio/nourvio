@@ -15,7 +15,12 @@ export type PhotoService = ReturnType<typeof createPhotoService>
  * The house style, the same for every photo, so they look like one
  * cookbook: a dark plate on white marble, in soft daylight.
  */
-const STYLE = `Style: a realistic, appetizing food photograph for a modern cookbook. The food is plated on a matte charcoal-black stoneware plate, or in a matching dark stoneware bowl for a soup, stew, curry, noodles, salad, sauce, dip or drink. It sits on a white Carrara marble counter with soft grey veining. Soft natural daylight from the left with gentle shadows, shot from about 45 degrees with a shallow depth of field, the dish filling most of the frame. Minimal styling: at most a folded linen napkin or a fresh garnish that belongs in the recipe. True-to-life colors. No text, labels, logos, hands, people or cluttered props.`
+const STYLE = `Style: a realistic, appetizing food photograph for a modern cookbook.
+- Dishware, all matte charcoal-black stoneware: a plate for most food; a bowl for a soup, stew, curry, noodles or salad; for a sauce, dressing, dip, spread or condiment, a small ramekin or dipping dish with a little spoon resting in it, shot a little closer; a simple glass for a drink.
+- It sits on a white Carrara marble counter with soft grey veining.
+- Soft natural daylight from the left with gentle shadows, shot from about 45 degrees with a shallow depth of field, the dish filling most of the frame.
+- Minimal styling: at most a folded linen napkin or a fresh garnish that belongs in the recipe. True-to-life colors.
+- No text, labels, logos, hands, people or cluttered props.`
 
 /** Ingredients that don't say anything about how a dish looks. */
 const UNSEEN =
@@ -39,6 +44,7 @@ export function photoPrompt(recipe: Recipe) {
     `A photograph of ${recipe.name}, finished and ready to eat.`,
     recipe.description && `About the dish: ${recipe.description.slice(0, 400)}`,
     foods.length > 0 && `Made with: ${foods.join(", ")}.`,
+    recipe.tags.length > 0 && `Tagged: ${recipe.tags.slice(0, 8).join(", ")}.`,
     serving && `How it's finished: ${serving}`,
     STYLE,
   ]
