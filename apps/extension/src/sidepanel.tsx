@@ -4,6 +4,7 @@ import { STORE_SECTIONS, type ShoppingItem } from "@mise/shared"
 
 import { getConnection, mise, MiseError, type Connection } from "./mise.ts"
 import "./ui.css"
+import { WalmartView } from "./walmart-view.tsx"
 
 /** Stores to search for an item in the tab beside the list. */
 const STORES = {
@@ -26,27 +27,28 @@ const STORES = {
 } as const
 type StoreKey = keyof typeof STORES
 
-function SidePanel() {
-  const [connection, setConnection] = useState<Connection | null | undefined>()
+function ListView() {
   const [items, setItems] = useState<ShoppingItem[] | null>(null)
   const [error, setError] = useState<string>()
   const [store, setStore] = useState<StoreKey>("none")
 
-  const load = useCallback(async () => {
-    try {
-      const { items } = await mise<{ items: ShoppingItem[] }>("/list")
-      setItems(items)
-      setError(undefined)
-    } catch (e) {
-      setError(e instanceof MiseError ? e.message : "Couldn't load the list.")
-    }
-  }, [])
+  const load = useCallback(
+    () =>
+      mise<{ items: ShoppingItem[] }>("/list").then(
+        ({ items }) => {
+          setItems(items)
+          setError(undefined)
+        },
+        (e) =>
+          setError(
+            e instanceof MiseError ? e.message : "Couldn't load the list."
+          )
+      ),
+    []
+  )
 
   useEffect(() => {
-    void getConnection().then((found) => {
-      setConnection(found)
-      if (found) void load()
-    })
+    void load()
     void chrome.storage.local.get("searchStore").then(({ searchStore }) => {
       if (typeof searchStore === "string" && searchStore in STORES) {
         setStore(searchStore as StoreKey)
@@ -94,19 +96,6 @@ function SidePanel() {
     void chrome.storage.local.set({ searchStore: value })
   }
 
-  if (connection === undefined) return null
-  if (!connection) {
-    return (
-      <div className="stack">
-        <h1>Shopping list</h1>
-        <p className="muted">
-          Connect the extension to your Mise first: click the Mise icon in the
-          toolbar.
-        </p>
-      </div>
-    )
-  }
-
   const toGet = (items ?? []).filter((item) => !item.checked)
   const got = (items ?? []).length - toGet.length
   const sections = STORE_SECTIONS.map((section) => ({
@@ -115,9 +104,9 @@ function SidePanel() {
   })).filter((section) => section.items.length)
 
   return (
-    <div className="stack">
+    <div className="stack" style={{ paddingTop: 0 }}>
       <div className="row spread">
-        <h1>Shopping list</h1>
+        <h2>To get</h2>
         <button className="ghost small" onClick={() => void load()}>
           Refresh
         </button>
@@ -180,6 +169,66 @@ function SidePanel() {
         </>
       )}
     </div>
+  )
+}
+
+/** The list, or filling the Walmart cart from it. */
+function SidePanel() {
+  const [connection, setConnection] = useState<Connection | null | undefined>()
+  const [tab, setTab] = useState<"list" | "walmart">("list")
+
+  useEffect(() => {
+    void getConnection().then(setConnection)
+    void chrome.storage.local.get("panelTab").then(({ panelTab }) => {
+      if (panelTab === "walmart") setTab("walmart")
+    })
+  }, [])
+
+  function pick(value: "list" | "walmart") {
+    setTab(value)
+    void chrome.storage.local.set({ panelTab: value })
+  }
+
+  if (connection === undefined) return null
+  if (!connection) {
+    return (
+      <div className="stack">
+        <h1>Shopping list</h1>
+        <p className="muted">
+          Connect the extension to your Mise first: click the Mise icon in the
+          toolbar.
+        </p>
+      </div>
+    )
+  }
+  return (
+    <>
+      <div className="stack" style={{ paddingBottom: 8 }}>
+        <div className="brand">
+          <img src="icons/48.png" alt="" />
+          <h1>Shopping list</h1>
+        </div>
+        <div className="tabs" role="tablist">
+          <button
+            role="tab"
+            aria-selected={tab === "list"}
+            className={tab === "list" ? "" : "outline"}
+            onClick={() => pick("list")}
+          >
+            List
+          </button>
+          <button
+            role="tab"
+            aria-selected={tab === "walmart"}
+            className={tab === "walmart" ? "" : "outline"}
+            onClick={() => pick("walmart")}
+          >
+            Walmart cart
+          </button>
+        </div>
+      </div>
+      {tab === "list" ? <ListView /> : <WalmartView />}
+    </>
   )
 }
 

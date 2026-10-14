@@ -235,3 +235,83 @@ input[type="checkbox"] {
   color: var(--muted-foreground);
   font-size: 13px;
 }
+
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.line {
+  display: grid;
+  grid-template-columns: auto 44px 1fr;
+  gap: 10px;
+  align-items: start;
+  padding: 10px;
+}
+
+.line + .line {
+  border-top: 1px solid var(--border);
+}
+
+.line img,
+.line .no-photo {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  object-fit: contain;
+}
+
+.line .no-photo {
+  background: var(--secondary);
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stepper button {
+  min-height: 26px;
+  width: 26px;
+  padding: 0;
+}
+
+.picker {
+  display: grid;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.picker button {
+  justify-content: flex-start;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  text-align: left;
+  font-weight: 400;
+}
+
+.picker img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.footer {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}

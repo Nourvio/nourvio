@@ -4,6 +4,7 @@ import {
   lineCost,
   packagesFor,
   parseProductSize,
+  sizeFromName,
   type Need,
 } from "./shopping.ts"
 
@@ -118,5 +119,17 @@ describe("packages to buy", () => {
       lineCost({ product: { ...product, salePrice: 2.5 }, packages: 2 })
     ).toBe(5)
     expect(lineCost({ product: null, packages: 1 })).toBeNull()
+  })
+})
+
+describe("sizes in product names", () => {
+  test.each([
+    ["Great Value Milk Whole Vitamin D, Half Gallon, 64 fl oz", "64 fl oz"],
+    ["Great Value Large White Eggs, 12 Count", "12 Count"],
+    ["Tyson Boneless Skinless Chicken Thighs, 2.5 lb Tray", "2.5 lb"],
+    ["Diet Pepsi Soda, 12 fl oz, 12 Pack Cans", "12 Pack"],
+    ["Bananas, each", null],
+  ])("%s", (name, size) => {
+    expect(sizeFromName(name)).toBe(size)
   })
 })

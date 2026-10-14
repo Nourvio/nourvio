@@ -274,3 +274,50 @@ export const krogerSettingsInput = z.object({
   locationId: z.string().trim().min(1).max(20).optional(),
   modality: z.enum(KROGER_MODALITIES).optional(),
 })
+
+/** http and https links only: a page can say anything. */
+const webLink = z.url({ protocol: /^https?$/ }).max(1000)
+
+/** A product as the browser extension read it from a store's site (Walmart). */
+export const storeProductSchema = z.object({
+  id: z.string().trim().min(1).max(64),
+  upc: z.string().trim().max(20).nullable(),
+  name: z.string().trim().min(1).max(300),
+  brand: z.string().trim().max(120).nullable(),
+  size: z.string().trim().max(60).nullable(),
+  image: webLink.nullable(),
+  price: z.number().nonnegative().max(10_000).nullable(),
+  salePrice: z.number().nonnegative().max(10_000).nullable(),
+  aisle: z.string().trim().max(60).nullable(),
+  aisleNumber: z.number().nullable(),
+  inStock: z.boolean().nullable(),
+  url: webLink.nullable(),
+})
+
+export const saveProductInput = z.object({ product: storeProductSchema })
+
+/** Each item's search results at a store, for Mise to pick from. */
+export const suggestProductsInput = z.object({
+  items: z
+    .array(
+      z.object({
+        itemId: z.uuid(),
+        products: z.array(storeProductSchema).max(12),
+      })
+    )
+    .max(200),
+})
+export type SuggestProductsInput = z.input<typeof suggestProductsInput>
+
+/**
+ * The package size in a product's name, for stores that don't list it on
+ * its own: "Great Value Whole Milk, Half Gallon, 64 fl oz" → "64 fl oz".
+ */
+export function sizeFromName(name: string) {
+  const sizes = [
+    ...name.matchAll(
+      /(\d+(?:\.\d+)?\s*(?:ct|count|pk|pack)\s*[/x×,-]?\s*)?\d+(?:\.\d+)?\s*(?:fl\.?\s*oz|oz|lbs?|ct|count|g|kg|ml|l|gal|gallons?|qt|pt|dozen|pk|pack)\b/gi
+    ),
+  ].map((match) => match[0].trim())
+  return sizes.findLast((size) => parseProductSize(size)) ?? null
+}

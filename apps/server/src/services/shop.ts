@@ -11,6 +11,7 @@ import {
   type KrogerAppSettings,
   type Need,
   type SendBasketInput,
+  type ShopId,
   type ShopStatus,
   type StoreProduct,
 } from "@mise/shared"
@@ -59,6 +60,12 @@ const WHOLE_PORTION =
   /\b(medium|large|small|whole|each|fruit|head|bulb|ear|breast|thigh)\b/i
 const PART_PORTION =
   /\b(clove|slice|sprig|leaf|leaves|cup|tbsp|tsp|tablespoon|teaspoon|oz|piece|chopped|diced)\b/i
+
+const STORE_NAMES: Record<ShopId, string> = {
+  kroger: "Kroger",
+  costco: "Costco",
+  walmart: "Walmart",
+}
 
 /** A sign-in started and not finished yet, by its state. Lost on restart; just try again. */
 type PendingLink = {
@@ -268,14 +275,14 @@ export function createShopService(
     cached = null
   }
 
-  async function connection(householdId: string) {
+  async function connection(householdId: string, shop: ShopId = "kroger") {
     const [row] = await db
       .select()
       .from(shopConnections)
       .where(
         and(
           eq(shopConnections.householdId, householdId),
-          eq(shopConnections.shop, "kroger")
+          eq(shopConnections.shop, shop)
         )
       )
     return row
@@ -283,11 +290,12 @@ export function createShopService(
 
   async function saveConnection(
     householdId: string,
-    patch: Partial<Omit<ConnectionRow, "householdId" | "shop">>
+    patch: Partial<Omit<ConnectionRow, "householdId" | "shop">>,
+    shop: ShopId = "kroger"
   ) {
     await db
       .insert(shopConnections)
-      .values({ householdId, shop: "kroger", ...patch })
+      .values({ householdId, shop, ...patch })
       .onConflictDoUpdate({
         target: [shopConnections.householdId, shopConnections.shop],
         set: patch,
@@ -697,39 +705,192 @@ export function createShopService(
       conn.modality
     )
 
-    // What was sent was looked over: remember those products for good.
-    const sentFoods = [
-      ...new Set(Object.keys(sentItems).map((id) => foodOf(byId.get(id)!.key))),
-    ]
-    await db
-      .update(storeProducts)
-      .set({ chosen: true })
-      .where(
-        and(
-          eq(storeProducts.householdId, householdId),
-          eq(storeProducts.shop, "kroger"),
-          inArray(storeProducts.food, sentFoods)
-        )
-      )
-    const stillListed = new Set(
-      (await listRows(db, householdId)).map((row) => row.id)
-    )
-    const previous = Object.fromEntries(
-      Object.entries(conn.lastSent?.items ?? {}).filter(([id]) =>
-        stillListed.has(id)
-      )
-    )
-    await saveConnection(householdId, {
-      lastSent: {
-        at: new Date().toISOString(),
-        items: { ...previous, ...sentItems },
-      },
-    })
+    await rememberSent(householdId, "kroger", sentItems, rows)
     return {
       sent: Object.keys(sentItems).length,
       storeName: store.banner,
       cartUrl: `https://www.${bannerDomain(store)}/cart`,
     }
+  }
+
+  /**
+   * What was sent was looked over: remember those products for good, and
+   * what went, so it's left out next time.
+   */
+  async function rememberSent(
+    householdId: string,
+    shop: ShopId,
+    sentItems: Record<string, number>,
+    rows: ItemRow[]
+  ) {
+    const byId = new Map(rows.map((row) => [row.id, row]))
+    const foods = [
+      ...new Set(Object.keys(sentItems).map((id) => foodOf(byId.get(id)!.key))),
+    ]
+    if (foods.length) {
+      await db
+        .update(storeProducts)
+        .set({ chosen: true })
+        .where(
+          and(
+            eq(storeProducts.householdId, householdId),
+            eq(storeProducts.shop, shop),
+            inArray(storeProducts.food, foods)
+          )
+        )
+    }
+    const conn = await connection(householdId, shop)
+    const stillListed = new Set(
+      (await listRows(db, householdId)).map((row) => row.id)
+    )
+    const previous = Object.fromEntries(
+      Object.entries(conn?.lastSent?.items ?? {}).filter(([id]) =>
+        stillListed.has(id)
+      )
+    )
+    await saveConnection(
+      householdId,
+      {
+        lastSent: {
+          at: new Date().toISOString(),
+          items: { ...previous, ...sentItems },
+        },
+      },
+      shop
+    )
+  }
+
+  async function savedProducts(householdId: string, shop: ShopId) {
+    const rows = await db
+      .select()
+      .from(storeProducts)
+      .where(
+        and(
+          eq(storeProducts.householdId, householdId),
+          eq(storeProducts.shop, shop)
+        )
+      )
+    return new Map(rows.map((row) => [row.food, row]))
+  }
+
+  async function rowsById(householdId: string, ids: string[]) {
+    const rows = ids.length
+      ? await db
+          .select()
+          .from(shoppingItems)
+          .where(
+            and(
+              eq(shoppingItems.householdId, householdId),
+              inArray(shoppingItems.id, ids)
+            )
+          )
+      : []
+    return new Map(rows.map((row) => [row.id, row]))
+  }
+
+  /**
+   * The list for a store Mise can't reach itself (Walmart, through the
+   * browser extension): remembered products, how many, and what was sent.
+   */
+  async function storeBasket(
+    householdId: string,
+    shop: ShopId
+  ): Promise<Basket> {
+    const rows = (await listRows(db, householdId)).filter((row) => !row.checked)
+    const saved = await savedProducts(householdId, shop)
+    const needs = await needsFor(db, rows)
+    const conn = await connection(householdId, shop)
+    const sent = conn?.lastSent?.items ?? {}
+    return {
+      shop,
+      storeName: STORE_NAMES[shop],
+      lines: rows.map((row, index) =>
+        toLine(row, needs[index]!, saved.get(foodOf(row.key)), sent)
+      ),
+      sentAt: conn?.lastSent?.at ?? null,
+    }
+  }
+
+  /** Mise's picks from the search results the extension found, kept as suggestions. */
+  async function suggest(
+    householdId: string,
+    actor: AiActor,
+    shop: ShopId,
+    input: { items: { itemId: string; products: StoreProduct[] }[] }
+  ) {
+    const byId = await rowsById(
+      householdId,
+      input.items.map((item) => item.itemId)
+    )
+    const asked = input.items.filter(
+      (item) => byId.has(item.itemId) && item.products.length
+    )
+    const rows = asked.map((item) => byId.get(item.itemId)!)
+    const picks = await choose(
+      actor,
+      rows,
+      asked.map((item) => item.products)
+    )
+    const values = rows.flatMap((row, index) => {
+      const product = picks[index]
+      return product
+        ? [{ householdId, shop, food: foodOf(row.key), product }]
+        : []
+    })
+    // A product someone chose stays; only fill in what's missing.
+    if (values.length) {
+      await db.insert(storeProducts).values(values).onConflictDoNothing()
+    }
+    return storeBasket(householdId, shop)
+  }
+
+  /** A product picked by hand (on the store's site) for an item's food, from now on. */
+  async function saveProduct(
+    householdId: string,
+    shop: ShopId,
+    itemId: string,
+    product: StoreProduct
+  ) {
+    const row = await findRow(householdId, itemId)
+    const food = foodOf(row.key)
+    await db
+      .insert(storeProducts)
+      .values({ householdId, shop, food, product, chosen: true })
+      .onConflictDoUpdate({
+        target: [
+          storeProducts.householdId,
+          storeProducts.shop,
+          storeProducts.food,
+        ],
+        set: { product, chosen: true },
+      })
+    const [need] = await needsFor(db, [row])
+    const conn = await connection(householdId, shop)
+    return toLine(
+      row,
+      need!,
+      { product, chosen: true },
+      conn?.lastSent?.items ?? {}
+    )
+  }
+
+  /** The extension added these to the store's cart: remember them. */
+  async function recordSent(
+    householdId: string,
+    shop: ShopId,
+    input: SendBasketInput
+  ) {
+    const byId = await rowsById(
+      householdId,
+      input.lines.map((line) => line.itemId)
+    )
+    const sentItems = Object.fromEntries(
+      input.lines
+        .filter((line) => byId.has(line.itemId))
+        .map((line) => [line.itemId, line.packages])
+    )
+    await rememberSent(householdId, shop, sentItems, [...byId.values()])
+    return { sent: Object.keys(sentItems).length }
   }
 
   /** Aisles of what's remembered, by food, for walking the store in order. */
@@ -760,5 +921,9 @@ export function createShopService(
     pick,
     send,
     aisles,
+    storeBasket,
+    suggest,
+    saveProduct,
+    recordSent,
   }
 }

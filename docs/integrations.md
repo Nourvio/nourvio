@@ -166,7 +166,7 @@ Instacart coverage varies by ZIP code. Mise can ask Instacart which stores it se
 
 ### The Mise browser extension
 
-One extension for Chrome, Edge and other Chromium browsers (Manifest V3, `apps/extension`). Part one is built; the Walmart part is next.
+One extension for Chrome, Edge and other Chromium browsers (Manifest V3, `apps/extension`).
 
 - **Connecting:**
   - Type your Mise's address in the extension's popup and click Connect. The browser asks to let the extension reach that one address (an optional host permission; the extension asks for nothing else up front).
@@ -179,11 +179,13 @@ One extension for Chrome, Edge and other Chromium browsers (Manifest V3, `apps/e
   - Mise still downloads the photo itself; most image servers don't block it. If one does, the recipe gets an AI photo when those are on.
 - **Right-click:** "Import this link into Mise" (sent to the normal link import) and "Add “…” to the Mise shopping list" on selected text (several lines or commas become several items). A note in the corner of the page says how it went.
 - **The list beside you:** the browser's side panel shows the unchecked list by aisle, checking items off in Mise as they go in the cart. **Find** puts an item's search at the store you pick (Walmart, Costco Same-Day or Fry's) in the tab beside it. It refreshes every 30 seconds while open.
-- **Walmart (next):**
-  - On a Walmart product page, **Use this for…** saves it as the product for a list item, with its price.
-  - **Fill my Walmart cart** adds the saved products for the week's list one at a time, slowly. Items without a saved product show Walmart's search results to pick from, and the pick is remembered.
-  - It ends with what was added, what was skipped, and an estimated total. You pick the pickup time and pay yourself.
-  - Because it works through walmart.com in your tab, the cart and search steps get a prototype first.
+- **Walmart** (the side panel's Walmart cart, and the popup on Walmart product pages):
+  - Walmart's pages carry their data as JSON (`__NEXT_DATA__`): a search page lists its products (item id, name, price, was-price, photo, stock, whether it's an ad), and a product page has the product (with its UPC and brand). The extension reads those in its Walmart tab; Mise's server never talks to Walmart.
+  - **Finding products:** for items without one, the extension searches Walmart in the Walmart tab, one item every 1.5 seconds, keeps up to eight results (in stock and not ads first), and sends them to Mise, which picks with the small AI model (the same as for Kroger) and keeps the pick as a suggestion. The package size comes from the product's name ("…, 64 fl oz"). **Change** shows an item's results to pick from; **Use this for…** on a product page picks it directly.
+  - **Filling the cart:** for each line, the extension opens the product's page and presses Walmart's own buttons: Add to cart (`data-automation-id="atc"`), then the quantity stepper's + (`data-testid="quantity-stepper-inc-button"`, whose label says the current quantity) until the cart has enough. One every 1.5 seconds or so. Walmart sometimes moves on to an "Added to cart" page part way; the extension opens the product again and carries on from what's in the cart. Copying Walmart's own add-to-cart request instead would break with each of their releases (it's a persisted GraphQL query, `updateItems/<hash>`).
+  - **Person checks:** if Walmart shows its "Robot or human?" check, the extension stops and asks you to finish it in the Walmart tab. It doesn't try to get past it.
+  - What went into the cart is recorded in Mise (`/api/shop/walmart/sent`) and left out next time unless ticked. Checked October 14, 2026 on walmart.com: reading search results, and adding 2 of a product to a guest cart (then emptying it).
+  - It depends on how walmart.com works, so it will need fixes when Walmart changes those pages. Automating a retailer's site is a gray area under their terms; this is low volume, on your own account.
 - **Phones:** extensions don't run in Chrome on Android, and Safari on iPhone needs an App Store app for them. Phones keep the share sheet (Android), Paste (iPhone) and an iOS Shortcut; the extension is for the computer.
 - **Installing:** the Docker image builds the extension, and Settings → Browser extension downloads it (`GET /api/extension/download`). Unzip it, turn on Developer mode in `chrome://extensions`, and Load unpacked. A Chrome Web Store listing (it can be unlisted) would skip Developer mode, for a one-time $5 developer fee and a review of each update.
 

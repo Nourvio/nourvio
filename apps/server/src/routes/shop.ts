@@ -2,7 +2,9 @@ import {
   krogerAppInput,
   krogerSettingsInput,
   pickProductInput,
+  saveProductInput,
   sendBasketInput,
+  suggestProductsInput,
 } from "@mise/shared"
 import { Hono, type Context } from "hono"
 
@@ -155,6 +157,43 @@ export function shopRoutes(
   app.post("/kroger/send", async (c) =>
     c.json(
       await shop.send(currentHousehold(c), await readBody(c, sendBasketInput))
+    )
+  )
+
+  // ---- Walmart, through the browser extension ----
+  // Mise can't reach Walmart itself: the extension searches and fills the
+  // cart in the person's own Walmart tab, and Mise keeps the picks.
+  app.get("/walmart/basket", async (c) =>
+    c.json({ basket: await shop.storeBasket(currentHousehold(c), "walmart") })
+  )
+  app.post("/walmart/suggest", async (c) =>
+    c.json({
+      basket: await shop.suggest(
+        currentHousehold(c),
+        actor(c),
+        "walmart",
+        await readBody(c, suggestProductsInput)
+      ),
+    })
+  )
+  app.put("/walmart/products/:itemId", async (c) => {
+    const { product } = await readBody(c, saveProductInput)
+    return c.json({
+      line: await shop.saveProduct(
+        currentHousehold(c),
+        "walmart",
+        c.req.param("itemId"),
+        product
+      ),
+    })
+  })
+  app.post("/walmart/sent", async (c) =>
+    c.json(
+      await shop.recordSent(
+        currentHousehold(c),
+        "walmart",
+        await readBody(c, sendBasketInput)
+      )
     )
   )
 

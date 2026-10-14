@@ -1,5 +1,12 @@
 import { mise, setConnection, type Connection } from "./mise.ts"
 import { listenForToken, readPage, showNote } from "./page.ts"
+import {
+  getJob,
+  runFill,
+  runSearch,
+  type FillRequest,
+  type SearchRequest,
+} from "./walmart-jobs.ts"
 
 type ImportResult = {
   recipe: { slug: string; name: string }
@@ -129,6 +136,22 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 })
 
 chrome.runtime.onMessage.addListener((message, sender) => {
+  // From the side panel: long Walmart jobs, one at a time.
+  if (message?.type === "walmart-search" || message?.type === "walmart-fill") {
+    void (async () => {
+      if ((await getJob())?.running) return
+      if (message.type === "walmart-search") {
+        await runSearch(message.request as SearchRequest)
+      } else {
+        await runFill(message.request as FillRequest)
+      }
+    })()
+    return
+  }
+  if (message?.type === "walmart-stop") {
+    void chrome.storage.session.set({ walmartCancel: true })
+    return
+  }
   // From the popup: open Mise's connect page, then listen there for the token.
   if (message?.type === "connect" && typeof message.origin === "string") {
     void chrome.tabs

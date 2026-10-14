@@ -515,3 +515,149 @@ describe("store connections: the AI's pick", () => {
     }
   })
 })
+
+describe("store connections: Walmart, through the extension", () => {
+  const walmart = (
+    id: string,
+    name: string,
+    price: number,
+    size: string | null,
+    inStock = true
+  ) => ({
+    id,
+    upc: null,
+    name,
+    brand: null,
+    size,
+    image: `https://i5.walmartimages.com/seo/${id}.jpeg`,
+    price,
+    salePrice: null,
+    aisle: null,
+    aisleNumber: null,
+    inStock,
+    url: `https://www.walmart.com/ip/${id}`,
+  })
+
+  test("keeps Mise's picks from the extension's searches, a hand pick over them, and what was sent", async () => {
+    const t = await createTestAppWithAdmin()
+    try {
+      for (const text of [
+        "1 gallon milk",
+        "2 cans diced tomatoes",
+        "paper towels",
+      ]) {
+        await t.admin.post("/api/list/items", { text })
+      }
+      const empty = (await t.admin.get("/api/shop/walmart/basket")).body
+        .basket as Basket
+      expect(empty.storeName).toBe("Walmart")
+      expect(empty.lines.every((line) => line.product === null)).toBe(true)
+      const id = (name: string) =>
+        empty.lines.find((l) => l.name === name)!.itemId
+
+      // No AI set up: the first in stock.
+      const suggested = await t.admin.post("/api/shop/walmart/suggest", {
+        items: [
+          {
+            itemId: id("milk"),
+            products: [
+              walmart("1", "Fancy Milk, 1 gal", 5.99, "1 gal", false),
+              walmart(
+                "2",
+                "Great Value Whole Milk, Half Gallon, 64 fl oz",
+                1.32,
+                "64 fl oz"
+              ),
+            ],
+          },
+          {
+            itemId: id("diced tomatoes"),
+            products: [
+              walmart(
+                "3",
+                "Great Value Diced Tomatoes, 14.5 oz",
+                0.92,
+                "14.5 oz"
+              ),
+            ],
+          },
+        ],
+      })
+      expect(suggested.status).toBe(200)
+      const b = suggested.body.basket as Basket
+      const milk = b.lines.find((l) => l.name === "milk")!
+      expect(milk).toMatchObject({
+        product: { id: "2", price: 1.32 },
+        suggested: true,
+        packages: 2,
+        sure: true,
+      })
+      expect(b.lines.find((l) => l.name === "diced tomatoes")).toMatchObject({
+        packages: 2,
+      })
+
+      const picked = await t.admin.put(
+        `/api/shop/walmart/products/${id("milk")}`,
+        {
+          product: walmart(
+            "4",
+            "Great Value Whole Milk, 1 Gallon",
+            2.48,
+            "1 gal"
+          ),
+        }
+      )
+      expect(picked.body.line).toMatchObject({
+        product: { id: "4" },
+        suggested: false,
+        packages: 1,
+      })
+      // Searching again doesn't undo a hand pick.
+      await t.admin.post("/api/shop/walmart/suggest", {
+        items: [
+          {
+            itemId: id("milk"),
+            products: [walmart("2", "GV Milk", 1.32, "64 fl oz")],
+          },
+        ],
+      })
+      const again = (await t.admin.get("/api/shop/walmart/basket")).body
+        .basket as Basket
+      expect(again.lines.find((l) => l.name === "milk")!.product?.id).toBe("4")
+
+      const sent = await t.admin.post("/api/shop/walmart/sent", {
+        lines: [
+          { itemId: id("milk"), packages: 1 },
+          { itemId: id("diced tomatoes"), packages: 2 },
+        ],
+      })
+      expect(sent.body).toEqual({ sent: 2 })
+      const after = (await t.admin.get("/api/shop/walmart/basket")).body
+        .basket as Basket
+      expect(after.sentAt).toBeTruthy()
+      expect(
+        after.lines.find((l) => l.name === "diced tomatoes")
+      ).toMatchObject({
+        sent: true,
+        suggested: false,
+      })
+      expect(after.lines.find((l) => l.name === "paper towels")!.sent).toBe(
+        false
+      )
+
+      // Product details from a browser are checked.
+      const bad = await t.admin.put(
+        `/api/shop/walmart/products/${id("milk")}`,
+        {
+          product: {
+            ...walmart("5", "Milk", 1, null),
+            url: "javascript:alert(1)",
+          },
+        }
+      )
+      expect(bad.status).toBe(400)
+    } finally {
+      await t.close()
+    }
+  })
+})

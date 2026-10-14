@@ -1,5 +1,6 @@
 import { StrictMode, useEffect, useState } from "react"
 import { createRoot } from "react-dom/client"
+import type { ShoppingItem, StoreProduct } from "@mise/shared"
 
 import {
   getConnection,
@@ -10,6 +11,7 @@ import {
   type Connection,
 } from "./mise.ts"
 import { readPage, type PageRead } from "./page.ts"
+import { readProductPage, toProduct } from "./walmart.ts"
 import "./ui.css"
 
 type ImportResult = {
@@ -111,6 +113,7 @@ function Connect() {
 
 function Connected({ connection }: { connection: Connection }) {
   const [state, setState] = useState<PageState>({ step: "reading" })
+  const [walmart, setWalmart] = useState<StoreProduct | null>(null)
 
   useEffect(() => {
     void (async () => {
@@ -119,6 +122,18 @@ function Connected({ connection }: { connection: Connection }) {
         currentWindow: true,
       })
       if (tab?.id === undefined) return setState({ step: "unreadable" })
+      // A Walmart product page: offer it as the product for a list item.
+      if (/^https:\/\/www\.walmart\.com\/ip\//.test(tab.url ?? "")) {
+        try {
+          const [read] = await chrome.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: readProductPage,
+          })
+          if (read?.result) setWalmart(toProduct(read.result))
+        } catch {
+          // Not readable; the recipe import below says so.
+        }
+      }
       try {
         const [read] = await chrome.scripting.executeScript({
           target: { tabId: tab.id },
@@ -176,6 +191,18 @@ function Connected({ connection }: { connection: Connection }) {
   const open = (path: string) => {
     void chrome.tabs.create({ url: `${connection.origin}${path}` })
     self.close()
+  }
+
+  if (walmart) {
+    return (
+      <div className="stack">
+        <Brand />
+        <WalmartPick product={walmart} />
+        <button className="outline" onClick={openList}>
+          Shopping list
+        </button>
+      </div>
+    )
   }
 
   return (
@@ -252,6 +279,78 @@ function Connected({ connection }: { connection: Connection }) {
           Disconnect
         </button>
       </div>
+    </div>
+  )
+}
+
+/** On a Walmart product page: use it for something on the list, from now on. */
+function WalmartPick({ product }: { product: StoreProduct }) {
+  const [items, setItems] = useState<ShoppingItem[] | null>(null)
+  const [itemId, setItemId] = useState("")
+  const [saved, setSaved] = useState<string | null>(null)
+  const [error, setError] = useState<string>()
+
+  useEffect(() => {
+    mise<{ items: ShoppingItem[] }>("/list").then(
+      ({ items }) => setItems(items.filter((item) => !item.checked)),
+      (e) =>
+        setError(e instanceof MiseError ? e.message : "Couldn't load the list.")
+    )
+  }, [])
+
+  async function save() {
+    try {
+      await mise(`/shop/walmart/products/${itemId}`, {
+        method: "PUT",
+        body: { product },
+      })
+      setSaved(items?.find((item) => item.id === itemId)?.name ?? "it")
+    } catch (e) {
+      setError(e instanceof MiseError ? e.message : "Couldn't save that.")
+    }
+  }
+
+  return (
+    <div className="card">
+      <p style={{ fontWeight: 500 }}>{product.name}</p>
+      <p className="muted">
+        {[
+          product.size,
+          product.price !== null &&
+            `$${(product.salePrice ?? product.price).toFixed(2)}`,
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+      {saved ? (
+        <p>Mise will buy this for {saved} at Walmart from now on.</p>
+      ) : items === null ? (
+        !error && <p className="muted">Loading the list…</p>
+      ) : items.length ? (
+        <>
+          <label className="muted" style={{ display: "grid", gap: 4 }}>
+            Use this for
+            <select
+              value={itemId}
+              onChange={(event) => setItemId(event.target.value)}
+            >
+              <option value="">Something on the list…</option>
+              {items.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                  {item.amount ? ` (${item.amount})` : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button disabled={!itemId} onClick={() => void save()}>
+            Use this at Walmart
+          </button>
+        </>
+      ) : (
+        <p className="muted">The shopping list is empty.</p>
+      )}
+      {error && <p className="error">{error}</p>}
     </div>
   )
 }
