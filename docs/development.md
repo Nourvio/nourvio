@@ -1,6 +1,10 @@
 # Development
 
-The web app (`apps/web`) exists. The server and database are still planned, and the commands marked *planned* below don't work yet.
+What exists so far:
+- **`apps/web`:** the app shell and theme.
+- **`apps/server`:** a Hono server that serves the built web app, plus `/api/health`, which also checks Postgres.
+
+The commands marked *planned* below don't work yet.
 
 ## Prerequisites
 
@@ -15,16 +19,29 @@ Run these from the repo root.
 | Command | What it does |
 |---|---|
 | `npm install` | Installs all workspaces |
-| `npm run dev` | Starts Vite on :5173. Later it will also start the API on :3000, with Vite forwarding `/api` to it. |
+| `npm run db:up` / `db:down` | Starts or stops a local Postgres 18 in Docker (`compose.dev.yaml`). It matches `DATABASE_URL` in `.env.example`. |
+| `npm run dev` | Starts Vite on :5173 and the API on :3000 (restarting it on changes). Vite forwards `/api` to the API. |
 | `npm run build` | Typechecks and builds every workspace |
-| `npm run typecheck` | Runs `tsc -b` across workspaces |
+| `npm start` | Runs the server on its own. It serves `apps/web/dist`, so run `build` first. |
+| `npm run typecheck` | Runs `tsc` across workspaces |
 | `npm run lint` | Runs ESLint across workspaces |
 | `npm run format` / `format:check` | Runs Prettier (with Tailwind class sorting) over `apps/` |
 | `npm run check:contrast -w @mise/web` | Checks every palette in `index.css` against WCAG contrast. Run it after changing colors. |
-| `npm run db:up` | *Planned.* Starts a local Postgres 18 in Docker (`compose.dev.yml`) |
+| `MISE_BUILD_CONTEXT=. docker compose up --build` | Runs the production stack from your local checkout. It needs a `.env` with `POSTGRES_PASSWORD`. |
 | `npm run test` | *Planned.* Runs Vitest across workspaces. Database tests use PGlite (in-process Postgres), so Docker isn't needed. |
 | `npm run db:generate` | *Planned.* Generates a migration with drizzle-kit after changing the schema |
-| `docker compose up --build` | *Planned.* Runs the production image with Postgres locally |
+
+## Server
+
+- **No build step.** Node 24 runs `apps/server/src/*.ts` directly by stripping the types. That puts some limits on the TypeScript we write:
+  - Relative imports include the `.ts` extension (`./config.ts`).
+  - Type-only imports use `import type`.
+  - Syntax that needs compiling is off (`erasableSyntaxOnly`): no `enum`, no `namespace`, no constructor parameter properties.
+- **Settings are read from the environment in `config.ts`.** In development, `npm run dev` loads the repo-root `.env` if there is one. The settings table is in the [README](../README.md#settings).
+- **The web app is served from `apps/web/dist`:**
+  - Hashed `/assets/*` files are cached for a year.
+  - HTML is never cached.
+  - Any other path gets `index.html`, so React Router can handle it.
 
 ## Web app layout
 

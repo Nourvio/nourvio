@@ -11,4 +11,10 @@ export default defineConfig({
       "@": resolve(import.meta.dirname, "./src"),
     },
   },
+  server: {
+    // The API runs separately in development (apps/server on :3000).
+    proxy: {
+      "/api": "http://localhost:3000",
+    },
+  },
 })

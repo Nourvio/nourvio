@@ -1,0 +1,19 @@
+# Postgres for local development: `npm run db:up` / `npm run db:down`.
+# Matches DATABASE_URL in .env.example.
+
+name: mise-dev
+
+services:
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: mise
+      POSTGRES_PASSWORD: mise
+      POSTGRES_DB: mise
+    ports:
+      - "5432:5432"
+    volumes:
+      - mise-dev-db:/var/lib/postgresql
+
+volumes:
+  mise-dev-db:

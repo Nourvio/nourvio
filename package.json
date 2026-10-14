@@ -9,14 +9,18 @@
     "node": ">=24"
   },
   "scripts": {
-    "dev": "npm run dev -w @mise/web",
+    "dev": "concurrently --names web,server --prefix-colors cyan,magenta \"npm run dev -w @mise/web\" \"npm run dev -w @mise/server\"",
     "build": "npm run build --workspaces --if-present",
+    "start": "npm run start -w @mise/server",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "format": "prettier --write apps",
-    "format:check": "prettier --check apps"
+    "format:check": "prettier --check apps",
+    "db:up": "docker compose -f compose.dev.yaml up -d",
+    "db:down": "docker compose -f compose.dev.yaml down"
   },
   "devDependencies": {
+    "concurrently": "^10.0.6",
     "prettier": "^3.9.9",
     "prettier-plugin-tailwindcss": "^0.8.1"
   }

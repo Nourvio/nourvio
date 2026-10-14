@@ -66,8 +66,10 @@ mise/
 ├── packages/
 │   └── shared/              Zod schemas, types, ingredient parser, quantity math
 ├── docs/
+├── docker/                  container entrypoint
 ├── Dockerfile
-└── docker-compose.yml
+├── compose.yaml             production stack (builds from GitHub)
+└── compose.dev.yaml         local Postgres for development
 ```
 
 **One service layer.** The REST routes and the AI tools call the same service functions, so "add to plan" behaves the same whether you tap a button or ask the assistant.

@@ -5,16 +5,18 @@ Each milestone ends with something usable. Mealie keeps running until milestone 
 ## Milestone 0: Foundation
 
 **Done:**
-- The npm workspace with `apps/web`
+- The npm workspace, with `apps/web` and `apps/server`
 - Vite, React and shadcn/ui (Radix, Maia style), Tailwind v4
 - Three palettes in light and dark, checked for contrast
 - The app shell: sidebar on iPad and desktop, tabs on phone, chat launcher, Settings
 - Placeholder pages and the `/styleguide` page
+- A Hono server that serves the web app and `/api/health` (with a Postgres check)
+- A Dockerfile, plus a compose stack (app, Postgres, nightly backup, optional tunnel) that builds straight from GitHub
+- GitHub Actions: typecheck, lint, format, contrast and build checks, plus a Docker build
 
 **To do:**
-- Add `apps/server` and `packages/shared` to the workspace
-- A Hono server serving the API and the built web app
-- Postgres 18 and Drizzle:
+- Add `packages/shared` to the workspace
+- Postgres and Drizzle:
   - migrations run at startup
   - the `pg_trgm` extension
   - seeded units and store sections
@@ -22,9 +24,8 @@ Each milestone ends with something usable. Mealie keeps running until milestone 
 - Accounts, sessions, the admin role, the first-run setup code, and login rate limiting
 - Save each person's appearance (mode and palette) to their account instead of only on the device
 - A web app manifest and home-screen icons. The favicon already exists.
-- Dockerfile, the compose stack (app, Postgres, nightly backup) and GitHub Actions for checks and the GHCR image
 
-**Done when:** you can sign in at the public URL from a phone, through the tunnel, and see the empty app shell running on TrueNAS. A nightly dump should appear in the backups dataset.
+**Done when:** you can sign in at the public URL from a phone, through the tunnel, and see the empty app shell running in Dockge on the home server. A nightly dump should appear in `data/backups`.
 
 ## Milestone 1: Recipes and AI basics
 
