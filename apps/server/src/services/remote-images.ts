@@ -18,9 +18,12 @@ const cacheDir = () => join(imagesDir(), "remote")
 export async function remoteThumbnail(
   fetcher: Fetcher,
   url: string,
-  referer?: string
+  referer?: string,
+  /** A square product shot, whole on white, rather than a cropped photo. */
+  shape: "photo" | "product" = "photo"
 ) {
-  const name = `${createHash("sha1").update(url).digest("hex")}.webp`
+  const hash = createHash("sha1").update(url).digest("hex")
+  const name = shape === "photo" ? `${hash}.webp` : `${hash}-product.webp`
   const path = join(cacheDir(), name)
   try {
     return await readFile(path)
@@ -34,7 +37,12 @@ export async function remoteThumbnail(
   })
   const thumbnail = await sharp(image.body, { failOn: "error" })
     .rotate()
-    .resize({ width: 640, height: 480, fit: "cover" })
+    .resize(
+      shape === "photo"
+        ? { width: 640, height: 480, fit: "cover" }
+        : { width: 320, height: 320, fit: "contain", background: "#ffffff" }
+    )
+    .flatten({ background: "#ffffff" })
     .webp({ quality: 75 })
     .toBuffer()
   await mkdir(cacheDir(), { recursive: true })

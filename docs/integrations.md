@@ -93,45 +93,122 @@ Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x
    - Per-serving totals are the sum divided by servings, labeled "calculated."
 3. **AI estimate** when matching fails, labeled "estimate."
 
-## Grocery ordering
+## Grocery stores (connections)
 
-### Walmart (our store)
+Researched again on October 14, 2026, for the common US chains: what it takes to get Mise's shopping list into each store.
 
-**What exists:**
-- There's no public API that adds items to a shopper's cart.
-- Walmart's affiliate API is read-only: product data and links.
-- The Commerce API can complete transactions but needs business approval.
+### Three ways in
 
-([Zinc's overview](https://www.zinc.com/blog/walmart-api))
+| Way | What happens | Stores |
+|---|---|---|
+| **Straight into the cart** (the store's official API) | Mise matches each item to a product at your store and adds it to your cart. You pick a pickup or delivery time and pay in the store's own app. | Kroger family only |
+| **A shopping link** (Instacart) | Mise turns the list into an Instacart page. You pick the store there, check the matched products and check out on Instacart, at Instacart's prices and fees. | Most chains, Costco included |
+| **No connection** | Mise can't reach the store's cart, so it offers a list with a search link for each item. | Walmart (for now), Target, Trader Joe's, Amazon |
 
-**Plan: a browser extension** (Chrome/Edge, Manifest V3) that works inside our own logged-in Walmart session.
+### Store by store
 
-1. Open walmart.com, signed in, and click the Mise extension.
-2. It fetches the current list from Mise, using the personal API token from Settings.
-3. Items already mapped to a product are added to the cart one at a time, with a short delay. Walmart rate-limits bursts with HTTP 429 errors.
-4. For unmapped items, the extension shows Walmart search results for the item. Pick one and the mapping is saved back to Mise (`store_products`), so it's only asked once.
-5. It ends with a summary: what was added, what was skipped, and estimated cost. Then you pick a pickup time and check out yourself.
+| Store | Public cart API? | On Instacart? | Best route |
+|---|---|---|---|
+| **Kroger family:** Kroger, Fry's, Ralphs, King Soopers, Smith's, Fred Meyer, QFC, Harris Teeter, Dillons, Mariano's, Pick 'n Save | **Yes.** Free and self-serve; it adds to the cart | Yes | Kroger API |
+| **Walmart** | Only for approved partners (Pinterest, eMeals) | No | Search links; a browser extension if wanted |
+| **Costco** | No | Yes: Costco's same-day delivery is run by Instacart | Instacart |
+| **Sam's Club** | No | In many areas | Instacart |
+| **Albertsons family:** Safeway, Albertsons, Vons, Jewel-Osco, Acme, Shaw's, Tom Thumb, Randalls | No | Yes | Instacart |
+| **Publix** | No | Yes | Instacart |
+| **Aldi** | No | Yes | Instacart |
+| **Ahold Delhaize:** Food Lion, Stop & Shop, Giant, Hannaford | No | Yes | Instacart |
+| **Sprouts, Wegmans, Meijer** | No | Yes | Instacart |
+| **H-E-B, Hy-Vee** | No | Depends on the area | Instacart where it's offered |
+| **Target** | No. Its delivery is its own Shipt, which has no public API either | No | List and links |
+| **Amazon Fresh, Whole Foods** | Only an add-to-cart link for Amazon affiliates, which needs Amazon's product IDs | No | Later, maybe |
+| **Trader Joe's** | No online ordering at all | No | An in-store list |
 
-**Before the cart, AI translates amounts** into product quantities using our saved products. For example, 3 cups of chopped onion becomes 2 yellow onions.
+Instacart coverage varies by ZIP code. Mise can ask Instacart which stores it serves near the household (below) instead of relying on this table.
 
-**Risks:**
-- The extension depends on how Walmart's site works, so it will break now and then and need fixes.
-- Automating a retailer's site is a gray area under their terms. This is low volume and on our own account.
-- **Fallback:** the List screen can always show plain product links.
+### Kroger family (the best fit)
 
-### Kroger family (if that's ever an option)
+- **Getting access:** a free, self-serve developer account at [developer.kroger.com](https://developer.kroger.com). Register an app to get a client ID and secret. Each Mise server registers its own, the way it brings its own AI keys, with the redirect address `https://<your Mise address>/api/shop/kroger/callback` (Settings → Kroger shows the exact one). `KROGER_API_URL` can point Mise at Kroger's certification environment, or a stand-in for testing.
+- **What the public APIs do:**
+  - Locations: finds stores near a ZIP code.
+  - Products: search by word, brand or UPC. Given a store (`filter.locationId`), results include that store's regular and sale price (`price.regular`, `price.promo`), the stock level (high, low or temporarily out), and the **aisle**, with side and shelf.
+  - Cart: adds items by UPC and quantity, for pickup or delivery.
+  - Identity: the signed-in shopper's profile.
+- **Banners:** a store's `chain` code (`FRYS`, `RALPHS`, `KINGSOOPERS`…) gives the name shown ("Fry's") and the website for product and cart links (frysfood.com).
+- **Signing in:** the household links a Kroger account once, on Kroger's own sign-in page (OAuth authorization code with PKCE, scopes `cart.basic:write` and `profile.compact`). Product and store searches use the app's own token (`product.compact`). Mise keeps the refresh token encrypted, like the AI keys.
+- **Limits:**
+  - The public cart API only **adds**. It can't read, change or empty the cart, so Mise remembers what it sent and won't add the same week twice. Viewing and removing are in Kroger's Partner tier, which needs a contract; Mise doesn't need it.
+  - Daily call limits: products 10,000, cart 5,000, locations 1,600 per endpoint. That's far more than a household uses.
+  - There's no checkout endpoint. You pick a time and pay in the Fry's (or Kroger) app, so Mise never touches payment.
+- **Extras that come with it:**
+  - Real prices and sales give an estimated total for the week. Later, plans could lean on what's on sale.
+  - Aisle numbers let the list sort in the order you walk your store.
 
-Kroger's banners include King Soopers, Ralphs, Fred Meyer, Smith's, Fry's and Harris Teeter. They have an official public API ([developer.kroger.com](https://developer.kroger.com)):
+### Instacart (Costco and most other chains)
 
-- product search and store locations
-- a cart endpoint that adds items to a shopper's cart after they sign in with OAuth (scope `cart.basic:write`)
-- no checkout endpoint; you finish in their app
+- **Not open to the public (October 14, 2026):** the docs describe self-serve keys, but the user found the Developer Platform isn't taking the public right now. Mise doesn't use it; Costco gets links instead (below).
+- **Getting access (as documented):** a self-serve API key from the [Instacart Developer Dashboard](https://dashboard.instacart.com), with development and production keys. It's free. Instacart's affiliate program (Tastemakers, 3%) is optional and not needed.
+- **Making the link:** `POST /idp/v1/products/products_link` with `link_type: "shopping_list"` and `line_items`. Each item has:
+  - `name`: the search term
+  - `line_item_measurements`: one or more amounts with quantity and unit, so Instacart can pick a product size
+  - optionally `upcs` or `product_ids`
+  - optionally `filters`: brands, and health filters like ORGANIC and GLUTEN_FREE
 
-This would be much sturdier than the Walmart extension. ([API overview](https://jentic.com/apis/kroger), [example client](https://pypi.org/project/kroger-cart/))
+  It returns `products_link_url`. `expires_in` can keep the link for up to 365 days.
+- **On the page:** the shopper picks the store. As far as the docs say, the store can't be chosen in advance. Instacart shows its matches, the shopper adds them to the Instacart cart, and checks out with Instacart's prices (often 5–15% above the shelf) and delivery or pickup fees.
+- **Nearby stores:** `GET /idp/v1/retailers?postal_code=…&country_code=US` lists the stores Instacart serves near a ZIP code. Settings can show "Available near you: Costco, Fry's, Safeway…".
+- **The fit:** a hand-off, not a cart fill. It's less automatic than Kroger but needs no upkeep, and it reaches Costco, whose same-day delivery Instacart already runs.
 
-### Instacart
+### Walmart (still hard)
 
-The [Instacart Developer Platform](https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page) turns a list into a shareable link. You pick a store on Instacart and check out there. It covers most chains, but as far as we know not Walmart. It's an option for stores other than Walmart.
+- **New since the first look:** Walmart now has a Recipes and Bundle API and an AddToCart service that fill a shopper's Walmart cart from an ingredient list. They're only for approved partners, such as Pinterest's "Shop ingredients" button, eMeals (behind the WP Recipe Maker plugin's Walmart button) and Whisk/Samsung Food. There's no self-serve sign-up; it's a business deal.
+- The affiliate API (product search, item IDs, prices) is read-only and needs program approval. Walmart isn't on Instacart.
+- **Decided:** Walmart goes through the Mise browser extension (below), working in your own signed-in Walmart tab. It will break now and then when walmart.com changes and need a fix. Automating a retailer's site is a gray area under their terms; this is low volume, on your own account. It has to go slowly, since Walmart answers quick bursts with HTTP 429. Search links stay as the fallback.
+
+### The Mise browser extension (planned)
+
+One extension for Chrome, Edge and other Chromium browsers (Manifest V3; Firefox later, with small changes). It does the jobs that need your own browser:
+
+- **Connecting:**
+  - Type your Mise address in the extension and click Connect. Mise opens a page asking whether to allow it.
+  - Allowing creates a personal API token for the extension, which can be revoked in Settings, and hands it back.
+  - Requests carry the token in a header, not the session cookie, so the same-site check that guards cookie requests doesn't apply to them.
+- **Import this page:**
+  - The extension sends the page as your browser shows it (its HTML and address) to Mise, which reads it like a link import: recipe data first, AI otherwise.
+  - That gets past sites that block servers (Budget Bytes, Serious Eats, Allrecipes), and works for recipes you can see through your own subscription (NYT Cooking, America's Test Kitchen).
+  - If Mise's server can't download the photo, the extension sends the one your browser already loaded.
+  - The toolbar icon shows when the page has a recipe.
+- **Right-click:** "Import into Mise" on a link or video (sent to the normal link import), and "Add to shopping list" on selected text.
+- **The list beside you:** the week's list in the browser's side panel while you shop any store's site (Costco on Instacart, say). Items get checked off as they go in the cart.
+- **Walmart:**
+  - On a Walmart product page, **Use this for…** saves it as the product for a list item, with its price.
+  - **Fill my Walmart cart** adds the saved products for the week's list one at a time, slowly. Items without a saved product show Walmart's search results to pick from, and the pick is remembered.
+  - It ends with what was added, what was skipped, and an estimated total. You pick the pickup time and pay yourself.
+  - Because it works through walmart.com in your tab, the cart and search steps get a prototype first.
+- **Phones:** extensions don't run in Chrome on Android, and Safari on iPhone needs an App Store app for them. Phones keep the share sheet (Android), Paste (iPhone) and an iOS Shortcut; the extension is for the computer.
+- **Installing:**
+  - The simplest for a self-hosted app: download it from Settings and load it unpacked. Chrome shows a developer-mode note.
+  - A Chrome Web Store listing (it can be unlisted) avoids that note, for a one-time $5 developer fee and a review of each update.
+
+### Costco
+
+- No API of any kind. costco.com's own cart is mostly not groceries.
+- Same-day grocery delivery is run by Instacart. Without Instacart's API, Mise links each list item to its search at Costco Same-Day, to add there by hand.
+- For warehouse trips, a plain list is what's useful. Costco packs are big, so turning amounts into packages should know a Costco pack (three pounds of onions, not one onion).
+
+### Everyone else
+
+- **Target:** no API, and its Shipt delivery has none either. A list and links.
+- **Amazon Fresh and Whole Foods:** Amazon's documented "Add to Cart form" (`/gp/aws/cart/add.html?ASIN.1=…&Quantity.1=…`) fills an Amazon cart. It needs an Amazon Associates account, and finding the product IDs (ASINs) needs Amazon's product API, which needs recent affiliate sales. Not worth it now.
+- **Trader Joe's:** no online ordering, so the list is all there is.
+
+### What every connection needs
+
+These parts are the same whatever the store:
+
+1. **A product for each list item,** picked once per store and remembered (`store_products`): name, size, UPC or store ID, last price and photo. The first time, Mise shows the store's top matches with the small AI model's pick first. After that it's automatic, and you can always swap.
+2. **Amounts turned into packages.** "3 cups chopped onion" becomes 2 onions; "1½ lb chicken thighs" becomes one 2 lb pack. This uses the grams Mise already works out for each ingredient and the product's size ("16 oz", "12 ct").
+3. **A review before anything is sent:** each product with packages, price and any sale, plus swap, skip and a total.
+4. **Nothing extra:** what's always on hand or already in the pantry is left out, as the list does today.
 
 ## Considered and dropped: ChatGPT and Claude app connectors (MCP)
 
@@ -147,8 +224,13 @@ If we ever want connectors, the same service layer and tool definitions could ba
 
 - Mealie releases (feature reference): https://github.com/mealie-recipes/mealie/releases
 - Walmart APIs overview: https://www.zinc.com/blog/walmart-api
-- Kroger API: https://jentic.com/apis/kroger, https://pypi.org/project/kroger-cart/
-- Instacart Developer Platform: https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page
+- Walmart partner APIs (Recipes and Bundle, AddToCart): https://walmart.io/apirefservices
+- Walmart's partner cart fills: https://business.pinterest.com/blog/turning-recipe-inspiration-into-shoppable-experiences-with-walmart/, https://help.bootstrapped.ventures/article/339-shop-with-walmart-button
+- Kroger developer portal and FAQ (public vs Partner, daily limits): https://developer.kroger.com/, https://developer.kroger.com/support/faq
+- Kroger API details: https://jentic.com/apis/kroger, https://github.com/CupOfOwls/kroger-api, https://www.val.town/x/bgschiller/personalShopper/code/docs/kroger-products.md
+- Instacart Developer Platform: https://docs.instacart.com/developer_platform_api/, https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page, https://docs.instacart.com/developer_platform_api/api/retailers/get_nearby_retailers, https://docs.instacart.com/developer_platform_api/get_started/api-keys
+- Costco same-day delivery through Instacart: https://www.freightwaves.com/news/2017-10-10-instacart-powers-costco-same-day-delivery
+- Amazon Add to Cart form: https://webservices.amazon.co.jp/paapi5/documentation/add-to-cart-form.html
 - USDA FoodData Central API: https://fdc.nal.usda.gov/api-guide/
 - Claude web search tool: https://platform.claude.com/docs/en/agents-and-tools/tool-use/web-search-tool
 - OpenAI image generation and pricing: https://developers.openai.com/api/docs/guides/image-generation, https://developers.openai.com/api/docs/pricing

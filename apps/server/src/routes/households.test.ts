@@ -2,7 +2,13 @@ import { eq } from "drizzle-orm"
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 
-import { discoveries, followedSites, invites } from "../db/schema.ts"
+import {
+  discoveries,
+  followedSites,
+  invites,
+  shopConnections,
+  storeProducts,
+} from "../db/schema.ts"
 import { itemKey } from "../services/sites.ts"
 import { apiClient, createTestAppWithAdmin } from "../test/helpers.ts"
 
@@ -201,6 +207,63 @@ describe("households", () => {
       ).toBe(404)
       expect((await neighbor.delete(`/api/sites/${site!.id}`)).status).toBe(404)
       expect((await t.admin.get("/api/sites")).body.sites).toHaveLength(1)
+    })
+
+    test("store connections and products", async () => {
+      const household = (await t.admin.get("/api/household")).body.household
+      const store = {
+        locationId: "1",
+        name: "Fry's - Tempe",
+        banner: "Fry's",
+        address: "Tempe",
+      }
+      await t.db.insert(shopConnections).values({
+        householdId: household.id,
+        shop: "kroger",
+        store,
+      })
+      const item = (await t.admin.post("/api/list/items", { text: "milk" }))
+        .body.item
+      await t.db.insert(storeProducts).values({
+        householdId: household.id,
+        shop: "kroger",
+        food: "milk",
+        product: {
+          id: "1",
+          upc: "1",
+          name: "Milk",
+          brand: null,
+          size: "1 gal",
+          image: null,
+          price: 3,
+          salePrice: null,
+          aisle: null,
+          aisleNumber: null,
+          inStock: true,
+          url: null,
+        },
+        chosen: true,
+      })
+      expect((await neighbor.get("/api/shop")).body.status.kroger.store).toBe(
+        null
+      )
+      // With a store of their own, the neighbor still can't touch this list.
+      const theirs = (await neighbor.get("/api/household")).body.household
+      await t.db.insert(shopConnections).values({
+        householdId: theirs.id,
+        shop: "kroger",
+        store,
+      })
+      expect(
+        (
+          await neighbor.put(`/api/shop/kroger/products/${item.id}`, {
+            productId: "1",
+          })
+        ).status
+      ).toBe(404)
+      expect(
+        (await t.admin.get("/api/shop")).body.status.kroger.store.banner
+      ).toBe("Fry's")
     })
 
     test("each household has its own slugs and tag spellings", async () => {

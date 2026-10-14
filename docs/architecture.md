@@ -63,7 +63,7 @@ mise/
 │   │   ├── src/ai/              provider interface, Claude + OpenAI providers, prompts, tools, jobs
 │   │   ├── src/import/          link / video / text / photo / Mealie importers
 │   │   └── src/db/              Drizzle schema, migrations, seed (units, sections)
-│   └── extension/           Walmart cart extension (milestone 6)
+│   └── extension/           Mise browser extension: page import, list side panel, Walmart cart (milestone 6)
 ├── packages/
 │   └── shared/              Zod schemas, types, ingredient parser, quantity math
 ├── docs/
@@ -103,7 +103,8 @@ Everything a household owns carries its `household_id`, and every query is scope
 | `food_sections` | household_id, food, section_id | Remembers where the household moved a food, for next time |
 | `plan_rules` | name, days, meal, tag filters, no_repeat_days, prefer_rating | *Later.* Saved rules for suggestions. |
 | `pantry_items` | household_id, key, name, quantity, unit_id, amount_text, section_id, use_by, entries (jsonb) | `key` is the pantry match key. `entries` are the planned meals it was bought for. |
-| `store_products` | store, food, product_id, name, size, purchase_unit, last_price, preferred | The ingredient-to-Walmart-product mapping |
+| `store_products` | household_id, shop, food, product (jsonb: store id, UPC, name, size, photo, price, sale price, aisle, stock, link), chosen | The product a household buys for a food (the food part of a list item's key) at each store. `chosen` is false while it's only Mise's suggestion |
+| `shop_connections` | household_id, shop, store (jsonb), modality (pickup or delivery), account (jsonb: Kroger tokens, encrypted; who linked it), last_sent (jsonb: list item → packages) | A household's store and linked account |
 | `proposals` | household_id, kind (cleanup, recipe_edit, new_recipe, plan_meals, list_items), recipe_id (null when there isn't one), payload (jsonb: summary, before/after sections, draft, variant name, meals, items), status, job_id, conversation_id, result_recipe_id | A pending change from the AI, waiting for you to apply or dismiss it (see [AI](#ai)) |
 | `chat_conversations` | household_id, user_id, title, provider, model | Private to the person who started it. Stays on the provider and model it started with, so it can resume exactly. |
 | `chat_messages` | conversation_id, position, role, parts (jsonb: text, tool activity and proposal ids, for display), native (jsonb: the provider's own messages), context_label | One user message, or one whole assistant reply (which can span several model calls and tool uses) |
@@ -157,7 +158,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | List | `GET /api/list`, `POST /api/list/items`, `PATCH`/`DELETE /api/list/items/:id`, `POST /api/list/clear-checked`, `POST /api/list/put-away`, `POST /api/list/from-plan`, `PUT /api/list/on-hand`; every-week items `GET`/`POST /api/list/weekly`, `PATCH`/`DELETE /api/list/weekly/:id`, `POST /api/list/weekly/add-to-list` |
 | Pantry | `GET`/`POST /api/pantry` (a typed line), `PATCH`/`DELETE /api/pantry/:id`; `POST /api/list/put-away` moves checked list items in |
 | AI settings | `GET /api/ai/status` (everyone); `GET`/`PUT /api/ai/settings`, `POST /api/ai/settings/test`, `GET /api/ai/settings/models`, `GET /api/ai/settings/usage` (server admin) |
-| Store | `GET /api/store/walmart/list` (for the extension), `PUT /api/store/products/:foodId` |
+| Shop | `GET /api/shop` (the household's connections); Kroger: `GET`/`PUT /api/shop/kroger/app` (server admin), `GET /api/shop/kroger/locations?zip=`, `PUT /api/shop/kroger` (store, pickup or delivery; household admins), `POST /api/shop/kroger/link` and `GET /api/shop/kroger/callback` (signing in), `DELETE /api/shop/kroger/link`, `GET /api/shop/kroger/basket`, `GET /api/shop/kroger/search?q=`, `PUT /api/shop/kroger/products/:itemId`, `POST /api/shop/kroger/send`; `GET /api/shop/image?u=` (a store's product photo, through Mise; store image servers only) |
 | Images | `GET /api/images/:file` |
 
 ## AI
@@ -260,7 +261,8 @@ The original is always kept. Every applied cleanup adds a version, and the first
 
 - **Structured extraction (import):** turns a web page without recipe data, pasted text, or photos into a recipe draft. The draft's ingredient lines and steps go through the same parser as everything else.
 - **Week suggestions:** today, Fill the week is rules only (no AI, though it does use up the pantry's Use soon items first), and the assistant can plan meals in chat. *Later:* the rules pick candidates and the AI ranks them, weighing preferences too.
-- **Shopping translation:** turns combined recipe amounts into product quantities, using our saved Walmart products.
+- **Store products** (`services/shop.ts`, `shop/kroger.ts`): the review ("basket") takes each unchecked list item, refreshes the remembered products' prices from Kroger (50 per call), and searches Kroger for items without one (four at a time). The small model (task `shopping`) picks from each item's results in one call; without AI it's the first in stock. Packages come from `packagesFor` (`packages/shared/src/shopping.ts`): the list amount as a count, grams (`gramsFor`, with USDA portions) and millilitres, against the package size read from Kroger's `size` ("1 gal", "3 lb bag", "6 ct / 12 fl oz"), with 10% leeway. Cans, jars and packages count one for one. Sending adds the ticked lines to the cart by UPC (25 per call), marks those products chosen, and remembers what was sent.
+- **Kroger sign-in:** OAuth authorization code with PKCE; the state lives in memory for 10 minutes and must come back to the same person. Access tokens (30 minutes) are refreshed when needed; if Kroger refuses the refresh token, the account is marked to link again. The redirect address is `PUBLIC_URL` (or the forwarded host) + `/api/shop/kroger/callback`; the dev server's proxy forwards the browser's host so it's right in development too.
 - **Finding recipes** (`services/discover.ts`): the small model, with web search, gets the theme and the household's rules and calls `offer_recipes` with 10 to 12 picks. Mise opens each page (four at a time) and keeps those with recipe data, under the link they land on; if fewer than four work, the model hears which failed and offers more once. Up to eight are kept, no more than two from one site unless there aren't enough others. It runs in the background; a search still "searching" after five minutes was cut short and shows as failed.
 - **Nutrition** (`services/nutrition.ts`):
   - Each new food is searched in USDA FoodData Central (Foundation and SR Legacy foods), and the AI picks the candidate that's the food as used, or none. The match is cached in `food_matches`.
@@ -325,7 +327,7 @@ The parser lives in the shared package, so the server and browser use the same c
 | Review | A queue of AI proposals waiting for you, such as bulk cleanup results |
 | Find recipes | Tabs for starter collections (photo cards; a collection's page lists its recipes with Import and Import all) and Discover with AI (a theme box, ideas, results and earlier searches) and Sites (newest recipes from followed sites, filterable by site, with following and suggestions to the side). `?tab=` picks the tab, `?search=` the search shown and `?site=` the site |
 | Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, Add to list, and calories per day |
-| List | Shopping list grouped by section, with every-week items, always-on-hand items and (later) Send to Walmart |
+| List | Shopping list grouped by section, with every-week items, always-on-hand items and **Send to Fry's** (`/list/shop`: each item's Fry's product, packages, prices and sales, a total, then add to the cart) |
 | Pantry | Use soon (near use-by dates, and fresh leftovers from skipped meals), everything else by aisle, and always-on-hand items |
 | Chat | Available on every screen (see below) |
 | Settings | Your account and appearance; your household (members, invites, rename, tidying up, which meals to plan and the first day of the week); nutrition for the whole library; for the server admin, the server (sign-up, households), AI (keys, models, usage by household), the USDA key and the Mealie import; later the API token and plan rules |

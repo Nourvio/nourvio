@@ -39,7 +39,7 @@ const SECTION_ORDER = new Map<string, number>(
   STORE_SECTIONS.map((section) => [section.id, section.sortOrder])
 )
 
-function toItem(row: ItemRow): ShoppingItem {
+export function toItem(row: ItemRow): ShoppingItem {
   return {
     id: row.id,
     name: row.name,
@@ -54,21 +54,24 @@ function toItem(row: ItemRow): ShoppingItem {
 }
 
 /** The food part of an item key: "onion|each" → "onion". */
-const foodOf = (key: string) => key.split("|")[0]!
+export const foodOf = (key: string) => key.split("|")[0]!
 
-export async function listItems(db: Db, householdId: string) {
+/** The list's rows in aisle order, oldest first within an aisle. */
+export async function listRows(db: Db, householdId: string) {
   const rows = await db
     .select()
     .from(shoppingItems)
     .where(eq(shoppingItems.householdId, householdId))
     .orderBy(asc(shoppingItems.createdAt))
-  return rows
-    .sort(
-      (a, b) =>
-        (SECTION_ORDER.get(a.sectionId) ?? 999) -
-        (SECTION_ORDER.get(b.sectionId) ?? 999)
-    )
-    .map(toItem)
+  return rows.sort(
+    (a, b) =>
+      (SECTION_ORDER.get(a.sectionId) ?? 999) -
+      (SECTION_ORDER.get(b.sectionId) ?? 999)
+  )
+}
+
+export async function listItems(db: Db, householdId: string) {
+  return (await listRows(db, householdId)).map(toItem)
 }
 
 async function findItem(db: Db, householdId: string, id: string) {

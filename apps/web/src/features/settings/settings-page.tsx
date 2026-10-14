@@ -27,6 +27,8 @@ import { NutritionLibraryCard } from "./nutrition-library-card"
 import { PhotosLibraryCard } from "./photos-library-card"
 import { ServerCard } from "./server-card"
 import { TastesCard } from "./tastes-card"
+import { KrogerAppCard } from "@/features/shop/kroger-app-card"
+import { StoresCard } from "@/features/shop/stores-card"
 import { TidyUpCard } from "./tidy-up-card"
 import { useAiStatus } from "./use-ai"
 
@@ -67,6 +69,12 @@ export function SettingsPage() {
       group: "Household",
       card: <TastesCard />,
     },
+    {
+      id: "connections",
+      label: "Stores",
+      group: "Household",
+      card: <StoresCard />,
+    },
     admin && {
       id: "meal-plan",
       label: "Meal plan",
@@ -105,6 +113,12 @@ export function SettingsPage() {
       label: "AI",
       group: "This server",
       card: <AiCard />,
+    },
+    me.isServerAdmin && {
+      id: "kroger",
+      label: "Kroger",
+      group: "This server",
+      card: <KrogerAppCard />,
     },
     me.isServerAdmin && {
       id: "nutrition-data",

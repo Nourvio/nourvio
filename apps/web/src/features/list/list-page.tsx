@@ -6,8 +6,10 @@ import {
   FridgeIcon,
   MoreHorizontalIcon,
   ShoppingBasket01Icon,
+  ShoppingCart01Icon,
 } from "@hugeicons/core-free-icons"
 import { STORE_SECTIONS, type ShoppingItem } from "@mise/shared"
+import { Link } from "react-router"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/layout/page-header"
@@ -40,6 +42,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
+import { useShopStatus } from "@/features/shop/use-shop"
+
 import { AddFromPlanDialog } from "./add-from-plan-dialog"
 import { EditItemDialog, OnHandDialog, WeeklyItemsDialog } from "./list-dialogs"
 import {
@@ -54,6 +58,7 @@ import {
 /** The household's shopping list, in store order, with checked items at the bottom. */
 export function ListPage() {
   const list = useList()
+  const kroger = useShopStatus().data?.kroger
   const clear = useClearChecked()
   const putAway = usePutAway()
   const [fromPlan, setFromPlan] = React.useState(false)
@@ -104,6 +109,18 @@ export function ListPage() {
         }
         actions={
           <>
+            {kroger?.store && toGet.length > 0 && (
+              <Button variant="outline" asChild>
+                <Link to="/list/shop">
+                  <HugeiconsIcon
+                    icon={ShoppingCart01Icon}
+                    strokeWidth={2}
+                    data-icon="inline-start"
+                  />
+                  Send to {kroger.store.banner}
+                </Link>
+              </Button>
+            )}
             <Button onClick={() => setFromPlan(true)}>
               <HugeiconsIcon
                 icon={Calendar03Icon}

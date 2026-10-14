@@ -71,7 +71,7 @@ Everything persistent is a bind mount under `./data`, next to the compose file, 
 
 The tunnel is already in `compose.yaml`. The README explains how to turn it on.
 
-**Optional extra layer:** Cloudflare Access in front of the site. If we use it, add a bypass rule for `/api/store/*`, because the Walmart extension can't get through the Access login.
+**Optional extra layer:** Cloudflare Access in front of the site. If we use it, the browser extension can't get through the Access login; it would need an Access service token or a bypass rule for its requests.
 
 ## Backups and restore
 

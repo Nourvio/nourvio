@@ -23,7 +23,11 @@ import type {
   StoreSectionId,
   Role,
   UnitKind,
+  KrogerModality,
+  KrogerStore,
+  ShopId,
   StarterRecipe,
+  StoreProduct,
 } from "@mise/shared"
 import { sql } from "drizzle-orm"
 import {
@@ -580,6 +584,53 @@ export const weeklyItems = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index().on(t.householdId)]
+)
+
+/** The product a household buys for a food at a store, remembered once picked. */
+export const storeProducts = pgTable(
+  "store_products",
+  {
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    shop: text().$type<ShopId>().notNull(),
+    /** The food part of a list item's key (see foodKey). */
+    food: text().notNull(),
+    product: jsonb().$type<StoreProduct>().notNull(),
+    /** False while it's only Mise's suggestion. */
+    chosen: boolean().notNull().default(false),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.shop, t.food] })]
+)
+
+/** A signed-in Kroger account, its tokens encrypted. */
+export type KrogerAccount = {
+  accessToken: string
+  refreshToken: string
+  expiresAt: number
+  linkedBy: string
+  linkedAt: string
+  /** Kroger refused the refresh token; it needs linking again. */
+  broken?: boolean
+}
+
+/** A household's connection to a store: which one, and its account. */
+export const shopConnections = pgTable(
+  "shop_connections",
+  {
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    shop: text().$type<ShopId>().notNull(),
+    store: jsonb().$type<KrogerStore>(),
+    modality: text().$type<KrogerModality>().notNull().default("PICKUP"),
+    account: jsonb().$type<KrogerAccount>(),
+    /** What was last sent to the cart: list item id → packages. */
+    lastSent: jsonb().$type<{ at: string; items: Record<string, number> }>(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.shop] })]
 )
 
 /** Where the household shops for a food, learned when they move an item. */

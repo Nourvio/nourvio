@@ -20,6 +20,7 @@ import { RecipePage } from "@/features/recipes/recipe-page"
 import { RecipesPage } from "@/features/recipes/recipes-page"
 import { ReviewPage } from "@/features/recipes/review-page"
 import { SettingsPage } from "@/features/settings/settings-page"
+import { ShopPage } from "@/features/shop/shop-page"
 import { StyleguidePage } from "@/features/styleguide/styleguide-page"
 
 import { NotFoundPage } from "./not-found-page"
@@ -80,6 +81,7 @@ export const router = createBrowserRouter([
           { path: "discover/:id", element: <CollectionPage /> },
           { path: "plan", element: <PlanPage /> },
           { path: "list", element: <ListPage /> },
+          { path: "list/shop", element: <ShopPage /> },
           { path: "pantry", element: <PantryPage /> },
           { path: "settings", element: <SettingsPage /> },
           { path: "styleguide", element: <StyleguidePage /> },

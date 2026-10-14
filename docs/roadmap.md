@@ -118,17 +118,43 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 **Done when:** every recipe shows per-serving nutrition with its source.
 
-## Milestone 6: Walmart
+## Milestone 6: Store connections and the Mise extension
 
-**Status:** parked (October 2026). The focus is polishing the app itself first. The plan below stands if it comes back.
+**Status:** being built (October 14, 2026). Steps 1 and 2 are built, in one commit; checked against a stand-in Kroger server, waiting for the real Kroger app's keys. The research is in [integrations.md](integrations.md#grocery-stores-connections). Decided with the user:
 
-- Store product mappings (food → Walmart product) managed in Mise
-- AI translation of list amounts into product quantities
-- A Manifest V3 extension: fetch the list, add mapped items, pick and save unmapped items, show a summary
-- A personal API token in Settings
-- Product links on the List screen as the fallback
+- **Stores:** Fry's, Costco and Walmart.
+- **How each connects:** Fry's through Kroger's official cart API, and Walmart through a Mise browser extension, which also takes on other jobs like importing a recipe from any page. Costco was going to be an Instacart shopping link, but the user found Instacart's Developer Platform isn't open to the public, so Costco gets links to each item at Costco Same-Day, plus the extension's list side panel.
+- **Accounts:** one linked store account per household, so one shared cart.
+- **Autopilot:** the weekly autopilot plans the week and builds the list, then waits. You review and tap Send; it never fills a cart by itself.
 
-**Done when:** after the first week's mappings, a week's list lands in the Walmart cart in about two minutes with only a few manual picks.
+Build order, a commit for each:
+
+1. **The shopping foundation:**
+   - A product for each list item at each store, picked once and remembered (`store_products`).
+   - Amounts turned into packages.
+   - A review screen: products, packages, prices and sales, swap or skip, and a total.
+2. **Fry's:**
+   - Settings → Connections: the server admin adds the Kroger app's keys, and a household admin links the household's Fry's account and picks the store.
+   - **Send to Fry's** from the review.
+   - Store prices and sales, and the list sorted by Fry's aisles for shopping in person.
+   - After the autopilot runs, Today says "Next week is planned" and links to the review.
+3. **Costco:** the list for Costco, each item linked to its search at Costco Same-Day, checked off as you add them there.
+4. **The Mise extension, part one (any site):**
+   - Connect it to your Mise.
+   - Import the recipe on the page you're looking at. This works on sites that block Mise's server, and on recipes you can see through your own subscription.
+   - Right-click a link or video to import it, or selected text to add it to the list.
+   - Keep the week's list in a side panel while shopping any store's site, checking items off as you go.
+5. **The Mise extension, part two (Walmart):**
+   - Pick a product on any Walmart page for a list item ("use this for milk"), price included.
+   - Fill the Walmart cart with the week's list: one item at a time, asking about items without a product yet, and ending with a summary and an estimated total.
+6. **Later:** plans that lean on Fry's sales, and Costco-size packs for warehouse trips.
+
+**Done when:**
+- After the first week's product picks, a week's list lands in the Fry's cart in a couple of minutes, and in the Walmart cart through the extension.
+- A Costco order is a few taps per item, straight from the list.
+- A recipe on a site that blocks Mise imports in one click from the extension.
+
+**Still open:** where the extension is installed from: downloaded from Mise and loaded unpacked, or a Chrome Web Store listing (see [integrations.md](integrations.md#the-mise-browser-extension-planned)).
 
 ## Milestone 7: A smarter assistant
 
@@ -167,7 +193,7 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 | # | Question | Recommendation | Affects |
 |---|---|---|---|
-| 1 | Is Walmart the long-term store, or is a Kroger-family store an option? | Walmart for now. Kroger would make milestone 6 much sturdier. | M6 |
+| 1 | Which stores should connections cover? | **Decided:** Fry's (Kroger's official cart API), Costco through Instacart, and Walmart through the Mise extension. See milestone 6. | M6 |
 | 2 | One shared household login, or one account per person? | **Decided:** one account per person, joining by invite link. One server can host several households. | M0 |
 | 3 | Do you have a domain on Cloudflare for the tunnel? | Needed for the recommended setup | M0 |
 | 4 | Dinners only, or breakfast and lunch too? | **Decided:** each household picks; dinner by default, with breakfast, lunch and snacks optional | M3 |

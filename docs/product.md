@@ -68,6 +68,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
 | Manual | Type ingredients one per line and steps one per line. A line starting with `#` starts a section. |
 | Chat | Ask the assistant to save what you just worked out together (see 3). |
 | Mealie | A one-time import of the whole existing Mealie library, with images. |
+| Browser extension (planned) | Import the page you're looking at in one click, even on sites that block Mise or need your subscription. Right-click a link to import it. |
 | Collections | **Find recipes** (Recipes, or Add recipe → Browse collections) has hand-picked collections of well-loved recipes from free sites: Weeknight wins, Chicken, Pasta and noodles, Soups and stews, Vegetarian mains, Comfort classics, Baking, Cookies and bars, and Breakfast. Each was checked to import cleanly. Browse them with photos, import one at a time, or **Import all** (one after another, so no site is hit all at once). Recipes already in the library say so and link to it. |
 | Discover with AI | Find recipes → **Discover with AI**: type what you're in the mood for ("cozy fall soups", "a new pasta") or tap an idea, and the assistant searches the web for about eight recipes that fit the household's tastes and rules, from at least a few different sites. Mise opens each one first and keeps only pages it can import, with their photo, time and a line on why it's a good pick. A search takes under a minute and costs about 6¢ (a small model plus a few web searches). The last twelve searches are kept to come back to. |
 | Sites | Find recipes → **Sites**: follow a recipe site by pasting its address, or pick from suggestions that are checked to work (RecipeTin Eats, BBC Good Food, Love and Lemons, Pinch of Yum, Once Upon a Chef and more). Mise reads the site's feed every few hours and opens each new post, a few seconds apart, to keep only the real recipes (not roundups, gear reviews or news), so the page shows each site's newest recipes with photos and times, ready to import. Filter by site, or unfollow any time. A site without a feed, without recipe details, or that turns Mise away shows nothing, and says so. |
@@ -161,12 +162,20 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 - Mark something **used up** (with an undo), or send it back to the list.
 - *Later:* barcode scanning, and the assistant updating the pantry.
 
-### 7. Grocery ordering (Walmart pickup)
+### 7. Store connections
 
-- **Map each ingredient to the Walmart product we usually buy, once.** Mise remembers the mapping.
-- **Turn recipe amounts into things you can buy.** "3 cloves garlic + 1 tbsp minced garlic" becomes one bulb. AI helps with this.
-- **A browser extension fills the Walmart cart** while you're logged in. You pick the pickup time and check out yourself. Mise never touches payment.
-- **Fallback:** a list of product links.
+Our stores are Fry's, Costco and Walmart. Fry's is built; the rest is planned (see [roadmap.md](roadmap.md#milestone-6-store-connections-and-the-mise-extension)).
+
+- **Fry's: straight into the cart** (List → **Send to Fry's**). Once a household admin picks the store and links the household's Fry's account in Settings → Stores:
+  - Each item gets a product at that Fry's. The first time, Mise suggests one (the small AI model picks from Fry's search results, so "chicken thighs" isn't dog treats); after that it remembers. **Change** searches Fry's to pick another, and that's remembered too.
+  - Recipe amounts become packages: 2 cups of milk is one gallon, 3 onions is 3 onions or one 3 lb bag, 2 cans is 2 cans. When the amount and the package can't be compared (4 cloves of garlic, a bulb sold by the each), it says **Check how many**.
+  - Fry's prices for that store today, sales, stock and the aisle show on each line, with a total.
+  - **Add to Fry's cart** sends the ticked lines. Pick a pickup or delivery time and pay in the Fry's app or website. Kroger's API can only add, so what was sent is marked **Sent** and left out next time unless ticked.
+  - Works the same for any Kroger store: Ralphs, King Soopers, Smith's, Harris Teeter and the rest.
+- **Costco (planned):** the list for Costco, each item linked to Costco Same-Day to add there.
+- **Walmart (planned): through the Mise browser extension.** It fills your Walmart cart from your own signed-in tab, asking the first time which product to use for each item.
+- **Review first:** when the weekly autopilot plans the week, nothing goes into a cart by itself.
+- **Mise never touches payment.**
 
 ### 8. Nutrition
 
