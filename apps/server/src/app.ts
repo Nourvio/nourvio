@@ -21,6 +21,7 @@ import { aiRoutes } from "./routes/ai.ts"
 import { authRoutes } from "./routes/auth.ts"
 import { chatRoutes } from "./routes/chat.ts"
 import { collectionsRoutes } from "./routes/collections.ts"
+import { discoverRoutes } from "./routes/discover.ts"
 import { householdRoutes } from "./routes/household.ts"
 import { imagesRoutes } from "./routes/images.ts"
 import { importRoutes } from "./routes/import.ts"
@@ -106,6 +107,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/nutrition", nutritionRoutes(ctx, nutrition))
   app.route("/api/photos", photosRoutes(photos))
   app.route("/api/collections", collectionsRoutes(ctx))
+  app.route("/api/discover", discoverRoutes(ctx, ai))
   app.route("/api/plan", planRoutes(ctx))
   app.route("/api/list", listRoutes(ctx))
   app.route("/api/pantry", pantryRoutes(ctx))

@@ -1,35 +1,12 @@
 import type { BrowseCollection } from "@mise/shared"
-import { and, eq, inArray } from "drizzle-orm"
 import { Hono } from "hono"
 
 import { requireUser } from "../auth/middleware.ts"
 import { STARTER_COLLECTIONS } from "../collections/starter.ts"
 import { currentHousehold, type AppContext, type AppEnv } from "../context.ts"
-import type { Db } from "../db/client.ts"
-import { recipes } from "../db/schema.ts"
-import { normalizeUrl } from "../import/links.ts"
+import { inLibrary, normalizeUrl } from "../import/links.ts"
 import { fetchPublic } from "../import/safe-fetch.ts"
 import { remoteThumbnail } from "../services/remote-images.ts"
-
-/** Which of these links are in the household's library already, by link. */
-export async function inLibrary(db: Db, householdId: string, urls: string[]) {
-  const found = new Map<string, { slug: string; name: string }>()
-  if (!urls.length) return found
-  const normal = urls.map((url) => normalizeUrl(url))
-  const rows = await db
-    .select({ slug: recipes.slug, name: recipes.name, url: recipes.sourceUrl })
-    .from(recipes)
-    .where(
-      and(
-        eq(recipes.householdId, householdId),
-        inArray(recipes.sourceUrl, normal)
-      )
-    )
-  for (const row of rows) {
-    if (row.url) found.set(row.url, { slug: row.slug, name: row.name })
-  }
-  return found
-}
 
 /** Hand-picked starter collections, and their photos. */
 export function collectionsRoutes({ db, fetcher = fetchPublic }: AppContext) {

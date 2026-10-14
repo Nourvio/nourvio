@@ -1,42 +1,94 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowLeft01Icon, CookingPotIcon } from "@hugeicons/core-free-icons"
 import type { BrowseCollection } from "@mise/shared"
-import { Link, useParams } from "react-router"
+import { Link, useParams, useSearchParams } from "react-router"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useAiStatus } from "@/features/settings/use-ai"
 import { NotFoundPage } from "@/app/not-found-page"
 
+import { DiscoverWithAi } from "./discover-ai"
 import { FoundRecipeCard } from "./found-recipe-card"
 import { useCollections, useImportFound } from "./use-discover"
 
-/** Find recipes: hand-picked collections to start a library from. */
+const TABS = ["collections", "ai"] as const
+type Tab = (typeof TABS)[number]
+
+/** Find recipes: hand-picked collections, or recipes the assistant finds. */
 export function DiscoverPage() {
-  const collections = useCollections()
+  const ai = useAiStatus()
+  const [params, setParams] = useSearchParams()
+  const withAi = ai.data?.available ?? false
+  const asked = params.get("tab") as Tab | null
+  const tab: Tab =
+    asked && TABS.includes(asked) && (asked !== "ai" || withAi)
+      ? asked
+      : "collections"
+
   return (
     <>
       <PageHeader
         title="Find recipes"
-        description="Hand-picked collections of well-loved recipes. Import the ones you like, or a whole collection at once."
+        description={
+          withAi
+            ? "Start from hand-picked collections of well-loved recipes, or have the assistant find some for whatever you're in the mood for."
+            : "Hand-picked collections of well-loved recipes. Import the ones you like, or a whole collection at once."
+        }
       />
-      {collections.isPending ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-72 rounded-3xl" />
-          ))}
-        </div>
-      ) : collections.isError ? (
-        <p className="text-muted-foreground">Couldn't load the collections.</p>
+      {withAi ? (
+        <Tabs
+          value={tab}
+          onValueChange={(value) =>
+            setParams(value === "collections" ? {} : { tab: value }, {
+              replace: true,
+            })
+          }
+          className="gap-6"
+        >
+          <TabsList>
+            <TabsTrigger value="collections">Collections</TabsTrigger>
+            <TabsTrigger value="ai">Discover with AI</TabsTrigger>
+          </TabsList>
+          <TabsContent value="collections">
+            <Collections />
+          </TabsContent>
+          <TabsContent value="ai">
+            <DiscoverWithAi />
+          </TabsContent>
+        </Tabs>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {collections.data.map((collection) => (
-            <CollectionCard key={collection.id} collection={collection} />
-          ))}
-        </div>
+        <Collections />
       )}
     </>
+  )
+}
+
+function Collections() {
+  const collections = useCollections()
+  if (collections.isPending) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }, (_, i) => (
+          <Skeleton key={i} className="h-72 rounded-3xl" />
+        ))}
+      </div>
+    )
+  }
+  if (collections.isError) {
+    return (
+      <p className="text-muted-foreground">Couldn't load the collections.</p>
+    )
+  }
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {collections.data.map((collection) => (
+        <CollectionCard key={collection.id} collection={collection} />
+      ))}
+    </div>
   )
 }
 

@@ -61,6 +61,26 @@ export async function findBySourceUrl(
   return row ? getRecipe(db, householdId, row.id) : null
 }
 
+/** Which of these links are in the household's library already, by link. */
+export async function inLibrary(db: Db, householdId: string, urls: string[]) {
+  const found = new Map<string, { slug: string; name: string }>()
+  if (!urls.length) return found
+  const normal = urls.map((url) => normalizeUrl(url))
+  const rows = await db
+    .select({ slug: recipes.slug, name: recipes.name, url: recipes.sourceUrl })
+    .from(recipes)
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        inArray(recipes.sourceUrl, normal)
+      )
+    )
+  for (const row of rows) {
+    if (row.url) found.set(row.url, { slug: row.slug, name: row.name })
+  }
+  return found
+}
+
 /** Photos smaller than this on their short side are icons or thumbnails. */
 const MIN_PHOTO_SIDE = 200
 /** Good enough to stop looking for a bigger one. */

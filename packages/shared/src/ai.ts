@@ -15,6 +15,7 @@ export const AI_TASKS = [
   "chat",
   "nutrition",
   "swap",
+  "discover",
 ] as const
 export type AiTask = (typeof AI_TASKS)[number]
 
@@ -27,6 +28,7 @@ export const AI_TASK_NAMES: Record<AiTask, string> = {
   chat: "Assistant",
   nutrition: "Nutrition",
   swap: "Ingredient swaps",
+  discover: "Finding recipes",
 }
 
 /**
@@ -38,6 +40,7 @@ export const LIGHT_TASK_MODELS: Partial<
 > = {
   nutrition: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
   swap: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
+  discover: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
 }
 
 /** Used when nothing else is picked. */
@@ -128,6 +131,7 @@ export const updateAiSettingsInput = z.object({
       chat: modelRef.nullable(),
       nutrition: modelRef.nullable(),
       swap: modelRef.nullable(),
+      discover: modelRef.nullable(),
     })
     .partial()
     .optional(),

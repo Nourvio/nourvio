@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm"
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 
-import { invites } from "../db/schema.ts"
+import { discoveries, invites } from "../db/schema.ts"
 import { apiClient, createTestAppWithAdmin } from "../test/helpers.ts"
 
 const SOUP = {
@@ -136,6 +136,38 @@ describe("households", () => {
       expect(
         (await t.admin.get(`/api/recipes/${soup.id}/cook-notes`)).body.notes
       ).toHaveLength(1)
+    })
+
+    test("recipes found with AI", async () => {
+      const household = (await t.admin.get("/api/household")).body.household
+      const [found] = await t.db
+        .insert(discoveries)
+        .values({
+          householdId: household.id,
+          theme: "Soups",
+          status: "done",
+          recipes: [
+            {
+              url: "https://example.com/soup",
+              title: "Soup",
+              site: "Example",
+              minutes: 20,
+              image: "https://example.com/soup.jpg",
+              why: "Good",
+            },
+          ],
+        })
+        .returning()
+      expect(
+        (await t.admin.get(`/api/discover/${found!.id}`)).body.discovery.theme
+      ).toBe("Soups")
+      expect((await neighbor.get("/api/discover")).body.discoveries).toEqual([])
+      expect((await neighbor.get(`/api/discover/${found!.id}`)).status).toBe(
+        404
+      )
+      expect(
+        (await neighbor.raw(`/api/discover/${found!.id}/0/image`)).status
+      ).toBe(404)
     })
 
     test("each household has its own slugs and tag spellings", async () => {

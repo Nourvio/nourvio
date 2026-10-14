@@ -88,6 +88,7 @@ Everything a household owns carries its `household_id`, and every query is scope
 | `recipes` | id, household_id, slug (unique per household), name, description, image, image_ai (made by AI), source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), diet_overrides (jsonb), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
 | `recipe_ingredients` | recipe_id, position, section, raw_text, quantity, quantity_max, unit_id, food, note | `raw_text` is always kept and shown as written. The parsed fields drive scaling, lists and nutrition. |
 | `recipe_steps` | recipe_id, position, section, text | |
+| `discoveries` | household_id, user_id, theme, status (searching, done, failed), error, recipes (jsonb: link, name, site, time, photo, why) | Find recipes → Discover with AI. The latest twelve per household are kept |
 | `cook_notes` | household_id, recipe_id, user_id, rating, note, created_at | "How did it go?" after cooking. A note can become a `recipe_edit` proposal (with the note in `payload.fromNote`), shown on the recipe page like a tidy-up |
 | `recipe_versions` | recipe_id, snapshot (jsonb), source, created_by, created_at | Every saved change makes a snapshot, so the original import can always be restored. `source` is one of import, manual, ai_cleanup, chat. |
 | `tags`, `recipe_tags` | household_id, name (unique per household, ignoring case) | |
@@ -144,6 +145,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Photos | `POST /api/recipes/:id/photo` (make one with AI), `GET /api/recipes/:id/photo` (whether one is being made); `GET`/`POST /api/photos/library`, `POST /api/photos/library/:id/stop` (household admins) |
 | Versions | `GET /api/recipes/:id/versions`, `POST /api/recipes/:id/versions/:versionId/restore` |
 | Collections | `GET /api/collections` (the starter collections, with which recipes are in the library), `GET /api/collections/:id/:index/image` (a recipe's photo, through Mise) |
+| Discover | `GET /api/discover` (recent searches), `POST /api/discover` (start one; it carries on in the background, one per household at a time), `GET /api/discover/:id`, `GET /api/discover/:id/:index/image` |
 | Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (server admin, into their household): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
 | AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal, or null when there's nothing to change), `GET /api/recipes/:id/proposal`; library runs at `GET`/`POST /api/ai/cleanup-job` and `POST /api/ai/cleanup-job/:id/cancel` (household admins) |
 | Proposals | `GET /api/proposals` (pending), `POST /api/proposals/:id/apply` (chosen sections), `POST /api/proposals/:id/dismiss` |
@@ -183,7 +185,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 - **Models:**
   - Settings has a default model, picked from the providers' live model lists.
   - Each task can override that default. So far: importing, tidying, the assistant (which also plans meals) and nutrition; shopping translation joins later.
-  - Nutrition and ingredient swaps are simple work, so unless they have their own pick they use the small model of the default's provider (Claude Haiku 5.5 or GPT-6 Luna).
+  - Nutrition, ingredient swaps and finding recipes are simple work, so unless they have their own pick they use the small model of the default's provider (Claude Haiku 5.5 or GPT-6 Luna).
   - With nothing picked, the defaults are Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6 Sol (`gpt-6-sol`).
   - A pick whose provider has lost its key is skipped, so removing a key never breaks import.
 - **Claude specifics:**
@@ -257,6 +259,7 @@ The original is always kept. Every applied cleanup adds a version, and the first
 - **Structured extraction (import):** turns a web page without recipe data, pasted text, or photos into a recipe draft. The draft's ingredient lines and steps go through the same parser as everything else.
 - **Week suggestions:** today, Fill the week is rules only (no AI, though it does use up the pantry's Use soon items first), and the assistant can plan meals in chat. *Later:* the rules pick candidates and the AI ranks them, weighing preferences too.
 - **Shopping translation:** turns combined recipe amounts into product quantities, using our saved Walmart products.
+- **Finding recipes** (`services/discover.ts`): the small model, with web search, gets the theme and the household's rules and calls `offer_recipes` with 10 to 12 picks. Mise opens each page (four at a time) and keeps those with recipe data, under the link they land on; if fewer than four work, the model hears which failed and offers more once. Up to eight are kept, no more than two from one site unless there aren't enough others. It runs in the background; a search still "searching" after five minutes was cut short and shows as failed.
 - **Nutrition** (`services/nutrition.ts`):
   - Each new food is searched in USDA FoodData Central (Foundation and SR Legacy foods), and the AI picks the candidate that's the food as used, or none. The match is cached in `food_matches`.
   - Amounts become grams from the line (weights, "1 (15 oz) can") or the food's USDA portions ("1 medium" = 110 g, "1 cup, chopped" = 160 g). What portions can't cover ("4 chicken thighs") the AI weighs, and that's cached per unit too, so most recipes after the first few need no AI at all.
@@ -317,7 +320,7 @@ The parser lives in the shared package, so the server and browser use the same c
 | Cook | Full-screen cooking: a get-ready checklist, then a step at a time with that step's ingredients, timers and a text size. `?entry=` (from the plan or Today) makes Done cooking mark that meal cooked |
 | Add | Link, Text, Photo and Manual tabs |
 | Review | A queue of AI proposals waiting for you, such as bulk cleanup results |
-| Find recipes | Starter collections as photo cards; a collection's page lists its recipes with Import and Import all |
+| Find recipes | Tabs for starter collections (photo cards; a collection's page lists its recipes with Import and Import all) and Discover with AI (a theme box, ideas, results and earlier searches). `?tab=` picks the tab and `?search=` the search shown |
 | Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, Add to list, and calories per day |
 | List | Shopping list grouped by section, with every-week items, always-on-hand items and (later) Send to Walmart |
 | Pantry | Use soon (near use-by dates, and fresh leftovers from skipped meals), everything else by aisle, and always-on-hand items |

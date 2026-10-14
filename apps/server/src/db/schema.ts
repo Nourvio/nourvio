@@ -23,6 +23,7 @@ import type {
   StoreSectionId,
   Role,
   UnitKind,
+  StarterRecipe,
 } from "@mise/shared"
 import { sql } from "drizzle-orm"
 import {
@@ -386,6 +387,30 @@ export const aiUsage = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index().on(t.createdAt)]
+)
+
+/**
+ * A search for recipes on a theme (Find recipes → Discover). The recipes are
+ * the ones whose pages opened and read as recipes.
+ */
+export const discoveries = pgTable(
+  "discoveries",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: uuid().references(() => users.id, { onDelete: "set null" }),
+    theme: text().notNull(),
+    status: text().$type<"searching" | "done" | "failed">().notNull(),
+    error: text(),
+    recipes: jsonb()
+      .$type<(StarterRecipe & { why: string })[]>()
+      .notNull()
+      .default([]),
+    createdAt: createdAt(),
+  },
+  (t) => [index().on(t.householdId, t.createdAt)]
 )
 
 /**

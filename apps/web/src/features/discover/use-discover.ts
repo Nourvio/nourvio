@@ -1,6 +1,11 @@
 import * as React from "react"
-import type { BrowseCollection, FoundRecipe, ImportResult } from "@mise/shared"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
+import type {
+  BrowseCollection,
+  Discovery,
+  FoundRecipe,
+  ImportResult,
+} from "@mise/shared"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router"
 import { toast } from "sonner"
 
@@ -8,6 +13,7 @@ import { RECIPES_KEY } from "@/features/recipes/use-recipes"
 import { api, ApiError } from "@/lib/api"
 
 export const COLLECTIONS_KEY = ["collections"] as const
+export const DISCOVER_KEY = ["discover"] as const
 
 export function useCollections() {
   return useQuery({
@@ -16,6 +22,42 @@ export function useCollections() {
       (await api<{ collections: BrowseCollection[] }>("/collections"))
         .collections,
     staleTime: 5 * 60_000,
+  })
+}
+
+/** Recent searches with AI, checked every few seconds while one is running. */
+export function useDiscoveries() {
+  return useQuery({
+    queryKey: DISCOVER_KEY,
+    queryFn: async () =>
+      (await api<{ discoveries: Discovery[] }>("/discover")).discoveries,
+    refetchInterval: (query) =>
+      query.state.data?.some((item) => item.status === "searching")
+        ? 3000
+        : false,
+  })
+}
+
+export function useStartDiscovery() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (theme: string) =>
+      (
+        await api<{ discovery: Discovery }>("/discover", {
+          body: { theme },
+        })
+      ).discovery,
+    onSuccess: (discovery) => {
+      queryClient.setQueryData<Discovery[]>(DISCOVER_KEY, (current) => [
+        discovery,
+        ...(current ?? []),
+      ])
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof ApiError ? error.message : "Couldn't start that search"
+      )
+    },
   })
 }
 
@@ -36,7 +78,7 @@ export function useImportFound() {
   const refresh = React.useCallback(() => {
     queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
     queryClient.invalidateQueries({ queryKey: COLLECTIONS_KEY })
-    queryClient.invalidateQueries({ queryKey: ["discover"] })
+    queryClient.invalidateQueries({ queryKey: DISCOVER_KEY })
     queryClient.invalidateQueries({ queryKey: ["sites"] })
   }, [queryClient])
 
@@ -91,6 +133,7 @@ export function useImportFound() {
       setProgress({ done: index + 1, total: todo.length })
       // Keep the cards up to date as they arrive.
       queryClient.invalidateQueries({ queryKey: COLLECTIONS_KEY })
+      queryClient.invalidateQueries({ queryKey: DISCOVER_KEY })
     }
     setProgress(null)
     refresh()

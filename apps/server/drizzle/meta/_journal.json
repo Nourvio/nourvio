@@ -127,6 +127,13 @@
       "when": 1792006919833,
       "tag": "0017_cook_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792010927631,
+      "tag": "0018_discoveries",
+      "breakpoints": true
     }
   ]
 }

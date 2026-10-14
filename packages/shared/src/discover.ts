@@ -1,3 +1,5 @@
+import { z } from "zod"
+
 /** A recipe in a starter collection: a page that imports cleanly. */
 export type StarterRecipe = {
   url: string
@@ -33,3 +35,33 @@ export type BrowseCollection = {
   description: string
   recipes: FoundRecipe[]
 }
+
+/** A recipe the assistant found for a theme, with why it picked it. */
+export type DiscoveredRecipe = FoundRecipe & { why: string }
+
+/** One search for recipes on a theme, kept so it can be looked at again. */
+export type Discovery = {
+  id: string
+  theme: string
+  /** "searching" until the recipes are found and checked. */
+  status: "searching" | "done" | "failed"
+  error: string | null
+  recipes: DiscoveredRecipe[]
+  createdAt: string
+}
+
+export const discoverInput = z.object({
+  theme: z.string().trim().min(2, "Say what you're after").max(120),
+})
+
+/** Ideas to start from; any theme can be typed instead. */
+export const DISCOVER_THEMES = [
+  "Cozy soups and stews",
+  "30-minute dinners",
+  "Sheet-pan suppers",
+  "Slow cooker favorites",
+  "Make-ahead lunches",
+  "Vegetarian weeknights",
+  "Date night in",
+  "Something new to try",
+] as const
