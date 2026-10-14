@@ -1,10 +1,12 @@
 import {
   addAmounts,
+  combineLines,
   formatAmount,
   guessUseBy,
   pantryKey,
   parseIngredient,
   STORE_SECTIONS,
+  subtractAmounts,
   toIsoDate,
   type PantryItem,
   type PantryMeal,
@@ -21,10 +23,12 @@ import {
   pantryItems,
   recipes,
   shoppingItems,
+  type PantrySnapshot,
 } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
 import { getHousehold } from "./households.ts"
-import { readAmount, sectionsFor } from "./list.ts"
+import { readAmount, sectionsFor } from "./food.ts"
+import { getRecipe } from "./recipes.ts"
 
 type PantryRow = typeof pantryItems.$inferSelect
 
@@ -267,4 +271,136 @@ export async function putAway(
     )
   }
   return { stored, skipped: checked.length - stored }
+}
+
+const snapshot = (row: PantryRow, removed: boolean): PantrySnapshot => ({
+  id: row.id,
+  key: row.key,
+  name: row.name,
+  quantity: row.quantity,
+  unitId: row.unitId,
+  amountText: row.amountText,
+  sectionId: row.sectionId,
+  useBy: row.useBy,
+  entries: row.entries,
+  removed,
+})
+
+/**
+ * Cooking a planned meal takes its ingredients out of the pantry, scaled to
+ * its servings. Amounts that can be compared are subtracted; something
+ * bought for this meal without a comparable amount is used up; anything
+ * else ("have it" rice) stays. Returns the rows as they were, to put back.
+ */
+export async function useForMeal(
+  db: Db,
+  householdId: string,
+  entryId: string
+): Promise<PantrySnapshot[]> {
+  const [entry] = await db
+    .select()
+    .from(mealPlanEntries)
+    .where(
+      and(
+        eq(mealPlanEntries.id, entryId),
+        eq(mealPlanEntries.householdId, householdId)
+      )
+    )
+  if (!entry?.recipeId) return []
+  const recipe = await getRecipe(db, householdId, entry.recipeId)
+  const factor =
+    entry.servings && recipe.servings ? entry.servings / recipe.servings : 1
+  const needs = combineLines(
+    recipe.ingredients.map((ingredient) => ({
+      text: ingredient.text,
+      factor,
+      source: recipe.name,
+    }))
+  )
+
+  const rows = await db
+    .select()
+    .from(pantryItems)
+    .where(eq(pantryItems.householdId, householdId))
+  const before = new Map<string, PantryRow>()
+  const removed = new Set<string>()
+  const change = (row: PantryRow) => {
+    if (!before.has(row.id)) before.set(row.id, { ...row })
+  }
+
+  for (const need of needs) {
+    const key = pantryKey(need.name)
+    // What was bought for this meal goes first.
+    const matches = rows
+      .filter((row) => row.key === key && !removed.has(row.id))
+      .sort(
+        (a, b) =>
+          Number(b.entries.includes(entryId)) -
+          Number(a.entries.includes(entryId))
+      )
+    let left: { quantity: number | null; unitId: string | null } = need
+    for (const row of matches) {
+      const forThis = row.entries.includes(entryId)
+      const rest = row.amountText === null ? subtractAmounts(row, left) : null
+      if (!rest) {
+        // Can't tell how much is left: used up if it was bought for this.
+        if (forThis) {
+          change(row)
+          removed.add(row.id)
+        }
+        break
+      }
+      change(row)
+      if (rest.quantity > 0.001) {
+        row.quantity = rest.quantity
+        break
+      }
+      removed.add(row.id)
+      // Not enough in this one: take the rest from the next.
+      const still = subtractAmounts(left, row)
+      if (!still || still.quantity <= 0.001) break
+      left = still
+    }
+  }
+
+  for (const [id, original] of before) {
+    if (removed.has(id)) {
+      await db.delete(pantryItems).where(eq(pantryItems.id, id))
+    } else {
+      const row = rows.find((r) => r.id === id)!
+      await db
+        .update(pantryItems)
+        .set({
+          quantity: row.quantity,
+          entries: original.entries.filter((e) => e !== entryId),
+        })
+        .where(eq(pantryItems.id, id))
+    }
+  }
+  return [...before].map(([id, original]) =>
+    snapshot(original, removed.has(id))
+  )
+}
+
+/** Puts back what cooking a meal took out, when it turns out it wasn't cooked. */
+export async function restoreForMeal(
+  db: Db,
+  householdId: string,
+  used: PantrySnapshot[]
+) {
+  for (const { removed, id, ...values } of used) {
+    if (removed) {
+      await db
+        .insert(pantryItems)
+        .values({ id, householdId, ...values })
+        .onConflictDoUpdate({ target: pantryItems.id, set: values })
+    } else {
+      await db
+        .update(pantryItems)
+        .set(values)
+        .where(
+          and(eq(pantryItems.id, id), eq(pantryItems.householdId, householdId))
+        )
+    }
+  }
 }

@@ -49,7 +49,7 @@ Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x
   - Servings from `recipeServings` (2.x) or the yield text; times from `prepTime`, `performTime` (Mealie's cook time; `cookTime` in older versions) and `totalTime`, whether they're "1 hour 30 minutes" or ISO durations.
   - Tags and categories both become tags; rating (rounded), source link, notes, nutrition and last-made date come across.
   - Each recipe remembers its Mealie id (`external_ref`), so running it again skips what's already here.
-- **Later:** seeding our foods and units from Mealie's, when the foods list arrives (milestone 3).
+- Mealie's foods and units aren't imported: Mise matches foods by name (see [architecture.md](architecture.md#data-model)).
 
 ## AI providers (Claude and OpenAI)
 

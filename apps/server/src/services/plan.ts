@@ -12,6 +12,7 @@ import { mealPlanEntries, recipes } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
 import { findRecipeRow, getRecipe } from "./recipes.ts"
 import { imageUrls } from "./images.ts"
+import { restoreForMeal, useForMeal } from "./pantry.ts"
 
 type EntryRow = typeof mealPlanEntries.$inferSelect
 
@@ -59,6 +60,7 @@ function toEntry({ entry, recipe }: Joined): PlanEntry {
     servings: entry.servings,
     status: entry.status,
     listed: entry.listedAt !== null,
+    pantryUsed: (entry.pantryUsed ?? []).map((row) => row.name),
   }
 }
 
@@ -208,18 +210,34 @@ export async function updateEntry(
         : {}),
     })
     .where(eq(mealPlanEntries.id, current.id))
-  // Cooking a planned meal is the same as "I made this".
-  if (
-    input.status === "cooked" &&
-    current.status !== "cooked" &&
-    current.recipeId
-  ) {
+  const status = swapped ? "planned" : (input.status ?? current.status)
+  if (current.status === "cooked" && status !== "cooked") {
+    // It wasn't cooked after all: put back what it used.
+    await restoreForMeal(db, householdId, current.pantryUsed ?? [])
+    await db
+      .update(mealPlanEntries)
+      .set({ pantryUsed: null })
+      .where(eq(mealPlanEntries.id, current.id))
+  }
+  // Cooking a planned meal is the same as "I made this", and uses up its
+  // ingredients.
+  if (status === "cooked" && current.status !== "cooked" && current.recipeId) {
     await db
       .update(recipes)
       .set({ lastMadeAt: new Date() })
       .where(eq(recipes.id, current.recipeId))
+    await cooked(db, householdId, current.id)
   }
   return getEntry(db, current.id)
+}
+
+/** Takes a cooked meal's ingredients out of the pantry, remembering how to put them back. */
+async function cooked(db: Db, householdId: string, id: string) {
+  const used = await useForMeal(db, householdId, id)
+  await db
+    .update(mealPlanEntries)
+    .set({ pantryUsed: used })
+    .where(eq(mealPlanEntries.id, id))
 }
 
 export async function deleteEntry(db: Db, householdId: string, id: string) {
@@ -250,5 +268,6 @@ export async function markPlannedCooked(
       )
     )
     .returning({ id: mealPlanEntries.id })
+  for (const entry of updated) await cooked(db, householdId, entry.id)
   return updated.length
 }

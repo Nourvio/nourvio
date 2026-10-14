@@ -113,6 +113,8 @@ export function useMarkMade(id: string) {
     onSuccess: (recipe) => {
       saved(recipe)
       queryClient.invalidateQueries({ queryKey: ["plan"] })
+      // A planned meal cooked today takes its ingredients out of the pantry.
+      queryClient.invalidateQueries({ queryKey: ["pantry"] })
     },
   })
 }

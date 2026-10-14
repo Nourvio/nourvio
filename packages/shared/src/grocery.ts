@@ -252,6 +252,36 @@ export function formatAmount(quantity: number | null, unitId: string | null) {
 }
 
 /**
+ * What's left of one amount after taking another, in the first one's unit:
+ * the same unit, or volumes and weights converted. Null when they can't be
+ * compared (or either has no amount). Can go below zero.
+ */
+export function subtractAmounts(
+  have: { quantity: number | null; unitId: string | null },
+  take: { quantity: number | null; unitId: string | null }
+): { quantity: number; unitId: string | null } | null {
+  if (have.quantity === null || take.quantity === null) return null
+  const round = (n: number) => Math.round(n * 1000) / 1000
+  if (have.unitId === take.unitId) {
+    return {
+      quantity: round(have.quantity - take.quantity),
+      unitId: have.unitId,
+    }
+  }
+  const uh = have.unitId ? UNIT_BY_ID.get(have.unitId) : undefined
+  const ut = take.unitId ? UNIT_BY_ID.get(take.unitId) : undefined
+  if (uh && ut && uh.kind === ut.kind && uh.toBase && ut.toBase) {
+    return {
+      quantity: round(
+        (have.quantity * uh.toBase - take.quantity * ut.toBase) / uh.toBase
+      ),
+      unitId: have.unitId,
+    }
+  }
+  return null
+}
+
+/**
  * Adds one amount to another when they can be added: the same count unit,
  * or volumes and weights (converted, shown in the bigger unit). Returns
  * null when they can't, so the caller keeps them apart.

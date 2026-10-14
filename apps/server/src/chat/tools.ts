@@ -1,6 +1,9 @@
 import {
   isoDate,
   MEALS,
+  toIsoDate,
+  whyUseSoon,
+  type PantryItem,
   type PlanEntry,
   type Proposal,
   type ProposedMeal,
@@ -16,6 +19,7 @@ import { HttpError } from "../http.ts"
 import { toRecipeInput } from "../import/ai-extract.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
 import { listItems } from "../services/list.ts"
+import { listPantry } from "../services/pantry.ts"
 import { listEntries } from "../services/plan.ts"
 import {
   cleanLines,
@@ -311,6 +315,18 @@ const getMealPlan = tool({
   },
 })
 
+const getPantry = tool({
+  name: "get_pantry",
+  description:
+    "What the household has at home, with amounts where known, and what needs using soon (close to its use-by date, or bought for a meal that was skipped).",
+  input: z.object({}),
+  runningLabel: "Checking the pantry",
+  async run(ctx) {
+    const items = await listPantry(ctx.db, ctx.householdId)
+    return { output: describePantry(items), label: "Checked the pantry" }
+  },
+})
+
 const getShoppingList = tool({
   name: "get_shopping_list",
   description:
@@ -460,6 +476,7 @@ export const TOOLS = [
   listTagsTool,
   getMealPlan,
   getShoppingList,
+  getPantry,
   proposeNewRecipe,
   proposeRecipeEdit,
   tidyRecipe,
@@ -478,6 +495,32 @@ export function toolSpecs(): ChatToolSpec[] {
 
 export function findTool(name: string) {
   return TOOLS.find((t) => t.name === name)
+}
+
+/** The pantry as the model reads it: what needs using first, then the rest. */
+export function describePantry(items: PantryItem[]) {
+  if (!items.length) return "The pantry is empty."
+  const today = toIsoDate(new Date())
+  const line = (item: PantryItem) =>
+    `${item.name}${item.amount ? ` (${item.amount})` : ""}`
+  const soon = items.flatMap((item) => {
+    const why = whyUseSoon(item, today)
+    if (!why) return []
+    const reason =
+      why.kind === "leftover"
+        ? `bought for ${why.meals.map((m) => m.name).join(", ")}, which ${why.meals[0]!.status === "skipped" ? "was skipped" : "wasn't cooked"}`
+        : why.kind === "past"
+          ? `past its use-by date, ${why.date}`
+          : `use by ${why.date}`
+    return [`${line(item)}: ${reason}`]
+  })
+  const rest = items.filter((item) => !whyUseSoon(item, today)).map(line)
+  return [
+    soon.length ? `Needs using soon:\n${soon.join("\n")}` : "",
+    rest.length ? `Also at home:\n${rest.join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n")
 }
 
 /** A plan, day by day, as the model reads it. */

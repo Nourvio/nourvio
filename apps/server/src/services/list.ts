@@ -3,13 +3,15 @@ import {
   combineLines,
   foodKey,
   formatAmount,
-  guessSection,
+  pantryKey,
   parseIngredient,
   STORE_SECTIONS,
+  subtractAmounts,
+  toIsoDate,
   type AddFromPlanResult,
   type ListLine,
+  type PantryItem,
   type ShoppingItem,
-  type StoreSectionId,
   type UpdateListItemInput,
   type WeeklyItem,
   type WeeklyItemInput,
@@ -26,6 +28,8 @@ import {
   weeklyItems,
 } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
+import { readAmount, sectionsFor } from "./food.ts"
+import { listPantry } from "./pantry.ts"
 import { getHousehold } from "./households.ts"
 import { getRecipe } from "./recipes.ts"
 
@@ -51,31 +55,6 @@ function toItem(row: ItemRow): ShoppingItem {
 
 /** The food part of an item key: "onion|each" → "onion". */
 const foodOf = (key: string) => key.split("|")[0]!
-
-/** Where to file a food: the household's own choice, else a guess. */
-export async function sectionsFor(
-  db: Db,
-  householdId: string,
-  items: { name: string; unitId?: string | null }[]
-) {
-  const foods = items.map((item) => foodKey(item.name))
-  const learned = foods.length
-    ? await db
-        .select()
-        .from(foodSections)
-        .where(
-          and(
-            eq(foodSections.householdId, householdId),
-            inArray(foodSections.food, foods)
-          )
-        )
-    : []
-  const byFood = new Map(learned.map((row) => [row.food, row.sectionId]))
-  return items.map(
-    (item, i): StoreSectionId =>
-      byFood.get(foods[i]!) ?? guessSection(item.name, item.unitId)
-  )
-}
 
 export async function listItems(db: Db, householdId: string) {
   const rows = await db
@@ -130,20 +109,6 @@ export async function addManualItem(db: Db, householdId: string, text: string) {
     })
     .returning()
   return toItem(row!)
-}
-
-/** An amount as typed: "2 lb" becomes a number and a unit; anything else stays as written. Empty clears it. */
-export function readAmount(amount: string) {
-  const parsed = amount ? parseIngredient(`${amount} x`) : null
-  return parsed?.quantity !== null &&
-    parsed?.quantity !== undefined &&
-    parsed.food === "x"
-    ? {
-        quantity: parsed.quantityMax ?? parsed.quantity,
-        unitId: parsed.unitId,
-        amountText: null,
-      }
-    : { quantity: null, unitId: null, amountText: amount || null }
 }
 
 export async function updateItem(
@@ -235,6 +200,42 @@ export async function addWeeklyItems(db: Db, householdId: string) {
 }
 
 /**
+ * What's in the pantry and free to use: anything not set aside for a meal
+ * still coming up.
+ */
+async function availableInPantry(db: Db, householdId: string) {
+  const today = toIsoDate(new Date())
+  return (await listPantry(db, householdId)).filter(
+    (item) =>
+      !item.meals.some(
+        (meal) => meal.status === "planned" && meal.date >= today
+      )
+  )
+}
+
+/**
+ * How much of an ingredient is left to buy after what's in the pantry, or
+ * null when the pantry covers it. Having some of it without an amount that
+ * compares ("half a bag", or just "have it") counts as covered.
+ */
+function leftToBuy(
+  item: { name: string; quantity: number | null; unitId: string | null },
+  pantry: PantryItem[]
+) {
+  const key = pantryKey(item.name)
+  let need = { quantity: item.quantity, unitId: item.unitId }
+  let found = false
+  for (const have of pantry) {
+    if (pantryKey(have.name) !== key) continue
+    found = true
+    const rest = subtractAmounts(need, have)
+    if (!rest || rest.quantity <= 0.001) return null
+    need = rest
+  }
+  return found ? need : { quantity: item.quantity, unitId: item.unitId }
+}
+
+/**
  * Adds the ingredients of planned meals from one date to another that
  * aren't on the list yet: combined across recipes, scaled to the planned
  * servings, merged into what's already on the list, and leaving out what's
@@ -282,11 +283,19 @@ export async function addFromPlan(
 
   const onHand = new Set(household.onHand.map(foodKey))
   const skipped: string[] = []
+  const pantry = await availableInPantry(db, householdId)
+  const inPantry: string[] = []
   const combined = combineLines(lines).filter((item) => {
     if (onHand.has(foodOf(item.key))) {
       skipped.push(item.name)
       return false
     }
+    const need = leftToBuy(item, pantry)
+    if (!need) {
+      inPantry.push(item.name)
+      return false
+    }
+    Object.assign(item, need)
     return true
   })
 
@@ -349,7 +358,14 @@ export async function addFromPlan(
       )
   }
   const weekly = await addWeeklyItems(db, householdId)
-  return { meals: entries.length, added, merged, weekly, onHand: skipped }
+  return {
+    meals: entries.length,
+    added,
+    merged,
+    weekly,
+    onHand: skipped,
+    inPantry,
+  }
 }
 
 // ---- Every-week items ----

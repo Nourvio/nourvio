@@ -42,6 +42,8 @@ export type PlanEntry = {
   status: PlanStatus
   /** Its ingredients have been added to the shopping list. */
   listed: boolean
+  /** What cooking it took out of the pantry; put back if it's un-cooked. */
+  pantryUsed: string[]
 }
 
 const servings = z.number().positive().max(100).nullable()
@@ -122,6 +124,8 @@ export type MealSuggestion = {
   date: string
   meal: Meal
   recipe: NonNullable<PlanEntry["recipe"]>
+  /** Pantry food it uses up that needs using soon. */
+  uses: string[]
 }
 
 export const addPlanEntriesInput = z.object({

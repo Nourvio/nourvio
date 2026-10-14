@@ -59,45 +59,77 @@ describe("whyUseSoon", () => {
 
   test("flags food near or past its use-by date", () => {
     expect(
-      whyUseSoon({ useBy: "2026-10-16", meals: [] }, "2026-10-14")
+      whyUseSoon(
+        { sectionId: "produce", useBy: "2026-10-16", meals: [] },
+        "2026-10-14"
+      )
     ).toEqual({
       kind: "soon",
       date: "2026-10-16",
     })
     expect(
-      whyUseSoon({ useBy: "2026-10-13", meals: [] }, "2026-10-14")
+      whyUseSoon(
+        { sectionId: "produce", useBy: "2026-10-13", meals: [] },
+        "2026-10-14"
+      )
     ).toEqual({
       kind: "past",
       date: "2026-10-13",
     })
     expect(
-      whyUseSoon({ useBy: "2026-10-20", meals: [] }, "2026-10-14")
+      whyUseSoon(
+        { sectionId: "produce", useBy: "2026-10-20", meals: [] },
+        "2026-10-14"
+      )
     ).toBeNull()
   })
 
   test("flags food bought for meals that were skipped or went by", () => {
     const skipped = meal("2026-10-15", "skipped")
     const missed = meal("2026-10-12", "planned")
-    expect(whyUseSoon({ useBy: null, meals: [skipped] }, "2026-10-14")).toEqual(
-      {
-        kind: "leftover",
-        meals: [skipped],
-      }
-    )
-    expect(whyUseSoon({ useBy: null, meals: [missed] }, "2026-10-14")).toEqual({
+    expect(
+      whyUseSoon(
+        { sectionId: "produce", useBy: null, meals: [skipped] },
+        "2026-10-14"
+      )
+    ).toEqual({
+      kind: "leftover",
+      meals: [skipped],
+    })
+    expect(
+      whyUseSoon(
+        { sectionId: "produce", useBy: null, meals: [missed] },
+        "2026-10-14"
+      )
+    ).toEqual({
       kind: "leftover",
       meals: [missed],
     })
+    // Spices keep.
+    expect(
+      whyUseSoon(
+        { sectionId: "spices", useBy: null, meals: [skipped] },
+        "2026-10-14"
+      )
+    ).toBeNull()
     // Still wanted for an upcoming meal, or cooked: nothing to flag.
     expect(
       whyUseSoon(
-        { useBy: null, meals: [skipped, meal("2026-10-16", "planned")] },
+        {
+          sectionId: "produce",
+          useBy: null,
+          meals: [skipped, meal("2026-10-16", "planned")],
+        },
         "2026-10-14"
       )
     ).toBeNull()
     expect(
       whyUseSoon(
-        { useBy: null, meals: [meal("2026-10-12", "cooked")] },
+        {
+          sectionId: "produce",
+          useBy: null,
+          meals: [meal("2026-10-12", "cooked")],
+        },
         "2026-10-14"
       )
     ).toBeNull()

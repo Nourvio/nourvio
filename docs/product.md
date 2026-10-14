@@ -5,7 +5,7 @@
 Today we use Mealie. It handles recipes, plans and lists well, but it falls short where it matters most to us:
 
 - **AI isn't part of how we cook in it.** The real workflow is chatting with ChatGPT for ideas and substitutions, then copying the results over by hand.
-- **The pantry is a yes/no flag.** It doesn't know amounts, and it doesn't know about food bought for a meal that got skipped.
+- **Mealie's pantry is a yes/no flag.** It doesn't know amounts, and it doesn't know about food bought for a meal that got skipped.
 - **There's no way to send a list to a store.**
 - **Nutrition is typed in by hand.**
 
@@ -81,7 +81,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
   - save a variant or edit a recipe
   - add meals to the plan
   - add items to the list
-  - update the pantry
+  - *later:* update the pantry
 
   Every change shows a preview first (the recipe, or what changed in it), and nothing is saved until you tap to confirm.
 - **Conversations are saved,** so you can pick one up again.
@@ -99,31 +99,37 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 - **Suggest something else** on any planned meal swaps in another recipe, with an undo.
 - Mark each planned meal **cooked** (same as "I made this") or **skipped**.
 - **The assistant** knows which week you're looking at. Ask it to fill the dinners or plan easy lunches, and it offers the meals as a card you add with one tap.
-- *Later:* saved plan rules, and suggestions that weigh the pantry and food that needs using soon.
+- **Food that needs using comes first:** Fill the week gives each item under "Use soon" in the pantry a recipe that uses it, as early in the week as one fits, and says so ("Uses up your spinach"). A skipped meal doesn't count toward no-repeats, so it can come straight back.
+- *Later:* saved plan rules, and AI-ranked suggestions.
 
 ### 5. Shopping list
 
 - **Add from the plan:** a week's planned meals (the ones not added yet) go on the list, scaled to their servings.
   - The same ingredient is combined across recipes ("1 onion" + "2 onions" → 3 onions), converting units when it's safe.
+  - **What's in the pantry is subtracted:** 3 onions at home and 4 needed puts 1 on the list. Having some without a comparable amount ("half a bag" of rice) counts as enough. Food set aside for another upcoming meal doesn't count. You're told what was left off.
   - **Always on hand** items (salt, pepper, oil, water and so on; the household edits the list) are left off.
   - Each planned meal shows "On the list" once its ingredients are added.
 - **Every week** items (Diet Pepsi, bananas) go on with each week's plan, or with one tap from the List page.
 - Grouped by store section: produce, meat, dairy, bakery, canned goods and so on. Moving an item to another section is remembered for next time.
 - Add anything by typing it ("2 lb ground beef", "paper towels").
-- Check items off while shopping. They move to "In the cart" until cleared.
+- Check items off while shopping. They move to "In the cart".
+- **Put away** when you're home: everything in the cart goes into the pantry, remembering which meals it was bought for. Household things (paper towels) and always-on-hand items are just cleared.
 - The assistant can offer items to add, as a card.
-- *Later:* the pantry is subtracted, checked items move into the pantry (milestone 4), and the list goes to the store (see 7).
+- *Later:* the list goes to the store (see 7).
 - One list per household. More lists can come later if needed.
 
 ### 6. Pantry
 
-- **Amounts can be rough:** "2 lb", "half a bag", or just "have it".
-- **Always on hand** items like salt, oil and flour are assumed to be there. They only go on the list when marked low or out.
-- **Bought** items flow in from the shopping list.
-- **Cooked** meals take their ingredients out. It's approximate, and easy to correct.
-- **Skipped meals:** food bought for a planned meal that wasn't cooked stays in the pantry, tagged with the meal it was bought for. Next week's suggestions try to use it.
-- **Use-by dates** are optional for perishables. A "use soon" list surfaces them.
-- Barcode scanning may come later.
+- **Grouped by aisle,** like the list. Type what you have ("2 lb chicken thighs", "rice"), or let it fill itself from Put away on the List.
+- **Amounts can be rough:** "2 lb", "half a bag", or just "have it". The same food merges when the amounts add up.
+- **Matching is forgiving but careful:** "boneless skinless chicken thighs" is "chicken thighs", but "cream cheese" isn't "cheese". There's no list of foods to set up or confirm.
+- **Always on hand** items like salt, oil and flour are assumed to be there. Tap one on the Pantry page when it runs low, and it goes on the list.
+- **Cooked** meals take their ingredients out, scaled to the servings planned. Amounts that compare are subtracted; food bought for that meal without one is used up; "have it" staples stay. Marking the meal back to planned puts it all back.
+- **Use soon** is at the top:
+  - Fresh food gets a rough use-by date when it comes in (meat and fish 3 days, bread and deli 5, produce a week, nothing for onions, potatoes and other keepers). Edit or clear it any time.
+  - Fresh food bought for a meal that was skipped, or went by uncooked, shows as "Bought for Tacos, which was skipped". Paprika bought for it doesn't.
+- Mark something **used up** (with an undo), or send it back to the list.
+- *Later:* barcode scanning, and the assistant updating the pantry.
 
 ### 7. Grocery ordering (Walmart pickup)
 

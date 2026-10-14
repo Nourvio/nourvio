@@ -1,3 +1,4 @@
+import { addDays, toIsoDate } from "@mise/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 
 import { suggestMeals } from "../services/suggest.ts"
@@ -148,5 +149,57 @@ describe("meal suggestions", () => {
       recipe: { name: "Lasagna" },
       servings: 8,
     })
+  })
+
+  test("uses up what needs using first", async () => {
+    await t.admin.post("/api/recipes", {
+      name: "Beef Ragu",
+      tags: ["dinner"],
+      ingredients: ["1 lb ground beef", "1 can tomatoes"],
+    })
+    const beef = (
+      await t.admin.post("/api/pantry", { text: "1 lb ground beef" })
+    ).body.item
+    await t.admin.patch(`/api/pantry/${beef.id}`, {
+      useBy: addDays(toIsoDate(new Date()), 1),
+    })
+    for (let run = 0; run < 5; run++) {
+      const suggestions = await suggestMeals(t.db, householdId, [
+        { date: "2026-11-03", meal: "dinner" },
+        { date: "2026-11-02", meal: "dinner" },
+      ])
+      // The earliest night gets it, whatever the dice say.
+      const ragu = suggestions.find((s) => s.recipe.name === "Beef Ragu")
+      expect(ragu).toMatchObject({ date: "2026-11-02", uses: ["ground beef"] })
+    }
+  })
+
+  test("lets a skipped meal come round again", async () => {
+    const fish = (
+      await t.admin.post("/api/recipes", {
+        name: "Fish Tacos",
+        tags: ["dinner"],
+        ingredients: ["1 lb cod"],
+      })
+    ).body.recipe
+    const others = (await t.admin.get("/api/recipes")).body.recipes
+      .map((r: { id: string }) => r.id)
+      .filter((id: string) => id !== fish.id)
+    const entry = (
+      await t.admin.post("/api/plan/entries", {
+        date: "2026-11-20",
+        meal: "dinner",
+        recipeId: fish.id,
+      })
+    ).body.entry
+    const slot = [{ date: "2026-11-22", meal: "dinner" as const }]
+    expect(
+      await suggestMeals(t.db, householdId, slot, { exclude: others })
+    ).toEqual([])
+    await t.admin.patch(`/api/plan/entries/${entry.id}`, { status: "skipped" })
+    const again = await suggestMeals(t.db, householdId, slot, {
+      exclude: others,
+    })
+    expect(names(again)).toEqual(["Fish Tacos"])
   })
 })

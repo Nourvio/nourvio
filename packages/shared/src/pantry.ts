@@ -79,21 +79,32 @@ export function guessUseBy(
   return addDays(today, days)
 }
 
+/** Sections whose food goes off, so leftovers from a skipped meal need using. */
+const PERISHABLE: StoreSectionId[] = [
+  "produce",
+  "meat-seafood",
+  "dairy-eggs",
+  "deli",
+  "bakery",
+]
+
 export type UseSoonReason =
   | { kind: "past" | "soon"; date: string }
   | { kind: "leftover"; meals: PantryMeal[] }
 
 /**
  * Why an item should be used soon, if it should: its use-by date is close or
- * gone, or the meals it was bought for were skipped or went by uncooked.
+ * gone, or it's fresh food bought for meals that were skipped or went by
+ * uncooked. (Paprika bought for a skipped meal keeps.)
  */
 export function whyUseSoon(
-  item: Pick<PantryItem, "useBy" | "meals">,
+  item: Pick<PantryItem, "useBy" | "meals" | "sectionId">,
   today: string
 ): UseSoonReason | null {
   if (item.useBy && item.useBy <= addDays(today, USE_SOON_DAYS)) {
     return { kind: item.useBy < today ? "past" : "soon", date: item.useBy }
   }
+  if (!PERISHABLE.includes(item.sectionId)) return null
   const missed = item.meals.filter(
     (meal) =>
       meal.status === "skipped" ||

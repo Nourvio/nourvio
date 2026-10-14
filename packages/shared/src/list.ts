@@ -65,6 +65,8 @@ export type AddFromPlanResult = {
   weekly: number
   /** Ingredients left off because they're always on hand. */
   onHand: string[]
+  /** Ingredients left off because they're in the pantry. */
+  inPantry: string[]
 }
 
 export const onHandInput = z.object({

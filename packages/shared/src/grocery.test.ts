@@ -6,6 +6,7 @@ import {
   foodKey,
   formatAmount,
   guessSection,
+  subtractAmounts,
 } from "./grocery.ts"
 
 const line = (text: string, source = "Recipe", factor = 1) => ({
@@ -194,5 +195,43 @@ describe("addAmounts", () => {
       quantity: null,
       unitId: null,
     })
+  })
+})
+
+describe("subtractAmounts", () => {
+  test("takes the same unit, or converts volumes and weights", () => {
+    expect(
+      subtractAmounts(
+        { quantity: 3, unitId: "pound" },
+        { quantity: 1, unitId: "pound" }
+      )
+    ).toEqual({ quantity: 2, unitId: "pound" })
+    expect(
+      subtractAmounts(
+        { quantity: 1, unitId: "cup" },
+        { quantity: 4, unitId: "tablespoon" }
+      )
+    ).toEqual({ quantity: 0.75, unitId: "cup" })
+    expect(
+      subtractAmounts(
+        { quantity: 2, unitId: null },
+        { quantity: 3, unitId: null }
+      )
+    ).toEqual({ quantity: -1, unitId: null })
+  })
+
+  test("can't compare counts in different units, or no amount", () => {
+    expect(
+      subtractAmounts(
+        { quantity: 1, unitId: "can" },
+        { quantity: 1, unitId: "cup" }
+      )
+    ).toBeNull()
+    expect(
+      subtractAmounts(
+        { quantity: null, unitId: null },
+        { quantity: 1, unitId: null }
+      )
+    ).toBeNull()
   })
 })

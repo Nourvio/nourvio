@@ -1,6 +1,7 @@
 import { addDays, toIsoDate, type PantryItem } from "@mise/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 
+import { describePantry } from "../chat/tools.ts"
 import { apiClient, createTestAppWithAdmin } from "../test/helpers.ts"
 
 describe("pantry", () => {
@@ -121,6 +122,99 @@ describe("pantry", () => {
     expect(find(items, "tortillas")).toMatchObject({ amount: "8" })
     expect(find(items, "paper towels")).toBeUndefined()
     expect(find(items, "salt")).toBeUndefined()
+  })
+
+  let curry: { id: string }
+
+  test("leaves what's in the pantry off lists made from the plan", async () => {
+    await t.admin.post("/api/pantry", { text: "rice" })
+    const recipe = (
+      await t.admin.post("/api/recipes", {
+        name: "Chicken Curry",
+        servings: 4,
+        ingredients: [
+          "2 lb boneless chicken thighs",
+          "4 onions",
+          "1 cup rice",
+          "1 lb ground beef",
+        ],
+      })
+    ).body.recipe
+    curry = (
+      await t.admin.post("/api/plan/entries", {
+        date: addDays(today, 3),
+        meal: "dinner",
+        recipeId: recipe.id,
+      })
+    ).body.entry
+
+    const res = await t.admin.post("/api/list/from-plan", {
+      from: today,
+      to: addDays(today, 6),
+    })
+    // 3 lb of thighs covers 2; "have it" rice covers a cup.
+    expect(res.body.inPantry.sort()).toEqual([
+      "boneless chicken thighs",
+      "rice",
+    ])
+    const list = (await t.admin.get("/api/list")).body.items as {
+      name: string
+      amount: string
+    }[]
+    const amount = (name: string) => list.find((i) => i.name === name)?.amount
+    // 3 onions at home, 4 needed.
+    expect(amount("onions")).toBe("1")
+    // The ground beef at home is for Thursday's tacos, so buy more.
+    expect(amount("ground beef")).toBe("1 lb")
+  })
+
+  test("cooking uses it up, and un-cooking puts it back", async () => {
+    const before = await pantry()
+    const tacos = find(before, "ground beef")!.meals[0]!
+    const cooked = await t.admin.patch(`/api/plan/entries/${tacos.id}`, {
+      status: "cooked",
+    })
+    expect(cooked.body.entry.pantryUsed).toEqual(["ground beef", "tortillas"])
+    let items = await pantry()
+    expect(find(items, "ground beef")).toBeUndefined()
+    expect(find(items, "tortillas")).toBeUndefined()
+
+    const curryCooked = await t.admin.patch(`/api/plan/entries/${curry.id}`, {
+      status: "cooked",
+    })
+    expect(curryCooked.body.entry.pantryUsed.sort()).toEqual([
+      "chicken thighs",
+      "onions",
+    ])
+    items = await pantry()
+    expect(find(items, "chicken thighs")!.amount).toBe("1 lb")
+    expect(find(items, "onions")).toBeUndefined()
+    // "Have it" rice doesn't get used up by one meal.
+    expect(find(items, "rice")).toBeDefined()
+
+    const back = await t.admin.patch(`/api/plan/entries/${curry.id}`, {
+      status: "planned",
+    })
+    expect(back.body.entry.pantryUsed).toEqual([])
+    items = await pantry()
+    expect(find(items, "chicken thighs")!.amount).toBe("3 lb")
+    expect(find(items, "onions")).toMatchObject({
+      id: find(before, "onions")!.id,
+      amount: "3",
+    })
+  })
+
+  test("reads to the assistant with what needs using first", async () => {
+    const thighs = find(await pantry(), "chicken thighs")!
+    await t.admin.patch(`/api/pantry/${thighs.id}`, { useBy: today })
+    const text = describePantry(await pantry())
+    expect(
+      text.startsWith(
+        `Needs using soon:\nchicken thighs (3 lb): use by ${today}`
+      )
+    ).toBe(true)
+    expect(text).toContain("Also at home:")
+    expect(text).toContain("rice")
   })
 
   test("is per household", async () => {

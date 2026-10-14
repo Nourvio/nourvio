@@ -77,36 +77,28 @@ mise/
 
 ## Data model
 
-**Food** is the central idea. A food is a shared list entry, like "yellow onion." It links:
-
-- recipe ingredients
-- pantry items
-- shopping list items
-- store products
-- nutrition data
-
-This lets the same onion add up across recipes, get subtracted by the pantry, and map to a Walmart product.
+**Foods are matched by name, not by a table.** The shared package normalizes a food name (`foodKey`: lowercase, sizes and "fresh" dropped, singular), so "2 Large Onions" and "1 onion" are both "onion". The pantry goes a step further (`pantryKey`: prep and quality words like "boneless", "unsalted" and "diced" dropped too). That's what lets the same onion add up across recipes, get subtracted by the pantry, and (later) map to a Walmart product, with nothing for anyone to set up. A `foods` table may come with nutrition or Walmart if name matching isn't enough.
 
 Everything a household owns carries its `household_id`, and every query is scoped by the signed-in person's household. Another household's recipe, photo, suggestion or member is a 404.
 
 | Table | Key columns | Purpose |
 |---|---|---|
-| `households` | name, settings (jsonb: auto-tidy, meals planned, first day of the week, always-on-hand items) | A household shares a library, plan and list (and later a pantry). Deleting one removes everything in it. |
+| `households` | name, settings (jsonb: auto-tidy, meals planned, first day of the week, always-on-hand items) | A household shares a library, plan, list and pantry. Deleting one removes everything in it. |
 | `invites` | household_id, token_hash, role, expires_at, used_at, used_by | Single-use invite links, good for a week. Only a hash of the token is stored, so the link can only be shown when it's made. |
 | `recipes` | id, household_id, slug (unique per household), name, description, image, source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
-| `recipe_ingredients` | recipe_id, position, section, raw_text, quantity, quantity_max, unit_id, food_id, note | `raw_text` is always kept and shown as written. The parsed fields drive scaling, lists and nutrition. |
+| `recipe_ingredients` | recipe_id, position, section, raw_text, quantity, quantity_max, unit_id, food, note | `raw_text` is always kept and shown as written. The parsed fields drive scaling, lists and nutrition. |
 | `recipe_steps` | recipe_id, position, section, text | |
 | `recipe_versions` | recipe_id, snapshot (jsonb), source, created_by, created_at | Every saved change makes a snapshot, so the original import can always be restored. `source` is one of import, manual, ai_cleanup, chat. |
 | `tags`, `recipe_tags` | household_id, name (unique per household, ignoring case) | |
-| `foods` | name, plural, store_section, is_staple, fdc_id, nutrition_per_100g (jsonb), grams_per_unit (jsonb) | `fdc_id` links to USDA data |
+| `foods` | name, fdc_id, nutrition_per_100g (jsonb), grams_per_unit (jsonb) | *Maybe later, with nutrition.* `fdc_id` links to USDA data |
 | `units` | name, abbreviation, aliases, kind (volume/weight/count), to_base | `to_base` converts to ml or g for safe unit conversion. Seeded at startup. |
-| `meal_plan_entries` | household_id, date, meal, position, recipe_id (null for a note), note, servings (null for the recipe's own), status, listed_at | `status` is planned, cooked or skipped. `listed_at` is set once its ingredients are on the list. |
-| `shopping_items` | household_id, key, name, quantity, unit_id, amount_text, section_id, checked, checked_at, source, recipes (jsonb) | One list per household. `key` merges the same food across recipes. `source` is plan, manual or weekly. |
+| `meal_plan_entries` | household_id, date, meal, position, recipe_id (null for a note), note, servings (null for the recipe's own), status, listed_at, pantry_used (jsonb) | `status` is planned, cooked or skipped. `listed_at` is set once its ingredients are on the list. `pantry_used` holds the pantry rows as they were before cooking it, to put back. |
+| `shopping_items` | household_id, key, name, quantity, unit_id, amount_text, section_id, checked, checked_at, source, recipes (jsonb), entries (jsonb) | One list per household. `key` merges the same food across recipes. `source` is plan, manual or weekly. `entries` are the planned meals it's for. |
 | `weekly_items` | household_id, name, amount, section_id | Every-week items, added with each week's plan |
 | `food_sections` | household_id, food, section_id | Remembers where the household moved a food, for next time |
 | `plan_rules` | name, days, meal, tag filters, no_repeat_days, prefer_rating | *Later.* Saved rules for suggestions. |
-| `pantry_items` | food_id, quantity, unit_id, status, bought_at, use_by, reserved_for_entry_id | `status` is have, low or out |
-| `store_products` | store, food_id, product_id, name, size, purchase_unit, last_price, preferred | The ingredient-to-Walmart-product mapping |
+| `pantry_items` | household_id, key, name, quantity, unit_id, amount_text, section_id, use_by, entries (jsonb) | `key` is the pantry match key. `entries` are the planned meals it was bought for. |
+| `store_products` | store, food, product_id, name, size, purchase_unit, last_price, preferred | The ingredient-to-Walmart-product mapping |
 | `proposals` | household_id, kind (cleanup, recipe_edit, new_recipe, plan_meals, list_items), recipe_id (null when there isn't one), payload (jsonb: summary, before/after sections, draft, variant name, meals, items), status, job_id, conversation_id, result_recipe_id | A pending change from the AI, waiting for you to apply or dismiss it (see [AI](#ai)) |
 | `chat_conversations` | household_id, user_id, title, provider, model | Private to the person who started it. Stays on the provider and model it started with, so it can resume exactly. |
 | `chat_messages` | conversation_id, position, role, parts (jsonb: text, tool activity and proposal ids, for display), native (jsonb: the provider's own messages), context_label | One user message, or one whole assistant reply (which can span several model calls and tool uses) |
@@ -119,18 +111,16 @@ Everything a household owns carries its `household_id`, and every query is scope
 ### Postgres features we use
 
 - **`jsonb`** for nutrition, chat messages, version snapshots and proposal payloads.
-- **`pg_trgm`** for fuzzy matching. It matches "yellow onions, diced" to the food "yellow onion," and makes recipe search tolerant of typos.
+- **`pg_trgm`** makes recipe search tolerant of typos.
 - **Full-text search** (`tsvector`) across recipe names, ingredients, tags and steps.
 - **Later:** `pgvector` for meaning-based search ("something cozy with chicken"). That needs the `pgvector/pgvector:pg18` image instead of `postgres:18`, with no other changes.
 
-### How skipped meals work
+### How the pantry follows the plan
 
-*Planned for milestone 4, with the pantry.*
-
-1. Generating a list from the plan records, on each item, which planned meals it's for (`for_entries`).
-2. Checking an item off moves it into the pantry, reserved for those meals.
-3. Marking a meal **cooked** uses up its reserved items.
-4. If a meal is marked **skipped**, or its date passes without being cooked, its reserved items are released as **leftovers to use**. The planner and the assistant favor recipes that use them.
+1. Adding the plan to the list records, on each item, which planned meals it's for (`shopping_items.entries`). Food already in the pantry and not set aside for another upcoming meal is subtracted first.
+2. **Put away** moves checked items into the pantry with those meals (`pantry_items.entries`) and a guessed use-by date for fresh food.
+3. Marking a meal **cooked** subtracts its scaled ingredients from matching pantry rows, the ones bought for it first, and keeps a snapshot in `pantry_used`. Marking it back to planned (or skipped) restores the snapshot.
+4. If a meal is **skipped**, or its date passes uncooked, its fresh food shows as a leftover under **Use soon** (worked out when read, so there's nothing to update). Fill the week gives each Use soon item a recipe first, and the assistant sees them in its context.
 
 ## API
 
@@ -150,9 +140,8 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Chat | `POST /api/chat` (reply streams as server-sent events: conversation, text, tool, proposal, done, error), `GET /api/chat/conversations`, `GET`/`DELETE /api/chat/conversations/:id` |
 | Jobs | `GET /api/jobs/:id` |
 | Plan | `GET /api/plan?from=&to=` (up to 62 days), `POST /api/plan/entries`, `POST /api/plan/entries/batch`, `PATCH`/`DELETE /api/plan/entries/:id` (a new `recipeId` swaps the recipe), `POST /api/plan/suggest` (ideas for empty meals, with `exclude`) |
-| List | `GET /api/list`, `POST /api/list/items`, `PATCH`/`DELETE /api/list/items/:id`, `POST /api/list/clear-checked`, `POST /api/list/from-plan`, `PUT /api/list/on-hand`; every-week items `GET`/`POST /api/list/weekly`, `PATCH`/`DELETE /api/list/weekly/:id`, `POST /api/list/weekly/add-to-list` |
-| Pantry | `GET/POST /api/pantry`, `PUT/DELETE /api/pantry/:id` |
-| Foods / units | `GET/POST /api/foods`, `GET /api/units` |
+| List | `GET /api/list`, `POST /api/list/items`, `PATCH`/`DELETE /api/list/items/:id`, `POST /api/list/clear-checked`, `POST /api/list/put-away`, `POST /api/list/from-plan`, `PUT /api/list/on-hand`; every-week items `GET`/`POST /api/list/weekly`, `PATCH`/`DELETE /api/list/weekly/:id`, `POST /api/list/weekly/add-to-list` |
+| Pantry | `GET`/`POST /api/pantry` (a typed line), `PATCH`/`DELETE /api/pantry/:id`; `POST /api/list/put-away` moves checked list items in |
 | AI settings | `GET /api/ai/status` (everyone); `GET`/`PUT /api/ai/settings`, `POST /api/ai/settings/test`, `GET /api/ai/settings/models`, `GET /api/ai/settings/usage` (server admin) |
 | Store | `GET /api/store/walmart/list` (for the extension), `PUT /api/store/products/:foodId` |
 | Images | `GET /api/images/:file` |
@@ -209,8 +198,8 @@ The AI never writes directly to recipes, the plan, the list or the pantry.
 - **An agent loop on the server** (`apps/server/src/chat/`): each provider's adapter streams one model call and returns any tool calls; the loop runs the tools, feeds the results back, and repeats (up to 8 rounds). Everything streams to the browser as server-sent events, including a tool's activity line as soon as the model starts writing its input.
 - **Native histories:** each conversation keeps the provider's own messages (Claude's thinking blocks and tool calls, OpenAI's encrypted reasoning items), so it continues exactly. A conversation never switches provider.
 - **Claude:** adaptive thinking (not shown, but passed back between turns), medium effort, and the conversation prefix cached with `cache_control`. **OpenAI:** stateless Responses API (`store: false`) with encrypted reasoning passed back.
-- **Context goes with each message:** the recipe on screen and the scale it's shown at, or the week of the plan being viewed with what's planned, prepended in a `<context>` block. The person can drop it with one tap. *Later:* a pantry summary.
-- **Read tools:** `search_recipes`, `get_recipe`, `list_tags`, `get_meal_plan`, `get_shopping_list`. *Later:* `get_pantry`.
+- **Context goes with each message:** the recipe on screen and the scale it's shown at, or the week of the plan being viewed with what's planned and what in the pantry needs using soon, prepended in a `<context>` block. The person can drop it with one tap.
+- **Read tools:** `search_recipes`, `get_recipe`, `list_tags`, `get_meal_plan`, `get_shopping_list`, `get_pantry`.
 - **Proposal tools** (each makes a card with buttons, nothing is saved until tapped):
   - `propose_new_recipe`: a recipe from the conversation
   - `propose_recipe_edit`: substitutions, scaling, notes; with a `variantName`, it can be saved as a new recipe instead of changing the original
@@ -232,7 +221,6 @@ Imported recipes are often messy: odd formatting, run-on steps, "Enjoy!", no tag
 | Tags | Suggested from our existing tags first (to avoid near-duplicates like "weeknight" and "weeknights"), new tags only when nothing fits |
 | Description | A one- or two-sentence summary, if missing |
 | Missing details | Servings and times filled in when they can be worked out. Values already set are never changed. |
-| Foods | *Later, with the foods list (milestone 3).* Ingredients matched to foods, to help lists, the pantry and nutrition |
 
 **When it runs:**
 - **On demand:** a **Tidy up** button on any recipe, with checkboxes for the options above. You can also ask in chat.
@@ -250,7 +238,7 @@ The original is always kept. Every applied cleanup adds a version, and the first
 ### Other AI jobs
 
 - **Structured extraction (import):** turns a web page without recipe data, pasted text, or photos into a recipe draft. The draft's ingredient lines and steps go through the same parser as everything else.
-- **Week suggestions:** today, Fill the week is rules only (no AI), and the assistant can plan meals in chat. *Later:* the rules pick candidates and the AI ranks them, weighing the pantry, leftovers, use-by dates and preferences.
+- **Week suggestions:** today, Fill the week is rules only (no AI, though it does use up the pantry's Use soon items first), and the assistant can plan meals in chat. *Later:* the rules pick candidates and the AI ranks them, weighing preferences too.
 - **Shopping translation:** turns combined recipe amounts into product quantities, using our saved Walmart products.
 - **Nutrition fallback:** an estimate when USDA matching fails, always labeled as an estimate.
 
@@ -271,7 +259,7 @@ The parser lives in the shared package, so the server and browser use the same c
 
 - It handles fractions, unicode fractions (½), ranges (2–3), and sizes in parentheses (`1 (14.5 oz) can`).
 - The original text is always kept. Display shows the line as written, swapping in the scaled quantity when you change servings.
-- When a food or unit isn't recognized, the line still saves. It just won't combine on lists until it's matched. The UI lets you match it once, or AI cleanup can match it.
+- When a food or unit isn't recognized, the line still saves. It just won't combine with other lines on lists or match the pantry.
 
 ## Auth
 
@@ -301,7 +289,7 @@ The parser lives in the shared package, so the server and browser use the same c
 | Review | A queue of AI proposals waiting for you, such as bulk cleanup results |
 | Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, and Add to list |
 | List | Shopping list grouped by section, with every-week items, always-on-hand items and (later) Send to Walmart |
-| Pantry | On hand, use soon, leftovers to use, staples |
+| Pantry | Use soon (near use-by dates, and fresh leftovers from skipped meals), everything else by aisle, and always-on-hand items |
 | Chat | Available on every screen (see below) |
 | Settings | Your account and appearance; your household (members, invites, rename, tidying up, which meals to plan and the first day of the week); for the server admin, the server (sign-up, households), AI (keys, models, usage by household) and the Mealie import; later the API token and plan rules |
 

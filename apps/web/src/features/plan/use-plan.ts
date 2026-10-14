@@ -43,7 +43,11 @@ export function useUpdatePlanEntry() {
           body: input,
         })
       ).entry,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: PLAN_KEY }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: PLAN_KEY })
+      // Cooking a meal (or taking it back) changes the pantry.
+      queryClient.invalidateQueries({ queryKey: ["pantry"] })
+    },
   })
 }
 

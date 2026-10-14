@@ -139,10 +139,18 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
   const cooked = entry.status === "cooked"
 
   function setStatus(status: PlanEntry["status"], message: string) {
+    const names = (list: string[]) => list.join(", ").toLowerCase()
     update.mutate(
       { id: entry.id, status },
       {
-        onSuccess: () => toast.success(message),
+        onSuccess: (updated) =>
+          toast.success(message, {
+            description: updated.pantryUsed.length
+              ? `Took ${names(updated.pantryUsed)} out of the pantry.`
+              : entry.pantryUsed.length
+                ? `Put ${names(entry.pantryUsed)} back in the pantry.`
+                : undefined,
+          }),
         onError: (error) =>
           toast.error(
             error instanceof ApiError ? error.message : "Couldn't save that"

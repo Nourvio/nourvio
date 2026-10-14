@@ -77,9 +77,15 @@ function AddFromPlan({
               ? `Added ${parts.join(" and ")}`
               : "Nothing new to add",
             {
-              description: result.onHand.length
-                ? `Left out ${result.onHand.join(", ").toLowerCase()}: always on hand.`
-                : undefined,
+              description:
+                [
+                  result.inPantry.length &&
+                    `Already in the pantry: ${result.inPantry.join(", ").toLowerCase()}.`,
+                  result.onHand.length &&
+                    `Left out ${result.onHand.join(", ").toLowerCase()}: always on hand.`,
+                ]
+                  .filter(Boolean)
+                  .join(" ") || undefined,
             }
           )
           onDone()

@@ -386,6 +386,8 @@ export const mealPlanEntries = pgTable(
     status: text().$type<PlanStatus>().notNull().default("planned"),
     /** When its ingredients went on the shopping list, so they're only added once. */
     listedAt: timestamp({ withTimezone: true }),
+    /** Pantry rows as they were before cooking it used them, to put back. */
+    pantryUsed: jsonb().$type<PantrySnapshot[]>(),
     createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -465,6 +467,20 @@ export const foodSections = pgTable(
 )
 
 // ---- Pantry ----
+
+/** A pantry row before cooking a meal changed it, and whether it was removed. */
+export type PantrySnapshot = {
+  id: string
+  key: string
+  name: string
+  quantity: number | null
+  unitId: string | null
+  amountText: string | null
+  sectionId: StoreSectionId
+  useBy: string | null
+  entries: string[]
+  removed: boolean
+}
 
 /** What the household has at home. Amounts are optional and can be rough. */
 export const pantryItems = pgTable(

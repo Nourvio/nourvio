@@ -26,7 +26,7 @@ import {
 } from "./use-plan"
 
 type Slot = { date: string; meal: Meal }
-type SuggestedRecipe = MealSuggestion["recipe"]
+type Idea = Pick<MealSuggestion, "recipe" | "uses">
 
 const slotKey = (slot: Slot) => `${slot.date}:${slot.meal}`
 
@@ -83,9 +83,7 @@ function FillWeek({
     meals.includes("dinner") ? ["dinner"] : meals
   )
   /** Re-rolled ideas, and ideas left out (null), by slot. */
-  const [changes, setChanges] = React.useState<
-    Record<string, SuggestedRecipe | null>
-  >({})
+  const [changes, setChanges] = React.useState<Record<string, Idea | null>>({})
   /** Ideas already passed over, so a re-roll doesn't bring them back. */
   const [passed, setPassed] = React.useState<string[]>([])
   const [rolling, setRolling] = React.useState<string | null>(null)
@@ -104,12 +102,12 @@ function FillWeek({
   const suggestions = useMealSuggestions(slots)
 
   const fromServer = new Map(
-    (suggestions.data ?? []).map((s) => [slotKey(s), s.recipe])
+    (suggestions.data ?? []).map((s) => [slotKey(s), s])
   )
   const rows = slots.flatMap((slot) => {
     const key = slotKey(slot)
-    const recipe = key in changes ? changes[key] : fromServer.get(key)
-    return recipe ? [{ ...slot, key, recipe }] : []
+    const idea = key in changes ? changes[key] : fromServer.get(key)
+    return idea ? [{ ...slot, key, recipe: idea.recipe, uses: idea.uses }] : []
   })
   const unfilled = slots.filter((slot) => {
     const key = slotKey(slot)
@@ -132,7 +130,7 @@ function FillWeek({
             return
           }
           setPassed((ids) => [...ids, row.recipe.id])
-          setChanges((current) => ({ ...current, [row.key]: next.recipe }))
+          setChanges((current) => ({ ...current, [row.key]: next }))
         },
         onError: () => toast.error("Couldn't get another idea"),
         onSettled: () => setRolling(null),
@@ -229,7 +227,11 @@ function FillWeek({
                   {dayName(row.date)} · {MEAL_NAMES[row.meal]}
                 </span>
                 <span className="truncate font-medium">{row.recipe.name}</span>
-                {row.recipe.totalMinutes ? (
+                {row.uses.length > 0 ? (
+                  <span className="truncate text-xs font-medium text-amber-700 dark:text-amber-400">
+                    Uses up your {row.uses.join(", ").toLowerCase()}
+                  </span>
+                ) : row.recipe.totalMinutes ? (
                   <span className="text-xs text-muted-foreground">
                     {formatMinutes(row.recipe.totalMinutes)}
                   </span>

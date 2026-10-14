@@ -95,12 +95,14 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 ## Milestone 4: Pantry
 
-- Food matching: fuzzy suggestions with `pg_trgm`, a UI for confirming once, and AI matching during cleanup
-- Pantry with amounts, staples, and the low/out flags
-- Checked list items flow into the pantry, reserved for their meals
-- Cooking a meal uses up its ingredients. Skipping releases them as leftovers to use.
-- Use-by dates and the "use soon" list
-- Lists subtract the pantry, and suggestions favor leftovers and food that needs using soon
+**Status:** built. Tested in the browser: adding a week to the list left off what was in the pantry, Put away filled the pantry, skipping a dinner put its fresh groceries under Use soon, and next week's Fill the week led with a recipe that "uses up your lemon".
+
+- Pantry by aisle with rough amounts, use-by guesses for fresh food, and a "Use soon" list
+- Put away on the List moves bought items into the pantry, remembering their meals
+- Cooking a meal uses up its ingredients, and un-cooking puts them back. Skipped meals' fresh groceries show as leftovers to use.
+- Lists subtract the pantry; Fill the week uses up what needs using first; the assistant reads the pantry
+- Always-on-hand items go on the list from the Pantry page when they run low
+- *Changed:* no foods table or "confirm this match" screen. Matching uses normalized food names (prep and quality words dropped), which needs no setup. A foods table can still come with nutrition if it earns its keep.
 
 **Done when:** skipping Tuesday's meal makes next week's suggestions use its ingredients, and the list doesn't include what's already in the pantry.
 
