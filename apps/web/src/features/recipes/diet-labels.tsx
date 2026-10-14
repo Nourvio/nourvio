@@ -26,12 +26,16 @@ import { useSetDiets } from "./use-recipes"
 /** The recipe's diet labels, each a link to recipes like it, and a way to correct them. */
 export function DietBadges({
   recipe,
+  diets = recipe.diets,
   onEdit,
 }: {
   recipe: Recipe
+  /** Labels for the recipe with something it goes with, which can't be corrected here. */
+  diets?: Diet[]
   onEdit: () => void
 }) {
-  if (!recipe.diets.length) return null
+  const own = diets === recipe.diets
+  if (!diets.length) return null
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <HugeiconsIcon
@@ -40,19 +44,21 @@ export function DietBadges({
         className="size-4 text-primary"
         aria-hidden
       />
-      {recipe.diets.map((diet) => (
+      {diets.map((diet) => (
         <Badge key={diet} variant="outline" asChild>
           <Link to={`/recipes?diet=${diet}`}>{DIET_NAMES[diet]}</Link>
         </Badge>
       ))}
-      <Button
-        variant="link"
-        size="sm"
-        className="h-auto px-1 text-xs text-muted-foreground"
-        onClick={onEdit}
-      >
-        Not right?
-      </Button>
+      {own && (
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto px-1 text-xs text-muted-foreground"
+          onClick={onEdit}
+        >
+          Not right?
+        </Button>
+      )}
     </div>
   )
 }

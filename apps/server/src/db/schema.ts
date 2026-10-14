@@ -283,6 +283,39 @@ export const recipeTags = pgTable(
   (t) => [primaryKey({ columns: [t.recipeId, t.tagId] }), index().on(t.tagId)]
 )
 
+/**
+ * What a recipe goes with: a particular recipe ("Teriyaki Sauce" with
+ * "Chicken + Rice"), or every recipe with a tag ("any pasta sauce").
+ */
+export const recipePairings = pgTable(
+  "recipe_pairings",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    recipeId: uuid()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    pairedRecipeId: uuid().references(() => recipes.id, {
+      onDelete: "cascade",
+    }),
+    /** A tag name, matched ignoring case, when it isn't one recipe. */
+    tag: text(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index().on(t.recipeId),
+    index().on(t.pairedRecipeId),
+    uniqueIndex("recipe_pairings_recipe_unique")
+      .on(t.recipeId, t.pairedRecipeId)
+      .where(sql`${t.pairedRecipeId} is not null`),
+    uniqueIndex("recipe_pairings_tag_unique")
+      .on(t.recipeId, sql`lower(${t.tag})`)
+      .where(sql`${t.tag} is not null`),
+  ]
+)
+
 /** Every saved state of a recipe, so any change (including an AI cleanup) can be undone. */
 export const recipeVersions = pgTable(
   "recipe_versions",

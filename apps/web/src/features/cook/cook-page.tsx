@@ -6,7 +6,7 @@ import {
   Cancel01Icon,
   Timer02Icon,
 } from "@hugeicons/core-free-icons"
-import type { Recipe } from "@mise/shared"
+import { pairRecipes, type Recipe } from "@mise/shared"
 import { Link, useNavigate, useParams, useSearchParams } from "react-router"
 import { toast } from "sonner"
 
@@ -65,15 +65,21 @@ function CookView({ recipe }: { recipe: Recipe }) {
     scale: factor,
   })
 
-  const steps = recipe.steps
+  // Cooking it with something it goes with: both, the pairing first.
+  const withSlug = params.get("with")
+  const paired = useRecipe(withSlug ?? "", { enabled: Boolean(withSlug) })
+  const combined =
+    paired.data && paired.data.id !== recipe.id
+      ? pairRecipes(recipe, paired.data, factor)
+      : null
+  const allIngredients = combined?.ingredients ?? recipe.ingredients
+  const steps = combined?.steps ?? recipe.steps
   const step = steps[index]
   const isLast = index >= steps.length - 1
   const highlighted = React.useMemo(
     () =>
-      step
-        ? ingredientsInStep(step.text, recipe.ingredients)
-        : new Set<string>(),
-    [step, recipe.ingredients]
+      step ? ingredientsInStep(step.text, allIngredients) : new Set<string>(),
+    [step, allIngredients]
   )
 
   const go = React.useCallback(
@@ -116,7 +122,10 @@ function CookView({ recipe }: { recipe: Recipe }) {
 
   const ingredients = (
     <IngredientList
-      ingredients={recipe.ingredients}
+      ingredients={allIngredients}
+      factorOf={
+        combined ? (id) => combined.factors.get(id) ?? factor : undefined
+      }
       factor={factor}
       checked={checked}
       onToggle={toggle}
@@ -141,7 +150,7 @@ function CookView({ recipe }: { recipe: Recipe }) {
         </Button>
         <div className="min-w-0 flex-1">
           <p className="truncate font-heading text-lg font-semibold">
-            {recipe.name}
+            {combined?.name ?? recipe.name}
           </p>
           <p className="text-sm text-muted-foreground">
             {steps.length ? `Step ${index + 1} of ${steps.length}` : "No steps"}
@@ -179,7 +188,7 @@ function CookView({ recipe }: { recipe: Recipe }) {
         <Card className="hidden h-fit md:flex">
           <CardHeader className="grid gap-3">
             <CardTitle className="text-lg font-semibold">Ingredients</CardTitle>
-            <UnitToggle ingredients={recipe.ingredients} />
+            <UnitToggle ingredients={allIngredients} />
           </CardHeader>
           <CardContent>{ingredients}</CardContent>
         </Card>
@@ -272,7 +281,7 @@ function CookView({ recipe }: { recipe: Recipe }) {
           <DrawerContent className="max-h-[80svh]">
             <DrawerHeader className="flex flex-row items-center justify-between gap-3">
               <DrawerTitle>Ingredients</DrawerTitle>
-              <UnitToggle ingredients={recipe.ingredients} />
+              <UnitToggle ingredients={allIngredients} />
             </DrawerHeader>
             <div className="overflow-y-auto px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
               {ingredients}

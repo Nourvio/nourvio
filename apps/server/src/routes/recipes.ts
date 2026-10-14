@@ -1,4 +1,5 @@
 import {
+  addPairingsInput,
   cleanupInput,
   isoDate,
   rateInput,
@@ -20,6 +21,11 @@ import {
 } from "../context.ts"
 import { HttpError, readBody } from "../http.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
+import {
+  addPairings,
+  getPairings,
+  removePairing,
+} from "../services/pairings.ts"
 import { markPlannedCooked } from "../services/plan.ts"
 import { pendingCleanupFor } from "../services/proposals.ts"
 import { deleteImage, saveImage } from "../services/images.ts"
@@ -108,6 +114,29 @@ export function recipesRoutes(
     nutrition.afterSave(actorOf(c), recipe, previous)
     return c.json({ recipe })
   })
+
+  /** What the recipe goes with: picked recipes, or every recipe with a tag. */
+  app.get("/:id/pairings", async (c) =>
+    c.json(await getPairings(db, currentHousehold(c), c.req.param("id")))
+  )
+
+  app.post("/:id/pairings", async (c) => {
+    const input = await readBody(c, addPairingsInput)
+    return c.json(
+      await addPairings(db, currentHousehold(c), c.req.param("id"), input)
+    )
+  })
+
+  app.delete("/:id/pairings/:pairingId", async (c) =>
+    c.json(
+      await removePairing(
+        db,
+        currentHousehold(c),
+        c.req.param("id"),
+        c.req.param("pairingId")
+      )
+    )
+  )
 
   /** Corrections to the diet labels the ingredients suggest. */
   app.put("/:id/diets", async (c) => {

@@ -1,8 +1,10 @@
 import { toIsoDate } from "@mise/shared"
 import type {
+  AddPairingsInput,
   DietOverrides,
   Recipe,
   RecipeInput,
+  RecipePairings,
   RecipeSummary,
   RecipeVersion,
   Tag,
@@ -72,11 +74,43 @@ export function useDeleteTag() {
   })
 }
 
-export function useRecipe(idOrSlug: string) {
+export function useRecipe(idOrSlug: string, { enabled = true } = {}) {
   return useQuery({
     queryKey: recipeKey(idOrSlug),
     queryFn: async () =>
       (await api<{ recipe: Recipe }>(`/recipes/${idOrSlug}`)).recipe,
+    enabled: enabled && Boolean(idOrSlug),
+  })
+}
+
+const PAIRINGS_KEY = ["pairings"] as const
+
+/** What a recipe goes with, and what it's offered with. */
+export function usePairings(id: string) {
+  return useQuery({
+    queryKey: [...PAIRINGS_KEY, id],
+    queryFn: () => api<RecipePairings>(`/recipes/${id}/pairings`),
+  })
+}
+
+export function useAddPairings(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: AddPairingsInput) =>
+      api<RecipePairings>(`/recipes/${id}/pairings`, { body: input }),
+    // Other recipes' "pairs with" change too.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PAIRINGS_KEY }),
+  })
+}
+
+export function useRemovePairing(id: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (pairingId: string) =>
+      api<RecipePairings>(`/recipes/${id}/pairings/${pairingId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PAIRINGS_KEY }),
   })
 }
 

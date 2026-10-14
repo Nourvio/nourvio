@@ -46,6 +46,7 @@ export function IngredientText({
 export function IngredientList({
   ingredients,
   factor,
+  factorOf,
   checked,
   onToggle,
   highlighted,
@@ -54,6 +55,8 @@ export function IngredientList({
 }: {
   ingredients: RecipeIngredient[]
   factor: number
+  /** A different scale for some lines, like a sauce paired with this recipe. */
+  factorOf?: (id: string) => number
   checked: Set<string>
   onToggle: (id: string) => void
   highlighted?: Set<string>
@@ -105,7 +108,7 @@ export function IngredientList({
                     <span>
                       <IngredientText
                         text={ingredient.text}
-                        factor={factor}
+                        factor={factorOf?.(ingredient.id) ?? factor}
                         unitGrams={grams ? ingredient.unitGrams : null}
                       />
                     </span>

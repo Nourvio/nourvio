@@ -13,8 +13,8 @@ import {
   SparklesIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
-import type { Nutrition, Recipe } from "@mise/shared"
-import { Link, useNavigate, useParams } from "react-router"
+import { pairRecipes, type Nutrition, type Recipe } from "@mise/shared"
+import { Link, useNavigate, useParams, useSearchParams } from "react-router"
 import { toast } from "sonner"
 
 import {
@@ -53,6 +53,7 @@ import { ApiError } from "@/lib/api"
 
 import { DietBadges, DietDialog } from "./diet-labels"
 import { formatMinutes, formatRelativeDate } from "./format"
+import { GoesWith } from "./goes-with"
 import { groupBySection, IngredientList } from "./ingredient-list"
 import { RatingStars } from "./rating-stars"
 import { RecipeImage } from "./recipe-image"
@@ -88,6 +89,28 @@ export function RecipePage() {
 
 function RecipeView({ recipe }: { recipe: Recipe }) {
   const [factor, setFactor] = React.useState(1)
+  // "?with=teriyaki-sauce" shows it with something it goes with.
+  const [params, setParams] = useSearchParams()
+  const withSlug = params.get("with")
+  const paired = useRecipe(withSlug ?? "", { enabled: Boolean(withSlug) })
+  const combined =
+    withSlug && paired.data && paired.data.id !== recipe.id
+      ? pairRecipes(recipe, paired.data, factor)
+      : null
+  const ingredients = combined?.ingredients ?? recipe.ingredients
+  const steps = combined?.steps ?? recipe.steps
+
+  function showWith(slug: string | null) {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        if (slug) next.set("with", slug)
+        else next.delete("with")
+        return next
+      },
+      { replace: true }
+    )
+  }
   useChatScreen({
     kind: "recipe",
     recipeId: recipe.id,
@@ -115,7 +138,10 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
     ["Total", formatMinutes(recipe.totalMinutes)],
   ].filter((entry): entry is [string, string] => Boolean(entry[1]))
 
-  const cookLink = `/recipes/${recipe.slug}/cook${factor === 1 ? "" : `?scale=${factor}`}`
+  const cookParams = new URLSearchParams()
+  if (factor !== 1) cookParams.set("scale", String(factor))
+  if (combined && paired.data) cookParams.set("with", paired.data.slug)
+  const cookLink = `/recipes/${recipe.slug}/cook${cookParams.size ? `?${cookParams}` : ""}`
 
   return (
     <article className="grid gap-8 pt-2 pb-6">
@@ -209,7 +235,17 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               ))}
             </div>
           )}
-          <DietBadges recipe={recipe} onEdit={() => setEditingDiets(true)} />
+          <DietBadges
+            recipe={recipe}
+            diets={combined?.diets}
+            onEdit={() => setEditingDiets(true)}
+          />
+          <GoesWith
+            recipe={recipe}
+            selected={withSlug}
+            paired={combined ? paired.data : undefined}
+            onSelect={showWith}
+          />
           <DietDialog
             recipe={recipe}
             open={editingDiets}
@@ -272,12 +308,17 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               factor={factor}
               onChange={setFactor}
             />
-            <UnitToggle ingredients={recipe.ingredients} className="w-full" />
+            <UnitToggle ingredients={ingredients} className="w-full" />
           </CardHeader>
           <CardContent>
             <IngredientList
-              ingredients={recipe.ingredients}
+              ingredients={ingredients}
               factor={factor}
+              factorOf={
+                combined
+                  ? (id) => combined.factors.get(id) ?? factor
+                  : undefined
+              }
               checked={checked}
               onToggle={toggle}
             />
@@ -287,10 +328,10 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
         <div className="grid content-start gap-8">
           <section className="grid gap-4">
             <h2 className="text-2xl font-semibold">Steps</h2>
-            {recipe.steps.length === 0 ? (
+            {steps.length === 0 ? (
               <p className="text-muted-foreground">No steps yet.</p>
             ) : (
-              groupBySection(recipe.steps).map((group, groupIndex) => (
+              groupBySection(steps).map((group, groupIndex) => (
                 <div
                   key={`${group.section}-${groupIndex}`}
                   className="grid gap-4"
@@ -300,7 +341,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                   )}
                   <ol className="grid gap-5">
                     {group.items.map((step) => {
-                      const number = recipe.steps.indexOf(step) + 1
+                      const number = steps.indexOf(step) + 1
                       return (
                         <li key={step.id} className="flex gap-4">
                           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
@@ -327,7 +368,14 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             </section>
           )}
 
-          <NutritionPanel recipe={recipe} />
+          <NutritionPanel
+            recipe={recipe}
+            combined={
+              combined && paired.data
+                ? { nutrition: combined.nutrition, name: paired.data.name }
+                : undefined
+            }
+          />
 
           {recipe.sourceUrl && (
             <a
@@ -491,9 +539,31 @@ const NUTRITION_SOURCE: Record<Nutrition["source"], string> = {
  * Per-serving nutrition and where it's from. Without any, a button works it
  * out (when the server has a USDA or AI key).
  */
-function NutritionPanel({ recipe }: { recipe: Recipe }) {
+function NutritionPanel({
+  recipe,
+  combined,
+}: {
+  recipe: Recipe
+  /** Shown with something it goes with: the two added up, or nothing. */
+  combined?: { nutrition: Nutrition | null; name: string }
+}) {
   const ai = useAiStatus()
   const workOut = useWorkOutNutrition(recipe.id)
+  if (combined) {
+    return combined.nutrition ? (
+      <NutritionNumbers
+        nutrition={combined.nutrition}
+        note={`With ${combined.name}, per serving`}
+      />
+    ) : (
+      <section className="grid gap-2">
+        <h2 className="text-xl font-semibold">Nutrition</h2>
+        <p className="text-sm text-muted-foreground">
+          Both recipes need nutrition and servings to add them up.
+        </p>
+      </section>
+    )
+  }
   const { nutrition } = recipe
   const can = Boolean(ai.data?.usda || ai.data?.available)
   const rows = NUTRIENTS.filter(([key]) => nutrition && nutrition[key] !== null)
@@ -541,24 +611,10 @@ function NutritionPanel({ recipe }: { recipe: Recipe }) {
 
   const notCounted = nutrition.notCounted ?? []
   return (
-    <section className="grid gap-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-xl font-semibold">Nutrition</h2>
-        <span className="text-xs text-muted-foreground">
-          Per serving · {NUTRITION_SOURCE[nutrition.source]}
-        </span>
-      </div>
-      <dl className="grid grid-cols-3 gap-3 sm:grid-cols-4">
-        {rows.map(([key, label, unit]) => (
-          <div key={key} className="rounded-2xl bg-muted p-3">
-            <dt className="text-xs text-muted-foreground">{label}</dt>
-            <dd className="text-lg font-semibold">
-              {Math.round(nutrition[key] as number)}
-              {unit && <span className="text-sm font-normal"> {unit}</span>}
-            </dd>
-          </div>
-        ))}
-      </dl>
+    <NutritionNumbers
+      nutrition={nutrition}
+      note={`Per serving · ${NUTRITION_SOURCE[nutrition.source]}`}
+    >
       {(notCounted.length > 0 || (nutrition.source !== "site" && can)) && (
         <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
           {notCounted.length > 0 ? (
@@ -578,6 +634,39 @@ function NutritionPanel({ recipe }: { recipe: Recipe }) {
           )}
         </div>
       )}
+    </NutritionNumbers>
+  )
+}
+
+/** The per-serving numbers, with a note on where they're from. */
+function NutritionNumbers({
+  nutrition,
+  note,
+  children,
+}: {
+  nutrition: Nutrition
+  note: string
+  children?: React.ReactNode
+}) {
+  const rows = NUTRIENTS.filter(([key]) => nutrition[key] !== null)
+  return (
+    <section className="grid gap-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="text-xl font-semibold">Nutrition</h2>
+        <span className="text-xs text-muted-foreground">{note}</span>
+      </div>
+      <dl className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+        {rows.map(([key, label, unit]) => (
+          <div key={key} className="rounded-2xl bg-muted p-3">
+            <dt className="text-xs text-muted-foreground">{label}</dt>
+            <dd className="text-lg font-semibold">
+              {Math.round(nutrition[key] as number)}
+              {unit && <span className="text-sm font-normal"> {unit}</span>}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      {children}
     </section>
   )
 }
