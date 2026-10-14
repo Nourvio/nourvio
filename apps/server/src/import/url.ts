@@ -5,7 +5,7 @@ import type { Db } from "../db/client.ts"
 import { HttpError } from "../http.ts"
 import { createRecipe } from "../services/recipes.ts"
 import { extractRecipe, pageText } from "./ai-extract.ts"
-import { extractRecipeFromHtml } from "./jsonld.ts"
+import { extractRecipeFromHtml, shareImages } from "./jsonld.ts"
 import {
   downloadImage,
   findBySourceUrl,
@@ -67,7 +67,9 @@ export async function importFromUrl(
     extractRecipeFromHtml(html, finalUrl) ??
     (await readWithAi(html, finalUrl, options))
 
-  const image = await downloadImage(extracted.imageUrl, options.fetcher)
+  const image = await downloadImage(extracted.imageUrls, options.fetcher, {
+    referer: finalUrl,
+  })
   const recipe = await createRecipe(db, options.householdId, extracted.input, {
     origin: "url",
     userId: options.userId,
@@ -88,18 +90,12 @@ async function readWithAi(
       "That page doesn't include recipe data Mise can read. With an AI key set up in Settings, Mise can read pages like this; for now, try pasting the recipe text."
     )
   }
-  const { text, image } = pageText(html)
+  const { text } = pageText(html)
   const input = await extractRecipe(
     options.ai,
     { userId: options.userId, householdId: options.householdId },
     [{ type: "text", text: `Web page: ${pageUrl}\n\n${text}` }],
     pageUrl
   )
-  let imageUrl: string | null = null
-  try {
-    imageUrl = image ? new URL(image, pageUrl).toString() : null
-  } catch {
-    // A broken og:image isn't worth failing over.
-  }
-  return { input, imageUrl }
+  return { input, imageUrls: shareImages(html, pageUrl) }
 }

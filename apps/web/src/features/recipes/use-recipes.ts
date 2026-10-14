@@ -231,8 +231,21 @@ export function useRecipePhoto(id: string) {
       ).recipe,
     onSuccess: saved,
   })
-  return { upload, remove }
+  const generate = useMutation({
+    mutationKey: photoMutationKey(id),
+    mutationFn: async () =>
+      (
+        await api<{ recipe: Recipe }>(`/recipes/${id}/photo`, {
+          method: "POST",
+        })
+      ).recipe,
+    onSuccess: saved,
+  })
+  return { upload, remove, generate }
 }
+
+/** For telling, anywhere on the page, that a photo is being made. */
+export const photoMutationKey = (id: string) => ["recipe-photo", id] as const
 
 export function useDeleteRecipe() {
   const queryClient = useQueryClient()

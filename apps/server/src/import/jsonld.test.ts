@@ -64,6 +64,86 @@ const WPRM = {
   ],
 }
 
+describe("recipe photos", () => {
+  const recipe = {
+    "@type": "Recipe",
+    name: "Soup",
+    recipeIngredient: ["1 onion"],
+  }
+
+  test("follows a reference to the page's ImageObject", () => {
+    const result = extractRecipeFromHtml(
+      page({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "ImageObject",
+            "@id": "https://blog.example/soup/#primaryimage",
+            url: "https://blog.example/uploads/soup.jpg",
+            width: 1200,
+            height: 800,
+          },
+          {
+            ...recipe,
+            image: { "@id": "https://blog.example/soup/#primaryimage" },
+          },
+        ],
+      }),
+      "https://blog.example/soup/"
+    )!
+    expect(result.imageUrls).toEqual(["https://blog.example/uploads/soup.jpg"])
+  })
+
+  test("tries big ones first, then unknown sizes, then small ones", () => {
+    const result = extractRecipeFromHtml(
+      page({
+        ...recipe,
+        image: [
+          "https://blog.example/uploads/soup-150x150.jpg",
+          "https://blog.example/uploads/soup-500x500.jpg",
+          "https://blog.example/uploads/soup-1200x800.jpg",
+          "https://blog.example/uploads/soup.jpg",
+        ],
+      }),
+      "https://blog.example/soup/"
+    )!
+    expect(result.imageUrls).toEqual([
+      "https://blog.example/uploads/soup-1200x800.jpg",
+      "https://blog.example/uploads/soup.jpg",
+      "https://blog.example/uploads/soup-500x500.jpg",
+      "https://blog.example/uploads/soup-150x150.jpg",
+    ])
+  })
+
+  test("reads sizes from resize links", () => {
+    const result = extractRecipeFromHtml(
+      page({
+        ...recipe,
+        image: [
+          "https://blog.example/tachyon/soup.jpg?fit=225%2C225",
+          "https://blog.example/tachyon/soup.jpg?resize=1200%2C900",
+        ],
+      }),
+      "https://blog.example/soup/"
+    )!
+    // The small copy's original goes before the small copy.
+    expect(result.imageUrls).toEqual([
+      "https://blog.example/tachyon/soup.jpg?resize=1200%2C900",
+      "https://blog.example/tachyon/soup.jpg",
+      "https://blog.example/tachyon/soup.jpg?fit=225%2C225",
+    ])
+  })
+
+  test("falls back to the page's share image", () => {
+    const html = page(recipe).replace(
+      "<head>",
+      '<head><meta property="og:image" content="/share/soup.jpg">'
+    )
+    const result = extractRecipeFromHtml(html, "https://blog.example/soup/")!
+    expect(result.imageUrls).toEqual(["https://blog.example/share/soup.jpg"])
+  })
+})
+
 describe("extractRecipeFromHtml", () => {
   test("reads a recipe out of an @graph with sections and nutrition", () => {
     const result = extractRecipeFromHtml(
@@ -71,7 +151,7 @@ describe("extractRecipeFromHtml", () => {
       "https://blog.example/chicken-rice/"
     )
     expect(result).not.toBeNull()
-    const { input, imageUrl } = result!
+    const { input, imageUrls } = result!
     expect(input.name).toBe("Mom's Chicken & Rice")
     expect(input.description).toBe("Cozy, one-pan dinner.")
     expect(input.servings).toBe(4)
@@ -106,7 +186,9 @@ describe("extractRecipeFromHtml", () => {
       source: "site",
     })
     expect(input.sourceUrl).toBe("https://blog.example/chicken-rice/")
-    expect(imageUrl).toBe("https://blog.example/wp-content/uploads/chicken.jpg")
+    expect(imageUrls).toEqual([
+      "https://blog.example/wp-content/uploads/chicken.jpg",
+    ])
   })
 
   test("handles plain string instructions and a yield with a unit", () => {
@@ -132,7 +214,7 @@ describe("extractRecipeFromHtml", () => {
       "Scoop onto a sheet.",
       "Bake.",
     ])
-    expect(result.imageUrl).toBe("https://cdn.example/cookies.jpg")
+    expect(result.imageUrls).toEqual(["https://cdn.example/cookies.jpg"])
   })
 
   test("skips other JSON-LD blocks and tolerates trailing commas", () => {

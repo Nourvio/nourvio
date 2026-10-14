@@ -131,6 +131,8 @@ export type Recipe = RecipeSummary & {
   nutrition: Nutrition | null
   /** The household's corrections to the diet labels. */
   dietOverrides: DietOverrides
+  /** The photo was made by AI, not taken. */
+  photoByAi: boolean
   ingredients: RecipeIngredient[]
   steps: RecipeStep[]
   updatedAt: string

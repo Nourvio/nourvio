@@ -85,7 +85,7 @@ Everything a household owns carries its `household_id`, and every query is scope
 |---|---|---|
 | `households` | name, settings (jsonb: auto-tidy, meals planned, first day of the week, always-on-hand items) | A household shares a library, plan, list and pantry. Deleting one removes everything in it. |
 | `invites` | household_id, token_hash, role, expires_at, used_at, used_by | Single-use invite links, good for a week. Only a hash of the token is stored, so the link can only be shown when it's made. |
-| `recipes` | id, household_id, slug (unique per household), name, description, image, source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), diet_overrides (jsonb), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
+| `recipes` | id, household_id, slug (unique per household), name, description, image, image_ai (made by AI), source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), diet_overrides (jsonb), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
 | `recipe_ingredients` | recipe_id, position, section, raw_text, quantity, quantity_max, unit_id, food, note | `raw_text` is always kept and shown as written. The parsed fields drive scaling, lists and nutrition. |
 | `recipe_steps` | recipe_id, position, section, text | |
 | `recipe_versions` | recipe_id, snapshot (jsonb), source, created_by, created_at | Every saved change makes a snapshot, so the original import can always be restored. `source` is one of import, manual, ai_cleanup, chat. |
@@ -138,6 +138,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Tags | `GET /api/recipes/tags`, `PATCH /api/recipes/tags/:name` (rename, merging into an existing tag), `DELETE /api/recipes/tags/:name` |
 | Pairings | `GET /api/recipes/:id/pairings` (the rules, the recipes they add up to, and what it's offered with), `POST /api/recipes/:id/pairings` (recipes or a tag), `DELETE /api/recipes/:id/pairings/:pairingId` |
 | Nutrition | `GET`/`POST /api/nutrition/library`, `POST /api/nutrition/library/:id/stop` (household admins); `GET`/`PUT /api/nutrition/settings`, `POST /api/nutrition/settings/test` (server admin, the USDA key) |
+| Photos | `POST /api/recipes/:id/photo` (make one with AI), `GET /api/recipes/:id/photo` (whether one is being made); `GET`/`POST /api/photos/library`, `POST /api/photos/library/:id/stop` (household admins) |
 | Versions | `GET /api/recipes/:id/versions`, `POST /api/recipes/:id/versions/:versionId/restore` |
 | Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (server admin, into their household): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
 | AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal, or null when there's nothing to change), `GET /api/recipes/:id/proposal`; library runs at `GET`/`POST /api/ai/cleanup-job` and `POST /api/ai/cleanup-job/:id/cancel` (household admins) |
@@ -163,6 +164,8 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | `extract` | Returns structured output from a Zod schema |
 | `listModels` | Lists the models available to the key (also how a key is tested) |
 | `chat` | *Milestone 2.* Streams a reply, with tools |
+| `transcribe` | Speech to text, for videos without captions (OpenAI only) |
+| `generateImage` | A picture from a description, for recipe photos (OpenAI only). Photos all use one style prompt (`services/photos.ts`), and new recipes without one get one in the background when the server's setting allows. |
 
 - Features go through `ai/service.ts`, never an SDK directly. It picks the provider and model for the task, makes the call and records usage.
 - **Tools are defined once**, as Zod schemas, and converted to each provider's tool format.

@@ -1,0 +1,1 @@
+ALTER TABLE "recipes" ADD COLUMN "image_ai" boolean DEFAULT false NOT NULL;

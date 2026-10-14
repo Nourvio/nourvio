@@ -11,6 +11,18 @@ export type NutritionLibrary = {
   noServings: number
 }
 
+/** Making photos for a household's recipes that have none. */
+export type PhotoLibrary = {
+  job: CleanupJob | null
+  /** Recipes without a photo. */
+  missing: number
+  /** Photos can be made (an OpenAI key is set). */
+  available: boolean
+}
+
+/** Roughly what one photo costs, in US dollars, for showing before a library run. */
+export const PHOTO_COST_USD = 0.05
+
 /** The server's USDA FoodData Central key, as Settings shows it. */
 export type NutritionSettings = {
   usdaKey: {

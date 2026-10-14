@@ -10,6 +10,7 @@ import {
 } from "../context.ts"
 import { readBody } from "../http.ts"
 import type { NutritionService } from "../services/nutrition.ts"
+import type { PhotoService } from "../services/photos.ts"
 import {
   applyProposal,
   dismissProposal,
@@ -24,7 +25,8 @@ import { getRecipe } from "../services/recipes.ts"
  */
 export function proposalsRoutes(
   { db }: AppContext,
-  nutrition: NutritionService
+  nutrition: NutritionService,
+  photos: PhotoService
 ) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
@@ -52,6 +54,7 @@ export function proposalsRoutes(
       // Saved as a new recipe: compare it with nothing.
       const same = previous?.id === result.recipe.id ? previous : null
       nutrition.afterSave(actor, result.recipe, same)
+      if (!same) photos.afterCreate(actor, result.recipe)
     }
     return c.json(result)
   })

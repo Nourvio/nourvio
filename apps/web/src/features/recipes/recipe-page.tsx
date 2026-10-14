@@ -56,7 +56,7 @@ import { formatMinutes, formatRelativeDate } from "./format"
 import { GoesWith } from "./goes-with"
 import { groupBySection, IngredientList } from "./ingredient-list"
 import { RatingStars } from "./rating-stars"
-import { RecipeImage } from "./recipe-image"
+import { RecipePhoto, useMakePhoto } from "./recipe-photo"
 import { ServingsStepper } from "./servings-stepper"
 import { TidyUpDialog } from "./tidy-up-dialog"
 import { UnitToggle } from "./unit-toggle"
@@ -177,12 +177,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
       />
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] lg:gap-10">
-        <RecipeImage
-          src={recipe.imageUrl}
-          alt={recipe.name}
-          eager
-          className="aspect-[4/3] w-full rounded-3xl"
-        />
+        <RecipePhoto recipe={recipe} />
         <div className="grid content-start gap-4">
           <h1 className="text-3xl leading-tight font-semibold tracking-tight md:text-4xl">
             {recipe.name}
@@ -415,6 +410,7 @@ function MoreMenu({
   const navigate = useNavigate()
   const ai = useAiStatus()
   const photo = useRecipePhoto(recipe.id)
+  const aiPhoto = useMakePhoto(recipe)
   const deleteRecipe = useDeleteRecipe()
   const fileInput = React.useRef<HTMLInputElement>(null)
   const [historyOpen, setHistoryOpen] = React.useState(false)
@@ -457,6 +453,14 @@ function MoreMenu({
             <HugeiconsIcon icon={ImageAdd01Icon} strokeWidth={2} />
             {recipe.imageUrl ? "Change photo" : "Add a photo"}
           </DropdownMenuItem>
+          {aiPhoto.can && (
+            <DropdownMenuItem disabled={aiPhoto.making} onSelect={aiPhoto.make}>
+              <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
+              {recipe.photoByAi
+                ? "Make another AI photo"
+                : "Make a photo with AI"}
+            </DropdownMenuItem>
+          )}
           {recipe.imageUrl && (
             <DropdownMenuItem onSelect={() => photo.remove.mutate()}>
               Remove photo

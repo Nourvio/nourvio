@@ -10,6 +10,7 @@ import {
   type AiSettings,
   type AiStatus,
   type AiTask,
+  type AiUsageTask,
   type AiUsageRow,
   type ModelRef,
   type updateAiSettingsInput,
@@ -38,6 +39,8 @@ type StoredAiSettings = {
   keys?: Partial<Record<AiProviderId, string>>
   defaultModel?: ModelRef | null
   taskModels?: Partial<Record<AiTask, ModelRef>>
+  /** On unless turned off. */
+  autoPhotos?: boolean
 }
 
 /** Who a request is for: their household's usage is recorded against the server's keys. */
@@ -113,6 +116,7 @@ export function createAiService(
       keys: keyStatus,
       defaultModel: stored.defaultModel ?? null,
       taskModels: stored.taskModels ?? {},
+      autoPhotos: stored.autoPhotos ?? true,
     }
   }
 
@@ -122,6 +126,7 @@ export function createAiService(
       keys: { ...stored.keys },
       defaultModel: stored.defaultModel ?? null,
       taskModels: { ...stored.taskModels },
+      autoPhotos: input.autoPhotos ?? stored.autoPhotos,
     }
     for (const id of AI_PROVIDERS) {
       const key = input.keys?.[id]
@@ -141,14 +146,22 @@ export function createAiService(
   }
 
   async function status(): Promise<AiStatus> {
-    const available = await keys()
+    const stored = await load()
+    const available = await keys(stored)
     const providers = AI_PROVIDERS.filter((id) => available[id])
     return {
       available: providers.length > 0,
       providers,
       transcription: Boolean(available.openai),
       usda: Boolean(await usdaKey(db)),
+      images: Boolean(available.openai),
+      autoPhotos: Boolean(available.openai) && (stored.autoPhotos ?? true),
     }
+  }
+
+  /** Whether new recipes without a photo get one made. */
+  async function autoPhotos() {
+    return (await status()).autoPhotos
   }
 
   /** Tries a key (given, or the saved one) by listing the provider's models. */
@@ -234,7 +247,7 @@ export function createAiService(
     actor: AiActor,
     provider: AiProviderId,
     model: string,
-    task: AiTask,
+    task: AiUsageTask,
     usage: { inputTokens: number; outputTokens: number }
   ) {
     if (!usage.inputTokens && !usage.outputTokens) return
@@ -299,6 +312,27 @@ export function createAiService(
   }
 
   /**
+   * A picture from a description, with whichever configured provider can
+   * make one (OpenAI). Records what it cost.
+   */
+  async function generateImage(actor: AiActor, prompt: string) {
+    const available = await keys()
+    for (const id of AI_PROVIDERS) {
+      const found = available[id]
+      if (!found) continue
+      const provider = factory(id, found.key)
+      if (!provider.generateImage) continue
+      const { image, model, usage } = await provider.generateImage(prompt)
+      await recordUsage(actor, id, model, "photos", usage)
+      return image
+    }
+    throw new HttpError(
+      400,
+      "Making photos needs an OpenAI key. The server admin can add one in Settings → AI."
+    )
+  }
+
+  /**
    * Requests, tokens and rough cost by month, household and model, for the
    * last six months.
    */
@@ -340,6 +374,8 @@ export function createAiService(
     recordUsage,
     extract,
     transcribe,
+    generateImage,
+    autoPhotos,
     usageSummary,
   }
 }

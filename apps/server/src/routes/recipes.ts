@@ -12,6 +12,7 @@ import { bodyLimit } from "hono/body-limit"
 
 import type { AiService } from "../ai/service.ts"
 import type { NutritionService } from "../services/nutrition.ts"
+import type { PhotoService } from "../services/photos.ts"
 import { requireUser } from "../auth/middleware.ts"
 import {
   currentHousehold,
@@ -49,7 +50,8 @@ export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 export function recipesRoutes(
   { db }: AppContext,
   ai: AiService,
-  nutrition: NutritionService
+  nutrition: NutritionService,
+  photos: PhotoService
 ) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
@@ -90,6 +92,7 @@ export function recipesRoutes(
       userId: currentUser(c).id,
     })
     nutrition.afterSave(actorOf(c), recipe)
+    photos.afterCreate(actorOf(c), recipe)
     return c.json({ recipe }, 201)
   })
 
@@ -153,6 +156,18 @@ export function recipesRoutes(
   /** Works out nutrition now, from USDA data or an AI estimate. */
   app.post("/:id/nutrition", async (c) =>
     c.json({ recipe: await nutrition.workOut(actorOf(c), c.req.param("id")) })
+  )
+
+  /** Makes a photo with AI, for a recipe without one (or with an AI one). */
+  app.post("/:id/photo", async (c) =>
+    c.json({ recipe: await photos.make(actorOf(c), c.req.param("id")) })
+  )
+
+  /** Whether a photo is being made for it now (a new recipe's, in the background). */
+  app.get("/:id/photo", async (c) =>
+    c.json({
+      making: await photos.isMaking(currentHousehold(c), c.req.param("id")),
+    })
   )
 
   app.patch("/:id", async (c) => {

@@ -1,7 +1,7 @@
 import type {
   DietOverrides,
   AiProviderId,
-  AiTask,
+  AiUsageTask,
   Appearance,
   ChatPart,
   CleanupJob,
@@ -185,6 +185,8 @@ export const recipes = pgTable(
     description: text(),
     /** Base name of the stored photo in DATA_DIR/images (`<name>.webp` and `<name>-thumb.webp`). */
     image: text(),
+    /** The photo was made by AI rather than taken. */
+    imageAi: boolean().notNull().default(false),
     sourceUrl: text(),
     origin: text().$type<RecipeOrigin>().notNull().default("manual"),
     /** Where an imported recipe came from, e.g. "mealie:<id>", so re-imports don't duplicate. */
@@ -346,7 +348,7 @@ export const aiUsage = pgTable(
     userId: uuid().references(() => users.id, { onDelete: "set null" }),
     provider: text().$type<AiProviderId>().notNull(),
     model: text().notNull(),
-    task: text().$type<AiTask>().notNull(),
+    task: text().$type<AiUsageTask>().notNull(),
     inputTokens: integer().notNull(),
     outputTokens: integer().notNull(),
     /** Worked out when the request was made, from the prices then. */
@@ -639,7 +641,7 @@ export const aiJobs = pgTable("ai_jobs", {
   householdId: uuid()
     .notNull()
     .references(() => households.id, { onDelete: "cascade" }),
-  kind: text().$type<"cleanup" | "mealie" | "nutrition">().notNull(),
+  kind: text().$type<"cleanup" | "mealie" | "nutrition" | "photos">().notNull(),
   status: text().$type<CleanupJob["status"]>().notNull(),
   total: integer().notNull(),
   done: integer().notNull().default(0),

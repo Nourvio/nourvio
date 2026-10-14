@@ -10,7 +10,7 @@ What Mise connects to, what we learned about each service (researched October 20
   - steps, often with sections
   - keywords and category
   - sometimes nutrition
-- **AI fallback.** When a page has no recipe data, we send the page's readable text (navigation, scripts and footers removed) to the import model and get a structured draft back (see [architecture.md](architecture.md#structured-extraction)). The page's `og:image` becomes the photo.
+- **AI fallback.** When a page has no recipe data, we send the page's readable text (navigation, scripts and footers removed) to the import model and get a structured draft back (see [architecture.md](architecture.md#structured-extraction)). The page's share image (`og:image`) becomes the photo.
 - **Fetching.** We send a normal browser user agent, time out after 15 seconds, and cap pages at 5 MB. Tracking parameters (`utm_*`, `fbclid` and so on) are dropped from the link first.
 - **Sites that block us.** Some big publishers refuse requests that don't look like a browser:
   - Node's default TLS handshake is on some blocklists, so we connect over HTTP/2 with a browser's cipher order. Bon Appétit and NYT Cooking work, and so do Allrecipes and Simply Recipes most of the time.
@@ -18,7 +18,11 @@ What Mise connects to, what we learned about each service (researched October 20
   - When a site blocks us, the UI suggests pasting the text instead. A later option is a bookmarklet that sends the page from your own browser, which is already past the check.
 - **Duplicates.** Importing a link that's already in the library (also checked after redirects) returns the existing recipe, with a choice to import a copy anyway.
 - **Safety.** The server refuses to fetch private-network addresses (localhost, 10.x, 192.168.x, link-local, carrier NAT and IPv6 equivalents). It resolves names itself and checks every address and every redirect, so a public name pointing at a private address is refused too.
-- **Images.** The recipe image is downloaded and stored under `/data/images`, so it survives the site changing. A broken image doesn't fail the import.
+- **Images.** The recipe image is downloaded and stored under `/data/images`, so it survives the site changing. A broken image doesn't fail the import. Finding a good one:
+  - Every photo the page offers is a candidate: the recipe's own (following WordPress-style `{"@id": "…#primaryimage"}` references to the page's ImageObject), then the page's share image.
+  - They're tried biggest first, by the size the data gives or the link spells out ("-1200x800.jpg", "/1500x0/", "?resize=500,375"). Photos of unknown size come next (often the originals), and small copies last, after their own link without the resize settings, which image servers usually answer with the original.
+  - Downloads say which page asked (`Referer`), as a browser does, since some sites refuse photos otherwise. Anything under 200 px on its short side is skipped, and the first at least 450 px wins; otherwise the biggest usable one does.
+  - Checked October 2026 against RecipeTin Eats, Pinch of Yum, Love and Lemons, Serious Eats, Bon Appétit, Allrecipes and BBC Good Food (whose biggest photo is 440 px).
 
 ## Video links (TikTok, YouTube, Instagram)
 
@@ -72,6 +76,7 @@ Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x
 | GPT-6 Luna | `gpt-6-luna` | $0.10 / $0.50 |
 
 - **OpenAI models and prices** change often (GPT-6 Sol and Luna launched September 22, 2026), so Settings lists whatever models the key can use. Check OpenAI's pricing page before choosing one.
+- **Photos** for recipes without one are made by OpenAI's image models; Claude can't make pictures. Mise uses `gpt-image-2.5-flare` ("fast, high-quality everyday generation"), falling back to `gpt-image-2`, `gpt-image-1.5` and `gpt-image-1-mini` if a key can't use it. Images are billed per token ($5 per million text tokens in, $30 per million image tokens out); a 1536×1024 photo at medium quality comes to roughly 5¢. OpenAI may ask for the organization to be verified, and a new account needs credit, before it makes images. Both errors say so in the app.
 - **Picking models:** Settings tracks spend by provider, model and task, so we can see where a cheaper model is good enough.
 
 ## Nutrition
@@ -144,6 +149,7 @@ If we ever want connectors, the same service layer and tool definitions could ba
 - Kroger API: https://jentic.com/apis/kroger, https://pypi.org/project/kroger-cart/
 - Instacart Developer Platform: https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page
 - USDA FoodData Central API: https://fdc.nal.usda.gov/api-guide/
+- OpenAI image generation and pricing: https://developers.openai.com/api/docs/guides/image-generation, https://developers.openai.com/api/docs/pricing
 - ChatGPT developer mode (connector research): https://developers.openai.com/api/docs/guides/developer-mode, https://help.openai.com/articles/12584461
 - ChatGPT connector auth: https://docs.atlan.com/product/capabilities/atlan-ai/how-tos/chatgpt-remote-mcp
 - Claude custom connectors: https://support.anthropic.com/en/articles/11503834-building-custom-connectors-via-remote-mcp-servers

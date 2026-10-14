@@ -12,6 +12,9 @@ export const AI_PROVIDER_NAMES: Record<AiProviderId, string> = {
 export const AI_TASKS = ["import", "cleanup", "chat", "nutrition"] as const
 export type AiTask = (typeof AI_TASKS)[number]
 
+/** What usage is recorded against: the tasks above, plus making photos (an image model, not picked per task). */
+export type AiUsageTask = AiTask | "photos"
+
 export const AI_TASK_NAMES: Record<AiTask, string> = {
   import: "Importing recipes",
   cleanup: "Tidying recipes",
@@ -47,6 +50,12 @@ export const MODEL_PRICES: Record<string, [input: number, output: number]> = {
   "gpt-6-sol": [2, 10],
   "gpt-6.1-sol": [2, 10],
   "gpt-6-luna": [0.1, 0.5],
+  // Image models: text in, image tokens out.
+  "gpt-image-2.5-flare": [5, 30],
+  "gpt-image-2.5-sunburst": [5, 30],
+  "gpt-image-2": [5, 30],
+  "gpt-image-1.5": [5, 32],
+  "gpt-image-1-mini": [2, 8],
 }
 
 export function estimateCost(
@@ -85,6 +94,8 @@ export type AiSettings = {
   keys: Record<AiProviderId, AiKeyStatus>
   defaultModel: ModelRef | null
   taskModels: Partial<Record<AiTask, ModelRef>>
+  /** Make a photo for each new recipe that comes without one (needs an OpenAI key). */
+  autoPhotos: boolean
 }
 
 const keyInput = z
@@ -107,9 +118,11 @@ export const updateAiSettingsInput = z.object({
       import: modelRef.nullable(),
       cleanup: modelRef.nullable(),
       chat: modelRef.nullable(),
+      nutrition: modelRef.nullable(),
     })
     .partial()
     .optional(),
+  autoPhotos: z.boolean().optional(),
 })
 export type UpdateAiSettingsInput = z.input<typeof updateAiSettingsInput>
 
@@ -129,6 +142,10 @@ export type AiStatus = {
   transcription: boolean
   /** A USDA key is set, so nutrition can be calculated from ingredients. */
   usda: boolean
+  /** Photos can be made for recipes without one (needs an OpenAI key). */
+  images: boolean
+  /** New recipes without a photo get one made. */
+  autoPhotos: boolean
 }
 
 export type AiUsageRow = {

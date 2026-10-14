@@ -38,6 +38,10 @@ export interface AiProvider {
     audio: Buffer,
     filename: string
   ): Promise<{ text: string; model: string; usage: AiUsage }>
+  /** A picture from a description. Only OpenAI has this; Claude doesn't make images. */
+  generateImage?(
+    prompt: string
+  ): Promise<{ image: Buffer; model: string; usage: AiUsage }>
 }
 
 /** A tool the assistant can call, with a JSON schema for its input. */

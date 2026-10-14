@@ -25,6 +25,7 @@ export async function createTestApp({
   mealieFetch,
   fdcFactory,
   autoNutrition = false,
+  autoPhotos = false,
 }: {
   fetcher?: Fetcher
   aiFactory?: AiProviderFactory
@@ -33,6 +34,7 @@ export async function createTestApp({
   fdcFactory?: FdcClientFactory
   /** Off unless a test is about it, so saves don't kick off background work. */
   autoNutrition?: boolean
+  autoPhotos?: boolean
 } = {}) {
   const client = new PGlite({ extensions: { pg_trgm } })
   const pglite = drizzle({ client, schema, casing: "snake_case" })
@@ -52,6 +54,7 @@ export async function createTestApp({
     mealieFetch,
     fdcFactory,
     autoNutrition,
+    autoPhotos,
   })
   return { app, db, code, close: () => client.close() }
 }

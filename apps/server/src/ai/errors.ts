@@ -32,9 +32,21 @@ export function providerError(
     )
   }
   if (status === 429) {
+    const code =
+      error instanceof OpenAI.APIError || error instanceof Anthropic.APIError
+        ? (error as { code?: unknown }).code
+        : undefined
+    const detail = error instanceof Error ? error.message : ""
+    console.warn(`${name} said 429:`, code ?? "", detail)
+    if (code === "insufficient_quota" || /credit|quota|billing/i.test(detail)) {
+      return new HttpError(
+        502,
+        `The ${name} account is out of credit. Add some in its billing settings.`
+      )
+    }
     return new HttpError(
       502,
-      `${name} is rate limiting requests, or the account is out of credit`
+      `${name} is getting too many requests right now. Try again in a minute.`
     )
   }
   if (status === 400) {

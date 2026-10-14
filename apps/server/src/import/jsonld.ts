@@ -5,7 +5,8 @@ import { load } from "cheerio"
 
 export type ExtractedRecipe = {
   input: RecipeInput
-  imageUrl: string | null
+  /** Photos to try, best first: the recipe's own, then the page's share image. */
+  imageUrls: string[]
 }
 
 /** Decodes HTML entities, drops tags and collapses whitespace. */
@@ -94,19 +95,142 @@ export function parseYield(value: unknown) {
   }
 }
 
-function imageFrom(value: unknown, base: string): string | null {
-  for (const item of asArray(value)) {
-    const url =
+/**
+ * Every object with an "@id" in the page's JSON-LD, so references like
+ * `"image": { "@id": "…#primaryimage" }` (common on WordPress sites) can be
+ * followed to the ImageObject they point at.
+ */
+function indexIds(data: any, index = new Map<string, any>(), depth = 0) {
+  if (!data || typeof data !== "object" || depth > 8) return index
+  if (Array.isArray(data)) {
+    for (const item of data) indexIds(item, index, depth + 1)
+    return index
+  }
+  if (typeof data["@id"] === "string" && Object.keys(data).length > 1) {
+    index.set(data["@id"], data)
+  }
+  for (const value of Object.values(data)) {
+    if (value && typeof value === "object") indexIds(value, index, depth + 1)
+  }
+  return index
+}
+
+/**
+ * Pixels in a photo, from its ImageObject or the size in its link
+ * ("-1200x800.jpg", "/1500x0/", "?resize=500,375", "?w=1200"); 0 when unknown.
+ */
+function pixels(item: any, url: string) {
+  const width = Number(item?.width?.value ?? item?.width)
+  const height = Number(item?.height?.value ?? item?.height)
+  if (width > 0 && height > 0) return width * height
+  const link = url.replace(/%2C/gi, ",")
+  const pair =
+    link.match(/[-_/](\d{2,4})x(\d{1,4})(?:\.\w+(?:[?#]|$)|\/)/) ??
+    link.match(/[?&](?:resize|fit|size)=(\d{2,4}),(\d{2,4})/)
+  const w =
+    Number(pair?.[1]) || Number(link.match(/[?&](?:w|width)=(\d{2,4})\b/)?.[1])
+  const h =
+    Number(pair?.[2]) || Number(link.match(/[?&](?:h|height)=(\d{2,4})\b/)?.[1])
+  return w ? w * (h || w * 0.75) : 0
+}
+
+/** Big enough for the recipe page without looking soft. */
+const BIG_PIXELS = 800 * 500
+
+type Candidate = { url: string; size: number }
+
+const RESIZE_PARAMS = ["resize", "fit", "size", "w", "h", "width", "height"]
+
+/** A small copy's link without its resize settings, which image servers usually answer with the original. */
+function original(url: string) {
+  try {
+    const link = new URL(url)
+    const params = RESIZE_PARAMS.filter((key) => link.searchParams.has(key))
+    if (!params.length) return null
+    for (const key of params) link.searchParams.delete(key)
+    return link.toString()
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Best first: photos known to be big (biggest first), then ones of unknown
+ * size in the page's order (often the originals), then known small ones.
+ * A small copy's original is tried before the copy.
+ */
+function rankPhotos(found: Candidate[]) {
+  const big = found
+    .filter((f) => f.size >= BIG_PIXELS)
+    .sort((a, b) => b.size - a.size)
+  const small = found
+    .filter((f) => f.size > 0 && f.size < BIG_PIXELS)
+    .sort((a, b) => b.size - a.size)
+  const unknown = [
+    ...found.filter((f) => f.size === 0),
+    ...small.flatMap((f) => {
+      const url = original(f.url)
+      return url ? [{ url, size: 0 }] : []
+    }),
+  ]
+  return [...new Set([...big, ...unknown, ...small].map((f) => f.url))]
+}
+
+/** The recipe's photos as full links, with what's known of their size. */
+function imageCandidates(
+  value: unknown,
+  ids: Map<string, any>,
+  base: string
+): Candidate[] {
+  const found: Candidate[] = []
+  for (const listed of asArray(value)) {
+    const item =
+      listed &&
+      typeof listed === "object" &&
+      typeof listed["@id"] === "string" &&
+      !listed.url &&
+      !listed.contentUrl
+        ? (ids.get(listed["@id"]) ?? listed)
+        : listed
+    const raw =
       typeof item === "string" ? item : (item?.url ?? item?.contentUrl)
-    if (typeof url === "string" && url.trim()) {
+    for (const link of asArray(raw)) {
+      if (typeof link !== "string" || !link.trim()) continue
       try {
-        return new URL(url.trim(), base).toString()
+        const url = new URL(link.trim(), base).toString()
+        found.push({ url, size: pixels(item, url) })
       } catch {
         continue
       }
     }
   }
-  return null
+  return found
+}
+
+/** The page's share image (what a link preview shows), as a fallback photo. */
+export function shareImages(
+  html: string | ReturnType<typeof load>,
+  base: string
+) {
+  const $ = typeof html === "string" ? load(html) : html
+  const links = [
+    $('meta[property="og:image"]').attr("content"),
+    $('meta[property="og:image:url"]').attr("content"),
+    $('meta[property="og:image:secure_url"]').attr("content"),
+    $('meta[name="twitter:image"]').attr("content"),
+    $('meta[name="twitter:image:src"]').attr("content"),
+    $('link[rel="image_src"]').attr("href"),
+  ]
+  const urls: string[] = []
+  for (const link of links) {
+    if (!link?.trim()) continue
+    try {
+      urls.push(new URL(link.trim(), base).toString())
+    } catch {
+      // Not a usable link.
+    }
+  }
+  return [...new Set(urls)]
 }
 
 /** Steps as editor lines, with "# Section" lines for HowToSections. */
@@ -196,24 +320,25 @@ export function extractRecipeFromHtml(
 ): ExtractedRecipe | null {
   const $ = load(html)
   let node: any = null
+  const blocks: unknown[] = []
   $('script[type="application/ld+json"]').each((_, element) => {
-    if (node) return
     const raw = $(element).text().trim()
     if (!raw) return
+    let data: unknown
     try {
-      node = findRecipeNode(JSON.parse(raw))
+      data = JSON.parse(raw)
     } catch {
       // Some sites emit control characters or trailing commas; try a cleanup.
       try {
-        node = findRecipeNode(
-          JSON.parse(
-            raw.replace(/[\u0000-\u001f]+/g, " ").replace(/,\s*([}\]])/g, "$1")
-          )
+        data = JSON.parse(
+          raw.replace(/[\u0000-\u001f]+/g, " ").replace(/,\s*([}\]])/g, "$1")
         )
       } catch {
-        // Not usable; keep looking.
+        return // Not usable; keep looking.
       }
     }
+    blocks.push(data)
+    node ??= findRecipeNode(data)
   })
   if (!node) return null
 
@@ -245,6 +370,16 @@ export function extractRecipeFromHtml(
       nutrition: nutritionFrom(node.nutrition),
       sourceUrl: pageUrl,
     },
-    imageUrl: imageFrom(node.image ?? node.thumbnailUrl, pageUrl),
+    imageUrls: rankPhotos([
+      ...imageCandidates(
+        node.image ?? node.thumbnailUrl,
+        indexIds(blocks),
+        pageUrl
+      ),
+      ...shareImages($, pageUrl).map((url) => ({
+        url,
+        size: pixels(null, url),
+      })),
+    ]),
   }
 }

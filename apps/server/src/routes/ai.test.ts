@@ -97,6 +97,8 @@ describe("AI", () => {
       providers: [],
       transcription: false,
       usda: false,
+      images: false,
+      autoPhotos: false,
     })
     const res = await member.post("/api/import/text", {
       text: "Shakshuka: onions, tomatoes, eggs. Cook it all.",
@@ -212,6 +214,14 @@ describe("AI", () => {
       request: { model: "gpt-6-luna" },
     })
     await t.admin.put("/api/ai/settings", { taskModels: { import: null } })
+  })
+
+  test("keeps a model picked for nutrition", async () => {
+    const res = await t.admin.put("/api/ai/settings", {
+      taskModels: { nutrition: "anthropic:claude-sonnet-5-5" },
+    })
+    expect(res.body.taskModels.nutrition).toBe("anthropic:claude-sonnet-5-5")
+    await t.admin.put("/api/ai/settings", { taskModels: { nutrition: null } })
   })
 
   test("says so when there's no recipe in the text", async () => {

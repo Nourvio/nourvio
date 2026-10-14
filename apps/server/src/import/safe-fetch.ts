@@ -108,7 +108,12 @@ export type FetchedResource = {
 
 export type Fetcher = (
   url: string,
-  options?: { accept?: string; maxBytes?: number }
+  options?: {
+    accept?: string
+    maxBytes?: number
+    /** The page asking, as a browser says; some sites refuse photos without it. */
+    referer?: string
+  }
 ) => Promise<FetchedResource>
 
 function checkUrl(raw: string) {
@@ -137,6 +142,7 @@ export const fetchPublic: Fetcher = async (
   {
     accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     maxBytes = 5_000_000,
+    referer,
   } = {}
 ) => {
   let url = checkUrl(raw)
@@ -149,7 +155,11 @@ export const fetchPublic: Fetcher = async (
         dispatcher: publicAgent,
         redirect: "manual",
         signal,
-        headers: { ...BROWSER_HEADERS, accept },
+        headers: {
+          ...BROWSER_HEADERS,
+          accept,
+          ...(referer ? { referer } : {}),
+        },
       })
     } catch (error) {
       const code = (error as { cause?: { code?: string } }).cause?.code

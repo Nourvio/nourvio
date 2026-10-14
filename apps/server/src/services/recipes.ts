@@ -318,6 +318,7 @@ export async function getRecipe(
     notes: row.notes,
     nutrition: row.nutrition,
     dietOverrides: row.dietOverrides,
+    photoByAi: Boolean(row.image) && row.imageAi,
     updatedAt: row.updatedAt.toISOString(),
     ingredients: ingredients.map((i, index) => ({
       id: i.id,
@@ -527,6 +528,8 @@ export async function createRecipe(
     origin: RecipeOrigin
     userId: string | null
     image?: string | null
+    /** The photo was made by AI. */
+    imageAi?: boolean
     externalRef?: string | null
     lastMadeAt?: Date | null
   }
@@ -541,6 +544,7 @@ export async function createRecipe(
         slug: await uniqueSlug(tx, householdId, data.name),
         origin: options.origin,
         image: options.image ?? null,
+        imageAi: Boolean(options.image) && (options.imageAi ?? false),
         externalRef: options.externalRef ?? null,
         lastMadeAt: options.lastMadeAt ?? null,
         createdBy: options.userId,
@@ -608,12 +612,22 @@ export async function setRecipeFields(
   fields: Partial<
     Pick<
       RecipeRow,
-      "rating" | "lastMadeAt" | "image" | "nutrition" | "dietOverrides"
+      | "rating"
+      | "lastMadeAt"
+      | "image"
+      | "imageAi"
+      | "nutrition"
+      | "dietOverrides"
     >
   >
 ) {
   const row = await findRecipeRow(db, householdId, idOrSlug)
-  await db.update(recipes).set(fields).where(eq(recipes.id, row.id))
+  // A new photo is a real one unless it says otherwise.
+  const set =
+    fields.image !== undefined && fields.imageAi === undefined
+      ? { ...fields, imageAi: false }
+      : fields
+  await db.update(recipes).set(set).where(eq(recipes.id, row.id))
   return getRecipe(db, householdId, row.id)
 }
 

@@ -2,10 +2,50 @@ import type { AiModel } from "@mise/shared"
 import OpenAI, { toFile } from "openai"
 import { zodTextFormat } from "openai/helpers/zod"
 
+import { HttpError } from "../http.ts"
 import { providerError } from "./errors.ts"
 import type { AiPart, AiProvider, ChatAdapter } from "./types.ts"
 
 const TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe"
+
+/** Image models, best first. Older ones stand in when a key can't use the newest. */
+const IMAGE_MODELS = [
+  "gpt-image-2.5-flare",
+  "gpt-image-2",
+  "gpt-image-1.5",
+  "gpt-image-1-mini",
+]
+/** The first image model that worked, tried first next time. */
+let imageModel: string | null = null
+
+function modelMissing(error: unknown) {
+  return (
+    error instanceof OpenAI.APIError &&
+    (error.status === 404 || error.code === "model_not_found")
+  )
+}
+
+/** OpenAI's image errors worth explaining: an unverified organization and blocked prompts. */
+function imageError(error: unknown) {
+  if (error instanceof OpenAI.APIError) {
+    if (error.status === 403 && /verif/i.test(error.message)) {
+      return new HttpError(
+        502,
+        "OpenAI wants the organization verified before it makes images. Verify it at platform.openai.com, under Settings → Organization."
+      )
+    }
+    if (
+      error.code === "moderation_blocked" ||
+      /safety system/i.test(error.message)
+    ) {
+      return new HttpError(
+        502,
+        "OpenAI wouldn't make a picture for this one. Try again, or add a photo yourself."
+      )
+    }
+  }
+  return providerError("openai", error)
+}
 
 /** Models that make sense for chat and extraction, not audio, images or embeddings. */
 const CHAT_MODEL = /^(gpt-|o\d|chatgpt-)/
@@ -208,6 +248,45 @@ export function createOpenAiProvider(apiKey: string): AiProvider {
       } catch (error) {
         throw providerError("openai", error)
       }
+    },
+
+    async generateImage(prompt) {
+      const models = imageModel
+        ? [imageModel, ...IMAGE_MODELS.filter((m) => m !== imageModel)]
+        : IMAGE_MODELS
+      let lastError: unknown
+      for (const model of models) {
+        let result
+        try {
+          // Landscape suits recipe cards and the recipe page; medium quality
+          // looks good at that size for a fraction of the cost of high.
+          result = await client.images.generate({
+            model,
+            prompt,
+            size: "1536x1024",
+            quality: "medium",
+            output_format: "jpeg",
+            output_compression: 90,
+            n: 1,
+          })
+        } catch (error) {
+          lastError = error
+          if (modelMissing(error)) continue
+          throw imageError(error)
+        }
+        const data = result.data?.[0]?.b64_json
+        if (!data) throw providerError("openai", "no-output")
+        imageModel = model
+        return {
+          image: Buffer.from(data, "base64"),
+          model,
+          usage: {
+            inputTokens: result.usage?.input_tokens ?? 0,
+            outputTokens: result.usage?.output_tokens ?? 0,
+          },
+        }
+      }
+      throw imageError(lastError)
     },
   }
 }

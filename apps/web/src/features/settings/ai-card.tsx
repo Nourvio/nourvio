@@ -14,11 +14,13 @@ import {
   type AiTask,
   type AiUsageRow,
   type ModelRef,
+  PHOTO_COST_USD,
 } from "@mise/shared"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Card,
   CardContent,
@@ -115,6 +117,8 @@ export function AiCard() {
               <>
                 <FieldSeparator />
                 <ModelFields settings={settings.data} />
+                <FieldSeparator />
+                <PhotoFields settings={settings.data} />
                 <FieldSeparator />
                 <UsageSummary />
               </>
@@ -303,6 +307,51 @@ function KeyField({
     </Field>
   )
 }
+
+/** Photos for recipes without one, made by OpenAI's image model in one house style. */
+function PhotoFields({ settings }: { settings: AiSettings }) {
+  const update = useUpdateAiSettings()
+  const hasOpenAi = settings.keys.openai.configured
+  return (
+    <FieldSet>
+      <FieldLegend variant="label">Photos</FieldLegend>
+      <FieldDescription>
+        {hasOpenAi
+          ? `Recipes without a photo can get one made by OpenAI, all in the same style: a dark plate on white marble. About ${PHOTO_COST_LABEL} each.`
+          : "With an OpenAI key, recipes without a photo can get one made, all in the same style. Claude can't make pictures."}
+      </FieldDescription>
+      <Field orientation="horizontal">
+        <Checkbox
+          id="auto-photos"
+          checked={settings.autoPhotos}
+          disabled={!hasOpenAi || update.isPending}
+          onCheckedChange={(checked) =>
+            update.mutate(
+              { autoPhotos: checked === true },
+              {
+                onSuccess: () =>
+                  toast.success(
+                    checked === true
+                      ? "New recipes will get a photo"
+                      : "New recipes won't get a photo made"
+                  ),
+                onError: (error) =>
+                  toast.error(
+                    error instanceof ApiError ? error.message : "Couldn't save"
+                  ),
+              }
+            )
+          }
+        />
+        <FieldLabel htmlFor="auto-photos" className="font-normal">
+          Make a photo for each new recipe that comes without one
+        </FieldLabel>
+      </Field>
+    </FieldSet>
+  )
+}
+
+const PHOTO_COST_LABEL = `${Math.round(PHOTO_COST_USD * 100)}¢`
 
 const DEFAULT_CHOICE = "__default"
 

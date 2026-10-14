@@ -26,6 +26,8 @@ export type AppContext = {
   fdcFactory?: FdcClientFactory
   /** Work out nutrition in the background after a recipe is saved. On unless turned off (tests). */
   autoNutrition?: boolean
+  /** Make photos for new recipes without one, when the server's AI setting allows. On unless turned off (tests). */
+  autoPhotos?: boolean
 }
 
 export type AppEnv = {
