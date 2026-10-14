@@ -420,6 +420,8 @@ export const shoppingItems = pgTable(
     source: text().$type<ListSource>().notNull(),
     /** Recipe names it's for. */
     recipes: jsonb().$type<string[]>().notNull().default([]),
+    /** Planned meal ids it's for, carried into the pantry when put away. */
+    entries: jsonb().$type<string[]>().notNull().default([]),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -460,6 +462,37 @@ export const foodSections = pgTable(
       .references(() => storeSections.id),
   },
   (t) => [primaryKey({ columns: [t.householdId, t.food] })]
+)
+
+// ---- Pantry ----
+
+/** What the household has at home. Amounts are optional and can be rough. */
+export const pantryItems = pgTable(
+  "pantry_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    /** The food as the pantry matches it (see pantryKey). */
+    key: text().notNull(),
+    name: text().notNull(),
+    quantity: real(),
+    unitId: text().references(() => units.id, { onDelete: "set null" }),
+    /** A rough amount ("half a bag") when it isn't a number and unit. */
+    amountText: text(),
+    sectionId: text()
+      .$type<StoreSectionId>()
+      .notNull()
+      .default("other")
+      .references(() => storeSections.id),
+    useBy: date({ mode: "string" }),
+    /** Planned meal ids it was bought for. */
+    entries: jsonb().$type<string[]>().notNull().default([]),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.householdId, t.key)]
 )
 
 // ---- Chat ----

@@ -24,6 +24,7 @@ import { importRoutes } from "./routes/import.ts"
 import { joinRoutes, signupRoutes } from "./routes/join.ts"
 import { listRoutes } from "./routes/list.ts"
 import { meRoutes } from "./routes/me.ts"
+import { pantryRoutes } from "./routes/pantry.ts"
 import { planRoutes } from "./routes/plan.ts"
 import { proposalsRoutes } from "./routes/proposals.ts"
 import { recipesRoutes } from "./routes/recipes.ts"
@@ -94,6 +95,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/proposals", proposalsRoutes(ctx))
   app.route("/api/plan", planRoutes(ctx))
   app.route("/api/list", listRoutes(ctx))
+  app.route("/api/pantry", pantryRoutes(ctx))
   app.route("/api/images", imagesRoutes(ctx))
   app.route("/api/import", importRoutes(ctx, ai))
   app.route("/api/ai", aiRoutes(ctx, ai))

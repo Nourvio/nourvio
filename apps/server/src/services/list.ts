@@ -53,7 +53,7 @@ function toItem(row: ItemRow): ShoppingItem {
 const foodOf = (key: string) => key.split("|")[0]!
 
 /** Where to file a food: the household's own choice, else a guess. */
-async function sectionsFor(
+export async function sectionsFor(
   db: Db,
   householdId: string,
   items: { name: string; unitId?: string | null }[]
@@ -132,6 +132,20 @@ export async function addManualItem(db: Db, householdId: string, text: string) {
   return toItem(row!)
 }
 
+/** An amount as typed: "2 lb" becomes a number and a unit; anything else stays as written. Empty clears it. */
+export function readAmount(amount: string) {
+  const parsed = amount ? parseIngredient(`${amount} x`) : null
+  return parsed?.quantity !== null &&
+    parsed?.quantity !== undefined &&
+    parsed.food === "x"
+    ? {
+        quantity: parsed.quantityMax ?? parsed.quantity,
+        unitId: parsed.unitId,
+        amountText: null,
+      }
+    : { quantity: null, unitId: null, amountText: amount || null }
+}
+
 export async function updateItem(
   db: Db,
   householdId: string,
@@ -141,23 +155,7 @@ export async function updateItem(
   const current = await findItem(db, householdId, id)
   const patch: Partial<typeof shoppingItems.$inferInsert> = {}
   if (input.name) patch.name = input.name
-  if (input.amount !== undefined) {
-    const parsed = input.amount ? parseIngredient(`${input.amount} x`) : null
-    // "2 lb" becomes a number and a unit; anything else stays as written.
-    if (
-      parsed?.quantity !== null &&
-      parsed?.quantity !== undefined &&
-      parsed.food === "x"
-    ) {
-      patch.quantity = parsed.quantityMax ?? parsed.quantity
-      patch.unitId = parsed.unitId
-      patch.amountText = null
-    } else {
-      patch.quantity = null
-      patch.unitId = null
-      patch.amountText = input.amount || null
-    }
-  }
+  if (input.amount !== undefined) Object.assign(patch, readAmount(input.amount))
   if (input.checked !== undefined) {
     patch.checked = input.checked
     patch.checkedAt = input.checked ? new Date() : null
@@ -273,7 +271,12 @@ export async function addFromPlan(
     const factor =
       entry.servings && recipe.servings ? entry.servings / recipe.servings : 1
     for (const ingredient of recipe.ingredients) {
-      lines.push({ text: ingredient.text, factor, source: recipe.name })
+      lines.push({
+        text: ingredient.text,
+        factor,
+        source: recipe.name,
+        entryId: entry.id,
+      })
     }
   }
 
@@ -312,6 +315,7 @@ export async function addFromPlan(
             quantity: sum.quantity,
             unitId: sum.unitId,
             recipes: [...new Set([...match.recipes, ...item.sources])],
+            entries: [...new Set([...match.entries, ...item.entries])],
           })
           .where(eq(shoppingItems.id, match.id))
         Object.assign(match, sum)
@@ -326,6 +330,7 @@ export async function addFromPlan(
           sectionId: sections[i]!,
           source: "plan",
           recipes: item.sources,
+          entries: item.entries,
         })
         added++
       }

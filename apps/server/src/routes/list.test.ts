@@ -113,7 +113,7 @@ describe("shopping list", () => {
       amount: "1 can",
       sectionId: "canned-jarred",
     })
-    expect(find(items, "chicken stock")).toMatchObject({ amount: "4 c" })
+    expect(find(items, "chicken stock")).toMatchObject({ amount: "4 cups" })
     expect(find(items, "Diet Pepsi")).toMatchObject({
       amount: "2 × 12-pack",
       source: "weekly",

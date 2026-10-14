@@ -1,4 +1,5 @@
 import type {
+  PutAwayResult,
   AddFromPlanResult,
   ShoppingItem,
   UpdateListItemInput,
@@ -78,6 +79,18 @@ export function useClearChecked() {
     mutationFn: () =>
       api<{ removed: number }>("/list/clear-checked", { method: "POST" }),
     onSuccess: refresh,
+  })
+}
+
+/** Done shopping: checked items go into the pantry. */
+export function usePutAway() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () => api<PutAwayResult>("/list/put-away", { method: "POST" }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: LIST_KEY })
+      queryClient.invalidateQueries({ queryKey: ["pantry"] })
+    },
   })
 }
 

@@ -46,7 +46,7 @@ function failed(error: unknown) {
   toast.error(error instanceof ApiError ? error.message : "Couldn't save that")
 }
 
-function SectionSelect({
+export function SectionSelect({
   id,
   value,
   onChange,

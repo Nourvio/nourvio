@@ -71,6 +71,13 @@
       "when": 1791960173758,
       "tag": "0009_shopping_list",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791962250268,
+      "tag": "0010_pantry",
+      "breakpoints": true
     }
   ]
 }

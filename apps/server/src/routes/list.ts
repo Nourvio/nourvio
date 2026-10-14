@@ -24,6 +24,7 @@ import {
   updateItem,
   updateWeeklyItem,
 } from "../services/list.ts"
+import { putAway } from "../services/pantry.ts"
 
 /** The household's shopping list, and the items it gets every week. */
 export function listRoutes({ db }: AppContext) {
@@ -56,6 +57,11 @@ export function listRoutes({ db }: AppContext) {
 
   app.post("/clear-checked", async (c) =>
     c.json({ removed: await clearChecked(db, currentHousehold(c)) })
+  )
+
+  /** Done shopping: checked items go into the pantry. */
+  app.post("/put-away", async (c) =>
+    c.json(await putAway(db, currentHousehold(c)))
   )
 
   app.post("/from-plan", async (c) => {

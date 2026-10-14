@@ -44,6 +44,7 @@ describe("combineLines", () => {
         quantity: 3,
         unitId: null,
         sources: ["Chili", "Soup"],
+        entries: [],
       },
       {
         key: "garlic|clove",
@@ -51,6 +52,7 @@ describe("combineLines", () => {
         quantity: 6,
         unitId: "clove",
         sources: ["Chili", "Soup"],
+        entries: [],
       },
     ])
   })
@@ -63,7 +65,7 @@ describe("combineLines", () => {
       line("8 oz ground beef"),
     ])
     expect(butter).toMatchObject({ unitId: "cup", quantity: 0.625 })
-    expect(formatAmount(butter!.quantity, butter!.unitId)).toBe("⅝ c")
+    expect(formatAmount(butter!.quantity, butter!.unitId)).toBe("⅝ cup")
     expect(beef).toMatchObject({ unitId: "pound", quantity: 1.5 })
   })
 
@@ -98,6 +100,7 @@ describe("combineLines", () => {
         quantity: null,
         unitId: null,
         sources: ["A", "B"],
+        entries: [],
       },
       {
         key: "olive oil|volume",
@@ -105,6 +108,7 @@ describe("combineLines", () => {
         quantity: 2,
         unitId: "tablespoon",
         sources: ["B", "A"],
+        entries: [],
       },
     ])
   })

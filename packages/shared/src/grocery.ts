@@ -9,6 +9,7 @@ const DESCRIPTORS =
   /\b(extra[- ]large|large|medium|small|jumbo|fresh|freshly|ripe|organic)\b/g
 
 function singular(word: string) {
+  if (word === "leaves") return "leaf"
   if (/(ss|us|is)$/.test(word)) return word
   if (/ies$/.test(word)) return word.replace(/ies$/, "y")
   if (/(oes|ches|shes|xes|sses)$/.test(word)) return word.replace(/es$/, "")
@@ -114,6 +115,8 @@ export type ListLine = {
   factor: number
   /** Where it's from, like a recipe name. */
   source: string
+  /** The planned meal it's for. */
+  entryId?: string
 }
 
 export type CombinedItem = {
@@ -123,6 +126,8 @@ export type CombinedItem = {
   quantity: number | null
   unitId: string | null
   sources: string[]
+  /** The planned meals it's for. */
+  entries: string[]
 }
 
 type Group = {
@@ -135,6 +140,7 @@ type Group = {
   /** The unit to show volume and weight in: the biggest one used. */
   showUnit: Unit | null
   sources: Set<string>
+  entries: Set<string>
 }
 
 /**
@@ -177,10 +183,12 @@ export function combineLines(lines: ListLine[]): CombinedItem[] {
         unitId: kind === "count" ? (unit?.id ?? null) : null,
         showUnit: null,
         sources: new Set(),
+        entries: new Set(),
       }
       groups.set(key, group)
     }
     group.sources.add(line.source)
+    if (line.entryId) group.entries.add(line.entryId)
     if (amount === null || group.total === null) continue
 
     const scaled = amount * line.factor
@@ -203,6 +211,7 @@ export function combineLines(lines: ListLine[]): CombinedItem[] {
     )
     if (sibling) {
       for (const source of group.sources) sibling.sources.add(source)
+      for (const entry of group.entries) sibling.entries.add(entry)
       groups.delete(key)
     }
   }
@@ -220,6 +229,7 @@ export function combineLines(lines: ListLine[]): CombinedItem[] {
       quantity: quantity === null ? null : Math.round(quantity * 1000) / 1000,
       unitId,
       sources: [...group.sources],
+      entries: [...group.entries],
     }
   })
 }
@@ -231,8 +241,9 @@ export function formatAmount(quantity: number | null, unitId: string | null) {
   const metric = unitId ? METRIC_UNIT_IDS.has(unitId) : false
   const number = formatQuantity(quantity, { metric })
   if (!unit) return number
+  // "2 lb" and "1 tbsp" read fine; "2 c" doesn't, so cups are spelled out.
   const label =
-    unit.abbreviation && unit.kind !== "count"
+    unit.abbreviation && unit.kind !== "count" && unit.id !== "cup"
       ? unit.abbreviation
       : quantity > 1
         ? unit.pluralName

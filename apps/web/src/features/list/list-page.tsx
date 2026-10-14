@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
   Calendar03Icon,
+  FridgeIcon,
   MoreHorizontalIcon,
   ShoppingBasket01Icon,
 } from "@hugeicons/core-free-icons"
@@ -43,6 +44,7 @@ import {
   useAddListItem,
   useClearChecked,
   useList,
+  usePutAway,
   useUpdateListItem,
 } from "./use-list"
 
@@ -50,6 +52,7 @@ import {
 export function ListPage() {
   const list = useList()
   const clear = useClearChecked()
+  const putAway = usePutAway()
   const [fromPlan, setFromPlan] = React.useState(false)
   const [weekly, setWeekly] = React.useState(false)
   const [onHand, setOnHand] = React.useState(false)
@@ -62,6 +65,21 @@ export function ListPage() {
     ...section,
     items: toGet.filter((item) => item.sectionId === section.id),
   })).filter((section) => section.items.length)
+
+  function putAwayChecked() {
+    putAway.mutate(undefined, {
+      onSuccess: ({ stored }) =>
+        toast.success(
+          stored
+            ? `Put ${stored} ${stored === 1 ? "thing" : "things"} in the pantry`
+            : "Cleared the cart"
+        ),
+      onError: (error) =>
+        toast.error(
+          error instanceof ApiError ? error.message : "Couldn't put those away"
+        ),
+    })
+  }
 
   function clearChecked() {
     clear.mutate(undefined, {
@@ -109,6 +127,12 @@ export function ListPage() {
                   Always on hand
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={!got.length}
+                  onSelect={putAwayChecked}
+                >
+                  Put checked items away
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   disabled={!got.length}
                   onSelect={clearChecked}
@@ -172,9 +196,21 @@ export function ListPage() {
               </section>
             ))}
             {!toGet.length && (
-              <p className="py-4 text-center text-muted-foreground">
-                All done. Nice shopping.
-              </p>
+              <div className="grid justify-items-center gap-3 py-4 text-center">
+                <p className="text-muted-foreground">
+                  All done. Nice shopping.
+                </p>
+                {got.length > 0 && (
+                  <Button disabled={putAway.isPending} onClick={putAwayChecked}>
+                    <HugeiconsIcon
+                      icon={FridgeIcon}
+                      strokeWidth={2}
+                      data-icon="inline-start"
+                    />
+                    Put it all away
+                  </Button>
+                )}
+              </div>
             )}
             {got.length > 0 && (
               <section className="grid gap-1">
@@ -185,10 +221,15 @@ export function ListPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    disabled={clear.isPending}
-                    onClick={clearChecked}
+                    disabled={putAway.isPending}
+                    onClick={putAwayChecked}
                   >
-                    Clear
+                    <HugeiconsIcon
+                      icon={FridgeIcon}
+                      strokeWidth={2}
+                      data-icon="inline-start"
+                    />
+                    Put away
                   </Button>
                 </div>
                 <ul className="divide-y rounded-2xl border bg-card/60">
