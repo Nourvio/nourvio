@@ -100,6 +100,20 @@ export function useRateRecipe(id: string) {
 }
 
 /** "I made this", today. A meal planned for today with this recipe counts as cooked. */
+/** Works out nutrition now: USDA data, or an AI estimate. */
+export function useWorkOutNutrition(id: string) {
+  const saved = useRecipeSaved()
+  return useMutation({
+    mutationFn: async () =>
+      (
+        await api<{ recipe: Recipe }>(`/recipes/${id}/nutrition`, {
+          method: "POST",
+        })
+      ).recipe,
+    onSuccess: saved,
+  })
+}
+
 export function useMarkMade(id: string) {
   const saved = useRecipeSaved()
   const queryClient = useQueryClient()

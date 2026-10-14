@@ -10,7 +10,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api } from "@/lib/api"
 
-const AI_KEY = ["ai"] as const
+export const AI_KEY = ["ai"] as const
 
 /** Can AI features be used? Everyone can ask. */
 export function useAiStatus() {

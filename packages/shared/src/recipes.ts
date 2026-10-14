@@ -13,6 +13,21 @@ export type RecipeOrigin = (typeof ORIGINS)[number]
 
 export const NUTRITION_SOURCES = ["site", "calculated", "estimate"] as const
 
+/** Per serving. Grams, except calories, and sodium and cholesterol in milligrams. */
+export const NUTRIENT_KEYS = [
+  "calories",
+  "fat",
+  "saturatedFat",
+  "carbohydrates",
+  "fiber",
+  "sugar",
+  "protein",
+  "sodium",
+  "cholesterol",
+] as const
+export type NutrientKey = (typeof NUTRIENT_KEYS)[number]
+export type NutrientValues = Record<NutrientKey, number | null>
+
 /** Per serving. Grams, except sodium and cholesterol in milligrams. */
 export const nutritionSchema = z.object({
   calories: z.number().min(0).nullable(),
@@ -25,6 +40,8 @@ export const nutritionSchema = z.object({
   sodium: z.number().min(0).nullable(),
   cholesterol: z.number().min(0).nullable(),
   source: z.enum(NUTRITION_SOURCES),
+  /** For a calculation: ingredient lines that couldn't be counted. */
+  notCounted: z.array(z.string().max(500)).max(300).optional(),
 })
 export type Nutrition = z.infer<typeof nutritionSchema>
 

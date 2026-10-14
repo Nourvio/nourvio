@@ -13,6 +13,7 @@ import type { AiProviderFactory } from "../ai/types.ts"
 import type { MealieFetch } from "../import/mealie.ts"
 import type { Fetcher } from "../import/safe-fetch.ts"
 import type { VideoTools } from "../import/video-tools.ts"
+import type { FdcClientFactory } from "../nutrition/fdc.ts"
 
 type App = ReturnType<typeof createApp>
 
@@ -22,11 +23,16 @@ export async function createTestApp({
   aiFactory,
   videoTools,
   mealieFetch,
+  fdcFactory,
+  autoNutrition = false,
 }: {
   fetcher?: Fetcher
   aiFactory?: AiProviderFactory
   videoTools?: VideoTools
   mealieFetch?: MealieFetch
+  fdcFactory?: FdcClientFactory
+  /** Off unless a test is about it, so saves don't kick off background work. */
+  autoNutrition?: boolean
 } = {}) {
   const client = new PGlite({ extensions: { pg_trgm } })
   const pglite = drizzle({ client, schema, casing: "snake_case" })
@@ -44,6 +50,8 @@ export async function createTestApp({
     aiFactory,
     videoTools,
     mealieFetch,
+    fdcFactory,
+    autoNutrition,
   })
   return { app, db, code, close: () => client.close() }
 }

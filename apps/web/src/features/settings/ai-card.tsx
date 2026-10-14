@@ -5,6 +5,7 @@ import {
   AI_TASK_NAMES,
   AI_TASKS,
   DEFAULT_MODELS,
+  LIGHT_TASK_MODELS,
   parseModelRef,
   type AiKeyStatus,
   type AiModel,
@@ -349,7 +350,11 @@ function ModelFields({ settings }: { settings: AiSettings }) {
             id={`model-${task}`}
             label={AI_TASK_NAMES[task]}
             value={settings.taskModels[task] ?? null}
-            emptyLabel="Same as default"
+            emptyLabel={
+              LIGHT_TASK_MODELS[task]
+                ? "A small model (Haiku or Luna)"
+                : "Same as default"
+            }
             models={models.data}
             loading={models.isPending}
             configured={configured}

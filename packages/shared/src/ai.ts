@@ -9,13 +9,24 @@ export const AI_PROVIDER_NAMES: Record<AiProviderId, string> = {
 }
 
 /** Jobs that can each use their own model. */
-export const AI_TASKS = ["import", "cleanup", "chat"] as const
+export const AI_TASKS = ["import", "cleanup", "chat", "nutrition"] as const
 export type AiTask = (typeof AI_TASKS)[number]
 
 export const AI_TASK_NAMES: Record<AiTask, string> = {
   import: "Importing recipes",
   cleanup: "Tidying recipes",
   chat: "Assistant",
+  nutrition: "Nutrition",
+}
+
+/**
+ * Tasks simple enough for a small, cheap model, used unless the task has its
+ * own pick. Matching "onion" to "Onions, raw" doesn't need the big one.
+ */
+export const LIGHT_TASK_MODELS: Partial<
+  Record<AiTask, Record<AiProviderId, string>>
+> = {
+  nutrition: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
 }
 
 /** Used when nothing else is picked. */
@@ -116,6 +127,8 @@ export type AiStatus = {
   providers: AiProviderId[]
   /** Spoken words in videos can be transcribed (needs an OpenAI key). */
   transcription: boolean
+  /** A USDA key is set, so nutrition can be calculated from ingredients. */
+  usda: boolean
 }
 
 export type AiUsageRow = {

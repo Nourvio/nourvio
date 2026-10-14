@@ -10,6 +10,7 @@ import { HTTPException } from "hono/http-exception"
 import { secureHeaders } from "hono/secure-headers"
 
 import { createAiService } from "./ai/service.ts"
+import { createNutritionService } from "./services/nutrition.ts"
 import { loadSession, requireUser } from "./auth/middleware.ts"
 import { config } from "./config.ts"
 import type { AppContext, AppEnv } from "./context.ts"
@@ -24,6 +25,7 @@ import { importRoutes } from "./routes/import.ts"
 import { joinRoutes, signupRoutes } from "./routes/join.ts"
 import { listRoutes } from "./routes/list.ts"
 import { meRoutes } from "./routes/me.ts"
+import { nutritionRoutes } from "./routes/nutrition.ts"
 import { pantryRoutes } from "./routes/pantry.ts"
 import { planRoutes } from "./routes/plan.ts"
 import { proposalsRoutes } from "./routes/proposals.ts"
@@ -55,6 +57,10 @@ function isSameSite(origin: string, c: Context) {
 export function createApp(ctx: AppContext) {
   const app = new Hono<AppEnv>()
   const ai = createAiService(ctx.db, ctx.aiFactory)
+  const nutrition = createNutritionService(ctx.db, ai, {
+    fdcFactory: ctx.fdcFactory,
+    auto: ctx.autoNutrition,
+  })
 
   app.use(secureHeaders())
   // Compression would hold back a streaming chat reply, so skip it there.
@@ -91,13 +97,14 @@ export function createApp(ctx: AppContext) {
   app.route("/api/household", householdRoutes(ctx))
   app.route("/api/users", usersRoutes(ctx))
   app.route("/api/server", serverRoutes(ctx))
-  app.route("/api/recipes", recipesRoutes(ctx, ai))
-  app.route("/api/proposals", proposalsRoutes(ctx))
+  app.route("/api/recipes", recipesRoutes(ctx, ai, nutrition))
+  app.route("/api/proposals", proposalsRoutes(ctx, nutrition))
+  app.route("/api/nutrition", nutritionRoutes(ctx, nutrition))
   app.route("/api/plan", planRoutes(ctx))
   app.route("/api/list", listRoutes(ctx))
   app.route("/api/pantry", pantryRoutes(ctx))
   app.route("/api/images", imagesRoutes(ctx))
-  app.route("/api/import", importRoutes(ctx, ai))
+  app.route("/api/import", importRoutes(ctx, ai, nutrition))
   app.route("/api/ai", aiRoutes(ctx, ai))
   app.route("/api/chat", chatRoutes(ctx, ai))
   app.all("/api/*", requireUser, (c) => c.json({ error: "Not found" }, 404))

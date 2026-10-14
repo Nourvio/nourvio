@@ -3,6 +3,7 @@ import {
   AI_PROVIDERS,
   DEFAULT_MODELS,
   estimateCost,
+  LIGHT_TASK_MODELS,
   parseModelRef,
   type AiModel,
   type AiProviderId,
@@ -20,6 +21,7 @@ import type { Db } from "../db/client.ts"
 import { aiUsage, households, settings } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
 import { decryptSecret, encryptSecret } from "../secrets.ts"
+import { usdaKey } from "../nutrition/settings.ts"
 import { createAnthropicProvider } from "./anthropic.ts"
 import { createOpenAiProvider } from "./openai.ts"
 import type { AiProvider, AiProviderFactory, ExtractRequest } from "./types.ts"
@@ -145,6 +147,7 @@ export function createAiService(
       available: providers.length > 0,
       providers,
       transcription: Boolean(available.openai),
+      usda: Boolean(await usdaKey(db)),
     }
   }
 
@@ -184,16 +187,27 @@ export function createAiService(
   }
 
   /**
-   * The provider and model for a task: the task's own pick, then the default,
-   * then whichever provider has a key. A pick whose provider lost its key is
-   * skipped.
+   * The provider and model for a task: the task's own pick; for a light task,
+   * the small model of the default's provider (or any with a key); then the
+   * default, then whichever provider has a key. A pick whose provider lost
+   * its key is skipped.
    */
   async function resolve(
     task: AiTask
   ): Promise<{ provider: AiProvider; model: string }> {
     const stored = await load()
     const available = await keys(stored)
-    for (const ref of [stored.taskModels?.[task], stored.defaultModel]) {
+    const light = LIGHT_TASK_MODELS[task]
+    const own = stored.taskModels?.[task]
+    if (light && !(own && available[parseModelRef(own).provider])) {
+      const preferred = stored.defaultModel
+        ? parseModelRef(stored.defaultModel).provider
+        : null
+      const id = [preferred, ...AI_PROVIDERS].find((p) => p && available[p])
+      if (id)
+        return { provider: factory(id, available[id]!.key), model: light[id] }
+    }
+    for (const ref of [own, stored.defaultModel]) {
       if (!ref) continue
       const { provider, model } = parseModelRef(ref)
       const found = available[provider]

@@ -10,6 +10,7 @@ import { bodyLimit } from "hono/body-limit"
 
 import { requireServerAdmin, requireUser } from "../auth/middleware.ts"
 import type { AiService } from "../ai/service.ts"
+import type { NutritionService } from "../services/nutrition.ts"
 import {
   currentHousehold,
   currentUser,
@@ -40,7 +41,8 @@ export function importRoutes(
     videoTools = systemVideoTools,
     mealieFetch = fetch,
   }: AppContext,
-  ai: AiService
+  ai: AiService,
+  nutrition: NutritionService
 ) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
@@ -54,6 +56,7 @@ export function importRoutes(
     actor: { userId: string; householdId: string }
   ) {
     if (result.duplicate) return
+    nutrition.afterSave(actor, result.recipe)
     if (!(await getHousehold(db, actor.householdId)).autoCleanup) return
     void proposeCleanup(db, ai, actor.householdId, result.recipe.id, {
       userId: actor.userId,

@@ -460,7 +460,9 @@ export async function setRecipeFields(
   db: Db,
   householdId: string,
   idOrSlug: string,
-  fields: Partial<Pick<RecipeRow, "rating" | "lastMadeAt" | "image">>
+  fields: Partial<
+    Pick<RecipeRow, "rating" | "lastMadeAt" | "image" | "nutrition">
+  >
 ) {
   const row = await findRecipeRow(db, householdId, idOrSlug)
   await db.update(recipes).set(fields).where(eq(recipes.id, row.id))

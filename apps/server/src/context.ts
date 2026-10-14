@@ -8,6 +8,7 @@ import type { MealieFetch } from "./import/mealie.ts"
 import type { Fetcher } from "./import/safe-fetch.ts"
 import type { VideoTools } from "./import/video-tools.ts"
 import type { UserRow } from "./services/users.ts"
+import type { FdcClientFactory } from "./nutrition/fdc.ts"
 
 /** What the app needs to run. Tests pass an in-memory database here. */
 export type AppContext = {
@@ -21,6 +22,10 @@ export type AppContext = {
   videoTools?: VideoTools
   /** How the Mealie importer reaches Mealie. Tests swap in a fake. */
   mealieFetch?: MealieFetch
+  /** How USDA FoodData Central is reached. Tests swap in a fake. */
+  fdcFactory?: FdcClientFactory
+  /** Work out nutrition in the background after a recipe is saved. On unless turned off (tests). */
+  autoNutrition?: boolean
 }
 
 export type AppEnv = {

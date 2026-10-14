@@ -3,6 +3,7 @@ import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 
 import type { AiService } from "../ai/service.ts"
+import type { NutritionService } from "../services/nutrition.ts"
 import { requireUser } from "../auth/middleware.ts"
 import {
   currentHousehold,
@@ -30,9 +31,18 @@ import {
 
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
-export function recipesRoutes({ db }: AppContext, ai: AiService) {
+export function recipesRoutes(
+  { db }: AppContext,
+  ai: AiService,
+  nutrition: NutritionService
+) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
+
+  const actorOf = (c: Parameters<typeof currentUser>[0]) => ({
+    userId: currentUser(c).id,
+    householdId: currentHousehold(c),
+  })
 
   app.get("/", async (c) => {
     const recipes = await listRecipes(db, currentHousehold(c), {
@@ -52,6 +62,7 @@ export function recipesRoutes({ db }: AppContext, ai: AiService) {
       origin: "manual",
       userId: currentUser(c).id,
     })
+    nutrition.afterSave(actorOf(c), recipe)
     return c.json({ recipe }, 201)
   })
 
@@ -63,6 +74,7 @@ export function recipesRoutes({ db }: AppContext, ai: AiService) {
 
   app.put("/:id", async (c) => {
     const input = await readBody(c, recipeInput)
+    const previous = await getRecipe(db, currentHousehold(c), c.req.param("id"))
     const recipe = await updateRecipe(
       db,
       currentHousehold(c),
@@ -72,8 +84,14 @@ export function recipesRoutes({ db }: AppContext, ai: AiService) {
         userId: currentUser(c).id,
       }
     )
+    nutrition.afterSave(actorOf(c), recipe, previous)
     return c.json({ recipe })
   })
+
+  /** Works out nutrition now, from USDA data or an AI estimate. */
+  app.post("/:id/nutrition", async (c) =>
+    c.json({ recipe: await nutrition.workOut(actorOf(c), c.req.param("id")) })
+  )
 
   app.patch("/:id", async (c) => {
     const { rating } = await readBody(c, rateInput)
@@ -178,6 +196,7 @@ export function recipesRoutes({ db }: AppContext, ai: AiService) {
   )
 
   app.post("/:id/versions/:versionId/restore", async (c) => {
+    const previous = await getRecipe(db, currentHousehold(c), c.req.param("id"))
     const recipe = await restoreVersion(
       db,
       currentHousehold(c),
@@ -185,6 +204,7 @@ export function recipesRoutes({ db }: AppContext, ai: AiService) {
       c.req.param("versionId"),
       currentUser(c).id
     )
+    nutrition.afterSave(actorOf(c), recipe, previous)
     return c.json({ recipe })
   })
 

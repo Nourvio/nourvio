@@ -96,6 +96,7 @@ describe("AI", () => {
       available: false,
       providers: [],
       transcription: false,
+      usda: false,
     })
     const res = await member.post("/api/import/text", {
       text: "Shakshuka: onions, tomatoes, eggs. Cook it all.",

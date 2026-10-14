@@ -21,6 +21,7 @@ import { AiCard } from "./ai-card"
 import { HouseholdCard } from "./household-card"
 import { MealPlanCard } from "./meal-plan-card"
 import { MealieCard } from "./mealie-card"
+import { NutritionCard } from "./nutrition-card"
 import { ServerCard } from "./server-card"
 import { TidyUpCard } from "./tidy-up-card"
 import { useAiStatus } from "./use-ai"
@@ -71,6 +72,7 @@ export function SettingsPage() {
             <h2 className="pt-4 text-xl font-semibold">Running this server</h2>
             <ServerCard />
             <AiCard />
+            <NutritionCard />
             <MealieCard />
           </>
         )}

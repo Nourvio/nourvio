@@ -6,6 +6,7 @@ import type {
   CleanupJob,
   ListSource,
   Meal,
+  NutrientValues,
   Nutrition,
   PlanStatus,
   ProposalKind,
@@ -466,7 +467,41 @@ export const foodSections = pgTable(
   (t) => [primaryKey({ columns: [t.householdId, t.food] })]
 )
 
+// ---- Nutrition ----
+
+/**
+ * USDA FoodData Central foods we've used, cached for good: nutrients per
+ * 100 g, and household portions ("1 medium" = 110 g) for converting amounts.
+ * Shared by every household; it's public data.
+ */
+export const fdcFoods = pgTable("fdc_foods", {
+  fdcId: integer().primaryKey(),
+  description: text().notNull(),
+  dataType: text().notNull(),
+  nutrients: jsonb().$type<NutrientValues>().notNull(),
+  portions: jsonb().$type<FdcPortion[]>().notNull().default([]),
+  fetchedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+})
+
+/**
+ * Which USDA food an ingredient name means ("boneless chicken thigh" →
+ * 2646171), and what one of a unit weighs when the USDA has no portion for
+ * it ("each" → 120 g). A null fdc_id means nothing fit. Shared by every
+ * household.
+ */
+export const foodMatches = pgTable("food_matches", {
+  /** The food as lists match it (see foodKey). */
+  food: text().primaryKey(),
+  fdcId: integer(),
+  /** Grams for one of a unit, by unit id or "each". */
+  grams: jsonb().$type<Record<string, number>>().notNull().default({}),
+  updatedAt: updatedAt(),
+})
+
 // ---- Pantry ----
+
+/** A USDA household portion: "1 medium" weighs 110 g. */
+export type FdcPortion = { label: string; amount: number; grams: number }
 
 /** A pantry row before cooking a meal changed it, and whether it was removed. */
 export type PantrySnapshot = {

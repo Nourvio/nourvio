@@ -43,6 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
 import { NotFoundPage } from "@/app/not-found-page"
 import { useChatScreen } from "@/features/chat/chat-provider"
 import { AddToPlanButton } from "@/features/plan/add-to-plan-dialog"
@@ -62,6 +63,7 @@ import {
   useRateRecipe,
   useRecipe,
   useRecipePhoto,
+  useWorkOutNutrition,
 } from "./use-recipes"
 import { VersionsDialog } from "./versions-dialog"
 
@@ -310,7 +312,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             </section>
           )}
 
-          {recipe.nutrition && <NutritionPanel nutrition={recipe.nutrition} />}
+          <NutritionPanel recipe={recipe} />
 
           {recipe.sourceUrl && (
             <a
@@ -464,9 +466,59 @@ const NUTRITION_SOURCE: Record<Nutrition["source"], string> = {
   estimate: "AI estimate",
 }
 
-function NutritionPanel({ nutrition }: { nutrition: Nutrition }) {
-  const rows = NUTRIENTS.filter(([key]) => nutrition[key] !== null)
-  if (!rows.length) return null
+/**
+ * Per-serving nutrition and where it's from. Without any, a button works it
+ * out (when the server has a USDA or AI key).
+ */
+function NutritionPanel({ recipe }: { recipe: Recipe }) {
+  const ai = useAiStatus()
+  const workOut = useWorkOutNutrition(recipe.id)
+  const { nutrition } = recipe
+  const can = Boolean(ai.data?.usda || ai.data?.available)
+  const rows = NUTRIENTS.filter(([key]) => nutrition && nutrition[key] !== null)
+
+  function run() {
+    workOut.mutate(undefined, {
+      onError: (error) =>
+        toast.error(
+          error instanceof ApiError
+            ? error.message
+            : "Couldn't work out the nutrition"
+        ),
+    })
+  }
+
+  if (!nutrition || !rows.length) {
+    if (!can) return null
+    return (
+      <section className="grid gap-2">
+        <h2 className="text-xl font-semibold">Nutrition</h2>
+        {recipe.servings ? (
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              variant="outline"
+              disabled={workOut.isPending}
+              onClick={run}
+            >
+              {workOut.isPending && <Spinner data-icon="inline-start" />}
+              {workOut.isPending ? "Working it out…" : "Work out nutrition"}
+            </Button>
+            <span className="text-sm text-muted-foreground">
+              {ai.data?.usda
+                ? "Per serving, from USDA data."
+                : "Per serving, as an AI estimate."}
+            </span>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Add how many servings it makes to work out nutrition.
+          </p>
+        )}
+      </section>
+    )
+  }
+
+  const notCounted = nutrition.notCounted ?? []
   return (
     <section className="grid gap-3">
       <div className="flex items-baseline justify-between gap-3">
@@ -486,6 +538,25 @@ function NutritionPanel({ nutrition }: { nutrition: Nutrition }) {
           </div>
         ))}
       </dl>
+      {(notCounted.length > 0 || (nutrition.source !== "site" && can)) && (
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          {notCounted.length > 0 ? (
+            <span>Not counted: {notCounted.join("; ")}</span>
+          ) : (
+            <span />
+          )}
+          {nutrition.source !== "site" && can && (
+            <button
+              type="button"
+              className="font-medium text-primary hover:underline disabled:opacity-50"
+              disabled={workOut.isPending}
+              onClick={run}
+            >
+              {workOut.isPending ? "Working it out…" : "Work it out again"}
+            </button>
+          )}
+        </div>
+      )}
     </section>
   )
 }

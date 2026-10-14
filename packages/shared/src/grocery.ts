@@ -105,7 +105,7 @@ export function guessSection(
 }
 
 /** How-much phrases that aren't part of the thing to buy: "Salt to taste". */
-const HOW_MUCH =
+export const HOW_MUCH =
   /\s+(to taste|as needed|if needed|for (serving|garnish|drizzling|frying|dusting|the pan|greasing)|optional)\b.*$/i
 
 export type ListLine = {
