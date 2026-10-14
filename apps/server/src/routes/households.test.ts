@@ -266,6 +266,28 @@ describe("households", () => {
       ).toBe("Fry's")
     })
 
+    test("shopping lists and where foods go", async () => {
+      const lists = [
+        { id: "main", name: "Groceries", store: null, sections: [] },
+        { id: "costco", name: "Costco", store: "costco", sections: [] },
+      ]
+      await t.admin.put("/api/household/lists", { lists })
+      await neighbor.put("/api/household/lists", { lists })
+      const mine = (await t.admin.post("/api/list/items", { text: "oat milk" }))
+        .body.item
+      await t.admin.patch(`/api/list/items/${mine.id}`, { listId: "costco" })
+      expect(
+        (await neighbor.patch(`/api/list/items/${mine.id}`, { listId: "main" }))
+          .status
+      ).toBe(404)
+      // What this household learned doesn't move the neighbor's oat milk.
+      const theirs = (
+        await neighbor.post("/api/list/items", { text: "oat milk" })
+      ).body.item
+      expect(theirs.listId).toBe("main")
+      await t.admin.put("/api/household/lists", { lists: [lists[0]] })
+    })
+
     test("each household has its own slugs and tag spellings", async () => {
       const theirs = await neighbor.post("/api/recipes", {
         ...SOUP,

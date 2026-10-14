@@ -26,6 +26,7 @@ import type {
   KrogerModality,
   KrogerStore,
   ShopId,
+  ShoppingList,
   StarterRecipe,
   StoreProduct,
 } from "@mise/shared"
@@ -74,6 +75,7 @@ export const households = pgTable("households", {
       onHand?: string[]
       tastes?: HouseholdTastes
       autoPlan?: AutoPlan
+      lists?: ShoppingList[]
     }>()
     .notNull()
     .default({}),
@@ -579,6 +581,8 @@ export const shoppingItems = pgTable(
     recipes: jsonb().$type<string[]>().notNull().default([]),
     /** Planned meal ids it's for, carried into the pantry when put away. */
     entries: jsonb().$type<string[]>().notNull().default([]),
+    /** One of the household's lists; null is the main list. */
+    listId: text(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -664,6 +668,19 @@ export const foodSections = pgTable(
       .$type<StoreSectionId>()
       .notNull()
       .references(() => storeSections.id),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.food] })]
+)
+
+/** Which list a household buys a food from, learned when they move an item. */
+export const foodLists = pgTable(
+  "food_lists",
+  {
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    food: text().notNull(),
+    listId: text().notNull(),
   },
   (t) => [primaryKey({ columns: [t.householdId, t.food] })]
 )

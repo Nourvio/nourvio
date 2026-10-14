@@ -41,7 +41,7 @@ import {
   type KrogerApp,
   type KrogerClient,
 } from "../shop/kroger.ts"
-import { foodOf, listRows, toItem } from "./list.ts"
+import { foodOf, listRows, listRowsForStore, toItem } from "./list.ts"
 
 type ItemRow = typeof shoppingItems.$inferSelect
 type ConnectionRow = typeof shopConnections.$inferSelect
@@ -518,7 +518,9 @@ export function createShopService(
   async function basket(householdId: string, actor: AiActor): Promise<Basket> {
     const { row: conn, store } = await requireStore(householdId)
     const client = await kroger()
-    const rows = (await listRows(db, householdId)).filter((row) => !row.checked)
+    const rows = (await listRowsForStore(db, householdId, "kroger")).filter(
+      (row) => !row.checked
+    )
     const savedRows = await db
       .select()
       .from(storeProducts)
@@ -797,7 +799,9 @@ export function createShopService(
     householdId: string,
     shop: ShopId
   ): Promise<Basket> {
-    const rows = (await listRows(db, householdId)).filter((row) => !row.checked)
+    const rows = (await listRowsForStore(db, householdId, shop)).filter(
+      (row) => !row.checked
+    )
     const saved = await savedProducts(householdId, shop)
     const needs = await needsFor(db, rows)
     const conn = await connection(householdId, shop)

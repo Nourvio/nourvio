@@ -3,6 +3,8 @@ import {
   combineLines,
   foodKey,
   formatAmount,
+  listsForStore,
+  MAIN_LIST,
   pantryKey,
   parseIngredient,
   STORE_SECTIONS,
@@ -11,7 +13,10 @@ import {
   type AddFromPlanResult,
   type ListLine,
   type PantryItem,
+  type ShopId,
   type ShoppingItem,
+  type ShoppingList,
+  type StoreSectionId,
   type UpdateListItemInput,
   type WeeklyItem,
   type WeeklyItemInput,
@@ -21,6 +26,7 @@ import { z } from "zod"
 
 import type { Db } from "../db/client.ts"
 import {
+  foodLists,
   foodSections,
   mealPlanEntries,
   recipes,
@@ -42,6 +48,7 @@ const SECTION_ORDER = new Map<string, number>(
 export function toItem(row: ItemRow): ShoppingItem {
   return {
     id: row.id,
+    listId: row.listId ?? MAIN_LIST,
     name: row.name,
     amount: row.amountText ?? formatAmount(row.quantity, row.unitId),
     quantity: row.quantity,
@@ -74,6 +81,86 @@ export async function listItems(db: Db, householdId: string) {
   return (await listRows(db, householdId)).map(toItem)
 }
 
+/** The rows a store shops from: its own list, else the lists for no store (see listsForStore). */
+export async function listRowsForStore(
+  db: Db,
+  householdId: string,
+  store: ShopId
+) {
+  const { lists } = await getHousehold(db, householdId)
+  const ids = listsForStore(lists, store)
+  return (await listRows(db, householdId)).filter((row) =>
+    ids.has(row.listId ?? MAIN_LIST)
+  )
+}
+
+/**
+ * After the lists change: what's waiting on the main list moves to the
+ * list its food or aisle goes on now. Things moved by hand stay put.
+ */
+export async function sortOntoLists(db: Db, householdId: string) {
+  const rows = await db
+    .select()
+    .from(shoppingItems)
+    .where(
+      and(
+        eq(shoppingItems.householdId, householdId),
+        eq(shoppingItems.checked, false),
+        isNull(shoppingItems.listId)
+      )
+    )
+  const targets = await listsFor(db, householdId, rows)
+  for (const [i, row] of rows.entries()) {
+    if (targets[i]) {
+      await db
+        .update(shoppingItems)
+        .set({ listId: targets[i] })
+        .where(eq(shoppingItems.id, row.id))
+    }
+  }
+}
+
+/** A list id as stored on an item: null for the main list, or for one that doesn't exist. */
+function storedList(lists: ShoppingList[], id: string | undefined | null) {
+  if (!id || id === MAIN_LIST) return null
+  return lists.some((list) => list.id === id) ? id : null
+}
+
+/**
+ * Which list each item goes on: where its food was moved to before, else
+ * the list its aisle goes on, else the main list.
+ */
+async function listsFor(
+  db: Db,
+  householdId: string,
+  items: { name: string; sectionId: StoreSectionId }[]
+) {
+  const { lists } = await getHousehold(db, householdId)
+  if (lists.length < 2) return items.map(() => null)
+  const bySection = new Map(
+    lists.flatMap((list) => list.sections.map((section) => [section, list.id]))
+  )
+  const foods = items.map((item) => foodKey(item.name))
+  const learned = foods.length
+    ? await db
+        .select()
+        .from(foodLists)
+        .where(
+          and(
+            eq(foodLists.householdId, householdId),
+            inArray(foodLists.food, foods)
+          )
+        )
+    : []
+  const byFood = new Map(learned.map((row) => [row.food, row.listId]))
+  return items.map((item, i) =>
+    storedList(
+      lists,
+      byFood.get(foods[i]!) ?? bySection.get(item.sectionId) ?? null
+    )
+  )
+}
+
 async function findItem(db: Db, householdId: string, id: string) {
   const [row] = z.uuid().safeParse(id).success
     ? await db
@@ -90,8 +177,13 @@ async function findItem(db: Db, householdId: string, id: string) {
   return row
 }
 
-/** Something typed in: "2 lb ground beef" or "paper towels". */
-export async function addManualItem(db: Db, householdId: string, text: string) {
+/** Something typed in: "2 lb ground beef" or "paper towels", on a list if given. */
+export async function addManualItem(
+  db: Db,
+  householdId: string,
+  text: string,
+  listId?: string
+) {
   const parsed = parseIngredient(text)
   const hasAmount = parsed.quantity !== null && parsed.food
   const name = hasAmount ? parsed.food! : text.trim()
@@ -109,6 +201,12 @@ export async function addManualItem(db: Db, householdId: string, text: string) {
       unitId: hasAmount ? parsed.unitId : null,
       sectionId: section!,
       source: "manual",
+      listId:
+        listId === undefined
+          ? (
+              await listsFor(db, householdId, [{ name, sectionId: section! }])
+            )[0]
+          : storedList((await getHousehold(db, householdId)).lists, listId),
     })
     .returning()
   return toItem(row!)
@@ -127,6 +225,25 @@ export async function updateItem(
   if (input.checked !== undefined) {
     patch.checked = input.checked
     patch.checkedAt = input.checked ? new Date() : null
+  }
+  if (input.listId !== undefined) {
+    const { lists } = await getHousehold(db, householdId)
+    if (
+      input.listId !== MAIN_LIST &&
+      !lists.some((l) => l.id === input.listId)
+    ) {
+      throw new HttpError(404, "That list isn't here any more")
+    }
+    patch.listId = storedList(lists, input.listId)
+    // Remember it: next time this food goes on that list by itself.
+    const food = foodKey(input.name ?? current.name)
+    await db
+      .insert(foodLists)
+      .values({ householdId, food, listId: input.listId })
+      .onConflictDoUpdate({
+        target: [foodLists.householdId, foodLists.food],
+        set: { listId: input.listId },
+      })
   }
   if (input.sectionId && input.sectionId !== current.sectionId) {
     patch.sectionId = input.sectionId
@@ -188,14 +305,16 @@ export async function addWeeklyItems(db: Db, householdId: string) {
     (item) => !have.has(`${foodKey(item.name)}|weekly`)
   )
   if (missing.length) {
+    const lists = await listsFor(db, householdId, missing)
     await db.insert(shoppingItems).values(
-      missing.map((item) => ({
+      missing.map((item, i) => ({
         householdId,
         key: `${foodKey(item.name)}|weekly`,
         name: item.name,
         amountText: item.amount,
         sectionId: item.sectionId,
         source: "weekly" as const,
+        listId: lists[i],
       }))
     )
   }
@@ -311,6 +430,11 @@ export async function addFromPlan(
         )
       )
     const sections = await sectionsFor(db, householdId, combined)
+    const lists = await listsFor(
+      db,
+      householdId,
+      combined.map((item, i) => ({ name: item.name, sectionId: sections[i]! }))
+    )
     for (const [i, item] of combined.entries()) {
       const match = existing.find(
         (row) => foodOf(row.key) === foodOf(item.key) && row.amountText === null
@@ -339,6 +463,7 @@ export async function addFromPlan(
           source: "plan",
           recipes: item.sources,
           entries: item.entries,
+          listId: lists[i],
         })
         added++
       }

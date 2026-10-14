@@ -3,6 +3,7 @@ import {
   householdTastesInput,
   updateAutoPlanInput,
   updateHouseholdInput,
+  shoppingListsInput,
 } from "@mise/shared"
 import { Hono } from "hono"
 
@@ -21,7 +22,9 @@ import {
   listInvites,
   revokeInvite,
   updateHousehold,
+  saveLists,
 } from "../services/households.ts"
+import { sortOntoLists } from "../services/list.ts"
 
 /** The signed-in person's household: its name and settings, and invite links. */
 export function householdRoutes({ db }: AppContext) {
@@ -45,6 +48,14 @@ export function householdRoutes({ db }: AppContext) {
     return c.json({
       household: await updateHousehold(db, currentHousehold(c), { tastes }),
     })
+  })
+
+  /** Shopping lists: anyone in the household can change them, like the list itself. */
+  app.put("/lists", async (c) => {
+    const { lists } = await readBody(c, shoppingListsInput)
+    const household = await saveLists(db, currentHousehold(c), lists)
+    await sortOntoLists(db, currentHousehold(c))
+    return c.json({ household })
   })
 
   /** Planning the week ahead by itself (household admins). */

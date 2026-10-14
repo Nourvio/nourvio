@@ -179,12 +179,21 @@ Build order, a commit for each:
 
 **Done when:** a week plans itself and its list without anyone opening the app, and a new household can fill its library from collections, discovery and followed sites without pasting a link.
 
+## Milestone 9: Lists by store
+
+**Status:** built October 14, 2026. The user asked to split the list, since they get soda and meat at Costco and everything else elsewhere.
+
+- **Lists:** the household's shopping lists, each for a store (Fry's, Costco or Walmart) or for none (a party list). One is the main list, which everything goes on unless something says otherwise. A household with one list sees the List page as before.
+- **Sorting itself:** each list can take aisles ("Meat & seafood and Beverages go on the Costco list"), and moving something to another list teaches Mise where that food goes, which wins over the aisle. It applies to everything added: typed in, every-week items and the plan. Saving the lists also moves what's waiting on the main list.
+- **Shopping follows:** Send to Fry's, Shop at Costco and the extension's Walmart cart each use their store's list, or the lists for no store when a store has none. The extension's side panel can show one list.
+
+**Done when:** soda and chicken land on the Costco list by themselves, and Send to Fry's sends only the rest.
+
 ## Later, maybe
 
 - Meaning-based recipe search with `pgvector` ("something cozy with chicken")
 - Offline reading in the cook view (a service worker)
 - Barcode scanning for the pantry
-- Multiple shopping lists
 - Price tracking, from the prices Fry's and Walmart show when sending the list
 - A ChatGPT/Claude app connector (MCP). We dropped this in favor of in-app chat, but the service layer would make it easy to add (see [integrations.md](integrations.md#considered-and-dropped-chatgpt-and-claude-app-connectors-mcp)).
 

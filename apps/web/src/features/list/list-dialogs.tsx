@@ -105,6 +105,8 @@ function EditItem({
   const [name, setName] = React.useState(item.name)
   const [amount, setAmount] = React.useState(item.amount)
   const [section, setSection] = React.useState(item.sectionId)
+  const lists = useHouseholdInfo().data?.lists ?? []
+  const [listId, setListId] = React.useState(item.listId)
 
   function save(event: React.FormEvent) {
     event.preventDefault()
@@ -114,6 +116,7 @@ function EditItem({
         ...(name.trim() !== item.name ? { name: name.trim() } : {}),
         ...(amount.trim() !== item.amount ? { amount: amount.trim() } : {}),
         ...(section !== item.sectionId ? { sectionId: section } : {}),
+        ...(listId !== item.listId ? { listId } : {}),
       },
       { onSuccess: onDone, onError: failed }
     )
@@ -150,6 +153,26 @@ function EditItem({
             Mise remembers where this goes next time.
           </FieldDescription>
         </Field>
+        {lists.length > 1 && (
+          <Field>
+            <FieldLabel htmlFor="item-list">List</FieldLabel>
+            <Select value={listId} onValueChange={setListId}>
+              <SelectTrigger id="item-list" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {lists.map((list) => (
+                  <SelectItem key={list.id} value={list.id}>
+                    {list.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FieldDescription>
+              Next time {name.trim() || "this"} goes on that list by itself.
+            </FieldDescription>
+          </Field>
+        )}
         {item.recipes.length > 0 && (
           <p className="text-sm text-muted-foreground">
             For {item.recipes.join(", ")}

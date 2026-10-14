@@ -17,6 +17,9 @@ import {
   type InvitePreview,
   type Role,
   type ServerSettings,
+  DEFAULT_LISTS,
+  MAIN_LIST,
+  type ShoppingList,
 } from "@mise/shared"
 import {
   and,
@@ -26,8 +29,9 @@ import {
   eq,
   gt,
   gte,
-  isNull,
   isNotNull,
+  isNull,
+  notInArray,
   sql,
 } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
@@ -41,6 +45,8 @@ import {
   recipes,
   settings,
   users,
+  foodLists,
+  shoppingItems,
 } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
 import { deleteImage } from "./images.ts"
@@ -58,6 +64,7 @@ function toHousehold(row: HouseholdRow): Household {
     onHand: row.settings.onHand ?? DEFAULT_ON_HAND,
     tastes: { ...NO_TASTES, ...row.settings.tastes },
     autoPlan: { ...DEFAULT_AUTO_PLAN, ...row.settings.autoPlan },
+    lists: row.settings.lists?.length ? row.settings.lists : DEFAULT_LISTS,
   }
 }
 
@@ -119,6 +126,45 @@ export async function updateHousehold(
         ...(patch.autoPlan ? { autoPlan: patch.autoPlan } : {}),
       },
     })
+    .where(eq(households.id, id))
+    .returning()
+  return toHousehold(row!)
+}
+
+/**
+ * Saves the household's lists. Things on a list that's gone move to the
+ * main list, and foods remembered for it are forgotten.
+ */
+export async function saveLists(db: Db, id: string, lists: ShoppingList[]) {
+  const [current] = await db
+    .select()
+    .from(households)
+    .where(eq(households.id, id))
+  if (!current) throw new HttpError(404, "That household doesn't exist")
+  const kept = lists.map((list) => list.id)
+  await db
+    .update(shoppingItems)
+    .set({ listId: null })
+    .where(
+      and(
+        eq(shoppingItems.householdId, id),
+        isNotNull(shoppingItems.listId),
+        notInArray(shoppingItems.listId, kept)
+      )
+    )
+  await db
+    .delete(foodLists)
+    .where(
+      and(eq(foodLists.householdId, id), notInArray(foodLists.listId, kept))
+    )
+  // The main list first.
+  const ordered = [
+    ...lists.filter((list) => list.id === MAIN_LIST),
+    ...lists.filter((list) => list.id !== MAIN_LIST),
+  ]
+  const [row] = await db
+    .update(households)
+    .set({ settings: { ...current.settings, lists: ordered } })
     .where(eq(households.id, id))
     .returning()
   return toHousehold(row!)

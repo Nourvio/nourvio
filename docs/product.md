@@ -148,6 +148,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 - The assistant can offer items to add, as a card.
 - *Later:* the list goes to the store (see 7).
 - One list per household. More lists can come later if needed.
+- **Lists by store.** Split the list in two or more (List → ⋯ → Split into lists by store): say Costco for meat and soda, and the main list for everything else. Each list can take whole aisles, and moving something to another list (tap it, then pick the list) teaches Mise that food goes there from now on. Tabs switch between lists, and each store's button sends only its list: Send to Fry's sends the Fry's list, Shop at Costco shows the Costco list.
 
 ### 6. Pantry
 

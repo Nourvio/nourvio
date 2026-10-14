@@ -3,6 +3,7 @@ import { z } from "zod"
 import { MEALS, type Meal } from "./plan.ts"
 import type { AutoPlan } from "./autoplan.ts"
 import type { HouseholdTastes } from "./tastes.ts"
+import type { ShoppingList } from "./list.ts"
 import {
   displayNameSchema,
   passwordSchema,
@@ -30,6 +31,8 @@ export type Household = {
   tastes: HouseholdTastes
   /** Planning the week ahead by itself. */
   autoPlan: AutoPlan
+  /** Shopping lists, the main one first. */
+  lists: ShoppingList[]
 }
 
 export const householdNameSchema = z

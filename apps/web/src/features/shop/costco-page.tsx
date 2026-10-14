@@ -1,6 +1,6 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowLeft01Icon, LinkSquare02Icon } from "@hugeicons/core-free-icons"
-import { STORE_SECTIONS } from "@mise/shared"
+import { DEFAULT_LISTS, listsForStore, STORE_SECTIONS } from "@mise/shared"
 import { Link } from "react-router"
 
 import { PageHeader } from "@/components/layout/page-header"
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useList, useUpdateListItem } from "@/features/list/use-list"
+import { useHouseholdInfo } from "@/features/settings/use-household"
 import { cn } from "@/lib/utils"
 
 /** An item's search at Costco Same-Day (run by Instacart); it asks you to sign in first if you aren't. */
@@ -29,7 +30,10 @@ export function costcoSearchUrl(name: string) {
 export function CostcoPage() {
   const list = useList()
   const update = useUpdateListItem()
-  const items = list.data ?? []
+  const lists = useHouseholdInfo().data?.lists ?? DEFAULT_LISTS
+  // The Costco list, if there is one; else the lists for no store.
+  const shopping = listsForStore(lists, "costco")
+  const items = (list.data ?? []).filter((item) => shopping.has(item.listId))
   const toGet = items.filter((item) => !item.checked)
   const got = items.filter((item) => item.checked)
   const sections = STORE_SECTIONS.map((section) => ({

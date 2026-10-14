@@ -1,6 +1,10 @@
 import { StrictMode, useCallback, useEffect, useState } from "react"
 import { createRoot } from "react-dom/client"
-import { STORE_SECTIONS, type ShoppingItem } from "@mise/shared"
+import {
+  STORE_SECTIONS,
+  type ShoppingItem,
+  type ShoppingList,
+} from "@mise/shared"
 
 import { getConnection, mise, MiseError, type Connection } from "./mise.ts"
 import "./ui.css"
@@ -31,6 +35,8 @@ function ListView() {
   const [items, setItems] = useState<ShoppingItem[] | null>(null)
   const [error, setError] = useState<string>()
   const [store, setStore] = useState<StoreKey>("none")
+  const [lists, setLists] = useState<ShoppingList[]>([])
+  const [listId, setListId] = useState("all")
 
   const load = useCallback(
     () =>
@@ -49,6 +55,13 @@ function ListView() {
 
   useEffect(() => {
     void load()
+    mise<{ household: { lists: ShoppingList[] } }>("/household").then(
+      ({ household }) => setLists(household.lists),
+      () => {}
+    )
+    void chrome.storage.local.get("panelList").then(({ panelList }) => {
+      if (typeof panelList === "string") setListId(panelList)
+    })
     void chrome.storage.local.get("searchStore").then(({ searchStore }) => {
       if (typeof searchStore === "string" && searchStore in STORES) {
         setStore(searchStore as StoreKey)
@@ -96,8 +109,12 @@ function ListView() {
     void chrome.storage.local.set({ searchStore: value })
   }
 
-  const toGet = (items ?? []).filter((item) => !item.checked)
-  const got = (items ?? []).length - toGet.length
+  const chosen = lists.some((list) => list.id === listId) ? listId : "all"
+  const onList = (items ?? []).filter(
+    (item) => chosen === "all" || item.listId === chosen
+  )
+  const toGet = onList.filter((item) => !item.checked)
+  const got = onList.length - toGet.length
   const sections = STORE_SECTIONS.map((section) => ({
     ...section,
     items: toGet.filter((item) => item.sectionId === section.id),
@@ -111,6 +128,25 @@ function ListView() {
           Refresh
         </button>
       </div>
+      {lists.length > 1 && (
+        <label className="muted" style={{ display: "grid", gap: 4 }}>
+          List
+          <select
+            value={chosen}
+            onChange={(event) => {
+              setListId(event.target.value)
+              void chrome.storage.local.set({ panelList: event.target.value })
+            }}
+          >
+            <option value="all">All lists</option>
+            {lists.map((list) => (
+              <option key={list.id} value={list.id}>
+                {list.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <label className="muted" style={{ display: "grid", gap: 4 }}>
         Search for each item at
         <select

@@ -6,6 +6,7 @@ import type {
   HouseholdTastes,
   Invite,
   Role,
+  ShoppingList,
   UpdateAutoPlanInput,
   UpdateHouseholdInput,
   UpdateUserInput,
@@ -68,6 +69,25 @@ export function useHouseholdInfo() {
     queryKey: HOUSEHOLD_INFO_KEY,
     queryFn: async () =>
       (await api<{ household: Household }>("/household")).household,
+  })
+}
+
+/** The household's shopping lists; anyone in it can change them. */
+export function useSaveLists() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (lists: ShoppingList[]) =>
+      (
+        await api<{ household: Household }>("/household/lists", {
+          method: "PUT",
+          body: { lists },
+        })
+      ).household,
+    onSuccess: (household) => {
+      queryClient.setQueryData(HOUSEHOLD_INFO_KEY, household)
+      // Things on a removed list moved to the main one.
+      queryClient.invalidateQueries({ queryKey: ["list"] })
+    },
   })
 }
 

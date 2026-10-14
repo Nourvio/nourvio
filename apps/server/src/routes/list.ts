@@ -36,9 +36,9 @@ export function listRoutes({ db }: AppContext) {
   )
 
   app.post("/items", async (c) => {
-    const { text } = await readBody(c, addListItemInput)
+    const { text, listId } = await readBody(c, addListItemInput)
     return c.json(
-      { item: await addManualItem(db, currentHousehold(c), text) },
+      { item: await addManualItem(db, currentHousehold(c), text, listId) },
       201
     )
   })

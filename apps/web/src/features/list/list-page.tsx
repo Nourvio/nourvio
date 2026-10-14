@@ -8,7 +8,12 @@ import {
   ShoppingBasket01Icon,
   ShoppingCart01Icon,
 } from "@hugeicons/core-free-icons"
-import { STORE_SECTIONS, type ShoppingItem } from "@mise/shared"
+import {
+  DEFAULT_LISTS,
+  MAIN_LIST,
+  STORE_SECTIONS,
+  type ShoppingItem,
+} from "@mise/shared"
 import { Link } from "react-router"
 import { toast } from "sonner"
 
@@ -42,10 +47,12 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
+import { useHouseholdInfo } from "@/features/settings/use-household"
 import { useShopStatus } from "@/features/shop/use-shop"
 
 import { AddFromPlanDialog } from "./add-from-plan-dialog"
 import { EditItemDialog, OnHandDialog, WeeklyItemsDialog } from "./list-dialogs"
+import { ListsDialog } from "./lists-dialog"
 import {
   useAddListItem,
   useClearChecked,
@@ -54,6 +61,17 @@ import {
   useUpdateListItem,
   useWeeklyItems,
 } from "./use-list"
+
+const LIST_KEY = "mise.list"
+
+/** The list last looked at on this device. */
+function readChosenList() {
+  try {
+    return localStorage.getItem(LIST_KEY) ?? MAIN_LIST
+  } catch {
+    return MAIN_LIST
+  }
+}
 
 /** The household's shopping list, in store order, with checked items at the bottom. */
 export function ListPage() {
@@ -65,8 +83,25 @@ export function ListPage() {
   const [weekly, setWeekly] = React.useState(false)
   const [onHand, setOnHand] = React.useState(false)
   const [editing, setEditing] = React.useState<ShoppingItem | null>(null)
+  const [managing, setManaging] = React.useState(false)
+  const lists = useHouseholdInfo().data?.lists ?? DEFAULT_LISTS
+  const [chosenList, setChosenList] = React.useState(readChosenList)
+  const current =
+    lists.find((l) => l.id === chosenList) ?? lists[0] ?? DEFAULT_LISTS[0]!
+  const split = lists.length > 1
 
-  const items = list.data ?? []
+  function chooseList(id: string) {
+    setChosenList(id)
+    try {
+      localStorage.setItem(LIST_KEY, id)
+    } catch {
+      // Not remembered; no harm.
+    }
+  }
+
+  const all = list.data ?? []
+  // With several lists, the one chosen; else everything.
+  const items = split ? all.filter((item) => item.listId === current.id) : all
   const toGet = items.filter((item) => !item.checked)
   const got = items.filter((item) => item.checked)
   const sections = STORE_SECTIONS.map((section) => ({
@@ -104,7 +139,7 @@ export function ListPage() {
           list.isPending
             ? "Everything to pick up."
             : toGet.length
-              ? `${toGet.length} to get`
+              ? `${toGet.length} to get${split ? ` on ${current.name}` : ""}`
               : "Nothing left to get."
         }
         actions={
@@ -156,6 +191,10 @@ export function ListPage() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuItem onSelect={() => setManaging(true)}>
+                  {split ? "Edit lists" : "Split into lists by store"}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => setWeekly(true)}>
                   Every week items
                 </DropdownMenuItem>
@@ -181,6 +220,43 @@ export function ListPage() {
         }
       />
 
+      {split && (
+        <div
+          className="-mt-2 mb-4 flex flex-wrap items-center gap-2"
+          role="tablist"
+        >
+          {lists.map((l) => {
+            const left = all.filter(
+              (i) => i.listId === l.id && !i.checked
+            ).length
+            return (
+              <Button
+                key={l.id}
+                role="tab"
+                aria-selected={l.id === current.id}
+                size="sm"
+                variant={l.id === current.id ? "secondary" : "ghost"}
+                className="rounded-full"
+                onClick={() => chooseList(l.id)}
+              >
+                {l.name}
+                <span className="text-muted-foreground tabular-nums">
+                  {left}
+                </span>
+              </Button>
+            )
+          })}
+          <Button
+            size="sm"
+            variant="link"
+            className="text-muted-foreground"
+            onClick={() => setManaging(true)}
+          >
+            Edit lists
+          </Button>
+        </div>
+      )}
+
       <WithAside
         aside={
           <ListAside
@@ -192,7 +268,7 @@ export function ListPage() {
           />
         }
       >
-        <QuickAdd />
+        <QuickAdd listId={split ? current.id : undefined} />
 
         {list.isPending ? (
           <div className="grid gap-2">
@@ -202,6 +278,19 @@ export function ListPage() {
           </div>
         ) : list.isError ? (
           <p className="text-muted-foreground">Couldn't load the list.</p>
+        ) : split && all.length > 0 && !items.length ? (
+          <p className="py-6 text-center text-muted-foreground">
+            Nothing on the {current.name} list. Move things here by tapping them
+            on another list, or choose which aisles go here in{" "}
+            <button
+              type="button"
+              className="font-medium text-foreground underline underline-offset-4"
+              onClick={() => setManaging(true)}
+            >
+              Edit lists
+            </button>
+            .
+          </p>
         ) : !items.length ? (
           <Empty className="border border-dashed">
             <EmptyHeader>
@@ -302,6 +391,7 @@ export function ListPage() {
       <AddFromPlanDialog open={fromPlan} onOpenChange={setFromPlan} />
       <WeeklyItemsDialog open={weekly} onOpenChange={setWeekly} />
       <OnHandDialog open={onHand} onOpenChange={setOnHand} />
+      <ListsDialog open={managing} onOpenChange={setManaging} />
       <EditItemDialog item={editing} onClose={() => setEditing(null)} />
     </>
   )
@@ -412,7 +502,7 @@ function ListAside({
   )
 }
 
-function QuickAdd() {
+function QuickAdd({ listId }: { listId?: string }) {
   const add = useAddListItem()
   const [text, setText] = React.useState("")
   return (
@@ -420,13 +510,16 @@ function QuickAdd() {
       onSubmit={(event) => {
         event.preventDefault()
         if (!text.trim()) return
-        add.mutate(text.trim(), {
-          onSuccess: () => setText(""),
-          onError: (error) =>
-            toast.error(
-              error instanceof ApiError ? error.message : "Couldn't add that"
-            ),
-        })
+        add.mutate(
+          { text: text.trim(), listId },
+          {
+            onSuccess: () => setText(""),
+            onError: (error) =>
+              toast.error(
+                error instanceof ApiError ? error.message : "Couldn't add that"
+              ),
+          }
+        )
       }}
     >
       <InputGroup>

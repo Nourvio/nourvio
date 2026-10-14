@@ -28,9 +28,12 @@ function useRefresh() {
 export function useAddListItem() {
   const refresh = useRefresh()
   return useMutation({
-    mutationFn: async (text: string) =>
-      (await api<{ item: ShoppingItem }>("/list/items", { body: { text } }))
-        .item,
+    mutationFn: async (input: string | { text: string; listId?: string }) =>
+      (
+        await api<{ item: ShoppingItem }>("/list/items", {
+          body: typeof input === "string" ? { text: input } : input,
+        })
+      ).item,
     onSuccess: refresh,
   })
 }
