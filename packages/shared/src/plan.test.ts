@@ -1,6 +1,14 @@
 import { describe, expect, test } from "vitest"
 
-import { addDays, daysBetween, startOfWeek, weekdayOf } from "./plan.ts"
+import {
+  addDays,
+  daysBetween,
+  planTotals,
+  startOfWeek,
+  weekdayOf,
+  type PlanEntry,
+  type PlanNutrition,
+} from "./plan.ts"
 
 describe("plan dates", () => {
   test("add days across months, years and daylight saving", () => {
@@ -18,5 +26,54 @@ describe("plan dates", () => {
     expect(startOfWeek("2026-10-14", 1)).toBe("2026-10-12") // Monday
     expect(startOfWeek("2026-10-11", 0)).toBe("2026-10-11")
     expect(startOfWeek("2026-10-11", 1)).toBe("2026-10-05")
+  })
+})
+
+describe("planTotals", () => {
+  const entry = (
+    status: PlanEntry["status"],
+    nutrition: PlanNutrition | null,
+    recipe = true
+  ): PlanEntry => ({
+    id: String(Math.random()),
+    date: "2026-10-14",
+    meal: "dinner",
+    position: 0,
+    recipe: recipe
+      ? {
+          id: "r",
+          slug: "r",
+          name: "R",
+          thumbnailUrl: null,
+          totalMinutes: null,
+          servings: 4,
+          nutrition,
+        }
+      : null,
+    note: recipe ? null : "Eating out",
+    servings: null,
+    status,
+    listed: false,
+    pantryUsed: [],
+  })
+  const some = { calories: 500, protein: 30, carbohydrates: 40, fat: 20 }
+
+  test("adds one serving of each meal that wasn't skipped", () => {
+    expect(
+      planTotals([
+        entry("planned", some),
+        entry("cooked", { ...some, calories: 300, fat: null }),
+        entry("skipped", some),
+        entry("planned", null),
+        entry("planned", null, false),
+      ])
+    ).toEqual({
+      calories: 800,
+      protein: 60,
+      carbohydrates: 80,
+      fat: 20,
+      counted: 2,
+      meals: 3,
+    })
   })
 })

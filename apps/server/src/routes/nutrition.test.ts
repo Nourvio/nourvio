@@ -1,14 +1,19 @@
 import type { Recipe } from "@mise/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 
+import { createAiService } from "../ai/service.ts"
 import type { AiProviderFactory } from "../ai/types.ts"
 import {
   FdcKeyError,
+  FdcRateLimitError,
   type FdcClientFactory,
   type FdcFood,
 } from "../nutrition/fdc.ts"
 import { gramsFor, readAmount } from "../nutrition/grams.ts"
-import { guessCandidate } from "../services/nutrition.ts"
+import {
+  createNutritionService,
+  guessCandidate,
+} from "../services/nutrition.ts"
 import { apiClient, createTestAppWithAdmin } from "../test/helpers.ts"
 
 const none = {
@@ -356,6 +361,126 @@ describe("nutrition", () => {
       ingredients: ["1 onion"],
     })
     expect((await sam.post(`/api/recipes/${r.id}/nutrition`)).status).toBe(200)
+  })
+})
+
+describe("the whole library", () => {
+  let t: Awaited<ReturnType<typeof createTestAppWithAdmin>>
+  const usda = fakeUsda()
+
+  async function finished(
+    get: () => Promise<{ job: { status: string } | null }>
+  ) {
+    for (let i = 0; i < 100; i++) {
+      const status = await get()
+      if (status.job && status.job.status !== "running") return status
+      await new Promise((resolve) => setTimeout(resolve, 20))
+    }
+    throw new Error("The run never finished")
+  }
+
+  beforeAll(async () => {
+    t = await createTestAppWithAdmin({ fdcFactory: usda.factory })
+    await t.admin.put("/api/nutrition/settings", { usdaKey: "good-key-123456" })
+    for (const [name, servings] of [
+      ["Onion Soup", 4],
+      ["Garlic Oil", 8],
+      ["No Servings", null],
+    ] as const) {
+      await t.admin.post("/api/recipes", {
+        name,
+        servings,
+        ingredients:
+          name === "Garlic Oil"
+            ? ["1 cup olive oil", "6 cloves garlic"]
+            : ["3 onions"],
+      })
+    }
+  })
+  afterAll(() => t.close())
+
+  test("works out every recipe that has none, and shows on the plan", async () => {
+    const before = (await t.admin.get("/api/nutrition/library")).body
+    expect(before).toMatchObject({ job: null, missing: 2, noServings: 1 })
+    const started = await t.admin.post("/api/nutrition/library")
+    expect(started.status).toBe(201)
+    expect(started.body.job).toMatchObject({ status: "running", total: 2 })
+
+    const after = await finished(
+      async () => (await t.admin.get("/api/nutrition/library")).body
+    )
+    expect(after).toMatchObject({
+      job: { status: "done", done: 2, failed: 0 },
+      missing: 0,
+      noServings: 1,
+    })
+    expect((await t.admin.post("/api/nutrition/library")).status).toBe(400)
+
+    const soup = (await t.admin.get("/api/recipes/onion-soup")).body.recipe
+    expect(soup.nutrition).toMatchObject({ source: "calculated", calories: 33 })
+    const entry = await t.admin.post("/api/plan/entries", {
+      date: "2026-10-20",
+      meal: "dinner",
+      recipeId: soup.id,
+    })
+    expect(entry.body.entry.recipe.nutrition).toEqual({
+      calories: 33,
+      protein: 0.9,
+      carbohydrates: 7.7,
+      fat: null,
+    })
+  })
+
+  test("waits out USDA's hourly limit and carries on", async () => {
+    let limited = 1
+    const flaky: FdcClientFactory = (key) => {
+      const client = usda.factory(key)
+      return {
+        ...client,
+        async search(query) {
+          if (limited-- > 0) throw new FdcRateLimitError("slow down")
+          return client.search(query)
+        },
+      }
+    }
+    const ai = createAiService(t.db)
+    const service = createNutritionService(t.db, ai, {
+      fdcFactory: flaky,
+      rateLimitWaitMs: 5,
+    })
+    const recipe = (
+      await t.admin.post("/api/recipes", {
+        name: "Garlic Bread",
+        servings: 2,
+        ingredients: ["4 cloves garlic", "1 tbsp butter"],
+      })
+    ).body.recipe
+    const householdId = t.adminUser.householdId
+    await service.startLibraryRun({ userId: t.adminUser.id, householdId })
+    const status = await finished(() => service.libraryStatus(householdId))
+    expect(status.job).toMatchObject({ status: "done", done: 1, failed: 0 })
+    const after = (await t.admin.get(`/api/recipes/${recipe.id}`)).body.recipe
+    // Butter isn't in the fake catalog, so it's left out.
+    expect(after.nutrition).toMatchObject({
+      source: "calculated",
+      notCounted: ["1 tbsp butter"],
+    })
+  })
+
+  test("is for household admins", async () => {
+    await t.admin.post("/api/users", {
+      displayName: "Sam",
+      username: "sam",
+      password: "a long enough password",
+      role: "member",
+    })
+    const sam = apiClient(t.app)
+    await sam.post("/api/auth/login", {
+      username: "sam",
+      password: "a long enough password",
+    })
+    expect((await sam.get("/api/nutrition/library")).status).toBe(403)
+    expect((await sam.post("/api/nutrition/library")).status).toBe(403)
   })
 })
 

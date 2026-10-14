@@ -1,5 +1,13 @@
 import { z } from "zod"
 
+import type { Nutrition } from "./recipes.ts"
+
+/** The numbers the plan adds up, per serving. */
+export type PlanNutrition = Pick<
+  Nutrition,
+  "calories" | "protein" | "carbohydrates" | "fat"
+>
+
 /** Meals a day can have. Every one is optional; a household picks which to show. */
 export const MEALS = ["breakfast", "lunch", "dinner", "snack"] as const
 export type Meal = (typeof MEALS)[number]
@@ -34,6 +42,7 @@ export type PlanEntry = {
     thumbnailUrl: string | null
     totalMinutes: number | null
     servings: number | null
+    nutrition: PlanNutrition | null
   } | null
   /** A note instead of a recipe ("leftovers", "eating out"). */
   note: string | null
@@ -123,7 +132,7 @@ export type SuggestMealsInput = z.infer<typeof suggestMealsInput>
 export type MealSuggestion = {
   date: string
   meal: Meal
-  recipe: NonNullable<PlanEntry["recipe"]>
+  recipe: Omit<NonNullable<PlanEntry["recipe"]>, "nutrition">
   /** Pantry food it uses up that needs using soon. */
   uses: string[]
 }
@@ -143,3 +152,37 @@ export const addPlanEntriesInput = z.object({
     .max(50),
 })
 export type AddPlanEntriesInput = z.infer<typeof addPlanEntriesInput>
+
+export type PlanTotals = {
+  calories: number
+  protein: number
+  carbohydrates: number
+  fat: number
+  /** Meals with nutrition, out of `meals`. */
+  counted: number
+  /** Recipe meals that weren't skipped. */
+  meals: number
+}
+
+/**
+ * What one person eats from these meals: one serving of each recipe that
+ * wasn't skipped. Notes ("Eating out") and meals without nutrition aren't
+ * counted.
+ */
+export function planTotals(entries: PlanEntry[]): PlanTotals {
+  const meals = entries.filter(
+    (entry) => entry.recipe && entry.status !== "skipped"
+  )
+  const totals = { calories: 0, protein: 0, carbohydrates: 0, fat: 0 }
+  let counted = 0
+  for (const entry of meals) {
+    const nutrition = entry.recipe!.nutrition
+    if (nutrition?.calories == null) continue
+    counted++
+    totals.calories += nutrition.calories
+    totals.protein += nutrition.protein ?? 0
+    totals.carbohydrates += nutrition.carbohydrates ?? 0
+    totals.fat += nutrition.fat ?? 0
+  }
+  return { ...totals, counted, meals: meals.length }
+}

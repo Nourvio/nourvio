@@ -108,10 +108,13 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 ## Milestone 5: Nutrition
 
-- USDA FoodData Central matching for foods, with nutrient and portion caching
-- Per-serving calculation, with the source label (site, calculated or estimate)
-- AI estimate fallback
-- Daily and weekly totals on the plan
+**Status:** built. The AI estimate, the library run and the plan totals were tested live with Claude. The USDA calculation is tested against real USDA records and search results; it gets its first live run once a USDA key is added in Settings.
+
+- USDA FoodData Central matching, with the AI picking from the search results (USDA's top hit is often the wrong food), and nutrients, portions and matches cached server-wide
+- Per-serving calculation, with the source label (site, calculated or estimate) and the lines that weren't counted
+- AI estimate fallback, on a small model by default
+- Worked out in the background after a save, on demand from the recipe page, and for the whole library from Settings
+- Daily and weekly totals on the plan, per person
 
 **Done when:** every recipe shows per-serving nutrition with its source.
 

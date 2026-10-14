@@ -7,7 +7,13 @@ import {
   RefreshIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
-import { MEAL_NAMES, MEALS, type Meal, type PlanEntry } from "@mise/shared"
+import {
+  MEAL_NAMES,
+  MEALS,
+  planTotals,
+  type Meal,
+  type PlanEntry,
+} from "@mise/shared"
 import { Link } from "react-router"
 import { toast } from "sonner"
 
@@ -74,6 +80,7 @@ export function DayCard({
         <h2 className="text-lg font-semibold">{dayName(date)}</h2>
         <span className="text-sm text-muted-foreground">{monthDay(date)}</span>
         {isToday && <Badge className="self-center">Today</Badge>}
+        <DayNutrition entries={entries} />
       </header>
 
       {filled.map((meal) => (
@@ -124,6 +131,22 @@ export function DayCard({
         </div>
       )}
     </section>
+  )
+}
+
+/** One serving of each meal, added up: roughly what one person eats that day. */
+function DayNutrition({ entries }: { entries: PlanEntry[] }) {
+  const totals = planTotals(entries)
+  if (!totals.counted) return null
+  const partial = totals.counted < totals.meals
+  return (
+    <span
+      className="ml-auto text-sm text-muted-foreground tabular-nums"
+      title={`One serving of each meal: ${Math.round(totals.protein)} g protein, ${Math.round(totals.carbohydrates)} g carbs, ${Math.round(totals.fat)} g fat${partial ? `. ${totals.meals - totals.counted} without nutrition aren't counted.` : "."}`}
+    >
+      ≈ {Math.round(totals.calories).toLocaleString()} cal
+      {partial && "+"}
+    </span>
   )
 }
 

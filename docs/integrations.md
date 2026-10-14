@@ -78,10 +78,12 @@ Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x
 
 1. **From the recipe site.** JSON-LD `NutritionInformation` (calories, proteinContent, fatContent and so on) is stored as-is, labeled "from site."
 2. **Calculated from ingredients** with [USDA FoodData Central](https://fdc.nal.usda.gov/api-guide/):
-   - It's free with an api.data.gov key (1,000 requests per hour by default).
-   - We use two endpoints: `/foods/search` and `/food/{fdcId}`.
-   - Each food is matched to an FDC entry once and saved as `foods.fdc_id`, with its nutrients per 100 g cached locally. That keeps API calls rare.
-   - Ingredient amounts are converted to grams. Weights convert directly. Volumes and counts use FDC's portion data (`foodPortions`, like "1 cup chopped = 160 g" or "1 medium = 110 g"), stored in `foods.grams_per_unit`.
+   - It's free with an api.data.gov key (1,000 requests per hour by default). The shared `DEMO_KEY` allows only 10 an hour, too few to use. The key goes in the `X-Api-Key` header, so it stays out of URLs and logs.
+   - We use two endpoints: `/foods/search` (Foundation and SR Legacy foods only; branded products are noise) and `/food/{fdcId}`.
+   - USDA's ranking is often wrong for plain names: "chicken thighs" comes back as chicken skin first, "olive oil" as a corn, peanut and olive blend. So the AI picks from the top eight.
+   - Each food is matched once (`food_matches`) and its record cached (`fdc_foods`), shared across households. That keeps API calls rare after the first few recipes.
+   - Ingredient amounts are converted to grams. Weights convert directly. Volumes and counts use FDC's portion data (`foodPortions`, like "1 cup chopped = 160 g" or "1 medium = 110 g"). SR Legacy foods have rich portions; Foundation foods mostly don't, so the AI weighs those and the result is cached.
+   - Energy is nutrient 1008 in SR Legacy, but 2047 or 2048 (Atwater factors) in Foundation foods; sugars are 2000 or 1063.
    - Per-serving totals are the sum divided by servings, labeled "calculated."
 3. **AI estimate** when matching fails, labeled "estimate."
 

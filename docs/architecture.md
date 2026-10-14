@@ -77,7 +77,7 @@ mise/
 
 ## Data model
 
-**Foods are matched by name, not by a table.** The shared package normalizes a food name (`foodKey`: lowercase, sizes and "fresh" dropped, singular), so "2 Large Onions" and "1 onion" are both "onion". The pantry goes a step further (`pantryKey`: prep and quality words like "boneless", "unsalted" and "diced" dropped too). That's what lets the same onion add up across recipes, get subtracted by the pantry, and (later) map to a Walmart product, with nothing for anyone to set up. A `foods` table may come with nutrition or Walmart if name matching isn't enough.
+**Foods are matched by name, not by a table.** The shared package normalizes a food name (`foodKey`: lowercase, sizes and "fresh" dropped, singular), so "2 Large Onions" and "1 onion" are both "onion". The pantry goes a step further (`pantryKey`: prep and quality words like "boneless", "unsalted" and "diced" dropped too). That's what lets the same onion add up across recipes, get subtracted by the pantry, find its USDA nutrition (`food_matches`), and (later) map to a Walmart product, with nothing for anyone to set up.
 
 Everything a household owns carries its `household_id`, and every query is scoped by the signed-in person's household. Another household's recipe, photo, suggestion or member is a 404.
 
@@ -90,7 +90,8 @@ Everything a household owns carries its `household_id`, and every query is scope
 | `recipe_steps` | recipe_id, position, section, text | |
 | `recipe_versions` | recipe_id, snapshot (jsonb), source, created_by, created_at | Every saved change makes a snapshot, so the original import can always be restored. `source` is one of import, manual, ai_cleanup, chat. |
 | `tags`, `recipe_tags` | household_id, name (unique per household, ignoring case) | |
-| `foods` | name, fdc_id, nutrition_per_100g (jsonb), grams_per_unit (jsonb) | *Maybe later, with nutrition.* `fdc_id` links to USDA data |
+| `fdc_foods` | fdc_id, description, data_type, nutrients (jsonb, per 100 g), portions (jsonb: label, amount, grams) | USDA foods we've used, cached for good. Shared by every household; it's public data. |
+| `food_matches` | food (the `foodKey`), fdc_id (null when nothing fit), grams (jsonb: what one of a unit weighs, by unit id or "each") | Which USDA food a name means, picked once (by the AI when there is one) and reused by every recipe and household |
 | `units` | name, abbreviation, aliases, kind (volume/weight/count), to_base | `to_base` converts to ml or g for safe unit conversion. Seeded at startup. |
 | `meal_plan_entries` | household_id, date, meal, position, recipe_id (null for a note), note, servings (null for the recipe's own), status, listed_at, pantry_used (jsonb) | `status` is planned, cooked or skipped. `listed_at` is set once its ingredients are on the list. `pantry_used` holds the pantry rows as they were before cooking it, to put back. |
 | `shopping_items` | household_id, key, name, quantity, unit_id, amount_text, section_id, checked, checked_at, source, recipes (jsonb), entries (jsonb) | One list per household. `key` merges the same food across recipes. `source` is plan, manual or weekly. `entries` are the planned meals it's for. |
@@ -132,7 +133,8 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Joining | `GET`/`POST /api/join/:token` (invite links), `POST /api/signup` (when open) |
 | Household | `GET`/`PATCH /api/household`; invites `GET`/`POST /api/household/invites`, `DELETE /api/household/invites/:id`; members `GET`/`POST /api/users`, `PATCH`/`DELETE /api/users/:id` (household admins) |
 | Server | `GET`/`PUT /api/server/settings`, `GET /api/server/households`, `DELETE /api/server/households/:id` (server admin) |
-| Recipes | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image` |
+| Recipes | `GET/POST /api/recipes`, `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image`, `POST /api/recipes/:id/nutrition` (work it out now) |
+| Nutrition | `GET`/`POST /api/nutrition/library`, `POST /api/nutrition/library/:id/stop` (household admins); `GET`/`PUT /api/nutrition/settings`, `POST /api/nutrition/settings/test` (server admin, the USDA key) |
 | Versions | `GET /api/recipes/:id/versions`, `POST /api/recipes/:id/versions/:versionId/restore` |
 | Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (server admin, into their household): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
 | AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal, or null when there's nothing to change), `GET /api/recipes/:id/proposal`; library runs at `GET`/`POST /api/ai/cleanup-job` and `POST /api/ai/cleanup-job/:id/cancel` (household admins) |
@@ -170,7 +172,8 @@ JSON over REST under `/api`. Chat streams with server-sent events.
   - Only the server admin can change AI settings. Every household uses the same keys, and usage is recorded per household.
 - **Models:**
   - Settings has a default model, picked from the providers' live model lists.
-  - Each task can override that default. So far: importing, tidying and the assistant (which also plans meals); shopping translation and nutrition estimates join later.
+  - Each task can override that default. So far: importing, tidying, the assistant (which also plans meals) and nutrition; shopping translation joins later.
+  - Nutrition is simple work, so unless it has its own pick it uses the small model of the default's provider (Claude Haiku 5.5 or GPT-6 Luna).
   - With nothing picked, the defaults are Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6 Sol (`gpt-6-sol`).
   - A pick whose provider has lost its key is skipped, so removing a key never breaks import.
 - **Claude specifics:**
@@ -240,7 +243,11 @@ The original is always kept. Every applied cleanup adds a version, and the first
 - **Structured extraction (import):** turns a web page without recipe data, pasted text, or photos into a recipe draft. The draft's ingredient lines and steps go through the same parser as everything else.
 - **Week suggestions:** today, Fill the week is rules only (no AI, though it does use up the pantry's Use soon items first), and the assistant can plan meals in chat. *Later:* the rules pick candidates and the AI ranks them, weighing preferences too.
 - **Shopping translation:** turns combined recipe amounts into product quantities, using our saved Walmart products.
-- **Nutrition fallback:** an estimate when USDA matching fails, always labeled as an estimate.
+- **Nutrition** (`services/nutrition.ts`):
+  - Each new food is searched in USDA FoodData Central (Foundation and SR Legacy foods), and the AI picks the candidate that's the food as used, or none. The match is cached in `food_matches`.
+  - Amounts become grams from the line (weights, "1 (15 oz) can") or the food's USDA portions ("1 medium" = 110 g, "1 cup, chopped" = 160 g). What portions can't cover ("4 chicken thighs") the AI weighs, and that's cached per unit too, so most recipes after the first few need no AI at all.
+  - Without AI, a small scoring rule picks matches. Without a USDA key, or when more than a third of the lines can't be counted, the AI estimates the whole recipe instead, labeled as an estimate.
+  - It runs in the background after a recipe is saved with new ingredients (one run per recipe at a time). The library run goes two at a time and waits out USDA's hourly limit (1,000 requests) rather than failing.
 
 ### Rough cost
 
@@ -287,11 +294,11 @@ The parser lives in the shared package, so the server and browser use the same c
 | Cook | Full-screen cooking view |
 | Add | Link, Text, Photo and Manual tabs |
 | Review | A queue of AI proposals waiting for you, such as bulk cleanup results |
-| Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, and Add to list |
+| Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, Add to list, and calories per day |
 | List | Shopping list grouped by section, with every-week items, always-on-hand items and (later) Send to Walmart |
 | Pantry | Use soon (near use-by dates, and fresh leftovers from skipped meals), everything else by aisle, and always-on-hand items |
 | Chat | Available on every screen (see below) |
-| Settings | Your account and appearance; your household (members, invites, rename, tidying up, which meals to plan and the first day of the week); for the server admin, the server (sign-up, households), AI (keys, models, usage by household) and the Mealie import; later the API token and plan rules |
+| Settings | Your account and appearance; your household (members, invites, rename, tidying up, which meals to plan and the first day of the week); nutrition for the whole library; for the server admin, the server (sign-up, households), AI (keys, models, usage by household), the USDA key and the Mealie import; later the API token and plan rules |
 
 ### Layout
 

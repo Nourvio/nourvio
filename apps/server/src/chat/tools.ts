@@ -3,6 +3,7 @@ import {
   MEALS,
   toIsoDate,
   whyUseSoon,
+  type Nutrition,
   type PantryItem,
   type PlanEntry,
   type Proposal,
@@ -545,9 +546,30 @@ export function describeRecipe(recipe: Recipe) {
     recipeText(toInput(recipe)),
     recipe.rating ? `Rating: ${recipe.rating}/5` : null,
     recipe.lastMadeAt ? `Last made: ${recipe.lastMadeAt.slice(0, 10)}` : null,
+    recipe.nutrition ? describeNutrition(recipe.nutrition) : null,
   ]
     .filter(Boolean)
     .join("\n")
+}
+
+const NUTRITION_SOURCES: Record<Nutrition["source"], string> = {
+  site: "from the recipe site",
+  calculated: "calculated from USDA data",
+  estimate: "an AI estimate",
+}
+
+function describeNutrition(nutrition: Nutrition) {
+  const parts = [
+    nutrition.calories !== null && `${nutrition.calories} kcal`,
+    nutrition.protein !== null && `${nutrition.protein} g protein`,
+    nutrition.carbohydrates !== null && `${nutrition.carbohydrates} g carbs`,
+    nutrition.fat !== null && `${nutrition.fat} g fat`,
+    nutrition.fiber !== null && `${nutrition.fiber} g fiber`,
+    nutrition.sodium !== null && `${nutrition.sodium} mg sodium`,
+  ].filter(Boolean)
+  return parts.length
+    ? `Nutrition per serving (${NUTRITION_SOURCES[nutrition.source]}): ${parts.join(", ")}`
+    : null
 }
 
 /** Before and after for each field the model gave that differs from the recipe. */

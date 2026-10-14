@@ -1,4 +1,8 @@
-import type { NutritionSettings } from "@mise/shared"
+import type {
+  CleanupJob,
+  NutritionLibrary,
+  NutritionSettings,
+} from "@mise/shared"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api } from "@/lib/api"
@@ -42,5 +46,38 @@ export function useTestUsdaKey() {
       api<{ ok: true; found: number }>("/nutrition/settings/test", {
         body: usdaKey ? { usdaKey } : {},
       }),
+  })
+}
+
+const LIBRARY_KEY = ["nutrition-library"] as const
+
+/** Household admins: the library run, and how many recipes still need nutrition. */
+export function useNutritionLibrary() {
+  return useQuery({
+    queryKey: LIBRARY_KEY,
+    queryFn: () => api<NutritionLibrary>("/nutrition/library"),
+    // Check on a running job every few seconds.
+    refetchInterval: (query) =>
+      query.state.data?.job?.status === "running" ? 3000 : false,
+  })
+}
+
+export function useStartNutritionLibrary() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: () =>
+      api<{ job: CleanupJob }>("/nutrition/library", { method: "POST" }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: LIBRARY_KEY }),
+  })
+}
+
+export function useStopNutritionLibrary() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: string) =>
+      api<{ job: CleanupJob }>(`/nutrition/library/${id}/stop`, {
+        method: "POST",
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: LIBRARY_KEY }),
   })
 }

@@ -601,7 +601,7 @@ export const aiJobs = pgTable("ai_jobs", {
   householdId: uuid()
     .notNull()
     .references(() => households.id, { onDelete: "cascade" }),
-  kind: text().$type<"cleanup" | "mealie">().notNull(),
+  kind: text().$type<"cleanup" | "mealie" | "nutrition">().notNull(),
   status: text().$type<CleanupJob["status"]>().notNull(),
   total: integer().notNull(),
   done: integer().notNull().default(0),

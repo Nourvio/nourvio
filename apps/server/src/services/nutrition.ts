@@ -1,18 +1,27 @@
 import {
   NUTRIENT_KEYS,
+  type CleanupJob,
+  type NutritionLibrary,
   type NutrientValues,
   type Nutrition,
   type Recipe,
 } from "@mise/shared"
-import { inArray } from "drizzle-orm"
+import { and, asc, desc, eq, exists, inArray, isNull } from "drizzle-orm"
 import { z } from "zod"
 
 import type { AiActor, AiService } from "../ai/service.ts"
 import type { Db } from "../db/client.ts"
-import { fdcFoods, foodMatches } from "../db/schema.ts"
+import {
+  aiJobs,
+  fdcFoods,
+  foodMatches,
+  recipeIngredients,
+  recipes,
+} from "../db/schema.ts"
 import { HttpError } from "../http.ts"
 import {
   createFdcClient,
+  FdcRateLimitError,
   type FdcCandidate,
   type FdcClient,
   type FdcClientFactory,
@@ -107,7 +116,12 @@ export function guessCandidate(name: string, candidates: FdcCandidate[]) {
 export function createNutritionService(
   db: Db,
   ai: AiService,
-  options: { fdcFactory?: FdcClientFactory; auto?: boolean } = {}
+  options: {
+    fdcFactory?: FdcClientFactory
+    auto?: boolean
+    /** How long to wait after USDA's hourly limit before trying again. */
+    rateLimitWaitMs?: number
+  } = {}
 ) {
   const factory = options.fdcFactory ?? ((key: string) => createFdcClient(key))
   /** One run at a time per recipe; a save during a run queues another. */
@@ -425,5 +439,183 @@ export function createNutritionService(
     )
   }
 
-  return { abilities, workOut, afterSave, compute }
+  // ---- The whole library ----
+
+  /** Library runs going in this process, so they can be stopped. */
+  const runs = new Map<string, { cancelled: boolean }>()
+  const waitMs = options.rateLimitWaitMs ?? 5 * 60_000
+
+  /** Recipes with no nutrition yet, oldest first, and how many lack servings. */
+  async function missing(householdId: string) {
+    const rows = await db
+      .select({ id: recipes.id, servings: recipes.servings })
+      .from(recipes)
+      .where(
+        and(
+          eq(recipes.householdId, householdId),
+          isNull(recipes.nutrition),
+          exists(
+            db
+              .select({ id: recipeIngredients.id })
+              .from(recipeIngredients)
+              .where(eq(recipeIngredients.recipeId, recipes.id))
+          )
+        )
+      )
+      .orderBy(asc(recipes.createdAt))
+    return {
+      ids: rows.filter((r) => r.servings).map((r) => r.id),
+      noServings: rows.filter((r) => !r.servings).length,
+    }
+  }
+
+  function toJob(row: typeof aiJobs.$inferSelect): CleanupJob {
+    return {
+      id: row.id,
+      status: row.status,
+      total: row.total,
+      done: row.done,
+      failed: row.failed,
+      proposals: 0,
+      createdAt: row.createdAt.toISOString(),
+      finishedAt: row.finishedAt?.toISOString() ?? null,
+    }
+  }
+
+  async function libraryStatus(householdId: string): Promise<NutritionLibrary> {
+    const [row] = await db
+      .select()
+      .from(aiJobs)
+      .where(
+        and(eq(aiJobs.kind, "nutrition"), eq(aiJobs.householdId, householdId))
+      )
+      .orderBy(desc(aiJobs.createdAt))
+      .limit(1)
+    const { ids, noServings } = await missing(householdId)
+    return { job: row ? toJob(row) : null, missing: ids.length, noServings }
+  }
+
+  /**
+   * Works out nutrition for every recipe that has none, in the background,
+   * two at a time. Hitting USDA's hourly limit pauses the run rather than
+   * ending it.
+   */
+  async function startLibraryRun(actor: {
+    userId: string
+    householdId: string
+  }) {
+    const { householdId } = actor
+    const [active] = await db
+      .select({ id: aiJobs.id })
+      .from(aiJobs)
+      .where(
+        and(
+          eq(aiJobs.kind, "nutrition"),
+          eq(aiJobs.householdId, householdId),
+          eq(aiJobs.status, "running")
+        )
+      )
+    if (active)
+      throw new HttpError(409, "Nutrition is already being worked out")
+    const can = await abilities()
+    if (!can.calculate && !can.estimate) {
+      throw new HttpError(400, "Nutrition needs a USDA key or an AI key")
+    }
+    const { ids } = await missing(householdId)
+    if (!ids.length) {
+      throw new HttpError(400, "Every recipe with servings has nutrition")
+    }
+    const [row] = await db
+      .insert(aiJobs)
+      .values({
+        householdId,
+        kind: "nutrition",
+        status: "running",
+        total: ids.length,
+        createdBy: actor.userId,
+      })
+      .returning()
+    const job = row!
+    const control = { cancelled: false }
+    runs.set(job.id, control)
+
+    void (async () => {
+      let done = 0
+      let failed = 0
+      let failuresInARow = 0
+      let next = 0
+      let status: CleanupJob["status"] = "done"
+
+      async function worker() {
+        while (next < ids.length && !control.cancelled) {
+          const id = ids[next++]!
+          for (let wait = 0; ; wait++) {
+            try {
+              await workOut(actor, id)
+              done++
+              failuresInARow = 0
+            } catch (error) {
+              if (error instanceof FdcRateLimitError && wait < 12) {
+                await new Promise((resolve) => setTimeout(resolve, waitMs))
+                if (!control.cancelled) continue
+              }
+              failed++
+              failuresInARow++
+              console.warn(
+                `Nutrition for recipe ${id} failed:`,
+                (error as Error).message
+              )
+              if (failuresInARow >= 3) {
+                status = "failed"
+                control.cancelled = true
+              }
+            }
+            break
+          }
+          await db
+            .update(aiJobs)
+            .set({ done, failed })
+            .where(eq(aiJobs.id, job.id))
+        }
+      }
+
+      try {
+        await Promise.all([worker(), worker()])
+      } catch (error) {
+        status = "failed"
+        console.error("Library nutrition run stopped:", error)
+      }
+      if (control.cancelled && status === "done") status = "cancelled"
+      runs.delete(job.id)
+      await db
+        .update(aiJobs)
+        .set({ status, done, failed, finishedAt: new Date() })
+        .where(eq(aiJobs.id, job.id))
+    })()
+
+    return toJob(job)
+  }
+
+  async function stopLibraryRun(householdId: string, id: string) {
+    const [row] = z.uuid().safeParse(id).success
+      ? await db
+          .select()
+          .from(aiJobs)
+          .where(and(eq(aiJobs.id, id), eq(aiJobs.householdId, householdId)))
+      : []
+    const control = row && runs.get(row.id)
+    if (!row || !control) throw new HttpError(404, "That run isn't going")
+    control.cancelled = true
+    return toJob(row)
+  }
+
+  return {
+    abilities,
+    workOut,
+    afterSave,
+    compute,
+    libraryStatus,
+    startLibraryRun,
+    stopLibraryRun,
+  }
 }

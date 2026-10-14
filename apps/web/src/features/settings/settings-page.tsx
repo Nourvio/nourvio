@@ -22,6 +22,7 @@ import { HouseholdCard } from "./household-card"
 import { MealPlanCard } from "./meal-plan-card"
 import { MealieCard } from "./mealie-card"
 import { NutritionCard } from "./nutrition-card"
+import { NutritionLibraryCard } from "./nutrition-library-card"
 import { ServerCard } from "./server-card"
 import { TidyUpCard } from "./tidy-up-card"
 import { useAiStatus } from "./use-ai"
@@ -66,6 +67,9 @@ export function SettingsPage() {
         <HouseholdCard />
         {me.role === "admin" && <MealPlanCard />}
         {me.role === "admin" && ai.data?.available && <TidyUpCard />}
+        {me.role === "admin" && (ai.data?.available || ai.data?.usda) && (
+          <NutritionLibraryCard />
+        )}
 
         {me.isServerAdmin && (
           <>

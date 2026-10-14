@@ -1,5 +1,16 @@
 import { z } from "zod"
 
+import type { CleanupJob } from "./proposals.ts"
+
+/** A household's library run, and what's left to do. */
+export type NutritionLibrary = {
+  job: CleanupJob | null
+  /** Recipes with servings but no nutrition yet. */
+  missing: number
+  /** Recipes with no nutrition that need servings first. */
+  noServings: number
+}
+
 /** The server's USDA FoodData Central key, as Settings shows it. */
 export type NutritionSettings = {
   usdaKey: {

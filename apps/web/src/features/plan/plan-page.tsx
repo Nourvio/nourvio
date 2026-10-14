@@ -10,6 +10,7 @@ import {
   addDays,
   DEFAULT_MEALS,
   isoDate,
+  planTotals,
   startOfWeek,
   type Meal,
   type PlanEntry,
@@ -66,6 +67,18 @@ export function PlanPage() {
   }
 
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i))
+  // The average over days with something counted, per person.
+  const dayTotals = days
+    .map((date) =>
+      planTotals((plan.data ?? []).filter((entry) => entry.date === date))
+    )
+    .filter((totals) => totals.counted)
+  const perDay = dayTotals.length
+    ? Math.round(
+        dayTotals.reduce((sum, totals) => sum + totals.calories, 0) /
+          dayTotals.length
+      )
+    : null
   const label =
     start === thisWeek
       ? "This week"
@@ -79,7 +92,7 @@ export function PlanPage() {
     <>
       <PageHeader
         title="Plan"
-        description={`${label ? `${label}, ` : ""}${weekLabel(start)}`}
+        description={`${label ? `${label}, ` : ""}${weekLabel(start)}${perDay ? ` · planned meals average ${perDay.toLocaleString()} cal a day` : ""}`}
         actions={
           <>
             <Button

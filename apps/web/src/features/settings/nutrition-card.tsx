@@ -66,7 +66,7 @@ export function NutritionCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Nutrition</CardTitle>
+        <CardTitle>Nutrition data</CardTitle>
         <CardDescription>
           With a free USDA FoodData Central key, Mise calculates nutrition from
           each recipe's ingredients. Without one, the AI estimates it. A recipe

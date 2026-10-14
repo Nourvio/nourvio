@@ -2,7 +2,7 @@
 
 A self-hosted meal planner with an AI cooking assistant built in. Recipes, weekly plans, a pantry, shopping lists, nutrition and Walmart pickup orders for your household (and others you host), made to use from a phone or iPad while cooking.
 
-**Status:** usable day to day. Recipes (imported from links, videos, text, photos or Mealie), AI tidy-ups, the assistant, households with invites, the meal plan, the shopping list and the pantry all work. Nutrition and Walmart come next. See the [roadmap](docs/roadmap.md).
+**Status:** usable day to day. Recipes (imported from links, videos, text, photos or Mealie), AI tidy-ups, the assistant, households with invites, the meal plan, the shopping list, the pantry and nutrition all work. Walmart comes next. See the [roadmap](docs/roadmap.md).
 
 ## Run it with Docker Compose
 
@@ -82,7 +82,7 @@ Set these in `.env`, next to `compose.yaml`. Only `POSTGRES_PASSWORD` is require
 | `OPENAI_API_KEY` | none | OpenAI API key, same as above |
 | `MISE_SECRET` | none | Encrypts API keys saved in the app. If empty, Mise creates a random one in `data/app/secret`. |
 | `YTDLP_AUTO_UPDATE` | `true` | Mise updates its copy of yt-dlp (which reads video links) at startup and weekly. Set to `false` to stop that. |
-| `USDA_API_KEY` | none | *Later.* FoodData Central key for calculated nutrition, free from [api.data.gov](https://api.data.gov/signup/) |
+| `USDA_API_KEY` | none | FoodData Central key for calculated nutrition, free from [api.data.gov](https://api.data.gov/signup/). Can also be added in Settings. |
 | `TUNNEL_TOKEN` | none | Cloudflare Tunnel token, only if you enable the tunnel (below) |
 
 ## Your data

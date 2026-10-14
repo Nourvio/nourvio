@@ -1,6 +1,7 @@
 import {
   daysBetween,
   type AddPlanEntryInput,
+  type Nutrition,
   type PlanEntry,
   type UpdatePlanEntryInput,
 } from "@mise/shared"
@@ -25,6 +26,7 @@ const columns = {
     image: recipes.image,
     totalMinutes: recipes.totalMinutes,
     servings: recipes.servings,
+    nutrition: recipes.nutrition,
   },
 }
 
@@ -37,6 +39,7 @@ type Joined = {
     image: string | null
     totalMinutes: number | null
     servings: number | null
+    nutrition: Nutrition | null
   } | null
 }
 
@@ -54,6 +57,14 @@ function toEntry({ entry, recipe }: Joined): PlanEntry {
           thumbnailUrl: imageUrls(recipe.image).thumbnailUrl,
           totalMinutes: recipe.totalMinutes,
           servings: recipe.servings,
+          nutrition: recipe.nutrition
+            ? {
+                calories: recipe.nutrition.calories,
+                protein: recipe.nutrition.protein,
+                carbohydrates: recipe.nutrition.carbohydrates,
+                fat: recipe.nutrition.fat,
+              }
+            : null,
         }
       : null,
     note: entry.note,

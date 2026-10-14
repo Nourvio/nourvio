@@ -143,9 +143,10 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 - Per-serving numbers: calories, protein, carbs, fat, fiber, sugar and sodium.
 - **Where the numbers come from, in order of preference:**
   1. The recipe site, when it publishes them.
-  2. A calculation from the ingredients using USDA data.
-  3. An AI estimate as a last resort, clearly labeled as an estimate.
-- Shown on each recipe. Daily and weekly totals for the plan come later.
+  2. A calculation from the ingredients using USDA data (with a free USDA key in Settings). Lines it couldn't count are listed ("Not counted: 1 bay leaf").
+  3. An AI estimate when there's no USDA key, or too much couldn't be counted. Always labeled as an estimate.
+- **It happens by itself:** a new recipe, or one whose ingredients change, gets its nutrition worked out in the background. Changing only the servings rescales what's there. Each recipe also has a **Work out nutrition** button, and household admins can catch up the whole library (after a Mealie import, say) from Settings.
+- **On the plan,** each day shows roughly what one person eats from that day's meals (one serving of each, skipped meals and notes left out), and the week shows the average.
 
 ### 9. Phone and iPad
 
