@@ -4,10 +4,17 @@ import {
   ArrowLeft02Icon,
   ArrowRight02Icon,
   Cancel01Icon,
+  Mic01Icon,
   TextFontIcon,
   Timer02Icon,
 } from "@hugeicons/core-free-icons"
-import { pairRecipes, type Recipe, type RecipeIngredient } from "@mise/shared"
+import {
+  formatIngredient,
+  pairRecipes,
+  type CookCommand,
+  type Recipe,
+  type RecipeIngredient,
+} from "@mise/shared"
 import {
   useLocation,
   useNavigate,
@@ -51,6 +58,7 @@ import { useMarkMade, useRecipe } from "@/features/recipes/use-recipes"
 import { storedChoice } from "@/lib/stored-choice"
 import { cn } from "@/lib/utils"
 
+import { handsFreeSupported, spokenDuration, useHandsFree } from "./hands-free"
 import { ingredientsInStep, splitDurations } from "./step-text"
 import { NewTimerButton, startTimer, TimerChips } from "./timers"
 import { useWakeLock } from "./use-wake-lock"
@@ -204,11 +212,9 @@ function CookView({
   const stepIndex = index - (hasPrep ? 1 : 0)
   const step = onPrep ? undefined : steps[stepIndex]
   const isLast = index >= pages - 1
-  const highlighted = React.useMemo(
-    () =>
-      step ? ingredientsInStep(step.text, allIngredients) : new Set<string>(),
-    [step, allIngredients]
-  )
+  const highlighted = step
+    ? ingredientsInStep(step.text, allIngredients)
+    : new Set<string>()
   const stepIngredients = allIngredients.filter((i) => highlighted.has(i.id))
 
   const go = React.useCallback(
@@ -309,6 +315,128 @@ function CookView({
   }
 
   const here = `${location.pathname}${location.search}`
+
+  // Hands-free: commands by voice, and each page read aloud.
+  const [handsFree, setHandsFree] = React.useState(false)
+  const lastRead = React.useRef<number | null>(null)
+  const says = (ingredient: RecipeIngredient) => {
+    const { amount, rest } = formatIngredient(
+      ingredient.text,
+      factorOf?.(ingredient.id) ?? factor,
+      unitMode === "grams" ? ingredient.unitGrams : null
+    )
+    return `${amount}${rest}`.trim()
+  }
+  const pageText = () =>
+    onPrep
+      ? `Get ready. Gather ${allIngredients.length} ingredients. Say "ingredients" to hear them, or "next" to start.`
+      : step
+        ? `Step ${stepIndex + 1}. ${step.text}`
+        : "This recipe has no steps yet."
+  const voice = useHandsFree({
+    enabled: handsFree,
+    onDenied: () => {
+      setHandsFree(false)
+      toast.error(
+        "Hands-free needs the microphone. Allow it in the browser's settings for this site."
+      )
+    },
+    onCommand: (command: CookCommand) => {
+      switch (command.kind) {
+        case "next":
+          if (isLast)
+            voice.speak(
+              'That was the last step. Say "done" when you\'ve finished.'
+            )
+          else go(index + 1)
+          break
+        case "back":
+          if (index === 0) voice.speak("This is the start.")
+          else go(index - 1)
+          break
+        case "repeat":
+          voice.speak(pageText())
+          break
+        case "ingredients": {
+          const list = onPrep ? allIngredients : stepIngredients
+          voice.speak(
+            list.length
+              ? `${onPrep ? "You'll need" : "For this step"}: ${list.map(says).join(". ")}.`
+              : "This step doesn't call for any of the ingredients."
+          )
+          break
+        }
+        case "timer":
+          startTimer(command.label, command.seconds, here)
+          voice.speak(`Timer set for ${spokenDuration(command.seconds)}.`)
+          break
+        case "stepTimer": {
+          const duration = step
+            ? splitDurations(step.text).find((part) => part.type === "duration")
+            : undefined
+          if (duration?.type === "duration") {
+            startTimer(duration.label, duration.seconds, here)
+            voice.speak(`Timer set for ${spokenDuration(duration.seconds)}.`)
+          } else {
+            voice.speak(
+              'There\'s no time in this step. Say "timer for 10 minutes".'
+            )
+          }
+          break
+        }
+        case "howMuch": {
+          const words = command.food.split(/\s+/).filter((w) => w.length > 2)
+          const match =
+            allIngredients.find((i) =>
+              words.every((w) => i.text.toLowerCase().includes(w))
+            ) ??
+            allIngredients.find((i) =>
+              words.some((w) =>
+                i.text.toLowerCase().includes(w.replace(/s$/, ""))
+              )
+            )
+          voice.speak(
+            match ? says(match) : `I can't find ${command.food} in this recipe.`
+          )
+          break
+        }
+        case "stop":
+          voice.stopSpeaking()
+          break
+        case "done":
+          if (isLast) {
+            setHandsFree(false)
+            finish()
+          } else {
+            go(index + 1)
+          }
+          break
+      }
+    },
+  })
+
+  // Each new page is read aloud while hands-free is on.
+  React.useEffect(() => {
+    if (!handsFree || lastRead.current === index) return
+    lastRead.current = index
+    voice.speak(pageText())
+    // pageText reads the page for `index`; only a page change reads again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handsFree, index])
+
+  function toggleHandsFree() {
+    if (handsFree) {
+      setHandsFree(false)
+      lastRead.current = null
+      voice.stopSpeaking()
+      return
+    }
+    // Speaking straight from the tap lets phones play it.
+    lastRead.current = index
+    voice.speak(pageText())
+    setHandsFree(true)
+  }
+
   const ingredients = (
     <IngredientList
       ingredients={allIngredients}
@@ -351,10 +479,49 @@ function CookView({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {handsFreeSupported() && (
+            <Button
+              variant={handsFree ? "default" : "outline"}
+              size="icon"
+              aria-pressed={handsFree}
+              aria-label="Hands-free"
+              title="Hands-free: steps read aloud, commands by voice"
+              onClick={toggleHandsFree}
+            >
+              <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} />
+            </Button>
+          )}
           <NewTimerButton href={here} />
           <TextSizeMenu value={textSize} onChange={setTextSize} />
         </div>
         <TimerChips className="w-full sm:w-auto" />
+        {handsFree && (
+          <div
+            role="status"
+            className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-secondary px-3 py-2 text-sm"
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <span
+                className={cn(
+                  "size-2 rounded-full",
+                  voice.listening
+                    ? "animate-pulse bg-primary"
+                    : "bg-muted-foreground/40"
+                )}
+              />
+              {voice.listening ? "Listening" : "Hands-free"}
+            </span>
+            {voice.heard && (
+              <span className="text-muted-foreground">
+                Heard “{voice.heard}”
+              </span>
+            )}
+            <span className="text-muted-foreground">
+              Say next, back, read it, ingredients, timer for 10 minutes, or how
+              much garlic.
+            </span>
+          </div>
+        )}
       </header>
 
       {pages > 1 && (

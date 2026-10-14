@@ -190,6 +190,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
   - **Timers:** times in steps become tap-to-start timers ("bake 25 minutes"), and any other length is a tap away. They beep and buzz when done, take "+1 min", keep running while you look at something else in the app (shown in the top bar, a tap away from the cooking), and survive a reload.
   - **Leaving doesn't lose your place:** coming back within 12 hours picks up at the same step, with what was ticked off.
   - Started from the plan or Today, **Done cooking** marks that meal cooked (and takes its ingredients out of the pantry), then goes back where you started.
+- **Hands-free** (the microphone button in the cook view, in Chrome, Edge and Safari): each page is read aloud as it comes up, and it listens for "next", "back", "read it", "ingredients", "timer for 10 minutes", "start the timer", "how much garlic?", "stop" and "done". Only whole commands count, so kitchen conversation ("what's next for dinner?") doesn't turn the page. It stops listening while it speaks. The browser turns speech into text (Chrome uses Google's servers for this).
 - **Built for messy hands:** big tap targets, and swipe between steps.
 - Reading recipes offline may come later.
 
