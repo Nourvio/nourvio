@@ -138,6 +138,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Recipes | `GET/POST /api/recipes` (search with `q`; diet, tag and time filters and sorting happen in the browser), `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image`, `POST /api/recipes/:id/nutrition` (work it out now), `PUT /api/recipes/:id/diets` (corrections) |
 | Tags | `GET /api/recipes/tags`, `PATCH /api/recipes/tags/:name` (rename, merging into an existing tag), `DELETE /api/recipes/tags/:name` |
 | Cooking notes | `GET`/`POST /api/recipes/:id/cook-notes`, `DELETE /api/recipes/:id/cook-notes/:noteId` |
+| Swaps | `POST /api/recipes/:id/substitutes` (for one ingredient, knowing the pantry and the household's rules), `POST /api/recipes/:id/swap` (into the recipe for good; returns the version before, to undo) |
 | Pairings | `GET /api/recipes/:id/pairings` (the rules, the recipes they add up to, and what it's offered with), `POST /api/recipes/:id/pairings` (recipes or a tag), `DELETE /api/recipes/:id/pairings/:pairingId` |
 | Nutrition | `GET`/`POST /api/nutrition/library`, `POST /api/nutrition/library/:id/stop` (household admins); `GET`/`PUT /api/nutrition/settings`, `POST /api/nutrition/settings/test` (server admin, the USDA key) |
 | Photos | `POST /api/recipes/:id/photo` (make one with AI), `GET /api/recipes/:id/photo` (whether one is being made); `GET`/`POST /api/photos/library`, `POST /api/photos/library/:id/stop` (household admins) |
@@ -181,7 +182,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 - **Models:**
   - Settings has a default model, picked from the providers' live model lists.
   - Each task can override that default. So far: importing, tidying, the assistant (which also plans meals) and nutrition; shopping translation joins later.
-  - Nutrition is simple work, so unless it has its own pick it uses the small model of the default's provider (Claude Haiku 5.5 or GPT-6 Luna).
+  - Nutrition and ingredient swaps are simple work, so unless they have their own pick they use the small model of the default's provider (Claude Haiku 5.5 or GPT-6 Luna).
   - With nothing picked, the defaults are Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6 Sol (`gpt-6-sol`).
   - A pick whose provider has lost its key is skipped, so removing a key never breaks import.
 - **Claude specifics:**

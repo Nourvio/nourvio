@@ -13,7 +13,12 @@ import {
   SparklesIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
-import { pairRecipes, type Nutrition, type Recipe } from "@mise/shared"
+import {
+  pairRecipes,
+  type Nutrition,
+  type Recipe,
+  type RecipeIngredient,
+} from "@mise/shared"
 import { Link, useNavigate, useParams, useSearchParams } from "react-router"
 import { toast } from "sonner"
 
@@ -60,6 +65,8 @@ import { RatingStars } from "./rating-stars"
 import { RecipePhoto, useMakePhoto } from "./recipe-photo"
 import { TasteWarnings } from "./taste-warnings"
 import { ServingsStepper } from "./servings-stepper"
+import { SwapDialog } from "./swap-dialog"
+import { applySwaps, useSwaps } from "./swaps"
 import { TidyUpDialog } from "./tidy-up-dialog"
 import { UnitToggle } from "./unit-toggle"
 import { useRecipeProposal } from "./use-cleanup"
@@ -99,7 +106,18 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
     withSlug && paired.data && paired.data.id !== recipe.id
       ? pairRecipes(recipe, paired.data, factor)
       : null
-  const ingredients = combined?.ingredients ?? recipe.ingredients
+  // Swaps for this time ("out of buttermilk"), in place of what they replace.
+  const ai = useAiStatus()
+  const { swaps, swap, undo } = useSwaps(recipe.id)
+  const [swapping, setSwapping] = React.useState<RecipeIngredient | null>(null)
+  const { ingredients, swappedFrom } = applySwaps(
+    combined?.ingredients ?? recipe.ingredients,
+    swaps
+  )
+  const factorOf = combined
+    ? (id: string) =>
+        combined.factors.get(swappedFrom.get(id)?.originalId ?? id) ?? factor
+    : undefined
   const steps = combined?.steps ?? recipe.steps
 
   function showWith(slug: string | null) {
@@ -327,13 +345,26 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             <IngredientList
               ingredients={ingredients}
               factor={factor}
-              factorOf={
-                combined
-                  ? (id) => combined.factors.get(id) ?? factor
-                  : undefined
-              }
+              factorOf={factorOf}
               checked={checked}
               onToggle={toggle}
+              onSwap={ai.data?.available ? setSwapping : undefined}
+              swappedFrom={swappedFrom}
+              onUndoSwap={undo}
+            />
+            <SwapDialog
+              recipeId={
+                swapping &&
+                paired.data &&
+                !recipe.ingredients.some((i) => i.id === swapping.id)
+                  ? paired.data.id
+                  : recipe.id
+              }
+              ingredient={swapping}
+              factor={swapping ? (factorOf?.(swapping.id) ?? factor) : factor}
+              canSave
+              onUse={swap}
+              onClose={() => setSwapping(null)}
             />
           </CardContent>
         </Card>

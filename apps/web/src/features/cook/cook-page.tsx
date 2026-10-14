@@ -7,7 +7,7 @@ import {
   TextFontIcon,
   Timer02Icon,
 } from "@hugeicons/core-free-icons"
-import { pairRecipes, type Recipe } from "@mise/shared"
+import { pairRecipes, type Recipe, type RecipeIngredient } from "@mise/shared"
 import {
   useLocation,
   useNavigate,
@@ -44,6 +44,9 @@ import {
 } from "@/features/recipes/ingredient-list"
 import { UnitToggle, useUnitMode } from "@/features/recipes/unit-toggle"
 import { CookNoteDialog, LastCookNote } from "@/features/recipes/cook-notes"
+import { SwapDialog } from "@/features/recipes/swap-dialog"
+import { applySwaps, useSwaps } from "@/features/recipes/swaps"
+import { useAiStatus } from "@/features/settings/use-ai"
 import { useMarkMade, useRecipe } from "@/features/recipes/use-recipes"
 import { storedChoice } from "@/lib/stored-choice"
 import { cn } from "@/lib/utils"
@@ -180,10 +183,18 @@ function CookView({
     paired && paired.id !== recipe.id
       ? pairRecipes(recipe, paired, factor)
       : null
-  const allIngredients = combined?.ingredients ?? recipe.ingredients
+  // Swaps for this time carry over from the recipe page, and can be made here.
+  const ai = useAiStatus()
+  const { swaps, swap, undo } = useSwaps(recipe.id)
+  const [swapping, setSwapping] = React.useState<RecipeIngredient | null>(null)
+  const { ingredients: allIngredients, swappedFrom } = applySwaps(
+    combined?.ingredients ?? recipe.ingredients,
+    swaps
+  )
   const steps = combined?.steps ?? recipe.steps
   const factorOf = combined
-    ? (id: string) => combined.factors.get(id) ?? factor
+    ? (id: string) =>
+        combined.factors.get(swappedFrom.get(id)?.originalId ?? id) ?? factor
     : undefined
 
   // A "get ready" page first, to gather everything, then the steps.
@@ -308,6 +319,9 @@ function CookView({
       highlighted={highlighted}
       idPrefix="cook"
       size="lg"
+      onSwap={ai.data?.available ? setSwapping : undefined}
+      swappedFrom={swappedFrom}
+      onUndoSwap={undo}
     />
   )
   const servings = recipe.servings ? recipe.servings * factor : null
@@ -582,6 +596,20 @@ function CookView({
       </footer>
 
       <ChatLauncher className="bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-24" />
+      <SwapDialog
+        recipeId={
+          swapping &&
+          paired &&
+          !recipe.ingredients.some((i) => i.id === swapping.id)
+            ? paired.id
+            : recipe.id
+        }
+        ingredient={swapping}
+        factor={swapping ? (factorOf?.(swapping.id) ?? factor) : factor}
+        canSave
+        onUse={swap}
+        onClose={() => setSwapping(null)}
+      />
       <CookNoteDialog
         recipe={recipe}
         open={asking}

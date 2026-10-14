@@ -7,6 +7,8 @@ import {
   recipeInput,
   renameTagInput,
   setDietsInput,
+  substitutesInput,
+  swapIngredientInput,
 } from "@mise/shared"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
@@ -35,6 +37,7 @@ import {
   listCookNotes,
 } from "../services/cook-notes.ts"
 import { pendingSuggestionFor } from "../services/proposals.ts"
+import { findSubstitutes, swapIngredient } from "../services/swaps.ts"
 import { deleteImage, saveImage } from "../services/images.ts"
 import {
   createRecipe,
@@ -163,6 +166,34 @@ export function recipesRoutes(
   app.post("/:id/nutrition", async (c) =>
     c.json({ recipe: await nutrition.workOut(actorOf(c), c.req.param("id")) })
   )
+
+  /** What to use instead of an ingredient. */
+  app.post("/:id/substitutes", async (c) => {
+    const { ingredientId } = await readBody(c, substitutesInput)
+    return c.json({
+      substitutes: await findSubstitutes(
+        db,
+        ai,
+        actorOf(c),
+        c.req.param("id"),
+        ingredientId
+      ),
+    })
+  })
+
+  /** Puts a substitute in the recipe for good; the version before can be restored. */
+  app.post("/:id/swap", async (c) => {
+    const input = await readBody(c, swapIngredientInput)
+    const { previous, recipe, undoVersionId } = await swapIngredient(
+      db,
+      currentHousehold(c),
+      c.req.param("id"),
+      input,
+      currentUser(c).id
+    )
+    nutrition.afterSave(actorOf(c), recipe, previous)
+    return c.json({ recipe, undoVersionId })
+  })
 
   /** "How did it go?": ratings and notes left after cooking. */
   app.get("/:id/cook-notes", async (c) =>

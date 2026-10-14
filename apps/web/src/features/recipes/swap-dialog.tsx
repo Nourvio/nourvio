@@ -1,0 +1,181 @@
+import { type RecipeIngredient } from "@mise/shared"
+import { toast } from "sonner"
+
+import { ResponsiveDialog } from "@/components/responsive-dialog"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ApiError } from "@/lib/api"
+
+import { IngredientText } from "./ingredient-list"
+import {
+  useRestoreVersion,
+  useSubstitutes,
+  useSwapIngredient,
+} from "./use-recipes"
+
+/**
+ * "Out of this?": substitutes for one ingredient that work in this recipe,
+ * what's in the pantry first. Use one this time, or save it to the recipe.
+ */
+export function SwapDialog({
+  recipeId,
+  ingredient,
+  factor,
+  canSave,
+  onUse,
+  onClose,
+}: {
+  recipeId: string
+  ingredient: RecipeIngredient | null
+  /** Amounts are shown at the scale on screen. */
+  factor: number
+  /** The ingredient is this recipe's own (not from something it's paired with). */
+  canSave: boolean
+  onUse: (ingredientId: string, lines: string[]) => void
+  onClose: () => void
+}) {
+  return (
+    <ResponsiveDialog
+      open={ingredient !== null}
+      onOpenChange={(open) => !open && onClose()}
+      title={ingredient ? `Instead of ${ingredient.text}` : "Swap"}
+      description="Swaps that work in this recipe, with what you have first."
+    >
+      {ingredient && (
+        <Options
+          recipeId={recipeId}
+          ingredient={ingredient}
+          factor={factor}
+          canSave={canSave}
+          onUse={onUse}
+          onClose={onClose}
+        />
+      )}
+    </ResponsiveDialog>
+  )
+}
+
+function Options({
+  recipeId,
+  ingredient,
+  factor,
+  canSave,
+  onUse,
+  onClose,
+}: {
+  recipeId: string
+  ingredient: RecipeIngredient
+  factor: number
+  canSave: boolean
+  onUse: (ingredientId: string, lines: string[]) => void
+  onClose: () => void
+}) {
+  const substitutes = useSubstitutes(recipeId, ingredient.id)
+  const save = useSwapIngredient(recipeId)
+  const restore = useRestoreVersion(recipeId)
+
+  function saveToRecipe(lines: string[]) {
+    save.mutate(
+      { ingredientId: ingredient.id, lines },
+      {
+        onSuccess: ({ undoVersionId }) => {
+          toast.success("Saved to the recipe", {
+            description: `Instead of ${ingredient.text}.`,
+            action: undoVersionId
+              ? {
+                  label: "Undo",
+                  onClick: () =>
+                    restore.mutate(undoVersionId, {
+                      onSuccess: () => toast("Put back as it was"),
+                    }),
+                }
+              : undefined,
+          })
+          onClose()
+        },
+        onError: (error) =>
+          toast.error(
+            error instanceof ApiError ? error.message : "Couldn't save that"
+          ),
+      }
+    )
+  }
+
+  if (substitutes.isPending) {
+    return (
+      <div className="grid gap-3" role="status" aria-label="Finding swaps">
+        <Skeleton className="h-20 rounded-2xl" />
+        <Skeleton className="h-20 rounded-2xl" />
+        <Skeleton className="h-20 rounded-2xl" />
+      </div>
+    )
+  }
+  if (substitutes.isError) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {substitutes.error instanceof ApiError
+          ? substitutes.error.message
+          : "Couldn't find swaps just now."}
+      </p>
+    )
+  }
+  if (!substitutes.data.length) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        Nothing good to swap in for this one. The assistant may have ideas if
+        you ask.
+      </p>
+    )
+  }
+  return (
+    <ul className="grid gap-3">
+      {substitutes.data.map((substitute) => (
+        <li
+          key={substitute.lines.join("|")}
+          className="grid gap-2 rounded-2xl border bg-card p-3.5"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <ul className="grid gap-0.5">
+              {substitute.lines.map((line) => (
+                <li key={line}>
+                  <IngredientText text={line} factor={factor} />
+                </li>
+              ))}
+            </ul>
+            {substitute.inPantry && (
+              <Badge variant="secondary" className="shrink-0">
+                In your pantry
+              </Badge>
+            )}
+          </div>
+          {substitute.note && (
+            <p className="text-sm text-muted-foreground">{substitute.note}</p>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              onClick={() => {
+                onUse(ingredient.id, substitute.lines)
+                toast.success("Swapped for this time")
+                onClose()
+              }}
+            >
+              Use this time
+            </Button>
+            {canSave && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={save.isPending}
+                onClick={() => saveToRecipe(substitute.lines)}
+              >
+                Save to recipe
+              </Button>
+            )}
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}

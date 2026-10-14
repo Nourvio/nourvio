@@ -10,6 +10,8 @@ import type {
   RecipePairings,
   RecipeSummary,
   RecipeVersion,
+  Substitute,
+  SwapResult,
   Tag,
 } from "@mise/shared"
 import {
@@ -245,6 +247,34 @@ export function useRecipePhoto(id: string) {
     onSuccess: saved,
   })
   return { upload, remove, generate }
+}
+
+/** What to use instead of an ingredient, asked once per ingredient. */
+export function useSubstitutes(recipeId: string, ingredientId: string | null) {
+  return useQuery({
+    queryKey: ["substitutes", recipeId, ingredientId],
+    queryFn: async () =>
+      (
+        await api<{ substitutes: Substitute[] }>(
+          `/recipes/${recipeId}/substitutes`,
+          { body: { ingredientId } }
+        )
+      ).substitutes,
+    enabled: ingredientId !== null,
+    staleTime: Infinity,
+    retry: false,
+    refetchOnWindowFocus: false,
+  })
+}
+
+/** Puts a substitute in the recipe for good. */
+export function useSwapIngredient(recipeId: string) {
+  const saved = useRecipeSaved()
+  return useMutation({
+    mutationFn: (input: { ingredientId: string; lines: string[] }) =>
+      api<SwapResult>(`/recipes/${recipeId}/swap`, { body: input }),
+    onSuccess: ({ recipe }) => saved(recipe),
+  })
 }
 
 const cookNotesKey = (recipeId: string) => ["cook-notes", recipeId] as const

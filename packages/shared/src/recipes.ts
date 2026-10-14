@@ -138,6 +138,29 @@ export type Recipe = RecipeSummary & {
   updatedAt: string
 }
 
+/** Something to use instead of an ingredient, for this recipe. */
+export type Substitute = {
+  /** Ingredient lines with amounts for the recipe as written: "1 cup milk", "1 tbsp lemon juice". */
+  lines: string[]
+  /** How to use it and how it changes the dish. */
+  note: string
+  /** It's in the pantry. */
+  inPantry: boolean
+}
+
+export const substitutesInput = z.object({ ingredientId: z.uuid() })
+
+export const swapIngredientInput = z.object({
+  ingredientId: z.uuid(),
+  lines: z.array(z.string().trim().min(1).max(500)).min(1).max(5),
+})
+
+export type SwapResult = {
+  recipe: Recipe
+  /** The version before the swap, to undo it. */
+  undoVersionId: string | null
+}
+
 /** "How did it go?": a rating and a note left after cooking, newest first. */
 export type CookNote = {
   id: string

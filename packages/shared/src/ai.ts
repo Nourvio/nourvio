@@ -9,7 +9,13 @@ export const AI_PROVIDER_NAMES: Record<AiProviderId, string> = {
 }
 
 /** Jobs that can each use their own model. */
-export const AI_TASKS = ["import", "cleanup", "chat", "nutrition"] as const
+export const AI_TASKS = [
+  "import",
+  "cleanup",
+  "chat",
+  "nutrition",
+  "swap",
+] as const
 export type AiTask = (typeof AI_TASKS)[number]
 
 /** What usage is recorded against: the tasks above, plus making photos (an image model, not picked per task). */
@@ -20,6 +26,7 @@ export const AI_TASK_NAMES: Record<AiTask, string> = {
   cleanup: "Tidying recipes",
   chat: "Assistant",
   nutrition: "Nutrition",
+  swap: "Ingredient swaps",
 }
 
 /**
@@ -30,6 +37,7 @@ export const LIGHT_TASK_MODELS: Partial<
   Record<AiTask, Record<AiProviderId, string>>
 > = {
   nutrition: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
+  swap: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
 }
 
 /** Used when nothing else is picked. */
@@ -119,6 +127,7 @@ export const updateAiSettingsInput = z.object({
       cleanup: modelRef.nullable(),
       chat: modelRef.nullable(),
       nutrition: modelRef.nullable(),
+      swap: modelRef.nullable(),
     })
     .partial()
     .optional(),
