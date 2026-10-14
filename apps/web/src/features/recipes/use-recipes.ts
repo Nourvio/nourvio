@@ -1,6 +1,9 @@
 import { toIsoDate } from "@mise/shared"
 import type {
+  AddCookNoteInput,
+  AddCookNoteResult,
   AddPairingsInput,
+  CookNote,
   DietOverrides,
   Recipe,
   RecipeInput,
@@ -242,6 +245,58 @@ export function useRecipePhoto(id: string) {
     onSuccess: saved,
   })
   return { upload, remove, generate }
+}
+
+const cookNotesKey = (recipeId: string) => ["cook-notes", recipeId] as const
+
+/** "How did it go?" notes left after cooking, newest first. */
+export function useCookNotes(recipeId: string) {
+  return useQuery({
+    queryKey: cookNotesKey(recipeId),
+    queryFn: async () =>
+      (await api<{ notes: CookNote[] }>(`/recipes/${recipeId}/cook-notes`))
+        .notes,
+  })
+}
+
+export function useAddCookNote(recipeId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: AddCookNoteInput) =>
+      api<AddCookNoteResult>(`/recipes/${recipeId}/cook-notes`, {
+        body: input,
+      }),
+    onSuccess: (result, input) => {
+      queryClient.invalidateQueries({ queryKey: cookNotesKey(recipeId) })
+      if (input.rating !== null) {
+        queryClient.invalidateQueries({ queryKey: ["recipe"] })
+        queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
+      }
+      // The note is being turned into a suggested change: look for it a few
+      // times over the next minute, so it shows up on the recipe by itself.
+      if (result.suggesting) {
+        for (const seconds of [6, 12, 20, 35, 60]) {
+          setTimeout(
+            () =>
+              queryClient.invalidateQueries({
+                queryKey: ["proposal", recipeId],
+              }),
+            seconds * 1000
+          )
+        }
+      }
+    },
+  })
+}
+
+export function useDeleteCookNote(recipeId: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (noteId: string) =>
+      api(`/recipes/${recipeId}/cook-notes/${noteId}`, { method: "DELETE" }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: cookNotesKey(recipeId) }),
+  })
 }
 
 /** For telling, anywhere on the page, that a photo is being made. */

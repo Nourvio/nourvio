@@ -51,6 +51,7 @@ import { AddToPlanButton } from "@/features/plan/add-to-plan-dialog"
 import { useAiStatus } from "@/features/settings/use-ai"
 import { ApiError } from "@/lib/api"
 
+import { CookNotes } from "./cook-notes"
 import { DietBadges, DietDialog } from "./diet-labels"
 import { formatMinutes, formatRelativeDate } from "./format"
 import { GoesWith } from "./goes-with"
@@ -161,8 +162,16 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
       {proposal.data && (
         <Alert>
           <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
-          <AlertTitle>Tidy-up suggestions are ready</AlertTitle>
-          <AlertDescription>{proposal.data.summary}</AlertDescription>
+          <AlertTitle>
+            {proposal.data.fromNote
+              ? "Your cooking note, as a change to the recipe"
+              : "Tidy-up suggestions are ready"}
+          </AlertTitle>
+          <AlertDescription>
+            {proposal.data.fromNote
+              ? `“${proposal.data.fromNote}”: ${proposal.data.summary}`
+              : proposal.data.summary}
+          </AlertDescription>
           <AlertAction>
             <Button size="sm" onClick={() => setTidying(true)}>
               Review
@@ -371,6 +380,8 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               </p>
             </section>
           )}
+
+          <CookNotes recipe={recipe} />
 
           <NutritionPanel
             recipe={recipe}

@@ -109,6 +109,35 @@ describe("households", () => {
       expect((await t.admin.raw(soup.thumbnailUrl)).status).toBe(200)
     })
 
+    test("notes left after cooking", async () => {
+      const added = await t.admin.post(`/api/recipes/${soup.id}/cook-notes`, {
+        rating: 4,
+        note: null,
+      })
+      expect(added.status).toBe(201)
+      expect(
+        (await neighbor.get(`/api/recipes/${soup.id}/cook-notes`)).status
+      ).toBe(404)
+      expect(
+        (
+          await neighbor.post(`/api/recipes/${soup.id}/cook-notes`, {
+            rating: 1,
+            note: null,
+          })
+        ).status
+      ).toBe(404)
+      expect(
+        (
+          await neighbor.delete(
+            `/api/recipes/${soup.id}/cook-notes/${added.body.note.id}`
+          )
+        ).status
+      ).toBe(404)
+      expect(
+        (await t.admin.get(`/api/recipes/${soup.id}/cook-notes`)).body.notes
+      ).toHaveLength(1)
+    })
+
     test("each household has its own slugs and tag spellings", async () => {
       const theirs = await neighbor.post("/api/recipes", {
         ...SOUP,

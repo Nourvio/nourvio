@@ -40,6 +40,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
   - Otherwise baking staples use the weights bakers go by (all-purpose flour 120 g a cup, packed brown sugar 213 g, butter 227 g), and other foods use USDA portions or what nutrition has learned.
   - Counts like "2 eggs" stay as written, as does anything without a known weight.
 - "I made this" records when a recipe was cooked. This feeds the planner and the pantry.
+- **How did it go?** Finishing in the cook view asks for stars and a note ("needed more salt", "5 minutes less in the oven"); a recipe page can take one any time. Stars become the recipe's rating. Notes are listed on the recipe, and the latest shows on the cook view's get-ready page next time. With AI set up, a note comes back as a suggested change to review on the recipe ("Bumps the garlic to 4 cloves and adds a splash of balsamic at the end"); an opinion like "the kids loved it" is just kept.
 - **Finding recipes in a big library:**
   - Search by name, description, tag or ingredient.
   - Filter by diet, tags (several at once, searchable, with counts) and time ("Under 30 min"), and sort by newest, name, rating, recently made or quickest. Filters show as chips you can remove, with "12 of 140 recipes", and live in the URL so a view can be bookmarked.

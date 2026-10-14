@@ -12,7 +12,7 @@ import {
   type RecipeSection,
   type RecipeValues,
 } from "@mise/shared"
-import { and, desc, eq, inArray } from "drizzle-orm"
+import { and, desc, eq, inArray, isNull } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
@@ -150,6 +150,7 @@ function toProposal({ proposal, recipe, result }: Joined): Proposal {
     meals: proposal.payload.meals ?? null,
     items: proposal.payload.items ?? null,
     tastes: proposal.payload.tastes ?? null,
+    fromNote: proposal.payload.fromNote ?? null,
     createdAt: proposal.createdAt.toISOString(),
   }
 }
@@ -209,8 +210,12 @@ export async function listPendingCleanups(db: Db, householdId: string) {
   return rows.map(toProposal)
 }
 
-/** The pending tidy-up for a recipe, if there is one. */
-export async function pendingCleanupFor(
+/**
+ * The suggestions waiting on a recipe's page, if any: a tidy-up, or a change
+ * worked out from a note left after cooking. (The assistant's suggestions
+ * wait in the conversation instead.)
+ */
+export async function pendingSuggestionFor(
   db: Db,
   householdId: string,
   idOrSlug: string
@@ -220,7 +225,8 @@ export async function pendingCleanupFor(
     .where(
       and(
         eq(proposals.recipeId, recipe.id),
-        eq(proposals.kind, "cleanup"),
+        inArray(proposals.kind, ["cleanup", "recipe_edit"]),
+        isNull(proposals.conversationId),
         eq(proposals.status, "pending")
       )
     )

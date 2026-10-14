@@ -1,4 +1,5 @@
 import {
+  addCookNoteInput,
   addPairingsInput,
   cleanupInput,
   isoDate,
@@ -28,7 +29,12 @@ import {
   removePairing,
 } from "../services/pairings.ts"
 import { markPlannedCooked } from "../services/plan.ts"
-import { pendingCleanupFor } from "../services/proposals.ts"
+import {
+  addCookNote,
+  deleteCookNote,
+  listCookNotes,
+} from "../services/cook-notes.ts"
+import { pendingSuggestionFor } from "../services/proposals.ts"
 import { deleteImage, saveImage } from "../services/images.ts"
 import {
   createRecipe,
@@ -158,6 +164,31 @@ export function recipesRoutes(
     c.json({ recipe: await nutrition.workOut(actorOf(c), c.req.param("id")) })
   )
 
+  /** "How did it go?": ratings and notes left after cooking. */
+  app.get("/:id/cook-notes", async (c) =>
+    c.json({
+      notes: await listCookNotes(db, currentHousehold(c), c.req.param("id")),
+    })
+  )
+
+  app.post("/:id/cook-notes", async (c) => {
+    const input = await readBody(c, addCookNoteInput)
+    return c.json(
+      await addCookNote(db, ai, actorOf(c), c.req.param("id"), input),
+      201
+    )
+  })
+
+  app.delete("/:id/cook-notes/:noteId", async (c) => {
+    await deleteCookNote(
+      db,
+      currentHousehold(c),
+      c.req.param("id"),
+      c.req.param("noteId")
+    )
+    return c.body(null, 204)
+  })
+
   /** Makes a photo with AI, for a recipe without one (or with an AI one). */
   app.post("/:id/photo", async (c) =>
     c.json({ recipe: await photos.make(actorOf(c), c.req.param("id")) })
@@ -258,7 +289,7 @@ export function recipesRoutes(
 
   app.get("/:id/proposal", async (c) =>
     c.json({
-      proposal: await pendingCleanupFor(
+      proposal: await pendingSuggestionFor(
         db,
         currentHousehold(c),
         c.req.param("id")

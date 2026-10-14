@@ -88,6 +88,7 @@ Everything a household owns carries its `household_id`, and every query is scope
 | `recipes` | id, household_id, slug (unique per household), name, description, image, image_ai (made by AI), source_url, servings, yield_text, prep/cook/total_minutes, notes, rating, nutrition (jsonb, per serving + source), diet_overrides (jsonb), origin, last_made_at, search (tsvector) | `origin` is one of url, text, photo, manual, chat, mealie |
 | `recipe_ingredients` | recipe_id, position, section, raw_text, quantity, quantity_max, unit_id, food, note | `raw_text` is always kept and shown as written. The parsed fields drive scaling, lists and nutrition. |
 | `recipe_steps` | recipe_id, position, section, text | |
+| `cook_notes` | household_id, recipe_id, user_id, rating, note, created_at | "How did it go?" after cooking. A note can become a `recipe_edit` proposal (with the note in `payload.fromNote`), shown on the recipe page like a tidy-up |
 | `recipe_versions` | recipe_id, snapshot (jsonb), source, created_by, created_at | Every saved change makes a snapshot, so the original import can always be restored. `source` is one of import, manual, ai_cleanup, chat. |
 | `tags`, `recipe_tags` | household_id, name (unique per household, ignoring case) | |
 | `recipe_pairings` | household_id, recipe_id, paired_recipe_id or tag | What a recipe goes with: one recipe, or every recipe with a tag (matched ignoring case, so new ones join) |
@@ -136,6 +137,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Server | `GET`/`PUT /api/server/settings`, `GET /api/server/households`, `DELETE /api/server/households/:id` (server admin) |
 | Recipes | `GET/POST /api/recipes` (search with `q`; diet, tag and time filters and sorting happen in the browser), `GET/PUT/DELETE /api/recipes/:id`, `POST /api/recipes/:id/made`, `POST /api/recipes/:id/image`, `POST /api/recipes/:id/nutrition` (work it out now), `PUT /api/recipes/:id/diets` (corrections) |
 | Tags | `GET /api/recipes/tags`, `PATCH /api/recipes/tags/:name` (rename, merging into an existing tag), `DELETE /api/recipes/tags/:name` |
+| Cooking notes | `GET`/`POST /api/recipes/:id/cook-notes`, `DELETE /api/recipes/:id/cook-notes/:noteId` |
 | Pairings | `GET /api/recipes/:id/pairings` (the rules, the recipes they add up to, and what it's offered with), `POST /api/recipes/:id/pairings` (recipes or a tag), `DELETE /api/recipes/:id/pairings/:pairingId` |
 | Nutrition | `GET`/`POST /api/nutrition/library`, `POST /api/nutrition/library/:id/stop` (household admins); `GET`/`PUT /api/nutrition/settings`, `POST /api/nutrition/settings/test` (server admin, the USDA key) |
 | Photos | `POST /api/recipes/:id/photo` (make one with AI), `GET /api/recipes/:id/photo` (whether one is being made); `GET`/`POST /api/photos/library`, `POST /api/photos/library/:id/stop` (household admins) |

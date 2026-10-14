@@ -336,6 +336,31 @@ export const recipeVersions = pgTable(
   (t) => [index().on(t.recipeId, t.createdAt)]
 )
 
+/** "How did it go?": a rating and a note left after cooking a recipe. */
+export const cookNotes = pgTable(
+  "cook_notes",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    recipeId: uuid()
+      .notNull()
+      .references(() => recipes.id, { onDelete: "cascade" }),
+    userId: uuid().references(() => users.id, { onDelete: "set null" }),
+    rating: smallint(),
+    note: text(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check(
+      "cook_notes_rating_check",
+      sql`${t.rating} is null or ${t.rating} between 1 and 5`
+    ),
+    index().on(t.recipeId, t.createdAt),
+  ]
+)
+
 // ---- AI ----
 
 /** One row per AI request, for the usage and cost summary in Settings. */
@@ -385,6 +410,7 @@ export const proposals = pgTable(
         meals?: ProposedMeal[]
         items?: string[]
         tastes?: Partial<HouseholdTastes>
+        fromNote?: string
       }>()
       .notNull(),
     /** Set when part of a library run. */

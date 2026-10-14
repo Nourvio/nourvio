@@ -138,6 +138,32 @@ export type Recipe = RecipeSummary & {
   updatedAt: string
 }
 
+/** "How did it go?": a rating and a note left after cooking, newest first. */
+export type CookNote = {
+  id: string
+  rating: number | null
+  note: string | null
+  /** Who left it. */
+  by: string | null
+  createdAt: string
+}
+
+export const addCookNoteInput = z
+  .object({
+    rating: z.number().int().min(1).max(5).nullable(),
+    note: z.string().trim().max(1000).nullable(),
+  })
+  .refine((input) => input.rating !== null || Boolean(input.note), {
+    message: "Give it stars or write a note",
+  })
+export type AddCookNoteInput = z.infer<typeof addCookNoteInput>
+
+export type AddCookNoteResult = {
+  note: CookNote
+  /** A note is being turned into a suggested change to the recipe. */
+  suggesting: boolean
+}
+
 export type RecipeVersion = {
   id: string
   source: "create" | "edit" | "ai_cleanup" | "chat" | "restore"

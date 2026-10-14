@@ -84,8 +84,11 @@ function TidyUp({
     return (
       <>
         <DialogHeader>
-          <DialogTitle>Tidy-up suggestions</DialogTitle>
+          <DialogTitle>
+            {result.fromNote ? "From your cooking note" : "Tidy-up suggestions"}
+          </DialogTitle>
           <DialogDescription>
+            {result.fromNote ? `“${result.fromNote}” ` : ""}
             Keep what you like. The current version stays in History.
           </DialogDescription>
         </DialogHeader>

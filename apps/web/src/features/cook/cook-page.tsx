@@ -43,6 +43,7 @@ import {
   IngredientText,
 } from "@/features/recipes/ingredient-list"
 import { UnitToggle, useUnitMode } from "@/features/recipes/unit-toggle"
+import { CookNoteDialog, LastCookNote } from "@/features/recipes/cook-notes"
 import { useMarkMade, useRecipe } from "@/features/recipes/use-recipes"
 import { storedChoice } from "@/lib/stored-choice"
 import { cn } from "@/lib/utils"
@@ -264,10 +265,13 @@ function CookView({
     else navigate(`/recipes/${recipe.slug}`)
   }
 
+  // After cooking: "How did it go?", then back where cooking started.
+  const [asking, setAsking] = React.useState(false)
+
   function done(message: string, description?: string) {
     saveProgress(recipe.id, null)
     toast.success(message, { description })
-    leave()
+    setAsking(true)
   }
 
   function finish() {
@@ -425,6 +429,7 @@ function CookView({
                     : ""}
                 </p>
               </div>
+              <LastCookNote recipeId={recipe.id} />
               <UnitToggle ingredients={allIngredients} className="w-fit" />
               <div className="select-text">{ingredients}</div>
             </div>
@@ -577,6 +582,14 @@ function CookView({
       </footer>
 
       <ChatLauncher className="bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-24" />
+      <CookNoteDialog
+        recipe={recipe}
+        open={asking}
+        onDone={() => {
+          setAsking(false)
+          leave()
+        }}
+      />
     </div>
   )
 }

@@ -124,6 +124,8 @@ export type Proposal = {
   items: string[] | null
   /** For tastes: what to add to the household's tastes and rules. */
   tastes: Partial<HouseholdTastes> | null
+  /** For a change worked out from a note left after cooking: the note. */
+  fromNote: string | null
   createdAt: string
 }
 
