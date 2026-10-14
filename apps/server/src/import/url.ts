@@ -1,4 +1,4 @@
-import type { ImportResult } from "@mise/shared"
+import type { ImportPageInput, ImportResult } from "@mise/shared"
 
 import type { AiService } from "../ai/service.ts"
 import type { Db } from "../db/client.ts"
@@ -62,13 +62,31 @@ export async function importFromUrl(
     if (existing) return { recipe: existing, duplicate: true }
   }
 
-  const html = decodeHtml(page.body, page.contentType)
-  const extracted =
-    extractRecipeFromHtml(html, finalUrl) ??
-    (await readWithAi(html, finalUrl, options))
+  return saveFromHtml(
+    db,
+    decodeHtml(page.body, page.contentType),
+    finalUrl,
+    options
+  )
+}
 
+/** Reads a page's recipe (its recipe data, else AI reading it) and saves it, with its photo. */
+async function saveFromHtml(
+  db: Db,
+  html: string,
+  pageUrl: string,
+  options: {
+    userId: string
+    householdId: string
+    fetcher: Fetcher
+    ai: AiService
+  }
+): Promise<ImportResult> {
+  const extracted =
+    extractRecipeFromHtml(html, pageUrl) ??
+    (await readWithAi(html, pageUrl, options))
   const image = await downloadImage(extracted.imageUrls, options.fetcher, {
-    referer: finalUrl,
+    referer: pageUrl,
   })
   const recipe = await createRecipe(db, options.householdId, extracted.input, {
     origin: "url",
@@ -76,6 +94,52 @@ export async function importFromUrl(
     image,
   })
   return { recipe, duplicate: false }
+}
+
+const escapeHtml = (text: string) =>
+  text.replace(
+    /[&<>"]/g,
+    (char) => `&${{ "&": "amp", "<": "lt", ">": "gt", '"': "quot" }[char]};`
+  )
+
+/**
+ * Imports a page the browser extension read in the person's own browser:
+ * its recipe data, photos and text, put back together as a small page and
+ * read like any link. Gets past sites that turn Mise's server away.
+ */
+export async function importFromPage(
+  db: Db,
+  page: ImportPageInput,
+  options: {
+    userId: string
+    householdId: string
+    fetcher: Fetcher
+    ai: AiService
+  }
+): Promise<ImportResult> {
+  const url = normalizeUrl(page.url)
+  if (!page.force) {
+    const existing = await findBySourceUrl(db, options.householdId, [url])
+    if (existing) return { recipe: existing, duplicate: true }
+  }
+  const html = [
+    "<!doctype html><html><head>",
+    page.title ? `<title>${escapeHtml(page.title)}</title>` : "",
+    ...(page.images ?? []).map(
+      (image) => `<meta property="og:image" content="${escapeHtml(image)}">`
+    ),
+    ...(page.jsonld ?? []).map(
+      (block) =>
+        // A "</script" inside the data would end the tag early; "<\/" means the same in JSON.
+        `<script type="application/ld+json">${block.replace(/<\/script/gi, "<\\/script")}</script>`
+    ),
+    "</head><body><main>",
+    ...(page.text ?? "")
+      .split(/\n{2,}/)
+      .map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`),
+    "</main></body></html>",
+  ].join("")
+  return saveFromHtml(db, html, url, options)
 }
 
 /** For pages without recipe data: AI reads the page's text. */

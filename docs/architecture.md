@@ -63,7 +63,7 @@ mise/
 │   │   ├── src/ai/              provider interface, Claude + OpenAI providers, prompts, tools, jobs
 │   │   ├── src/import/          link / video / text / photo / Mealie importers
 │   │   └── src/db/              Drizzle schema, migrations, seed (units, sections)
-│   └── extension/           Mise browser extension: page import, list side panel, Walmart cart (milestone 6)
+│   └── extension/           Mise browser extension (Manifest V3, React): popup, side panel, background worker; built to dist/ and zipped to release/
 ├── packages/
 │   └── shared/              Zod schemas, types, ingredient parser, quantity math
 ├── docs/
@@ -112,7 +112,8 @@ Everything a household owns carries its `household_id`, and every query is scope
 | `ai_jobs` | household_id, kind, status, total, done, skipped, failed | Long-running work: tidying a household's library, or the Mealie import. A run cut short by a restart is marked "interrupted". |
 | `settings` | key, value (jsonb) | Server-wide: AI keys (encrypted) and models, and whether sign-up is open |
 | `users` | username (unique on the server), household_id, role (admin or member, in the household), is_server_admin | |
-| `sessions`, `api_tokens` | | Login, and the extension's token |
+| `sessions` | | Login |
+| `api_tokens` | user_id, name, token_hash, created_at, last_used_at | The browser extension's personal tokens (`mise_…`); only a hash is kept |
 
 ### Postgres features we use
 
@@ -149,7 +150,8 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Collections | `GET /api/collections` (the starter collections, with which recipes are in the library), `GET /api/collections/:id/:index/image` (a recipe's photo, through Mise) |
 | Sites | `GET /api/sites` (followed sites with their newest recipes), `POST /api/sites` (follow by any page, a feed, or a suggestion), `DELETE /api/sites/:id`, `GET /api/sites/:id/image/:key` (a post's photo, through Mise) |
 | Discover | `GET /api/discover` (recent searches), `POST /api/discover` (start one; it carries on in the background, one per household at a time), `GET /api/discover/:id`, `GET /api/discover/:id/:index/image` |
-| Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (server admin, into their household): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
+| Extension | `GET`/`POST /api/extension/tokens` (making one needs a session, not a token), `DELETE /api/extension/tokens/:id`, `GET /api/extension/download` |
+| Import | `POST /api/import/url` (pages and video links), `/page` (a page as the browser extension read it: recipe data, photos, text), `/text`, `/photo`; Mealie (server admin, into their household): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
 | AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal, or null when there's nothing to change), `GET /api/recipes/:id/proposal`; library runs at `GET`/`POST /api/ai/cleanup-job` and `POST /api/ai/cleanup-job/:id/cancel` (household admins) |
 | Proposals | `GET /api/proposals` (pending), `POST /api/proposals/:id/apply` (chosen sections), `POST /api/proposals/:id/dismiss` |
 | Chat | `POST /api/chat` (reply streams as server-sent events: conversation, text, tool, proposal, done, error), `GET /api/chat/conversations`, `GET`/`DELETE /api/chat/conversations/:id` |
@@ -310,7 +312,7 @@ The parser lives in the shared package, so the server and browser use the same c
   - the server admin manages AI keys and models, sign-up, households and the Mealie import
   - a household always keeps at least one admin
 - **Isolation:** every household-owned query filters by the signed-in person's household, photos included (a photo is served only if one of your household's recipes uses it). Tests cover each kind of data.
-- **Extension:** uses a personal API token created in Settings.
+- **Extension:** a personal API token, sent as `Authorization: Bearer mise_…`, signs requests in as that person instead of the session cookie (`auth/api-tokens.ts`). Tokens are made on Mise's Connect the Mise extension page and handed to the extension there; only a hash is stored, and last use is noted at most every 10 minutes.
 - **Recipe import safety:** the server refuses to fetch private-network addresses. This stops someone from using the import feature to reach other machines on the home network.
 
 ## UI

@@ -148,6 +148,13 @@
       "when": 1792015505894,
       "tag": "0020_shop",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792016827769,
+      "tag": "0021_api_tokens",
+      "breakpoints": true
     }
   ]
 }

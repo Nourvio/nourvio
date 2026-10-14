@@ -164,30 +164,28 @@ Instacart coverage varies by ZIP code. Mise can ask Instacart which stores it se
 - The affiliate API (product search, item IDs, prices) is read-only and needs program approval. Walmart isn't on Instacart.
 - **Decided:** Walmart goes through the Mise browser extension (below), working in your own signed-in Walmart tab. It will break now and then when walmart.com changes and need a fix. Automating a retailer's site is a gray area under their terms; this is low volume, on your own account. It has to go slowly, since Walmart answers quick bursts with HTTP 429. Search links stay as the fallback.
 
-### The Mise browser extension (planned)
+### The Mise browser extension
 
-One extension for Chrome, Edge and other Chromium browsers (Manifest V3; Firefox later, with small changes). It does the jobs that need your own browser:
+One extension for Chrome, Edge and other Chromium browsers (Manifest V3, `apps/extension`). Part one is built; the Walmart part is next.
 
 - **Connecting:**
-  - Type your Mise address in the extension and click Connect. Mise opens a page asking whether to allow it.
-  - Allowing creates a personal API token for the extension, which can be revoked in Settings, and hands it back.
-  - Requests carry the token in a header, not the session cookie, so the same-site check that guards cookie requests doesn't apply to them.
-- **Import this page:**
-  - The extension sends the page as your browser shows it (its HTML and address) to Mise, which reads it like a link import: recipe data first, AI otherwise.
-  - That gets past sites that block servers (Budget Bytes, Serious Eats, Allrecipes), and works for recipes you can see through your own subscription (NYT Cooking, America's Test Kitchen).
-  - If Mise's server can't download the photo, the extension sends the one your browser already loaded.
-  - The toolbar icon shows when the page has a recipe.
-- **Right-click:** "Import into Mise" on a link or video (sent to the normal link import), and "Add to shopping list" on selected text.
-- **The list beside you:** the week's list in the browser's side panel while you shop any store's site (Costco on Instacart, say). Items get checked off as they go in the cart.
-- **Walmart:**
+  - Type your Mise's address in the extension's popup and click Connect. The browser asks to let the extension reach that one address (an optional host permission; the extension asks for nothing else up front).
+  - The extension opens Mise's **Connect the Mise extension** page. Allowing makes a personal API token and posts it to the page, where the extension (listening on that page only, in the tab it opened) takes it. If nothing takes it within 8 seconds, the token is deleted again.
+  - Requests carry the token in an `Authorization: Bearer mise_…` header, not the session cookie. A token can do anything the person can, except make more tokens. Settings → Browser extension lists connected browsers, with Disconnect; disconnecting in the extension deletes its token in Mise too.
+  - The worker in the background talks to Mise; extension pages aren't held back by CORS for an address they have permission for.
+- **Import this page** (the popup, or right-click → Import this recipe into Mise):
+  - The extension reads the page as the browser shows it: its recipe data (JSON-LD), share photo, title and readable text, trimmed to stay well under the API's 1 MB request limit. Mise rebuilds a small page from those and reads it like a link import: recipe data first, AI otherwise.
+  - That gets past sites that block servers. Checked October 14, 2026 with a Budget Bytes recipe, which Mise's server can't open: all 17 ingredients, the time, servings and photo came through. It also works for recipes you can see through your own subscription.
+  - Mise still downloads the photo itself; most image servers don't block it. If one does, the recipe gets an AI photo when those are on.
+- **Right-click:** "Import this link into Mise" (sent to the normal link import) and "Add “…” to the Mise shopping list" on selected text (several lines or commas become several items). A note in the corner of the page says how it went.
+- **The list beside you:** the browser's side panel shows the unchecked list by aisle, checking items off in Mise as they go in the cart. **Find** puts an item's search at the store you pick (Walmart, Costco Same-Day or Fry's) in the tab beside it. It refreshes every 30 seconds while open.
+- **Walmart (next):**
   - On a Walmart product page, **Use this for…** saves it as the product for a list item, with its price.
   - **Fill my Walmart cart** adds the saved products for the week's list one at a time, slowly. Items without a saved product show Walmart's search results to pick from, and the pick is remembered.
   - It ends with what was added, what was skipped, and an estimated total. You pick the pickup time and pay yourself.
   - Because it works through walmart.com in your tab, the cart and search steps get a prototype first.
 - **Phones:** extensions don't run in Chrome on Android, and Safari on iPhone needs an App Store app for them. Phones keep the share sheet (Android), Paste (iPhone) and an iOS Shortcut; the extension is for the computer.
-- **Installing:**
-  - The simplest for a self-hosted app: download it from Settings and load it unpacked. Chrome shows a developer-mode note.
-  - A Chrome Web Store listing (it can be unlisted) avoids that note, for a one-time $5 developer fee and a review of each update.
+- **Installing:** the Docker image builds the extension, and Settings → Browser extension downloads it (`GET /api/extension/download`). Unzip it, turn on Developer mode in `chrome://extensions`, and Load unpacked. A Chrome Web Store listing (it can be unlisted) would skip Developer mode, for a one-time $5 developer fee and a review of each update.
 
 ### Costco
 

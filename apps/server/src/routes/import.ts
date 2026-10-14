@@ -1,6 +1,7 @@
 import {
   CLEANUP_SECTIONS,
   mealieConnectionInput,
+  importPageInput,
   importTextInput,
   importUrlInput,
   type ImportResult,
@@ -26,7 +27,7 @@ import {
   startMealieImport,
 } from "../import/mealie.ts"
 import { fetchPublic } from "../import/safe-fetch.ts"
-import { importFromUrl } from "../import/url.ts"
+import { importFromPage, importFromUrl } from "../import/url.ts"
 import { systemVideoTools } from "../import/video-tools.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
 import { getHousehold } from "../services/households.ts"
@@ -84,6 +85,15 @@ export function importRoutes(
       videoTools,
       force,
     })
+    await afterImport(result, actor)
+    return c.json(result, result.duplicate ? 200 : 201)
+  })
+
+  // From the browser extension: a page as the person's browser shows it.
+  app.post("/page", async (c) => {
+    const page = await readBody(c, importPageInput)
+    const actor = actorOf(c)
+    const result = await importFromPage(db, page, { ...actor, fetcher, ai })
     await afterImport(result, actor)
     return c.json(result, result.duplicate ? 200 : 201)
   })

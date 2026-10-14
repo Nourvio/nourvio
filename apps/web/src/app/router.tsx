@@ -7,6 +7,7 @@ import { RequireAuth } from "@/features/auth/require-auth"
 import { SetupPage } from "@/features/auth/setup-page"
 import { SignupPage } from "@/features/auth/signup-page"
 import { CookPage } from "@/features/cook/cook-page"
+import { ConnectExtensionPage } from "@/features/extension/connect-page"
 import { CollectionPage, DiscoverPage } from "@/features/discover/discover-page"
 import { HomePage } from "@/features/home/home-page"
 import { ListPage } from "@/features/list/list-page"
@@ -52,6 +53,16 @@ export const router = createBrowserRouter([
       {
         path: "/join/:token",
         element: <JoinPage />,
+        errorElement: <RouteError />,
+      },
+      {
+        // The browser extension opens this to connect.
+        path: "/extension/connect",
+        element: (
+          <RequireAuth>
+            <ConnectExtensionPage />
+          </RequireAuth>
+        ),
         errorElement: <RouteError />,
       },
       {

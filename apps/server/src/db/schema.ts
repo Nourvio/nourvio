@@ -143,6 +143,25 @@ export const sessions = pgTable(
   (t) => [index().on(t.userId)]
 )
 
+/**
+ * Personal API tokens, for the Mise browser extension. Only a hash is kept;
+ * the token is shown once, when it's handed to the extension.
+ */
+export const apiTokens = pgTable(
+  "api_tokens",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text().notNull(),
+    tokenHash: text().notNull().unique(),
+    createdAt: createdAt(),
+    lastUsedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [index().on(t.userId)]
+)
+
 /** App-wide settings as JSON, keyed by name (AI providers, cleanup options, ...). */
 export const settings = pgTable("settings", {
   key: text().primaryKey(),

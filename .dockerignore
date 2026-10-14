@@ -13,3 +13,4 @@ backups
 *.log
 **/*.test.ts
 apps/server/src/test
+apps/extension/release

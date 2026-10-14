@@ -4,17 +4,20 @@
 # Build it from a checkout (`docker build .`) or straight from GitHub
 # (`docker build https://github.com/kjohnson2719/mise.git#main`).
 
-# ---- Build the web app ----
+# ---- Build the web app and the browser extension ----
 FROM node:24-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY apps/server/package.json apps/server/
+COPY apps/extension/package.json apps/extension/
 COPY packages/shared/package.json packages/shared/
 RUN npm ci
 COPY packages/shared packages/shared
 COPY apps/web apps/web
 RUN npm run build -w @mise/web
+COPY apps/extension apps/extension
+RUN npm run build -w @mise/extension
 
 # ---- Production dependencies for the server only ----
 FROM node:24-slim AS deps
@@ -22,6 +25,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/
 COPY apps/server/package.json apps/server/
+COPY apps/extension/package.json apps/extension/
 COPY packages/shared/package.json packages/shared/
 RUN npm ci --omit=dev --workspace @mise/server --ignore-scripts
 
@@ -70,6 +74,7 @@ COPY --from=deps /app/node_modules node_modules
 COPY packages/shared packages/shared
 COPY apps/server apps/server
 COPY --from=build /app/apps/web/dist apps/web/dist
+COPY --from=build /app/apps/extension/release apps/extension/release
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/mise-entrypoint
 RUN mkdir -p /data
 

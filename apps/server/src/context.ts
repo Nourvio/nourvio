@@ -36,6 +36,8 @@ export type AppEnv = {
   Variables: {
     user: UserRow | undefined
     sessionId: string | undefined
+    /** Signed in by the extension's API token rather than a session. */
+    viaToken: boolean | undefined
   }
 }
 

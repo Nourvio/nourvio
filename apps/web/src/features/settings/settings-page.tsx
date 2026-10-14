@@ -27,6 +27,7 @@ import { NutritionLibraryCard } from "./nutrition-library-card"
 import { PhotosLibraryCard } from "./photos-library-card"
 import { ServerCard } from "./server-card"
 import { TastesCard } from "./tastes-card"
+import { ExtensionCard } from "@/features/extension/extension-card"
 import { KrogerAppCard } from "@/features/shop/kroger-app-card"
 import { StoresCard } from "@/features/shop/stores-card"
 import { TidyUpCard } from "./tidy-up-card"
@@ -56,6 +57,12 @@ export function SettingsPage() {
       label: "Appearance",
       group: "You",
       card: <AppearanceCard />,
+    },
+    {
+      id: "extension",
+      label: "Browser extension",
+      group: "You",
+      card: <ExtensionCard />,
     },
     {
       id: "household",

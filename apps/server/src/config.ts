@@ -10,5 +10,11 @@ export const config = {
   /** The built web app. The Docker image puts it at the same relative path. */
   webDist:
     env.WEB_DIST ?? fileURLToPath(new URL("../../web/dist/", import.meta.url)),
+  /** The packaged browser extension, offered for download in Settings. */
+  extensionZip:
+    env.EXTENSION_ZIP ??
+    fileURLToPath(
+      new URL("../../extension/release/mise-extension.zip", import.meta.url)
+    ),
   version: env.MISE_VERSION ?? "dev",
 }

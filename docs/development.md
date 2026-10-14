@@ -44,9 +44,10 @@ Run these from the repo root.
 | `npm run dev` | Starts Vite on :5173 and the API on :3000 (restarting it on changes). Vite forwards `/api` to the API. |
 | `npm test` | Runs the server tests (Vitest) against PGlite, an in-memory Postgres, so Docker isn't needed |
 | `npm run build` | Typechecks and builds every workspace |
+| `npm run build -w @mise/extension` | Builds the browser extension into `apps/extension/dist` (load that folder unpacked in `chrome://extensions` to try it) and zips it to `apps/extension/release`, which Settings offers for download |
 | `npm start` | Runs the server on its own. It serves `apps/web/dist`, so run `build` first. |
 | `npm run typecheck` | Runs `tsc` across workspaces |
-| `npm run lint` | Runs ESLint on the web app |
+| `npm run lint` | Runs ESLint on the web app and the extension |
 | `npm run format` / `format:check` | Runs Prettier (with Tailwind class sorting) over `apps/` and `packages/` |
 | `npm run check:contrast -w @mise/web` | Checks every palette in `index.css` against WCAG contrast. Run it after changing colors. |
 | `npm run db:generate -w @mise/server` | Writes a new migration after you change `apps/server/src/db/schema.ts` |

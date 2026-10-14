@@ -3,6 +3,7 @@ import type { MiddlewareHandler } from "hono"
 import type { AppEnv } from "../context.ts"
 import type { Db } from "../db/client.ts"
 import { HttpError } from "../http.ts"
+import { validateApiToken } from "./api-tokens.ts"
 import {
   clearSessionCookie,
   getSessionToken,
@@ -10,9 +11,26 @@ import {
   validateSession,
 } from "./sessions.ts"
 
-/** Looks up the session cookie, if there is one, and sets `user` for later handlers. */
+/**
+ * Looks up who's asking and sets `user` for later handlers: the browser
+ * extension's API token (an Authorization header), else the session cookie.
+ */
 export function loadSession(db: Db): MiddlewareHandler<AppEnv> {
   return async (c, next) => {
+    const bearer = c.req
+      .header("authorization")
+      ?.match(/^Bearer\s+(\S+)$/i)?.[1]
+    if (bearer) {
+      const user = await validateApiToken(db, bearer)
+      if (!user)
+        throw new HttpError(
+          401,
+          "That extension token isn't valid any more. Connect the extension again."
+        )
+      c.set("user", user)
+      c.set("viaToken", true)
+      return next()
+    }
     const token = getSessionToken(c)
     if (token) {
       const session = await validateSession(db, token)
