@@ -17,6 +17,7 @@ import { pingDatabase } from "./db/client.ts"
 import { HttpError } from "./http.ts"
 import { aiRoutes } from "./routes/ai.ts"
 import { authRoutes } from "./routes/auth.ts"
+import { chatRoutes } from "./routes/chat.ts"
 import { householdRoutes } from "./routes/household.ts"
 import { imagesRoutes } from "./routes/images.ts"
 import { importRoutes } from "./routes/import.ts"
@@ -53,7 +54,11 @@ export function createApp(ctx: AppContext) {
   const ai = createAiService(ctx.db, ctx.aiFactory)
 
   app.use(secureHeaders())
-  app.use(compress())
+  // Compression would hold back a streaming chat reply, so skip it there.
+  const compression = compress()
+  app.use((c, next) =>
+    c.req.path === "/api/chat" ? next() : compression(c, next)
+  )
 
   // ---- API ----
   app.use("/api/*", csrf({ origin: isSameSite }))
@@ -88,6 +93,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/images", imagesRoutes(ctx))
   app.route("/api/import", importRoutes(ctx, ai))
   app.route("/api/ai", aiRoutes(ctx, ai))
+  app.route("/api/chat", chatRoutes(ctx, ai))
   app.all("/api/*", requireUser, (c) => c.json({ error: "Not found" }, 404))
 
   // ---- Web app ----

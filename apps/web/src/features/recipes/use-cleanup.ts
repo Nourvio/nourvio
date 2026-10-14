@@ -1,4 +1,10 @@
-import type { CleanupJob, CleanupSection, Proposal, Recipe } from "@mise/shared"
+import type {
+  CleanupJob,
+  CleanupSection,
+  Proposal,
+  Recipe,
+  RecipeSection,
+} from "@mise/shared"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api } from "@/lib/api"
@@ -52,7 +58,9 @@ export function useTidyUp(recipeId: string) {
 function useResolved() {
   const queryClient = useQueryClient()
   return (proposal: Proposal, recipe?: Recipe) => {
-    queryClient.setQueryData(proposalKey(proposal.recipe.id), null)
+    if (proposal.recipe) {
+      queryClient.setQueryData(proposalKey(proposal.recipe.id), null)
+    }
     queryClient.invalidateQueries({ queryKey: PROPOSALS_KEY })
     queryClient.invalidateQueries({ queryKey: JOB_KEY })
     if (recipe) {
@@ -66,31 +74,40 @@ function useResolved() {
   }
 }
 
+/**
+ * Applies a proposal: the chosen sections of a change (to the recipe, or as
+ * a new recipe with `asNew`), or a new recipe as a whole.
+ */
 export function useApplyProposal() {
   const resolved = useResolved()
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       proposal,
       sections,
+      asNew,
     }: {
       proposal: Proposal
-      sections: CleanupSection[]
+      sections?: RecipeSection[]
+      asNew?: boolean
     }) =>
-      (
-        await api<{ recipe: Recipe }>(`/proposals/${proposal.id}/apply`, {
-          body: { sections },
-        })
-      ).recipe,
-    onSuccess: (recipe, { proposal }) => resolved(proposal, recipe),
+      api<{ recipe: Recipe; proposal: Proposal }>(
+        `/proposals/${proposal.id}/apply`,
+        { body: { sections, asNew } }
+      ),
+    onSuccess: ({ recipe, proposal }) => resolved(proposal, recipe),
   })
 }
 
 export function useDismissProposal() {
   const resolved = useResolved()
   return useMutation({
-    mutationFn: (proposal: Proposal) =>
-      api(`/proposals/${proposal.id}/dismiss`, { method: "POST" }),
-    onSuccess: (_, proposal) => resolved(proposal),
+    mutationFn: async (proposal: Proposal) =>
+      (
+        await api<{ proposal: Proposal }>(`/proposals/${proposal.id}/dismiss`, {
+          method: "POST",
+        })
+      ).proposal,
+    onSuccess: (proposal) => resolved(proposal),
   })
 }
 

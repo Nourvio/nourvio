@@ -22,6 +22,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { NotFoundPage } from "@/app/not-found-page"
 import { ChatLauncher } from "@/features/chat/chat-launcher"
+import { useChatScreen } from "@/features/chat/chat-provider"
 import { IngredientList } from "@/features/recipes/ingredient-list"
 import { useMarkMade, useRecipe } from "@/features/recipes/use-recipes"
 import { cn } from "@/lib/utils"
@@ -56,6 +57,7 @@ function CookView({ recipe }: { recipe: Recipe }) {
   const screenOn = useWakeLock()
   const markMade = useMarkMade(recipe.id)
   const swipe = React.useRef<{ x: number; y: number } | null>(null)
+  useChatScreen({ recipeId: recipe.id, recipeName: recipe.name, scale: factor })
 
   const steps = recipe.steps
   const step = steps[index]

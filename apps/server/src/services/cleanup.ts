@@ -1,26 +1,24 @@
-import {
-  CLEANUP_SECTION_NAMES,
-  type CleanupSection,
-  type CleanupValues,
-  type Proposal,
-  type Recipe,
-  type RecipeDetails,
-  type RecipeInput,
+import type {
+  CleanupSection,
+  Proposal,
+  Recipe,
+  RecipeDetails,
+  RecipeValues,
 } from "@mise/shared"
-import { and, desc, eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import { z } from "zod"
 
 import type { AiService } from "../ai/service.ts"
 import type { Db } from "../db/client.ts"
-import { proposals, recipes } from "../db/schema.ts"
-import { HttpError } from "../http.ts"
+import { proposals } from "../db/schema.ts"
 import {
-  findRecipeRow,
-  getRecipe,
-  listTags,
-  toInput,
-  updateRecipe,
-} from "./recipes.ts"
+  cleanLines,
+  createProposal,
+  detailsOf,
+  recipeText,
+  sameList,
+} from "./proposals.ts"
+import { getRecipe, listTags, toInput } from "./recipes.ts"
 
 /** The model's answer. Null means "nothing to change" or "not asked". */
 const cleanupResult = z.object({
@@ -64,68 +62,10 @@ function systemPrompt(sections: CleanupSection[], existingTags: string[]) {
     .join("\n\n")
 }
 
-function recipeText(input: RecipeInput) {
-  const line = (label: string, value: unknown) =>
-    value === null || value === undefined || value === ""
-      ? `${label}: (none)`
-      : `${label}: ${value}`
-  return [
-    line("Name", input.name),
-    line("Description", input.description),
-    line("Servings", input.servings),
-    line("Yield", input.yieldText),
-    line("Prep minutes", input.prepMinutes),
-    line("Cook minutes", input.cookMinutes),
-    line("Total minutes", input.totalMinutes),
-    line("Tags", input.tags?.join(", ")),
-    `Ingredients:\n${(input.ingredients ?? []).join("\n") || "(none)"}`,
-    `Steps:\n${(input.steps ?? []).join("\n") || "(none)"}`,
-    line("Notes", input.notes),
-  ].join("\n")
-}
-
-function cleanLines(lines: string[], max: number, maxLength: number) {
-  return lines
-    .map((line) => line.replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .slice(0, max)
-    .map((line) => line.slice(0, maxLength))
-}
-
-function sameList(a: string[], b: string[]) {
-  return a.length === b.length && a.every((item, i) => item === b[i])
-}
-
 function minutes(value: number | null) {
   return value !== null && value > 0 && value < 100_000
     ? Math.round(value)
     : null
-}
-
-function detailsOf(recipe: Recipe): RecipeDetails {
-  return {
-    servings: recipe.servings,
-    prepMinutes: recipe.prepMinutes,
-    cookMinutes: recipe.cookMinutes,
-    totalMinutes: recipe.totalMinutes,
-  }
-}
-
-/** Each section's current value, in the same shape a proposal stores. */
-function currentValue(recipe: Recipe, section: CleanupSection) {
-  const input = toInput(recipe)
-  switch (section) {
-    case "description":
-      return recipe.description
-    case "tags":
-      return recipe.tags
-    case "details":
-      return detailsOf(recipe)
-    case "ingredients":
-      return input.ingredients ?? []
-    case "steps":
-      return input.steps ?? []
-  }
 }
 
 /** Compares the model's answer with the recipe and keeps real changes only. */
@@ -135,8 +75,8 @@ function changesFrom(
   result: z.infer<typeof cleanupResult>
 ) {
   const input = toInput(recipe)
-  const before: CleanupValues = {}
-  const after: CleanupValues = {}
+  const before: RecipeValues = {}
+  const after: RecipeValues = {}
 
   if (sections.includes("description") && !recipe.description) {
     const description = result.description?.trim().slice(0, 2000)
@@ -198,24 +138,6 @@ function changesFrom(
   return { before, after }
 }
 
-type ProposalRow = typeof proposals.$inferSelect
-
-function toProposal(
-  row: ProposalRow,
-  recipe: { id: string; slug: string; name: string }
-): Proposal {
-  return {
-    id: row.id,
-    kind: row.kind,
-    status: row.status,
-    recipe,
-    summary: row.payload.summary,
-    before: row.payload.before,
-    after: row.payload.after,
-    createdAt: row.createdAt.toISOString(),
-  }
-}
-
 /**
  * Asks the AI to tidy a recipe and stores what it suggests as a pending
  * proposal, replacing any earlier pending one. Returns null when there's
@@ -230,6 +152,7 @@ export async function proposeCleanup(
     userId: string | null
     sections: CleanupSection[]
     jobId?: string
+    conversationId?: string
   }
 ): Promise<Proposal | null> {
   const recipe = await getRecipe(db, householdId, idOrSlug)
@@ -247,145 +170,28 @@ export async function proposeCleanup(
   const summary = result.summary.trim().slice(0, 300) || "Tidied up"
   const changed = Object.keys(after).length > 0
 
-  const [row] = await db.transaction(async (tx) => {
-    if (changed) {
-      await tx
-        .update(proposals)
-        .set({ status: "dismissed", resolvedAt: new Date() })
-        .where(
-          and(
-            eq(proposals.recipeId, recipe.id),
-            eq(proposals.status, "pending")
-          )
+  if (changed) {
+    // The newest suggestions replace older ones for the same recipe.
+    await db
+      .update(proposals)
+      .set({ status: "dismissed", resolvedAt: new Date() })
+      .where(
+        and(
+          eq(proposals.recipeId, recipe.id),
+          eq(proposals.kind, "cleanup"),
+          eq(proposals.status, "pending")
         )
-    }
-    return tx
-      .insert(proposals)
-      .values({
-        kind: "cleanup",
-        recipeId: recipe.id,
-        status: changed ? "pending" : "unchanged",
-        payload: { summary, before, after },
-        jobId: options.jobId ?? null,
-        createdBy: options.userId,
-        resolvedAt: changed ? null : new Date(),
-      })
-      .returning()
+      )
+  }
+  const proposal = await createProposal(db, {
+    householdId,
+    kind: "cleanup",
+    recipeId: recipe.id,
+    status: changed ? "pending" : "unchanged",
+    payload: { summary, before, after },
+    userId: options.userId,
+    jobId: options.jobId,
+    conversationId: options.conversationId,
   })
-  return changed ? toProposal(row!, recipe) : null
-}
-
-const proposalColumns = {
-  proposal: proposals,
-  recipe: { id: recipes.id, slug: recipes.slug, name: recipes.name },
-}
-
-/** The household's proposals waiting for review, newest first. */
-export async function listPendingProposals(db: Db, householdId: string) {
-  const rows = await db
-    .select(proposalColumns)
-    .from(proposals)
-    .innerJoin(recipes, eq(proposals.recipeId, recipes.id))
-    .where(
-      and(eq(recipes.householdId, householdId), eq(proposals.status, "pending"))
-    )
-    .orderBy(desc(proposals.createdAt))
-    .limit(200)
-  return rows.map((r) => toProposal(r.proposal, r.recipe))
-}
-
-/** The pending proposal for a recipe, if there is one. */
-export async function pendingProposalFor(
-  db: Db,
-  householdId: string,
-  idOrSlug: string
-) {
-  const recipe = await findRecipeRow(db, householdId, idOrSlug)
-  const [row] = await db
-    .select()
-    .from(proposals)
-    .where(
-      and(eq(proposals.recipeId, recipe.id), eq(proposals.status, "pending"))
-    )
-    .orderBy(desc(proposals.createdAt))
-    .limit(1)
-  return row ? toProposal(row, recipe) : null
-}
-
-async function findPending(db: Db, householdId: string, id: string) {
-  const parsed = z.uuid().safeParse(id)
-  const [row] = parsed.success
-    ? await db
-        .select(proposalColumns)
-        .from(proposals)
-        .innerJoin(recipes, eq(proposals.recipeId, recipes.id))
-        .where(and(eq(proposals.id, id), eq(recipes.householdId, householdId)))
-    : []
-  if (!row) throw new HttpError(404, "Those suggestions don't exist")
-  if (row.proposal.status !== "pending") {
-    throw new HttpError(409, "Those suggestions were already dealt with")
-  }
-  return row
-}
-
-/**
- * Applies the chosen sections. A section the recipe has changed in since the
- * suggestions were made is refused rather than overwritten.
- */
-export async function applyProposal(
-  db: Db,
-  householdId: string,
-  id: string,
-  sections: CleanupSection[],
-  userId: string | null
-) {
-  const { proposal } = await findPending(db, householdId, id)
-  const { before, after } = proposal.payload
-  const chosen = sections.filter((section) => section in after)
-  if (!chosen.length) {
-    throw new HttpError(400, "None of those changes are in these suggestions")
-  }
-
-  const recipe = await getRecipe(db, householdId, proposal.recipeId)
-  const stale = chosen.filter(
-    (section) =>
-      JSON.stringify(currentValue(recipe, section)) !==
-      JSON.stringify(before[section])
-  )
-  if (stale.length) {
-    const names = stale.map((section) => CLEANUP_SECTION_NAMES[section])
-    const list =
-      names.length === 1
-        ? names[0]
-        : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
-    throw new HttpError(
-      409,
-      `${list} changed since these suggestions were made. Untick ${names.length === 1 ? "it" : "them"} to keep the rest, or tidy up again.`
-    )
-  }
-
-  const input = toInput(recipe)
-  for (const section of chosen) {
-    if (section === "details") Object.assign(input, after.details)
-    else if (section === "description") input.description = after.description
-    else if (section === "tags") input.tags = after.tags
-    else input[section] = after[section]
-  }
-  const updated = await updateRecipe(db, householdId, recipe.id, input, {
-    userId,
-    source: "ai_cleanup",
-  })
-  await db
-    .update(proposals)
-    .set({ status: "applied", resolvedAt: new Date() })
-    .where(eq(proposals.id, proposal.id))
-  return updated
-}
-
-export async function dismissProposal(db: Db, householdId: string, id: string) {
-  const { proposal } = await findPending(db, householdId, id)
-  await db
-    .update(proposals)
-    .set({ status: "dismissed", resolvedAt: new Date() })
-    .where(eq(proposals.id, proposal.id))
+  return changed ? proposal : null
 }

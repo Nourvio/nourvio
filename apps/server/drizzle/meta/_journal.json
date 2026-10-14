@@ -50,6 +50,13 @@
       "when": 1791953992171,
       "tag": "0006_households",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791957112269,
+      "tag": "0007_chat",
+      "breakpoints": true
     }
   ]
 }

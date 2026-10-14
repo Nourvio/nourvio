@@ -2,12 +2,14 @@ import type {
   AiProviderId,
   AiTask,
   Appearance,
+  ChatPart,
   CleanupJob,
-  CleanupValues,
   Nutrition,
+  ProposalKind,
   ProposalStatus,
   RecipeInput,
   RecipeOrigin,
+  RecipeValues,
   RecipeVersion,
   Role,
   UnitKind,
@@ -311,21 +313,86 @@ export const proposals = pgTable(
   "proposals",
   {
     id: uuid().primaryKey().defaultRandom(),
-    kind: text().$type<"cleanup">().notNull(),
-    recipeId: uuid()
+    householdId: uuid()
       .notNull()
-      .references(() => recipes.id, { onDelete: "cascade" }),
+      .references(() => households.id, { onDelete: "cascade" }),
+    kind: text().$type<ProposalKind>().notNull(),
+    /** The recipe it changes; null for a new recipe. */
+    recipeId: uuid().references(() => recipes.id, { onDelete: "cascade" }),
     status: text().$type<ProposalStatus>().notNull(),
     payload: jsonb()
-      .$type<{ summary: string; before: CleanupValues; after: CleanupValues }>()
+      .$type<{
+        summary: string
+        before: RecipeValues
+        after: RecipeValues
+        draft?: RecipeInput
+        variantName?: string | null
+      }>()
       .notNull(),
     /** Set when part of a library run. */
     jobId: uuid().references(() => aiJobs.id, { onDelete: "set null" }),
+    /** Set when suggested in a chat. */
+    conversationId: uuid().references(() => chatConversations.id, {
+      onDelete: "cascade",
+    }),
+    /** The recipe created or changed when it was applied. */
+    resultRecipeId: uuid().references(() => recipes.id, {
+      onDelete: "set null",
+    }),
     createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     resolvedAt: timestamp({ withTimezone: true }),
   },
-  (t) => [index().on(t.recipeId, t.status), index().on(t.status, t.createdAt)]
+  (t) => [
+    index().on(t.recipeId, t.status),
+    index().on(t.householdId, t.status, t.createdAt),
+  ]
+)
+
+// ---- Chat ----
+
+/** A conversation with the assistant. Private to the person who started it. */
+export const chatConversations = pgTable(
+  "chat_conversations",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text().notNull(),
+    /** A conversation stays on the provider and model it started with. */
+    provider: text().$type<AiProviderId>().notNull(),
+    model: text().notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.userId, t.updatedAt)]
+)
+
+/**
+ * One user message, or one whole assistant reply (which may span several
+ * model calls and tool uses). `native` holds what the provider needs to
+ * continue the conversation, in its own format; `parts` is what's shown.
+ */
+export const chatMessages = pgTable(
+  "chat_messages",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    conversationId: uuid()
+      .notNull()
+      .references(() => chatConversations.id, { onDelete: "cascade" }),
+    position: integer().notNull(),
+    role: text().$type<"user" | "assistant">().notNull(),
+    parts: jsonb().$type<ChatPart[]>().notNull(),
+    native: jsonb().$type<unknown[]>().notNull(),
+    /** The recipe the user was looking at, for a user message. */
+    contextLabel: text(),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex().on(t.conversationId, t.position)]
 )
 
 /**

@@ -210,6 +210,31 @@ export function createAiService(
     )
   }
 
+  /** A provider by id, if it has a key; for conversations pinned to one. */
+  async function providerFor(id: AiProviderId) {
+    const found = (await keys())[id]
+    return found ? factory(id, found.key) : null
+  }
+
+  async function recordUsage(
+    actor: AiActor,
+    provider: AiProviderId,
+    model: string,
+    task: AiTask,
+    usage: { inputTokens: number; outputTokens: number }
+  ) {
+    if (!usage.inputTokens && !usage.outputTokens) return
+    await db.insert(aiUsage).values({
+      ...actor,
+      provider,
+      model,
+      task,
+      inputTokens: usage.inputTokens,
+      outputTokens: usage.outputTokens,
+      costUsd: estimateCost(model, usage.inputTokens, usage.outputTokens),
+    })
+  }
+
   /** Runs a structured extraction for a task and records what it used. */
   async function extract<T extends z.ZodType>(
     task: AiTask,
@@ -297,6 +322,8 @@ export function createAiService(
     testKey,
     listModels,
     resolve,
+    providerFor,
+    recordUsage,
     extract,
     transcribe,
     usageSummary,

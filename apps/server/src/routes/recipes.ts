@@ -11,7 +11,8 @@ import {
   type AppEnv,
 } from "../context.ts"
 import { HttpError, readBody } from "../http.ts"
-import { pendingProposalFor, proposeCleanup } from "../services/cleanup.ts"
+import { proposeCleanup } from "../services/cleanup.ts"
+import { pendingCleanupFor } from "../services/proposals.ts"
 import { deleteImage, saveImage } from "../services/images.ts"
 import {
   createRecipe,
@@ -156,7 +157,7 @@ export function recipesRoutes({ db }: AppContext, ai: AiService) {
 
   app.get("/:id/proposal", async (c) =>
     c.json({
-      proposal: await pendingProposalFor(
+      proposal: await pendingCleanupFor(
         db,
         currentHousehold(c),
         c.req.param("id")

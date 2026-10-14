@@ -70,6 +70,8 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 ## Milestone 2: AI assistant
 
+**Status:** built. Tested live with Claude: it answers with the on-screen recipe and its scale in mind, looks things up, makes edit and new-recipe cards, saves variants, and continues saved conversations. OpenAI's chat path is written against its SDK but hasn't been run with a real key yet.
+
 - A streaming chat panel: a drawer on phone, a side panel on iPad
 - Page context (current recipe and servings, current week)
 - Read tools: search recipes, get recipe, list tags

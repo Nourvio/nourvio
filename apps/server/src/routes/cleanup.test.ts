@@ -217,7 +217,8 @@ describe("tidying up recipes", () => {
     ).body
     expect(Object.keys(proposal.after)).toEqual(["tags"])
     const res = await t.admin.post(`/api/proposals/${proposal.id}/dismiss`)
-    expect(res.status).toBe(204)
+    expect(res.status).toBe(200)
+    expect(res.body.proposal.status).toBe("dismissed")
     expect(
       (await t.admin.get(`/api/recipes/${chili.id}/proposal`)).body.proposal
     ).toBeNull()

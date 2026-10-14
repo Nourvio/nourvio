@@ -82,11 +82,12 @@ export function ReviewPage() {
             <Item key={proposal.id} variant="outline">
               <ItemContent>
                 <ItemTitle>
+                  {/* Tidy-ups always belong to a recipe. */}
                   <Link
-                    to={`/recipes/${proposal.recipe.slug}`}
+                    to={`/recipes/${proposal.recipe?.slug}`}
                     className="hover:underline"
                   >
-                    {proposal.recipe.name}
+                    {proposal.recipe?.name}
                   </Link>
                 </ItemTitle>
                 <ItemDescription>{proposal.summary}</ItemDescription>
@@ -119,7 +120,7 @@ export function ReviewPage() {
           {open && (
             <>
               <DialogHeader>
-                <DialogTitle>{open.recipe.name}</DialogTitle>
+                <DialogTitle>{open.recipe?.name}</DialogTitle>
                 <DialogDescription>
                   Keep what you like. The current version stays in History.
                 </DialogDescription>

@@ -1,22 +1,44 @@
 import { z } from "zod"
 
-/** What a tidy-up can touch. Each one can be applied or skipped on its own. */
+import type { RecipeInput } from "./recipes.ts"
+
+/**
+ * The parts of a recipe a suggested change can touch. Each one can be applied
+ * or skipped on its own.
+ */
+export const RECIPE_SECTIONS = [
+  "name",
+  "description",
+  "tags",
+  "details",
+  "ingredients",
+  "steps",
+  "notes",
+] as const
+export type RecipeSection = (typeof RECIPE_SECTIONS)[number]
+
+export const RECIPE_SECTION_NAMES: Record<RecipeSection, string> = {
+  name: "Name",
+  description: "Description",
+  tags: "Tags",
+  details: "Servings and times",
+  ingredients: "Ingredients",
+  steps: "Steps",
+  notes: "Notes",
+}
+
+/** What a tidy-up can touch. */
 export const CLEANUP_SECTIONS = [
   "description",
   "tags",
   "details",
   "ingredients",
   "steps",
-] as const
+] as const satisfies readonly RecipeSection[]
 export type CleanupSection = (typeof CLEANUP_SECTIONS)[number]
 
-export const CLEANUP_SECTION_NAMES: Record<CleanupSection, string> = {
-  description: "Description",
-  tags: "Tags",
-  details: "Servings and times",
-  ingredients: "Ingredients",
-  steps: "Steps",
-}
+export const CLEANUP_SECTION_NAMES: Record<CleanupSection, string> =
+  RECIPE_SECTION_NAMES
 
 export type RecipeDetails = {
   servings: number | null
@@ -26,13 +48,17 @@ export type RecipeDetails = {
 }
 
 /** Section values, before or after. Only sections that change are present. */
-export type CleanupValues = {
+export type RecipeValues = {
+  name?: string
   description?: string | null
   tags?: string[]
   details?: RecipeDetails
   ingredients?: string[]
   steps?: string[]
+  notes?: string | null
 }
+/** @deprecated Use RecipeValues. */
+export type CleanupValues = RecipeValues
 
 export const PROPOSAL_STATUSES = [
   "pending",
@@ -43,15 +69,32 @@ export const PROPOSAL_STATUSES = [
 ] as const
 export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number]
 
+/**
+ * - cleanup: a tidy-up of a recipe (Tidy up, auto-tidy, library runs, chat)
+ * - recipe_edit: a change suggested in chat, such as a substitution
+ * - new_recipe: a recipe worked out in chat, ready to save
+ */
+export const PROPOSAL_KINDS = ["cleanup", "recipe_edit", "new_recipe"] as const
+export type ProposalKind = (typeof PROPOSAL_KINDS)[number]
+
+type RecipeRef = { id: string; slug: string; name: string }
+
 export type Proposal = {
   id: string
-  kind: "cleanup"
+  kind: ProposalKind
   status: ProposalStatus
-  recipe: { id: string; slug: string; name: string }
+  /** The recipe it changes. Null for a new recipe. */
+  recipe: RecipeRef | null
   /** One sentence from the AI on what it changed. */
   summary: string
-  before: CleanupValues
-  after: CleanupValues
+  before: RecipeValues
+  after: RecipeValues
+  /** The whole recipe, for a new one. */
+  draft: RecipeInput | null
+  /** For an edit that makes a different version ("dairy-free"), its name as a new recipe. */
+  variantName: string | null
+  /** The recipe created or changed when it was applied. */
+  result: RecipeRef | null
   createdAt: string
 }
 
@@ -63,10 +106,15 @@ export const cleanupInput = z.object({
 })
 
 export const applyProposalInput = z.object({
+  /** For changes to a recipe: which sections to keep. */
   sections: z
-    .array(z.enum(CLEANUP_SECTIONS))
-    .min(1, "Pick at least one change to keep"),
+    .array(z.enum(RECIPE_SECTIONS))
+    .min(1, "Pick at least one change to keep")
+    .optional(),
+  /** Save the changed recipe as a new one, leaving the original alone. */
+  asNew: z.boolean().optional(),
 })
+export type ApplyProposalInput = z.infer<typeof applyProposalInput>
 
 export type CleanupJob = {
   id: string

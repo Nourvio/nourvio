@@ -105,8 +105,22 @@ export function apiClient(app: App) {
     return app.request(path, { headers: cookie ? { cookie } : {} })
   }
 
+  /** A POST whose reply streams (chat): the raw Response, cookie included. */
+  function stream(path: string, body: unknown) {
+    return app.request(path, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "http://localhost",
+        ...(cookie ? { cookie } : {}),
+      },
+      body: JSON.stringify(body),
+    })
+  }
+
   return {
     raw,
+    stream,
     get: (path: string) => request("GET", path),
     post: (path: string, body?: unknown) => request("POST", path, body),
     put: (path: string, body?: unknown) => request("PUT", path, body),

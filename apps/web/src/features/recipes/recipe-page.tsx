@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { NotFoundPage } from "@/app/not-found-page"
+import { useChatScreen } from "@/features/chat/chat-provider"
 import { useAiStatus } from "@/features/settings/use-ai"
 import { ApiError } from "@/lib/api"
 
@@ -81,6 +82,7 @@ export function RecipePage() {
 
 function RecipeView({ recipe }: { recipe: Recipe }) {
   const [factor, setFactor] = React.useState(1)
+  useChatScreen({ recipeId: recipe.id, recipeName: recipe.name, scale: factor })
   const [checked, setChecked] = React.useState<Set<string>>(new Set())
   const rate = useRateRecipe(recipe.id)
   const markMade = useMarkMade(recipe.id)

@@ -1,10 +1,10 @@
 import * as React from "react"
 import {
-  CLEANUP_SECTION_NAMES,
-  CLEANUP_SECTIONS,
-  type CleanupSection,
+  RECIPE_SECTION_NAMES,
+  RECIPE_SECTIONS,
   type Proposal,
   type RecipeDetails,
+  type RecipeSection,
 } from "@mise/shared"
 import { toast } from "sonner"
 
@@ -29,15 +29,15 @@ export function ProposalReview({
   proposal: Proposal
   onDone: () => void
 }) {
-  const sections = CLEANUP_SECTIONS.filter((s) => s in proposal.after)
-  const [chosen, setChosen] = React.useState<Set<CleanupSection>>(
+  const sections = RECIPE_SECTIONS.filter((s) => s in proposal.after)
+  const [chosen, setChosen] = React.useState<Set<RecipeSection>>(
     () => new Set(sections)
   )
   const apply = useApplyProposal()
   const dismiss = useDismissProposal()
   const busy = apply.isPending || dismiss.isPending
 
-  function toggle(section: CleanupSection, on: boolean) {
+  function toggle(section: RecipeSection, on: boolean) {
     setChosen((current) => {
       const next = new Set(current)
       if (on) next.add(section)
@@ -70,7 +70,7 @@ export function ProposalReview({
                 disabled={busy}
                 onCheckedChange={(on) => toggle(section, on === true)}
               />
-              {CLEANUP_SECTION_NAMES[section]}
+              {RECIPE_SECTION_NAMES[section]}
             </label>
             <SectionDiff proposal={proposal} section={section} />
           </section>
@@ -120,17 +120,27 @@ export function ProposalReview({
   )
 }
 
-function SectionDiff({
+export function SectionDiff({
   proposal,
   section,
 }: {
   proposal: Proposal
-  section: CleanupSection
+  section: RecipeSection
 }) {
   const { before, after } = proposal
   switch (section) {
+    case "name":
+      return (
+        <p className="text-sm">
+          <span className="text-muted-foreground line-through">
+            {before.name}
+          </span>{" "}
+          → <span className="font-medium">{after.name}</span>
+        </p>
+      )
     case "description":
-      return <p className="text-sm">{after.description}</p>
+    case "notes":
+      return <p className="text-sm whitespace-pre-line">{after[section]}</p>
     case "tags":
       return <TagDiff before={before.tags ?? []} after={after.tags ?? []} />
     case "details":
@@ -214,19 +224,22 @@ function LinesDiff({ before, after }: { before: string[]; after: string[] }) {
   const inAfter = new Set(after)
   const inBefore = new Set(before)
   return (
-    <div className="grid gap-3 text-sm md:grid-cols-2">
-      <LineList
-        title="Now"
-        lines={before}
-        isChanged={(line) => !inAfter.has(line)}
-        changedClass="text-muted-foreground line-through decoration-muted-foreground/60"
-      />
-      <LineList
-        title="Suggested"
-        lines={after}
-        isChanged={(line) => !inBefore.has(line)}
-        changedClass="-mx-1.5 rounded-md bg-accent px-1.5 text-accent-foreground"
-      />
+    // Side by side when there's room for it, stacked in the narrow chat panel.
+    <div className="@container">
+      <div className="grid gap-3 text-sm @md:grid-cols-2">
+        <LineList
+          title="Now"
+          lines={before}
+          isChanged={(line) => !inAfter.has(line)}
+          changedClass="text-muted-foreground line-through decoration-muted-foreground/60"
+        />
+        <LineList
+          title="Suggested"
+          lines={after}
+          isChanged={(line) => !inBefore.has(line)}
+          changedClass="-mx-1.5 rounded-md bg-accent px-1.5 text-accent-foreground"
+        />
+      </div>
     </div>
   )
 }

@@ -106,8 +106,9 @@ Everything a household owns carries its `household_id`, and every query is scope
 | `shopping_list_items` | list_id, food_id, text, quantity, unit_id, store_section, checked, for_entries (jsonb), store_product_id | `for_entries` records which planned meals an item was bought for |
 | `pantry_items` | food_id, quantity, unit_id, status, bought_at, use_by, reserved_for_entry_id | `status` is have, low or out |
 | `store_products` | store, food_id, product_id, name, size, purchase_unit, last_price, preferred | The ingredient-to-Walmart-product mapping |
-| `proposals` | kind, target_id, payload (jsonb), created_by (chat or cleanup), status | A pending change from the AI, waiting for you to apply or dismiss it (see [AI](#ai)) |
-| `chat_conversations`, `chat_messages` | provider, model, content (jsonb, in that provider's native format) | A conversation stays on the provider it started with, so it can resume exactly |
+| `proposals` | household_id, kind (cleanup, recipe_edit, new_recipe), recipe_id (null for a new recipe), payload (jsonb: summary, before/after sections, draft, variant name), status, job_id, conversation_id, result_recipe_id | A pending change from the AI, waiting for you to apply or dismiss it (see [AI](#ai)) |
+| `chat_conversations` | household_id, user_id, title, provider, model | Private to the person who started it. Stays on the provider and model it started with, so it can resume exactly. |
+| `chat_messages` | conversation_id, position, role, parts (jsonb: text, tool activity and proposal ids, for display), native (jsonb: the provider's own messages), context_label | One user message, or one whole assistant reply (which can span several model calls and tool uses) |
 | `ai_usage` | household_id, user_id, provider, model, task, input/output tokens, cost, created_at | Spend tracking per household, on the server's keys |
 | `ai_jobs` | household_id, kind, status, total, done, skipped, failed | Long-running work: tidying a household's library, or the Mealie import. A run cut short by a restart is marked "interrupted". |
 | `settings` | key, value (jsonb) | Server-wide: AI keys (encrypted) and models, and whether sign-up is open |
@@ -143,7 +144,7 @@ JSON over REST under `/api`. Chat streams with server-sent events.
 | Import | `POST /api/import/url` (pages and video links), `/text`, `/photo`; Mealie (server admin, into their household): `POST /api/import/mealie/check`, `POST /api/import/mealie`, `GET /api/import/mealie/job` |
 | AI cleanup | `POST /api/recipes/:id/cleanup` (returns a proposal, or null when there's nothing to change), `GET /api/recipes/:id/proposal`; library runs at `GET`/`POST /api/ai/cleanup-job` and `POST /api/ai/cleanup-job/:id/cancel` (household admins) |
 | Proposals | `GET /api/proposals` (pending), `POST /api/proposals/:id/apply` (chosen sections), `POST /api/proposals/:id/dismiss` |
-| Chat | `POST /api/chat` (streaming), `GET /api/chat/conversations`, `GET /api/chat/conversations/:id` |
+| Chat | `POST /api/chat` (reply streams as server-sent events: conversation, text, tool, proposal, done, error), `GET /api/chat/conversations`, `GET`/`DELETE /api/chat/conversations/:id` |
 | Jobs | `GET /api/jobs/:id` |
 | Plan | `GET /api/plan?week=`, `POST/PUT/DELETE /api/plan/entries/:id`, `POST /api/plan/suggest` |
 | Lists | `GET /api/lists/current`, `POST /api/lists/from-plan`, `POST/PUT/DELETE /api/lists/:id/items/:itemId` |
@@ -202,15 +203,18 @@ The AI never writes directly to recipes, the plan, the list or the pantry.
 
 ### Chat assistant
 
-- An agent loop on the server using the provider's tool calling, streamed to the browser.
-- **Context goes with each message:** the screen you're on (recipe id and servings, or the week being viewed) plus a short pantry summary.
-- **Read tools:** `search_recipes`, `get_recipe`, `get_meal_plan`, `get_pantry`, `list_tags`.
-- **Proposal tools:**
-  - `propose_recipe`: save something new from the conversation
-  - `propose_recipe_edit`: substitutions, dairy-free, rewording
-  - `propose_cleanup`: run cleanup on a recipe
-  - `propose_plan_changes`, `propose_list_items`, `propose_pantry_update`
-- Conversations are saved and can be picked up again. Switching provider starts a new conversation.
+- **An agent loop on the server** (`apps/server/src/chat/`): each provider's adapter streams one model call and returns any tool calls; the loop runs the tools, feeds the results back, and repeats (up to 8 rounds). Everything streams to the browser as server-sent events, including a tool's activity line as soon as the model starts writing its input.
+- **Native histories:** each conversation keeps the provider's own messages (Claude's thinking blocks and tool calls, OpenAI's encrypted reasoning items), so it continues exactly. A conversation never switches provider.
+- **Claude:** adaptive thinking (not shown, but passed back between turns), medium effort, and the conversation prefix cached with `cache_control`. **OpenAI:** stateless Responses API (`store: false`) with encrypted reasoning passed back.
+- **Context goes with each message:** the recipe on screen and the scale it's shown at, prepended in a `<context>` block. The person can drop it with one tap. *Later:* the week being viewed and a pantry summary.
+- **Read tools:** `search_recipes`, `get_recipe`, `list_tags`. *Later:* `get_meal_plan`, `get_pantry`.
+- **Proposal tools** (each makes a card with buttons, nothing is saved until tapped):
+  - `propose_new_recipe`: a recipe from the conversation
+  - `propose_recipe_edit`: substitutions, scaling, notes; with a `variantName`, it can be saved as a new recipe instead of changing the original
+  - `tidy_recipe`: runs the regular tidy-up on a recipe
+  - *Later:* `propose_plan_changes`, `propose_list_items`, `propose_pantry_update`
+- **Failures:** a tool error goes back to the model as a result so it can recover. If the provider fails, nothing is saved and the message goes back in the box to resend. Stopping a reply keeps what had arrived.
+- Conversations are saved per person, listed newest first, and can be picked up again or deleted. Usage is recorded under the "chat" task.
 
 ### Recipe cleanup
 

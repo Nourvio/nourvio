@@ -12,34 +12,43 @@ import { readBody } from "../http.ts"
 import {
   applyProposal,
   dismissProposal,
-  listPendingProposals,
-} from "../services/cleanup.ts"
+  listPendingCleanups,
+} from "../services/proposals.ts"
 
-/** AI suggestions waiting for review: list, apply (chosen sections) or dismiss. */
+/**
+ * AI suggestions: the Review page's tidy-ups, and applying or dismissing any
+ * proposal (tidy-ups, and chat's edits and new recipes).
+ */
 export function proposalsRoutes({ db }: AppContext) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
 
   app.get("/", async (c) =>
-    c.json({ proposals: await listPendingProposals(db, currentHousehold(c)) })
+    c.json({ proposals: await listPendingCleanups(db, currentHousehold(c)) })
   )
 
   app.post("/:id/apply", async (c) => {
-    const { sections } = await readBody(c, applyProposalInput)
-    const recipe = await applyProposal(
-      db,
-      currentHousehold(c),
-      c.req.param("id"),
-      sections,
-      currentUser(c).id
+    const input = await readBody(c, applyProposalInput)
+    return c.json(
+      await applyProposal(
+        db,
+        currentHousehold(c),
+        c.req.param("id"),
+        input,
+        currentUser(c).id
+      )
     )
-    return c.json({ recipe })
   })
 
-  app.post("/:id/dismiss", async (c) => {
-    await dismissProposal(db, currentHousehold(c), c.req.param("id"))
-    return c.body(null, 204)
-  })
+  app.post("/:id/dismiss", async (c) =>
+    c.json({
+      proposal: await dismissProposal(
+        db,
+        currentHousehold(c),
+        c.req.param("id")
+      ),
+    })
+  )
 
   return app
 }
