@@ -4,6 +4,7 @@ import {
   lineCost,
   packagesFor,
   parseProductSize,
+  readPackAmount,
   sizeFromName,
   type Need,
 } from "./shopping.ts"
@@ -131,5 +132,61 @@ describe("sizes in product names", () => {
     ["Bananas, each", null],
   ])("%s", (name, size) => {
     expect(sizeFromName(name)).toBe(size)
+  })
+})
+
+describe("packs", () => {
+  test.each([
+    ["2 × 12-pack", { count: 24, packs: { count: 2, size: 12 } }],
+    ["2 x 12 pack", { count: 24, packs: { count: 2, size: 12 } }],
+    ["2 12-packs", { count: 24, packs: { count: 2, size: 12 } }],
+    ["12-pack", { count: 12, packs: { count: 1, size: 12 } }],
+    ["6 cans", { count: 6, packs: null }],
+    ["2 ×", { count: 2, packs: null }],
+    ["a few", null],
+  ])("reads %s", (text, expected) => {
+    expect(readPackAmount(text)).toEqual(expected)
+  })
+
+  test("a multipack knows how many are in it", () => {
+    expect(parseProductSize("24 pk / 12 fl oz")).toMatchObject({
+      kind: "volume",
+      count: 24,
+    })
+    expect(parseProductSize("14.5 oz")?.count).toBeUndefined()
+  })
+
+  const soda = need({
+    count: 24,
+    containers: true,
+    packs: { count: 2, size: 12 },
+  })
+  const cans = need({ count: 2, containers: true })
+
+  test("two 12-packs are one 24-pack", () => {
+    expect(packagesFor(soda, parseProductSize("24 pk / 12 fl oz"))).toEqual({
+      packages: 1,
+      sure: true,
+    })
+    expect(
+      packagesFor(soda, parseProductSize("12 pk / 12 fl oz")).packages
+    ).toBe(2)
+    // Walmart's names give "12 Pack".
+    expect(packagesFor(soda, parseProductSize("12 Pack")).packages).toBe(2)
+    // A single bottle can't be compared with packs.
+    expect(packagesFor(soda, parseProductSize("2 L"))).toEqual({
+      packages: 2,
+      sure: false,
+    })
+  })
+
+  test("cans one for one, or a pack of them", () => {
+    expect(packagesFor(cans, parseProductSize("14.5 oz"))).toEqual({
+      packages: 2,
+      sure: true,
+    })
+    expect(packagesFor(cans, parseProductSize("6 pk / 14.5 oz")).packages).toBe(
+      1
+    )
   })
 })

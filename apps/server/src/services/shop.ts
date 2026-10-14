@@ -5,6 +5,7 @@ import {
   formatAmount,
   packagesFor,
   parseProductSize,
+  readPackAmount,
   UNITS,
   type Basket,
   type BasketLine,
@@ -147,11 +148,11 @@ async function needsFor(db: Db, rows: ItemRow[]) {
   const byFood = new Map(learned.map((row) => [row.food, row]))
 
   return rows.map((row, index): Need => {
-    // "2 × 12-pack" from every-week items: two of whatever the store sells.
-    const times = row.amountText?.match(/^\s*(\d+)\s*[×x]/)
-    if (times) {
+    // Packs and containers, as every-week items say: "2 × 12-pack".
+    const pack = row.amountText ? readPackAmount(row.amountText) : null
+    if (pack) {
       return {
-        count: Number(times[1]),
+        ...pack,
         grams: null,
         ml: null,
         eachGrams: null,

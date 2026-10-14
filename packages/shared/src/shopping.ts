@@ -36,6 +36,8 @@ export function storeImageUrl(image: string | null) {
 export type ProductSize = {
   kind: "weight" | "volume" | "count"
   amount: number
+  /** How many are in a multipack: "24 pk / 12 fl oz" is 24 cans. */
+  count?: number
 }
 
 const SIZE_UNITS: [RegExp, ProductSize["kind"], number][] = [
@@ -105,6 +107,7 @@ export function parseProductSize(size: string | null): ProductSize | null {
       return {
         kind: unit.kind,
         amount: readNumber(multi[1]!) * readNumber(multi[2]!) * unit.factor,
+        count: readNumber(multi[1]!),
       }
     }
   }
@@ -129,6 +132,40 @@ export type Need = {
   eachGrams: number | null
   /** Counted in cans, jars or packages: one of the store's is one of these. */
   containers?: boolean
+  /** Packs of a size: "2 × 12-pack" is 2 packs of 12 (and a count of 24). */
+  packs?: { count: number; size: number } | null
+}
+
+const PACK_WORDS = String.raw`(?:pk|packs?)`
+const ITEM_WORDS = String.raw`(?:ct|count|cans?|bottles?|jars?|boxes?|bags?|rolls?|pouches?)`
+
+/**
+ * Reads an amount written as packs or containers, as every-week items
+ * often are: "2 × 12-pack" or "2 12-packs" (24, as 2 packs of 12),
+ * "12-pack", "6 cans", "2 ×" anything (2 of them).
+ */
+export function readPackAmount(
+  text: string
+): Pick<Need, "count" | "packs"> | null {
+  const trimmed = text.trim().toLowerCase()
+  const packs = trimmed.match(
+    new RegExp(
+      String.raw`^(?:(\d+)\s*(?:[×x]\s*|\s+))?(\d+)[\s-]*${PACK_WORDS}\b`
+    )
+  )
+  if (packs) {
+    const count = packs[1] ? Number(packs[1]) : 1
+    const size = Number(packs[2])
+    if (count > 0 && size > 0)
+      return { count: count * size, packs: { count, size } }
+  }
+  const items = trimmed.match(new RegExp(String.raw`^(\d+)\s*${ITEM_WORDS}\b`))
+  if (items && Number(items[1]) > 0)
+    return { count: Number(items[1]), packs: null }
+  const times = trimmed.match(/^(\d+)\s*[×x]/)
+  if (times && Number(times[1]) > 0)
+    return { count: Number(times[1]), packs: null }
+  return null
 }
 
 /** A little over a package still counts as one: recipes aren't that exact. */
@@ -146,7 +183,15 @@ export function packagesFor(
   need: Need,
   size: ProductSize | null
 ): { packages: number; sure: boolean } {
-  if (need.containers && need.count && size?.kind !== "count") {
+  if (need.containers && need.count) {
+    // A multipack, or a count: as many as make up what's needed.
+    if (size?.count)
+      return { packages: round(need.count, size.count), sure: true }
+    if (size?.kind === "count") {
+      return { packages: round(need.count, size.amount), sure: true }
+    }
+    // Packs wanted, a single bottle offered: can't compare.
+    if (need.packs) return { packages: need.packs.count, sure: false }
     return { packages: round(need.count, 1), sure: Boolean(size) }
   }
   if (!size) {

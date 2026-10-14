@@ -168,7 +168,7 @@ Our stores are Fry's, Costco and Walmart (see [roadmap.md](roadmap.md#milestone-
 
 - **Fry's: straight into the cart** (List → **Send to Fry's**). Once a household admin picks the store and links the household's Fry's account in Settings → Stores:
   - Each item gets a product at that Fry's. The first time, Mise suggests one (the small AI model picks from Fry's search results, so "chicken thighs" isn't dog treats); after that it remembers. **Change** searches Fry's to pick another, and that's remembered too.
-  - Recipe amounts become packages: 2 cups of milk is one gallon, 3 onions is 3 onions or one 3 lb bag, 2 cans is 2 cans. When the amount and the package can't be compared (4 cloves of garlic, a bulb sold by the each), it says **Check how many**.
+  - Recipe amounts become packages: 2 cups of milk is one gallon, 3 onions is 3 onions or one 3 lb bag, 2 cans is 2 cans, and an every-week "2 × 12-pack" is one 24-pack (or two 12-packs). When the amount and the package can't be compared (4 cloves of garlic, a bulb sold by the each), it says **Check how many**.
   - Fry's prices for that store today, sales, stock and the aisle show on each line, with a total.
   - **Add to Fry's cart** sends the ticked lines. Pick a pickup or delivery time and pay in the Fry's app or website. Kroger's API can only add, so what was sent is marked **Sent** and left out next time unless ticked.
   - Works the same for any Kroger store: Ralphs, King Soopers, Smith's, Harris Teeter and the rest.

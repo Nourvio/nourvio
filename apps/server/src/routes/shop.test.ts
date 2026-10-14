@@ -661,3 +661,59 @@ describe("store connections: Walmart, through the extension", () => {
     }
   })
 })
+
+describe("store connections: packs", () => {
+  test("an every-week 2 × 12-pack is one 24-pack", async () => {
+    const t = await createTestAppWithAdmin()
+    try {
+      await t.admin.post("/api/list/weekly", {
+        name: "Diet Pepsi",
+        amount: "2 × 12-pack",
+      })
+      await t.admin.post("/api/list/weekly/add-to-list", {})
+      const empty = (await t.admin.get("/api/shop/walmart/basket")).body
+        .basket as Basket
+      const pepsi = empty.lines.find((l) => l.name === "Diet Pepsi")!
+      expect(pepsi.amount).toBe("2 × 12-pack")
+
+      const product = (id: string, name: string, size: string) => ({
+        id,
+        upc: null,
+        name,
+        brand: null,
+        size,
+        image: null,
+        price: 12.98,
+        salePrice: null,
+        aisle: null,
+        aisleNumber: null,
+        inStock: true,
+        url: null,
+      })
+      const big = await t.admin.put(
+        `/api/shop/walmart/products/${pepsi.itemId}`,
+        {
+          product: product(
+            "1",
+            "Diet Pepsi, 24 pk / 12 fl oz",
+            "24 pk / 12 fl oz"
+          ),
+        }
+      )
+      expect(big.body.line).toMatchObject({ packages: 1, sure: true })
+      const small = await t.admin.put(
+        `/api/shop/walmart/products/${pepsi.itemId}`,
+        {
+          product: product(
+            "2",
+            "Diet Pepsi Soda, 12 fl oz, 12 Pack Cans",
+            "12 Pack"
+          ),
+        }
+      )
+      expect(small.body.line).toMatchObject({ packages: 2, sure: true })
+    } finally {
+      await t.close()
+    }
+  })
+})
