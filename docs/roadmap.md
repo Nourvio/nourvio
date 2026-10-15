@@ -264,6 +264,31 @@ What's there today: Kroger's product API gives a store's regular and sale price,
   - **Android:** Mise, installed to the home screen, shows up in the share sheet. A small service worker hands the shared file to the review.
   - **iPhone:** apps on the home screen can't be in Apple's share sheet (only App Store apps can), but a Shortcut can. Settings has a **Send to Mise** guide: a few steps in the Shortcuts app with a key Mise makes for it. After that, Share → Send to Mise from Mail, Photos or Files opens the review. Once it's made, it can be shared as an iCloud link (to parents, say).
 
+## Milestone 14: Bulk actions
+
+**Status:** planned October 15, 2026; the flows are on a Design canvas (https://claude.ai/artifact/25aJgzjDM9G1zovMf7mL9s). The user asked for Mealie-style bulk actions: adding many recipes by link (sites and videos mixed), removing many, and the same on the other pages.
+
+**One way to select, everywhere.** Recipes, List, Pantry and Plan get a Select mode: a Select button in the header (or the ⋯ menu), or a long-press on a phone. Items get checkboxes, the header becomes "4 selected · Select all · Done", and an action bar sits at the bottom (above the tabs on a phone): the common actions as buttons, the rest under More. Removing more than one thing asks first, then offers Undo for 10 seconds. Done, Escape or leaving the page ends it.
+
+**1. Add many recipes by link** (Recipes → Add recipe → Paste several links)
+- Paste links one per line, or mixed into other text. Mise lists what it found (videos, recipe pages) and skips ones already in the library. An optional tag for everything (like "to try").
+- A background job on the server, so it carries on after leaving the page: recipe pages three at a time, videos one at a time. A progress page lists each link (waiting, importing, added, already had, didn't work with the reason and Try again). Recipes shows "Importing 6 of 10" while it runs, and a toast says how it went.
+- Sharing several links to Mise at once (the iPhone Shortcut or Android) starts the same import.
+- How: `import_batches` and `import_batch_items` tables, so progress survives a refresh or a restart (an unfinished batch carries on when the server starts); each item runs the existing link import (`importFromUrl`, with the usual follow-up); progress reaches open pages through the live events stream.
+
+**2. Recipes, selected:** add to plan, add their ingredients to the list, add or remove tags, tidy up, work out nutrition, make photos, export (JSON), delete.
+- **Recently deleted:** deleting moves recipes there for 30 days (a `deleted_at` column; every query leaves them out, a daily job removes them for good with their photos). Planned meals using them come off the plan, and back if they're restored. Recipes → ⋯ → Recently deleted restores them or empties it.
+
+**3. List, selected:** move to another list, change aisle, make every-week, remove. Page-wide: clear the whole list (with Undo), beside the existing Put checked away and Clear checked.
+
+**4. Pantry, selected:** add to the list, change aisle, set the use-by date, used up. Page-wide: "Toss the 3 past their date" on the Use soon card, and clear the pantry.
+
+**5. Plan:** select meals to move to another day, mark cooked or skipped, add to the list, or remove. The week's ⋯ menu adds Repeat last week (copies last week's meals onto empty slots) and Clear the rest of the week.
+
+**How it's built:** one bulk endpoint per page (`POST /api/recipes/bulk`, `/api/list/bulk`, `/api/pantry/bulk`, `/api/plan/bulk`) taking ids and an action, in one transaction, returning what changed (and what Undo needs to put it back); a shared select-mode hook and action bar component in the web app.
+
+**Open questions for the user:** Recently deleted for 30 days, or just confirm and Undo? A tag for bulk imports? Week actions on the Plan? Anything else Mealie does in bulk?
+
 ## Milestone 12: On the home screen, with reminders
 
 **Status:** planned October 14, 2026, and on hold: the user wants it documented and built later. The user wants a morning nudge like "pull the chicken out", and a one-tap way to put Mise on the home screen that their parents could manage.
