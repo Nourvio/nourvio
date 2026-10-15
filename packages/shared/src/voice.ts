@@ -37,16 +37,42 @@ export const KOKORO_VOICES: { id: string; name: string }[] = [
 export const DEFAULT_KOKORO_VOICE = "af_heart"
 export const DEFAULT_OPENAI_VOICE: OpenAiVoice = "coral"
 
-/** "af_heart" → "Heart, American", for voices without a friendlier name. */
+/** Kokoro's voice ids start with a language and a voice: "af" is American English, female. */
+const KOKORO_LANGUAGES: Record<string, string> = {
+  a: "American",
+  b: "British",
+  e: "Spanish",
+  f: "French",
+  h: "Hindi",
+  i: "Italian",
+  j: "Japanese",
+  p: "Portuguese",
+  z: "Mandarin",
+}
+
+/** Kokoro's English voices, the ones that read English recipes well. */
+export function isEnglishKokoroVoice(id: string) {
+  return /^[ab][fm]_/.test(id)
+}
+
+/** "af_heart" → "Heart, American", "bm_george" → "George, British". */
 export function kokoroVoiceName(id: string) {
   const known = KOKORO_VOICES.find((voice) => voice.id === id)
   if (known) return known.name
   const [prefix, name] = id.split("_")
   if (!name) return id
-  const accent =
-    { a: "American", b: "British" }[prefix?.[0] ?? ""] ?? prefix!.toUpperCase()
-  return `${name[0]!.toUpperCase()}${name.slice(1)}, ${accent}`
+  const language = KOKORO_LANGUAGES[prefix?.[0] ?? ""] ?? prefix!.toUpperCase()
+  return `${name[0]!.toUpperCase()}${name.slice(1)}, ${language}`
 }
+
+/** "Woman" or "man", from Kokoro's id ("af_…", "am_…"). */
+export function kokoroVoiceKind(id: string) {
+  return id[1] === "f" ? "Woman" : id[1] === "m" ? "Man" : null
+}
+
+/** What a voice preview reads. */
+export const VOICE_SAMPLE =
+  "Step 2. Pat the chicken dry, then season both sides with salt and pepper. Roast for 25 minutes, until golden."
 
 /** What cook mode needs to know: whether the server reads aloud. */
 export type VoiceStatus = { server: boolean }
@@ -86,6 +112,24 @@ export const updateVoiceSettingsInput = z.object({
   openaiVoice: z.enum(OPENAI_VOICES).optional(),
 })
 export type UpdateVoiceSettingsInput = z.infer<typeof updateVoiceSettingsInput>
+
+/** A voice to hear before picking it (server admin). */
+export const previewVoiceInput = z.discriminatedUnion("provider", [
+  z.object({
+    provider: z.literal("kokoro"),
+    voice: z.string().regex(/^[a-z]{2}_[a-z0-9]+$/),
+    /** A Kokoro address not saved yet; else the saved one. */
+    kokoroUrl: z
+      .url({ protocol: /^https?$/ })
+      .max(300)
+      .optional(),
+  }),
+  z.object({
+    provider: z.literal("openai"),
+    voice: z.enum(OPENAI_VOICES),
+  }),
+])
+export type PreviewVoiceInput = z.infer<typeof previewVoiceInput>
 
 export const speakInput = z.object({
   text: z.string().trim().min(1).max(1500),

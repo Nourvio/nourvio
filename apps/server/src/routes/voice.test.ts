@@ -212,4 +212,62 @@ describe("cook mode's voice", () => {
       await t.close()
     }
   })
+
+  test("previews any voice before it's picked, each made once", async () => {
+    process.env.KOKORO_URL = "http://kokoro:8880"
+    const kokoro = fakeKokoro()
+    const t = await createTestAppWithAdmin({
+      kokoroFetch: kokoro.kokoroFetch,
+      aiFactory: speakingOpenAi,
+    })
+    try {
+      const george = await t.admin.stream("/api/voice/preview", {
+        provider: "kokoro",
+        voice: "bm_george",
+      })
+      expect(george.status).toBe(200)
+      expect(george.headers.get("content-type")).toBe("audio/mpeg")
+      expect(kokoro.spoken.at(-1)).toMatchObject({ voice: "bm_george" })
+      expect(kokoro.spoken.at(-1)!.input).toMatch(
+        /^Step 2\. Pat the chicken dry/
+      )
+      // Nothing saved: the voice is still the default.
+      expect(
+        (await t.admin.get("/api/voice/settings")).body.settings.kokoro.voice
+      ).toBe("af_heart")
+      // Again: from what was kept.
+      await t.admin.stream("/api/voice/preview", {
+        provider: "kokoro",
+        voice: "bm_george",
+      })
+      expect(kokoro.spoken).toHaveLength(1)
+
+      await t.admin.put("/api/ai/settings", {
+        keys: { openai: "sk-test-openai-key-1234" },
+      })
+      const sage = await t.admin.stream("/api/voice/preview", {
+        provider: "openai",
+        voice: "sage",
+      })
+      expect(await sage.text()).toMatch(/^OPENAI:sage:Step 2\./)
+
+      const invite = await t.admin.post("/api/household/invites", {})
+      const member = apiClient(t.app)
+      await member.post(`/api/join/${invite.body.invite.token}`, {
+        username: "sam",
+        displayName: "Sam",
+        password: "another long password",
+      })
+      expect(
+        (
+          await member.stream("/api/voice/preview", {
+            provider: "kokoro",
+            voice: "af_heart",
+          })
+        ).status
+      ).toBe(403)
+    } finally {
+      await t.close()
+    }
+  })
 })

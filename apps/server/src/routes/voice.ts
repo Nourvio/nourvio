@@ -1,4 +1,8 @@
-import { speakInput, updateVoiceSettingsInput } from "@mise/shared"
+import {
+  previewVoiceInput,
+  speakInput,
+  updateVoiceSettingsInput,
+} from "@mise/shared"
 import { Hono } from "hono"
 
 import { requireServerAdmin, requireUser } from "../auth/middleware.ts"
@@ -19,6 +23,19 @@ export function voiceRoutes(voice: VoiceService) {
     const audio = await voice.speak(
       { userId: currentUser(c).id, householdId: currentHousehold(c) },
       text
+    )
+    return c.body(new Uint8Array(audio), 200, {
+      "content-type": "audio/mpeg",
+      "cache-control": "private, max-age=86400",
+    })
+  })
+
+  /** A sample in any voice, to hear before picking it. */
+  app.post("/preview", requireServerAdmin, async (c) => {
+    const input = await readBody(c, previewVoiceInput)
+    const audio = await voice.preview(
+      { userId: currentUser(c).id, householdId: currentHousehold(c) },
+      input
     )
     return c.body(new Uint8Array(audio), 200, {
       "content-type": "audio/mpeg",

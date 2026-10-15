@@ -5,7 +5,9 @@ import { join } from "node:path"
 import {
   DEFAULT_KOKORO_VOICE,
   DEFAULT_OPENAI_VOICE,
+  VOICE_SAMPLE,
   type OpenAiVoice,
+  type PreviewVoiceInput,
   type UpdateVoiceSettingsInput,
   type VoiceProvider,
   type VoiceSettings,
@@ -168,6 +170,47 @@ export function createVoiceService(
     return Buffer.from(await res.arrayBuffer())
   }
 
+  /** MP3 of some text in a voice, made once and kept. */
+  async function made(
+    actor: AiActor,
+    provider: "kokoro" | "openai",
+    voice: string,
+    text: string,
+    url: string | null
+  ) {
+    const name = createHash("sha256")
+      .update(`${provider}|${voice}|${text}`)
+      .digest("hex")
+      .slice(0, 40)
+    const file = join(voiceDir(), `${name}.mp3`)
+    try {
+      return await readFile(file)
+    } catch {
+      // Not made yet.
+    }
+    const audio =
+      provider === "kokoro"
+        ? await kokoroSpeak(url, voice, text)
+        : await ai.speak(actor, text, voice)
+    await mkdir(voiceDir(), { recursive: true })
+    await writeFile(file, audio)
+    return audio
+  }
+
+  /** A sample in any voice, to hear it before picking it. */
+  async function preview(actor: AiActor, input: PreviewVoiceInput) {
+    const stored = await load()
+    return made(
+      actor,
+      input.provider,
+      input.voice,
+      VOICE_SAMPLE,
+      input.provider === "kokoro"
+        ? (input.kokoroUrl ?? kokoroUrl(stored))
+        : null
+    )
+  }
+
   /** MP3 of the text in the server's voice, made once and kept. */
   async function speak(actor: AiActor, text: string) {
     const stored = await load()
@@ -182,26 +225,10 @@ export function createVoiceService(
       provider === "kokoro"
         ? (stored.kokoroVoice ?? DEFAULT_KOKORO_VOICE)
         : (stored.openaiVoice ?? DEFAULT_OPENAI_VOICE)
-    const name = createHash("sha256")
-      .update(`${provider}|${voice}|${text}`)
-      .digest("hex")
-      .slice(0, 40)
-    const file = join(voiceDir(), `${name}.mp3`)
-    try {
-      return await readFile(file)
-    } catch {
-      // Not made yet.
-    }
-    const audio =
-      provider === "kokoro"
-        ? await kokoroSpeak(kokoroUrl(stored), voice, text)
-        : await ai.speak(actor, text, voice)
-    await mkdir(voiceDir(), { recursive: true })
-    await writeFile(file, audio)
-    return audio
+    return made(actor, provider, voice, text, kokoroUrl(stored))
   }
 
-  return { status, getSettings, updateSettings, speak }
+  return { status, getSettings, updateSettings, speak, preview }
 }
 
 export type VoiceService = ReturnType<typeof createVoiceService>

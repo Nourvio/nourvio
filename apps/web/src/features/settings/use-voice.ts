@@ -1,4 +1,8 @@
-import type { UpdateVoiceSettingsInput, VoiceSettings } from "@mise/shared"
+import type {
+  PreviewVoiceInput,
+  UpdateVoiceSettingsInput,
+  VoiceSettings,
+} from "@mise/shared"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
 import { api } from "@/lib/api"
@@ -32,22 +36,30 @@ export function useSaveVoiceSettings() {
   })
 }
 
-/** Plays a sentence in the server's voice, as cook mode would hear it. */
-export async function playServerVoice(text: string) {
-  const res = await fetch("/api/voice/speak", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    credentials: "same-origin",
-    body: JSON.stringify({ text }),
-  })
-  if (!res.ok) {
-    const body = (await res.json().catch(() => null)) as {
-      error?: string
-    } | null
-    throw new Error(body?.error ?? "The server voice couldn't read that")
+// Previews already fetched this visit, so playing one again is instant.
+const previews = new Map<string, Promise<string>>()
+
+/** A sample of a voice (Kokoro or OpenAI) to play, before it's picked. */
+export function previewVoice(input: PreviewVoiceInput) {
+  const key = JSON.stringify(input)
+  let found = previews.get(key)
+  if (!found) {
+    found = fetch("/api/voice/preview", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify(input),
+    }).then(async (res) => {
+      if (!res.ok) {
+        const body = (await res.json().catch(() => null)) as {
+          error?: string
+        } | null
+        throw new Error(body?.error ?? "Couldn't play that voice")
+      }
+      return URL.createObjectURL(await res.blob())
+    })
+    found.catch(() => previews.delete(key))
+    previews.set(key, found)
   }
-  const url = URL.createObjectURL(await res.blob())
-  const audio = new Audio(url)
-  audio.onended = () => URL.revokeObjectURL(url)
-  await audio.play()
+  return found
 }
