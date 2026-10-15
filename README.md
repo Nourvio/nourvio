@@ -2,7 +2,7 @@
 
 A self-hosted meal planner with an AI cooking assistant built in. Recipes, weekly plans, a pantry, shopping lists, nutrition and Walmart pickup orders for your household (and others you host), made to use from a phone or iPad while cooking.
 
-**Status:** usable day to day. Recipes (imported from links, videos, text, photos or Mealie), AI tidy-ups, the assistant, households with invites, the meal plan, the shopping list, the pantry, nutrition (with grams for baking) and diet labels all work. Walmart ordering is parked while the app gets polished. See the [roadmap](docs/roadmap.md).
+**Status:** usable day to day. Recipes (imported from links, videos, text, photos or Mealie), AI tidy-ups, the assistant, households with invites, the meal plan, the shopping list, the pantry, nutrition (with grams for baking) and diet labels all work. Walmart ordering is parked while the app gets polished. See the [roadmap](apps/REFERENCE/docs/roadmap.md).
 
 ## Run it with Docker Compose
 
@@ -169,7 +169,7 @@ npm run dev
 - `npm run dev` starts the web app on http://localhost:5173 and the API on :3000. Vite forwards `/api` to the API. The setup code prints in the same terminal.
 - `npm test` runs the server tests against an in-memory Postgres, so it doesn't need Docker.
 
-More in [docs/development.md](docs/development.md).
+More in [apps/REFERENCE/docs/development.md](apps/REFERENCE/docs/development.md).
 
 ## Docs
 

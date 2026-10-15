@@ -1,0 +1,282 @@
+# Platform
+
+How Merran is put together underneath the features: modules and settings, accounts and households, API keys and the public API, AI keys at the server and household level, jobs, files, keeping households apart, security, and languages. The features themselves are in [scope.md](scope.md) and, in detail, in the REFERENCE app's [product.md](../apps/REFERENCE/docs/product.md).
+
+## Modules: everything optional
+
+Merran's core needs only Postgres. Everything that reaches outside the server, costs money or needs another container is a **module**: off until it has what it needs, and the app says what's missing instead of showing broken buttons.
+
+| Module | What it adds | Needs | On by default? |
+|---|---|---|---|
+| **Core** | Accounts and households, recipes (typed in, or imported from a link's recipe data), cook view, plan, list, pantry, export and import, the API | Postgres | Always |
+| **AI** | The assistant, AI import (text, photos, pages without recipe data), tidy up, swaps, cooking notes into edits, Discover, receipts, AI nutrition estimates | An AI key at the server or the household (see [AI](#ai)) | When a key exists |
+| **AI photos** | A photo for recipes without one | An AI key with an image model | Off |
+| **Video import** | TikTok, YouTube, Instagram and Facebook links | yt-dlp and ffmpeg (in the image), an AI key | On |
+| **Nutrition** | Calculated nutrition | A USDA key (free), optionally an AI key | When a key exists |
+| **Voice** | The server reads cook steps aloud | Kokoro (an optional container) or an AI key with speech | Off (the device's own voice always works) |
+| **Recipe sites** | Following sites' feeds, starter collections | Nothing | On |
+| **Stores** | Products, prices, sales, costs, sending a list to a store | Per store: Kroger needs a free developer app; link-only stores need nothing | Off |
+| **Browser extension** | Import from any page, the list in a side panel, store carts | The extension, an API key | On |
+| **Email** | Invites and password resets by email, verifying sign-ups | SMTP | Off |
+| **Single sign-on** | Signing in with Authentik, Authelia, Keycloak, Pocket ID, Google and the like | An OIDC provider | Off |
+| **Notifications** | Prep reminders and other pushes to phones | Nothing extra (Merran makes its own push keys); HTTPS | Off |
+| **Webhooks** | Telling other tools (Home Assistant, n8n) when things change | A household adding one | Off until one is added |
+| **MCP server** | Claude Desktop, Claude Code and other AI apps working with a household's recipes, plan and list | An API key | On when API keys are |
+| **Error tracking** | Errors sent to the operator's own Sentry, GlitchTip or Bugsink | A DSN | Off |
+| **Metrics** | A Prometheus `/metrics` endpoint | Nothing | Off |
+| **Telemetry** | An anonymous daily summary sent to the Merran project | The server admin opting in | Off |
+
+**How a module is built.** Each module lives in its own folder and declares, in one place:
+- its settings (with their environment variables), as a Zod schema
+- what it makes possible (`capabilities`: `ai.chat`, `ai.vision`, `video.import`, `store.kroger`...)
+- its routes, jobs and the outside addresses it may call
+- where it shows up in the web app
+
+The web app asks `GET /api/v1/capabilities` once at start and on changes, and draws only what's on. A household sees, say, "Photo import needs an AI key that can read images: add one in Settings → Household → AI" rather than an error.
+
+Store connections, importers, AI providers and voices are **adapters behind interfaces**, so a contributor can add Tesco, a Paprika importer or a new voice without touching the core.
+
+## Settings
+
+Settings live at three levels, and each one says which level it's at:
+
+| Level | Who changes it | Examples |
+|---|---|---|
+| **Server** | The server admin | Sign-up, AI keys and policy, modules, SMTP, SSO, telemetry |
+| **Household** | Household admins (some, like tastes, anyone in the household) | The household's AI keys and models, meals planned, lists and stores, tastes and rules, region and currency |
+| **Person** | Each person, the same in every household they're in | Appearance, language, units, notifications (and from which households), their API keys |
+
+- **Environment variables set server settings and lock them.** A setting from the environment shows in Settings as "Set on the server" and can't be changed there. Everything else can be changed in the app, so most people never edit `.env`.
+- **One schema** describes every setting: its environment variable, type, default, level and help text. Startup checks it and stops with one clear list of what's wrong. The configuration reference in the docs is generated from it, so it can't drift.
+- **Names:** environment variables start with `MERRAN_` (`MERRAN_SECRET`, `MERRAN_PUBLIC_URL`), except well-known ones like `DATABASE_URL`, `TZ` and provider keys (`ANTHROPIC_API_KEY`).
+- **Only the database is required.** The compose file sets it, so a first install needs one value: the Postgres password.
+
+## Accounts and households
+
+Built on Better Auth (see [stack.md](stack.md#better-auth-instead-of-our-own-sign-in)).
+
+- **Households are Better Auth organizations.** A household has members with a role: **owner**, **admin** or **member**. There's always at least one owner.
+- **The server admin** is whoever set the server up (Better Auth's admin plugin). They manage the server's settings, households, sign-up and the server's AI keys. Being server admin doesn't let them read another household's recipes.
+- **First run:** a one-time setup code printed in the log, as in the REFERENCE app, so a stranger can't claim a fresh install.
+- **Joining:** invite links (single use, a week long), or added directly by a household admin. With email set up, invites can also be emailed.
+- **Open sign-up** (off by default) starts a new household for each sign-up. The server admin can also require a verified email, require their approval before a new household can do anything, and cap the number of households.
+- **Signing in:**
+  - a username or email and a password (always available, unless the server admin turns it off in favour of SSO)
+  - **passkeys** and **two-step sign-in** (an authenticator app), each switched on by the server admin; the server admin can require two-step sign-in for admins
+  - **single sign-on** with any OIDC provider, set in the environment, with a choice of whether it can create accounts or only link existing ones
+- **Without email,** invites are links to copy, a household admin resets a member's password, and the server admin can reset anyone's with a command (`docker compose exec merran merran reset-password <username>`). **With SMTP,** people can reset their own.
+- **Devices:** Settings → You lists signed-in devices, with Sign out and Sign out everywhere.
+- **An audit log** for things worth knowing later: sign-ins from new devices, role changes, API keys made or revoked, AI keys added or removed, households deleted, settings changed. Household admins see their household's; the server admin sees server events.
+
+### More than one household
+
+A person can belong to several households (say, their own and their parents'), with a different role in each. Decided for 0.1.
+
+- **One household at a time.** The account menu has a **household switcher**, shown only to people in more than one. The household in use is remembered per device, so the kitchen iPad can stay on one household while a phone switches.
+- **What belongs to the person** follows them everywhere: their account, appearance, language and units, API keys, and notification choices.
+- **What belongs to the household** stays in it: recipes, plan, list, pantry, tastes, AI keys and spend, chats, cooking notes. A person's chats in one household aren't visible from another.
+- **Joining another household:** an invite link opened while signed in asks "Join the Parkers' household too?" instead of making a new account. A household admin can also invite an existing person by username or email, which they accept or decline.
+- **Starting another household** is allowed when sign-up is open, or when the server admin lets that person.
+- **Leaving:** anyone can leave a household (an owner must hand ownership on first, unless they're the last member, which deletes it after a warning).
+- **AI spend** counts towards the household in use. Each household's AI settings decide whose key pays, as below.
+- **Notifications** say which household they're for when the person is in more than one, and each person picks which households can notify them.
+- **Everything with a household** says which: API keys, webhooks, the extension, the iPhone Shortcut and MCP each work in one household, chosen when they're set up.
+
+## API keys
+
+People make their own keys for scripts, Home Assistant, the browser extension and the iPhone Shortcut. In the REFERENCE app every key had its owner's full rights; in Merran each key says what it can do.
+
+- **Settings → You → API keys:** a name, which household it's for, what it may do, and when it expires (30 days, 90 days, a year, or never). The key is shown once, starts with `mrn_` (so secret scanners can spot a leaked one), and only its hash is stored. Each key shows when it was last used, and can be revoked.
+- **Permissions**, read or read and write, for each area: recipes, plan, list, pantry, imports, and the assistant (which spends AI money). Admin actions are never available to keys in 0.1.
+- **A key acts as the person, in one household.** Leaving that household, or being removed from it, stops the key.
+- **Household keys** (owned by the household, not a person, for things like a kitchen display or Home Assistant that shouldn't stop working when one person leaves) are supported by Better Auth and come after 0.1.
+- **Connecting apps without copying keys:**
+  - **The browser extension:** Connect opens Merran, which asks "Let the Merran extension see your recipes, plan and list?", then makes a key with just those permissions and hands it to the extension.
+  - **The iPhone Shortcut:** a key with only the share permission, made by the Share to Merran guide. Shares made with it open through a one-time sign-in link, as in the REFERENCE app.
+- **The server admin** can turn API keys off, cap how long they last, and limit which permissions can be given.
+- **Rate limits** per key, so a runaway script can't take the server down.
+
+## The public API
+
+- **One API for everyone.** The web app, the extension and anyone's scripts use the same REST API under `/api/v1`, so it's always complete and always tested.
+- **The OpenAPI spec is generated** from the route definitions (`@hono/zod-openapi`), and the server shows a reference page at `/api/docs` (Scalar) with a Try it button. The docs site publishes the same.
+- **Sign-in for the API:** a session cookie (the web app) or `Authorization: Bearer mrn_…` (everything else).
+- **Stable within a major version.** Changes are added, not broken; anything removed is marked deprecated for at least one minor release first. CI compares the spec with the last release's and fails on an unannounced breaking change.
+- **Errors** have one shape: `{ error: { code, message, fields? } }`, with stable `code`s and messages safe to show.
+- **Lists are paged** with cursors, and big imports and runs return a job to follow.
+- **Live updates** stay as server-sent events (`/api/v1/events`), also open to API keys with read access.
+
+### Webhooks
+
+Household admins add them in Settings → Household → Webhooks, for Home Assistant, n8n and the like.
+
+- **Events:** the plan changed, a meal was cooked or skipped, the list changed, something went in or out of the pantry, a recipe was added or changed, a bulk import finished, the weekly autoplan ran, something's due to be used soon. One event stream inside Merran feeds the live updates, webhooks and notifications, so they always agree.
+- **Each webhook** has an address, the events it wants, and a secret. Deliveries are signed in the Standard Webhooks format (an HMAC of the body, a timestamp and an id), so the receiver can check they came from Merran and aren't replayed.
+- **Delivery** runs on pg-boss: retries with backoff for about a day, then the webhook is paused and its household admins are told. Each webhook shows its recent deliveries with their responses, and **Send a test**.
+- **Payloads** carry ids and a short summary, not whole recipes, so a leaked webhook log reveals little. The receiver can fetch more through the API.
+- **The home network:** Home Assistant usually lives on the same network as Merran, but letting any household make the server call local addresses is a risk on a shared server. So webhooks to private addresses are refused unless the server admin allows them (for every household, or chosen ones).
+
+### MCP server
+
+An MCP server at `/mcp` (Streamable HTTP, through the official MCP TypeScript SDK) lets Claude Desktop, Claude Code and any other MCP client work with a household's recipes, plan, list and pantry.
+
+- **Signed in with an API key,** so it can do only what the key allows, in the key's household. Settings → You → API keys has a **Use with an AI app** option that makes a key and shows the setup for Claude Desktop, Claude Code and others.
+- **The tools match the assistant's:** search and read recipes, the plan, the list and the pantry, then propose a new recipe, a recipe edit, meals or list items. The same service layer runs both.
+- **The AI proposes, people apply, here too.** Changes from an outside AI become proposals in Merran's Review queue, with a link back. A key can be allowed to apply list and plan changes straight away (adding milk to the list shouldn't need a review); recipe changes always wait.
+- **Using the MCP server spends no Merran AI money:** the outside app's model does the thinking.
+- **Later:** remote connectors in the ChatGPT and Claude apps need OAuth rather than a key. Better Auth's OAuth provider plugin could make Merran its own sign-in for them.
+
+## AI
+
+### Providers
+
+| Provider | Covers |
+|---|---|
+| Anthropic | Claude models |
+| OpenAI | GPT models, image generation, transcription, speech |
+| OpenAI-compatible | Anything with an OpenAI-style API at an address you give: Ollama, LM Studio, vLLM, LiteLLM, OpenRouter, Groq, Mistral and others |
+| Google | Gemini models (worth adding: a free tier and good vision) |
+
+All through AI SDK 6, behind Merran's own thin layer.
+
+**Models know what they can do.** Each model has abilities: structured output, tools, reading images, web search, making images, transcribing, speaking. A feature checks before it runs and says what's missing. Local models are free but vary a lot; the docs keep a short list of local models that handle recipe import well.
+
+### AI tasks
+
+| Task | Default size | Notes |
+|---|---|---|
+| Assistant | Large | Tools, and web search when the provider has it |
+| Import | Large | Pages without recipe data, text, photos, videos |
+| Tidy up | Large | Single recipes and library runs |
+| Cooking notes into edits | Large | |
+| Swaps | Small | |
+| Nutrition | Small | Picking USDA matches, weighing, estimating |
+| Shopping | Small | Picking store products |
+| Receipts | Small | Needs images for photos |
+| Discover | Small | Needs web search |
+| Prep reminders | Small | Reading steps for "marinate overnight" |
+| Photos | Image model | |
+| Transcription | Speech-to-text model | Video import without captions |
+| Voice | Text-to-speech model | Or Kokoro |
+
+Every task can have its own model; otherwise it uses the default large or small model for whoever's paying.
+
+### Whose key pays
+
+This is the big change from the REFERENCE app, where every household used the server's keys. In Merran the person running the server doesn't have to pay for everyone they share it with.
+
+- **Two kinds of keys:**
+  - **Server keys**, added by the server admin (or set in the environment).
+  - **Household keys**, added by a household's admins in Settings → Household → AI. Only that household uses them.
+- **The server admin decides who may use the server's keys** (Settings → This server → AI):
+  - which households: none, chosen households, or every household
+  - a monthly limit for each household on the server's keys (say $5), after which it needs its own key or waits for next month
+  - which tasks the server's keys cover (the small ones only, say), and which models
+  - whether households may add their own keys (yes by default)
+  - whether households may add their own OpenAI-compatible addresses (no by default; see below)
+- **Default for a fresh install:** the server's keys cover the server admin's own household only. Every other household brings its own key, or the server admin gives it access (decided October 15, 2026).
+- **For each AI call:** the household's own key for the task's model, if it has one; otherwise the server's key, if the household is allowed and under its limit; otherwise the feature is unavailable and says how to fix it. Background work (library runs, the price check's product picks) follows the same rule for the household it's working for.
+- **Household AI settings** show its keys (last four characters only, with Test), its default and per-task models from what its keys can use, what it's spent by month, task and person, and an optional monthly limit on its own keys.
+- **Limits are checked before a call** (from an estimate) and recorded after (from the real usage). A household near its limit gets a warning in Settings and on Today.
+- **Usage** records the household, the person, the task, the model, whose key paid (server or household), tokens and cost. A model with no known price records tokens and a blank cost.
+
+### Keeping keys safe
+
+- **Encrypted at rest** with AES-256-GCM. Each secret gets its own data key, encrypted by the server's master key (`MERRAN_SECRET`, or a random key made on first start in the data folder). A database dump alone reveals nothing.
+- **Rotating the master key:** `merran rotate-secret` re-encrypts every data key. Each stored secret records which master key it used.
+- **Never sent to the browser,** never logged (the logger redacts them), never in error reports.
+- **Tested before saving** against the provider.
+- **Households' own addresses are a risk.** An OpenAI-compatible address chosen by a household admin makes the server call an address someone else picked, which could be inside the server's network. So it's off by default; when the server admin allows it, private-network addresses are still refused. For a local Ollama, the server admin adds it once as a **shared endpoint** that chosen households can use.
+
+The same encryption covers every other secret Merran stores: Kroger tokens, SMTP passwords, push keys, the USDA key.
+
+### Other AI rules carried over
+
+- **The AI proposes, people apply.** AI never writes to recipes, the plan, the list or the pantry directly; it makes proposals to review (see the REFERENCE [architecture.md](../apps/REFERENCE/docs/architecture.md#proposals-how-the-ai-changes-things)).
+- **Prompts live in files,** versioned and tested, and ask for replies in the person's language.
+- **Tests never spend money:** AI SDK's mock models and recorded responses.
+- **Later:** the providers' batch APIs for library runs (half price), and a small set of real pages, photos and receipts to compare models, which helps people choosing a local model.
+
+## Other services and their keys
+
+| Service | Whose key | Why |
+|---|---|---|
+| USDA FoodData Central | Server | Free, public data, cached for every household |
+| Kroger (Fry's, Ralphs, King Soopers...) | The developer app is the server's; each household links its own Kroger account | One app per server is how Kroger works |
+| SMTP | Server | |
+| Kokoro | Server (an address) | Runs beside Merran |
+| Single sign-on | Server | |
+
+**Stores are adapters.** A store adapter can do some of: search products, read prices and sales, add to a cart, link an account. Kroger has an official API. Walmart works through the extension in the person's own tab. **Link-only stores** (Costco Same-Day, Target, Tesco, Albert Heijn...) are just a name, a country and a search address, so adding one is a few lines, and households pick stores from their own country.
+
+## Jobs
+
+pg-boss runs everything in the background, in Postgres (see [stack.md](stack.md#pg-boss-instead-of-hand-rolled-schedules)).
+
+| Job | When |
+|---|---|
+| Weekly autoplan | Each household's chosen day and time, in its time zone |
+| Price check | Daily, early morning in the household's time zone, and before the autoplan |
+| Followed sites | Every few hours per site |
+| Bulk imports | When started; three pages or one video at a time per household |
+| Library runs: tidy up, nutrition, photos | When started; two at a time |
+| Nutrition and photo for a saved recipe | After saving |
+| Discover searches | When started |
+| Purging Recently deleted | Daily |
+| Prep reminders | Every few minutes |
+| Webhook deliveries | When events happen, with retries for about a day |
+| Telemetry, if opted in | Daily |
+| Update check | Every 6 hours, unless turned off |
+
+- Work in progress survives restarts. Nothing important is kept only in memory: receipt drafts, the share inbox and pending Kroger sign-ins move to the database (with an expiry) or to pg-boss.
+- Each household gets a fair share, so one household's 500-recipe tidy-up doesn't hold up another's import.
+- Settings → This server → **Jobs** shows what's running, what failed and why, with Retry and Cancel.
+
+## Files
+
+- **A storage interface** with two drivers: a folder (the default, `/data/files` in the container) or any S3-compatible store (MinIO, Garage, Cloudflare R2, Backblaze B2, AWS).
+- **Photos** are resized to WebP with a thumbnail, and their location data (EXIF GPS) is removed on upload.
+- **Served only to their household:** a file is served if one of the household's recipes uses it, as in the REFERENCE app, or through a short-lived signed address when it's on S3.
+
+## Export and import
+
+People own their data, and open source makes moving in and out matter more.
+
+- **Export a household** (household admins): everything as a zip of JSON plus photos, in a documented, versioned Merran format. **Export a person's data** (anyone): their account, chats, cooking notes and settings.
+- **Import a Merran export** into a new or existing household.
+- **Import from other apps:** Mealie (from its API or a Mealie backup file, so the server needn't reach Mealie), Paprika (`.paprikarecipes`), Tandoor, and any file of schema.org recipes. More importers are welcome as adapters.
+- **Deleting:** a person can delete their account; an owner can delete their household; both explain exactly what goes.
+
+## Keeping households apart
+
+One server hosting several households is a core promise, so isolation can't rely on remembering to add a `where`.
+
+- **A scoped data layer.** Services get a household context, and household-owned tables are only reachable through helpers that apply it. Writing a raw query against a household table is a lint error outside that layer.
+- **Every household-owned table carries `household_id`,** child tables included (ingredients, steps, versions, chat messages), so a scope can be checked on any row.
+- **The isolation test is generated from the schema.** CI lists every table with `household_id` and fails if one has no test showing another household can't read, change or delete it.
+- **Shared tables** are only for data that belongs to no one: USDA foods and matches, units, the model catalog.
+- **Considered:** Postgres row-level security as a second lock. Drizzle can describe the policies, but it means setting the household on every connection and transaction. Worth adding later if the scoped layer ever proves leaky.
+
+## Security
+
+Carried over from the REFERENCE app, plus what a public project needs:
+
+- **One way to fetch the internet.** Every outside request goes through one helper: no private-network addresses (unless it's an address the server admin set, like Mealie or Ollama), timeouts, size limits, and redirects checked again.
+- **Merran says who it is.** The REFERENCE app fetched recipe sites dressed as Chrome (a browser user agent and cipher order) to get past bot blocks. Merran fetches with an honest `Merran/<version> (+https://merran.app)` user agent, follows `robots.txt` for background feed reads, and leaves sites that block servers to the browser extension, which imports from the person's own browser.
+- **Headers:** a Content Security Policy, `frame-ancestors 'none'`, HSTS behind HTTPS, and no inline scripts beyond the theme script (hashed).
+- **Behind a proxy:** a `MERRAN_TRUSTED_PROXIES` setting decides whose `X-Forwarded-For` is believed, so rate limits see real addresses and can't be dodged with a made-up header.
+- **Uploads:** size limits, and file types checked from the content, not the name.
+- **Rate limits** on sign-in, sign-up, invites, AI calls, imports and API keys, kept in Postgres so restarts don't reset them.
+- **Secrets** never logged or sent to the browser; see [Keeping keys safe](#keeping-keys-safe).
+- **Reporting problems:** `SECURITY.md` and GitHub's private vulnerability reporting; see [open-source.md](open-source.md#security-reports).
+
+## Languages, units and regions
+
+- **Each person picks** their language, units (as written, US, or metric: grams, ml and °C, converting both ways) and date and time format.
+- **Each household picks** its country, currency, time zone and first day of the week. The country decides which stores, aisles and nutrition source are offered.
+- **Money** is stored as an amount plus a currency, and shown with the browser's `Intl` formatting. Nothing assumes dollars.
+- **Aisles** come from a list per country, and households can rename, add and reorder them.
+- **Ingredient parsing** starts with English, with the units and words for other languages added as data, not code.
+- **The assistant** answers in the person's language.
+- **Starter collections and suggested sites** are data files per language, open to contributions.
+- **Nutrition:** USDA at first. Open Food Facts and national food databases can be added as nutrition sources later.

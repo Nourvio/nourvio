@@ -87,7 +87,7 @@ apps/server/
   - Relative imports include the `.ts` extension (`./config.ts`).
   - Type-only imports use `import type`.
   - Syntax that needs compiling is off (`erasableSyntaxOnly`): no `enum`, no `namespace`, no constructor parameter properties.
-- **Settings are read from the environment in `config.ts`.** `DATABASE_URL` is required. In development, `npm run dev` loads the repo-root `.env`. The full settings table is in the [README](../README.md#settings).
+- **Settings are read from the environment in `config.ts`.** `DATABASE_URL` is required. In development, `npm run dev` loads the repo-root `.env`. The full settings table is in the [README](../../../README.md#settings).
 - **Errors:** throw `HttpError(status, message, { fields })`, with a message that's safe to show the user. `readBody(c, schema)` does that for invalid input. Anything else becomes a generic 500 and is logged.
 - **The web app is served from `apps/web/dist`:**
   - Hashed `/assets/*` files are cached for a year.

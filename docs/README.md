@@ -1,38 +1,81 @@
-# Nourvio
+# Merran: the rewrite
 
-Nourvio is a self-hosted meal planner for your household (and any others you host on the same server), with an AI cooking assistant built in. It replaces Mealie and covers:
+Merran is a self-hosted meal planner for households, with an AI cooking assistant at its center: recipes, weekly plans, a shopping list, a pantry, nutrition and store connections, made for a phone or tablet on the kitchen counter. One server can host several households, and a person can belong to more than one.
 
-- recipes
-- weekly meal plans
-- a pantry
-- shopping lists
-- nutrition
-- Walmart pickup orders
+It's a full rewrite of the app that was called Mise and then Nourvio. That app (now in `apps/REFERENCE/`, with its docs in `apps/REFERENCE/docs/`) was a place to try ideas out, and most of them worked. Merran builds them again, properly, as an open-source project anyone can run.
 
-It's designed to be used from a phone or iPad while cooking.
+**Status:** planning. Nothing is built yet.
 
-**Status:** the web app shell and theme are built (`apps/web`). The server and database aren't started yet.
+## What's different this time
 
-## Docs
+- **Anyone can run it,** not just us: no hard-coded stores, currencies, units or hosting setup.
+- **Everything beyond the basics is optional.** The core needs only Postgres. AI, video import, nutrition, voice, stores, email, sign-in providers, error tracking, metrics and telemetry are modules that stay off until they're set up, and the app says what's missing instead of breaking.
+- **The person running the server doesn't pay for everyone.** Each household can bring its own AI keys; the server admin decides who, if anyone, uses the server's.
+- **A real API,** documented and versioned, with API keys that say what they can do. The web app and the browser extension use the same one. Webhooks tell other tools (Home Assistant, n8n) when things change, and an MCP server lets Claude Desktop, Claude Code and other AI apps work with a household's recipes, plan and list.
+- **Nothing leaves the server unless the server admin turned it on.** Telemetry is opt-in and shows exactly what it sends; error tracking goes to the operator's own Sentry-compatible service, if any.
+- **Built for contributors and translators** from the first line: adapters for stores, importers and AI providers, translations from day one, one-command setup with sample data and a fake AI.
+
+## Principles
+
+1. **Works with nothing set up.** A fresh install needs one password, and the core is useful with no keys at all.
+2. **Off by default, on by choice.** Anything that costs money, calls out or needs another container is a module.
+3. **Keys at the right level.** Server keys for the server; household keys for the household; personal API keys for each person, with only the rights they need.
+4. **One API.** If the web app can do it, the API can.
+5. **Households never see each other.** Enforced by a scoped data layer and tests generated from the schema, not by remembering.
+6. **The AI proposes, people apply.** Carried over unchanged.
+7. **Boring to run.** One image, one compose file, migrations on start with a backup first, signed releases.
+8. **Honest on the internet.** Merran says who it is when it fetches pages, and doesn't try to get past bot blocks.
+
+## The docs
 
 | Doc | What's in it |
 |---|---|
-| [product.md](product.md) | What we want: features, requirements, what's out of scope |
-| [architecture.md](architecture.md) | How it's built: stack, project layout, data model, API, AI, UI |
-| [integrations.md](integrations.md) | Outside services: recipe sites, Mealie, Claude and OpenAI, nutrition data, grocery stores, and why we dropped app connectors |
-| [deployment.md](deployment.md) | Running it on TrueNAS and putting it on the internet safely |
-| [development.md](development.md) | Local setup, commands, and code conventions |
-| [roadmap.md](roadmap.md) | Build order, milestones, and open questions |
+| [stack.md](stack.md) | Every layer reconsidered: what stays, what changes, and why |
+| [platform.md](platform.md) | Modules and settings, accounts and households, API keys and the public API, AI keys and policy, jobs, files, export, isolation, security, languages |
+| [operations.md](operations.md) | Logs, error tracking, analytics and telemetry, what leaves the server, images, releases, backups, the demo |
+| [open-source.md](open-source.md) | Name and license, contributing, CI, dependencies, security reports, docs site, funding, launch |
+| [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |
+
+The REFERENCE app's docs (`apps/REFERENCE/docs/`) still describe each feature in detail, and these docs link to them rather than repeat them.
 
 ## Decisions so far
 
 | Decision | Choice | Why |
 |---|---|---|
-| Build or adopt | Build our own and borrow ideas from Mealie | We want AI chat at the center. Mealie is AGPL, so we copy ideas, not code. |
-| Language | TypeScript everywhere | The web app, server and Walmart browser extension share types and validation |
-| UI | React, shadcn/ui, Tailwind CSS | shadcn gives us accessible components we own and can restyle. It has good mobile sheets and drawers. |
-| Server | Hono on Node 24 | Small and fast, and streams chat responses easily |
-| Database | PostgreSQL 18 through Drizzle ORM | The usual choice in compose stacks. Fuzzy matching and full-text search help with ingredients and recipe search, and there's room for AI-powered search later. |
-| AI | Claude and OpenAI, called from the server with your own API keys | Keys go in Settings or environment variables. Chat, recipe import and cleanup all live inside the app. No ChatGPT or Claude app connectors (MCP). |
-| Hosting | One Docker container on TrueNAS | Your hardware, your data |
-| Store connections | Fry's straight into the cart (Kroger's API, built), Costco as links to Costco Same-Day, Walmart through the Nourvio browser extension (planned) | Kroger has a free, official cart API; Walmart only lets approved partners fill carts. See [integrations.md](integrations.md#grocery-stores-connections). |
+| Name | Merran | Chosen October 15, 2026 |
+| Rewrite or refactor | Rewrite, using REFERENCE for ideas | It was built to try things; open source needs cleaner foundations |
+| Compatibility with REFERENCE | None needed | No data, names or schema carry over |
+| License | AGPL-3.0-or-later | Kept from REFERENCE |
+| Language and runtime | TypeScript on Node 24 LTS | Kept |
+| Server | Hono with OpenAPI from Zod | Kept, plus a public API spec |
+| Database | Postgres 18 and Drizzle, Postgres only | Kept |
+| Sign-in | Better Auth (households as organizations, API keys, passkeys, 2FA, OIDC) | Security-critical code shared with a bigger project |
+| Background work | pg-boss | Durable jobs in Postgres, no Redis |
+| AI | AI SDK 6 behind a thin Merran layer; Anthropic, OpenAI, OpenAI-compatible, Google | Households bring many kinds of keys |
+| Web | React 19, Vite, TanStack Router and Query, shadcn/ui on Base UI, Tailwind v4 | Mostly kept; typed routes and the current shadcn default |
+| Translations | i18next from the first string, Weblate later | Far cheaper than retrofitting |
+| Extension | WXT, for Chrome, Edge and Firefox | One codebase for every browser |
+| Distribution | Signed multi-arch images on GHCR, a compose file | Replaces building from the repo |
+| Releases | Semantic versions with release-please | Changelog and images from every release |
+| Telemetry | Opt-in, a daily anonymous summary, shown before it's sent, to a small receiver the project runs | Useful to the project, safe for self-hosters |
+| Error tracking | The operator's own Sentry-compatible DSN, plus a built-in Problems page | Nothing sent to the project |
+
+Decided with the user on October 15, 2026, from the plan's open questions:
+
+| Decision | Choice |
+|---|---|
+| Who uses the server's AI keys on a fresh install | Only the server admin's own household. The admin can give other households access, with a monthly limit; everyone else brings their own key. |
+| The first public release (0.1) | **Everything the REFERENCE app has, plus new work:** the platform (household AI keys, API keys, SSO, export, translations, units both ways), the pool of meals (M16), fridge, freezer or cupboard and usual buys (M17), working offline (M17), reminders and the install button (M12), smarter deals and saying why (M15), and webhooks and an MCP server. It's the first release; until then there are only `edge` images. |
+| A paid hosted version or a proprietary edition | No. Contributions use a **DCO** (signed-off commits), not a CLA. |
+| Filling the Walmart cart through the extension | In the public build as an **experimental** part of the stores module, **off by default**, still stopping at Walmart's bot check |
+| Belonging to more than one household | **Yes, with a household switcher in 0.1** (say, your household and your parents') |
+| Primitives under shadcn/ui | Base UI |
+| AI-written contributions | Welcome, with the parts an AI wrote named in the pull request, and the contributor answerable for every line |
+| A telemetry receiver | Yes: small, opt-in, its code public, with a public totals page |
+| The REFERENCE docs | Moved to `apps/REFERENCE/docs/`, so `docs/` is Merran's |
+
+## Open questions
+
+| # | Question | Recommendation | Affects |
+|---|---|---|---|
+| 1 | Is the name free, and where does Merran live? | **Checked October 15, 2026:** no MERRAN trademark in the US or EU registers and no product by that name. GitHub `merran` is a dormant personal account, so the org is **`merran-app`** (repo `merran-app/merran`, images `ghcr.io/merran-app/merran`), and the domain is **`merran.app`**. Still to do: claim the `@merran` npm scope (free), and use `merran.app` as the Bluesky handle. The one near match is a pending US application for MERRIN (one letter off, software, an AI parenting app); worth a real trademark check before filing a mark of our own. | Phase 7 |
