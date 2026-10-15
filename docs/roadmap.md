@@ -240,7 +240,7 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 
 ## Milestone 13: Shopping together, theme nights, costs and receipts
 
-**Status:** started October 14, 2026. The user picked these four from the list of ideas. Shopping together and theme nights are built.
+**Status:** started October 14, 2026. The user picked these four from the list of ideas. Shopping together, theme nights and costs are built. Found while building costs: the ingredient parser cut "skinless, boneless chicken thighs" at the first comma (the food was "skinless"); describing words before a comma now stay with the food.
 
 **1. Shopping together**
 - The List updates live on every phone in the household: check off bananas and they're checked on Jamie's phone a moment later. Items added, changed or removed show up the same way.

@@ -1,6 +1,9 @@
 import {
   addDays,
   avoidedIn,
+  costFor,
+  costShown,
+  daysBetween,
   fitsTheme,
   missingDiets,
   pantryKey,
@@ -25,9 +28,11 @@ import {
   recipeIngredients,
   recipes as recipesTable,
 } from "../db/schema.ts"
+import { recipeCosts } from "./costs.ts"
 import { getHousehold } from "./households.ts"
 import { pairingOptionsByRecipe } from "./pairings.ts"
 import { listPantry } from "./pantry.ts"
+import { listEntries } from "./plan.ts"
 import { listRecipes } from "./recipes.ts"
 import {
   currentDeals,
@@ -54,6 +59,8 @@ export type Suggestion = {
   onSale: OnSale[]
   /** The night's theme ("Taco night"), and whether this fits it. */
   theme: { name: string; fits: boolean } | null
+  /** What the recipe costs as written, when most of it is priced. */
+  cost: number | null
 }
 
 const MEAL_TAGS: Record<Meal, string[]> = {
@@ -186,7 +193,7 @@ export async function suggestMeals(
 
   // The household's rules: foods nobody should get, diets every meal fits,
   // and how long weeknight dinners can take.
-  const { tastes, themes } = await getHousehold(db, householdId)
+  const { tastes, themes, weeklyBudget } = await getHousehold(db, householdId)
   const ruledOut = new Set(
     recipes
       .filter(
@@ -219,6 +226,35 @@ export async function suggestMeals(
       (sales.get(recipe.id) ?? []).map((sale) => sale.section),
       tastes.sales
     )
+
+  // What recipes cost, and with a weekly budget, what each meal still to
+  // plan can cost: the days' share of the budget, less what's planned.
+  const costs = await recipeCosts(db, householdId)
+  const costOf = (recipe: RecipeSummary) =>
+    costShown(costs.get(recipe.id))?.total ?? null
+  let perMeal: number | null = null
+  if (weeklyBudget) {
+    const planned = await listEntries(db, householdId, dates[0]!, dates.at(-1)!)
+    const spent = planned.reduce((sum, entry) => {
+      if (!entry.recipe || entry.status === "skipped") return sum
+      return (
+        sum +
+        (costFor(
+          costShown(costs.get(entry.recipe.id)),
+          entry.servings,
+          entry.recipe.servings
+        ) ?? 0)
+      )
+    }, 0)
+    const days = daysBetween(dates[0]!, dates.at(-1)!) + 1
+    perMeal = Math.max(0, (weeklyBudget * days) / 7 - spent) / slots.length
+  }
+  /** Recipes that fit what's left of the budget get picked more. */
+  const budgetFactor = (recipe: RecipeSummary) => {
+    const cost = costOf(recipe)
+    if (perMeal === null || cost === null) return 1
+    return cost <= perMeal ? 1.3 : cost <= perMeal * 1.5 ? 1 : 0.5
+  }
 
   const tooLong = (recipe: RecipeSummary, slot: { date: string; meal: Meal }) =>
     tastes.weeknightMinutes !== null &&
@@ -292,7 +328,7 @@ export async function suggestMeals(
       )
       const recipe = pick(
         using,
-        (r) => weight(r, slot.meal, slot.date) + nudge(r),
+        (r) => (weight(r, slot.meal, slot.date) + nudge(r)) * budgetFactor(r),
         random
       )
       if (!recipe) continue
@@ -319,7 +355,10 @@ export async function suggestMeals(
     const recipe = pick(
       candidatesFor(slot),
       (r) =>
-        weight(r, slot.meal, slot.date) + usesOf.recipe(r.id).length + nudge(r),
+        (weight(r, slot.meal, slot.date) +
+          usesOf.recipe(r.id).length +
+          nudge(r)) *
+        budgetFactor(r),
       random
     )
     if (recipe) choose(index, recipe)
@@ -370,6 +409,7 @@ export async function suggestMeals(
             ? { name: themeLabel(theme), fits: suits(recipe, theme) }
             : null
         })(),
+        cost: costOf(recipe),
       },
     ]
   })

@@ -25,6 +25,7 @@ import {
 } from "../context.ts"
 import { HttpError, readBody } from "../http.ts"
 import { proposeCleanup } from "../services/cleanup.ts"
+import { recipeCosts } from "../services/costs.ts"
 import {
   addPairings,
   getPairings,
@@ -105,11 +106,28 @@ export function recipesRoutes(
     return c.json({ recipe }, 201)
   })
 
+  /** What every recipe costs at the household's stores, as far as Mise knows. */
+  app.get("/costs", async (c) => {
+    const costs = await recipeCosts(db, currentHousehold(c))
+    return c.json({
+      costs: Object.fromEntries(
+        [...costs].map(([id, { lines: _, ...cost }]) => [id, cost])
+      ),
+    })
+  })
+
   app.get("/:id", async (c) =>
     c.json({
       recipe: await getRecipe(db, currentHousehold(c), c.req.param("id")),
     })
   )
+
+  /** A recipe's cost, ingredient by ingredient. */
+  app.get("/:id/cost", async (c) => {
+    const recipe = await getRecipe(db, currentHousehold(c), c.req.param("id"))
+    const costs = await recipeCosts(db, currentHousehold(c), [recipe.id])
+    return c.json({ cost: costs.get(recipe.id) ?? null })
+  })
 
   app.put("/:id", async (c) => {
     const input = await readBody(c, recipeInput)

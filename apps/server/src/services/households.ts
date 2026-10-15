@@ -69,6 +69,7 @@ function toHousehold(row: HouseholdRow): Household {
     autoPlan: { ...DEFAULT_AUTO_PLAN, ...row.settings.autoPlan },
     lists: row.settings.lists?.length ? row.settings.lists : DEFAULT_LISTS,
     themes: row.settings.themes?.length === 7 ? row.settings.themes : NO_THEMES,
+    weeklyBudget: row.settings.weeklyBudget ?? null,
   }
 }
 
@@ -95,6 +96,7 @@ export async function updateHousehold(
     tastes?: HouseholdTastes
     autoPlan?: AutoPlan
     themes?: WeekThemes
+    weeklyBudget?: number | null
   }
 ) {
   const [current] = await db
@@ -122,6 +124,9 @@ export async function updateHousehold(
         ...(patch.tastes ? { tastes: patch.tastes } : {}),
         ...(patch.autoPlan ? { autoPlan: patch.autoPlan } : {}),
         ...(patch.themes ? { themes: patch.themes } : {}),
+        ...(patch.weeklyBudget === undefined
+          ? {}
+          : { weeklyBudget: patch.weeklyBudget }),
       },
     })
     .where(eq(households.id, id))

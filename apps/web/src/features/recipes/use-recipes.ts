@@ -1,5 +1,6 @@
 import { toIsoDate } from "@mise/shared"
 import type {
+  RecipeCosts,
   AddCookNoteInput,
   AddCookNoteResult,
   AddPairingsInput,
@@ -27,6 +28,16 @@ import { api, apiUpload } from "@/lib/api"
 export const RECIPES_KEY = ["recipes"] as const
 
 const recipeKey = (idOrSlug: string) => ["recipe", idOrSlug] as const
+
+/** What every recipe costs at the household's stores, as far as Mise knows. */
+export function useRecipeCosts() {
+  return useQuery({
+    queryKey: [...RECIPES_KEY, "costs"],
+    queryFn: async () =>
+      (await api<{ costs: RecipeCosts }>("/recipes/costs")).costs,
+    staleTime: 5 * 60_000,
+  })
+}
 
 export function useRecipes(filters: { q?: string; tag?: string } = {}) {
   const params = new URLSearchParams()

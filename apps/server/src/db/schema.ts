@@ -78,6 +78,7 @@ export const households = pgTable("households", {
       autoPlan?: AutoPlan
       lists?: ShoppingList[]
       themes?: WeekThemes
+      weeklyBudget?: number | null
     }>()
     .notNull()
     .default({}),

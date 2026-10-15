@@ -29,10 +29,17 @@ import {
 type Slot = { date: string; meal: Meal }
 type Idea = Pick<
   MealSuggestion,
-  "recipe" | "with" | "uses" | "onSale" | "theme"
+  "recipe" | "with" | "uses" | "onSale" | "theme" | "cost"
 >
 
 const slotKey = (slot: Slot) => `${slot.date}:${slot.meal}`
+
+const dollars = (value: number) =>
+  value.toLocaleString(undefined, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  })
 
 /**
  * Suggests recipes for the week's empty meals, from today on. Each idea can
@@ -121,10 +128,18 @@ function FillWeek({
             uses: idea.uses,
             onSale: idea.onSale,
             theme: idea.theme,
+            cost: idea.cost,
           },
         ]
       : []
   })
+  const total = rows.reduce(
+    (sum, row) =>
+      row.cost === null
+        ? sum
+        : { cost: sum.cost + row.cost, priced: sum.priced + 1 },
+    { cost: 0, priced: 0 }
+  )
   const unfilled = slots.filter((slot) => {
     const key = slotKey(slot)
     return !(key in changes) && !fromServer.has(key)
@@ -264,9 +279,15 @@ function FillWeek({
                   <span className="truncate text-xs font-medium text-primary">
                     {onSaleText(row.onSale)}
                   </span>
-                ) : row.recipe.totalMinutes ? (
+                ) : row.recipe.totalMinutes || row.cost !== null ? (
                   <span className="text-xs text-muted-foreground">
-                    {formatMinutes(row.recipe.totalMinutes)}
+                    {[
+                      row.recipe.totalMinutes &&
+                        formatMinutes(row.recipe.totalMinutes),
+                      row.cost !== null && `about ${dollars(row.cost)}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
                 ) : null}
               </div>
@@ -302,6 +323,18 @@ function FillWeek({
         <p className="text-xs text-muted-foreground">
           No idea for {unfilled} {unfilled === 1 ? "meal" : "meals"}: nothing
           new in your recipes fits.
+        </p>
+      )}
+
+      {total.priced > 0 && (
+        <p className="text-sm text-muted-foreground">
+          These come to about{" "}
+          <span className="font-medium text-foreground">
+            {dollars(total.cost)}
+          </span>
+          {total.priced < rows.length &&
+            ` (${total.priced} of ${rows.length} priced)`}
+          .
         </p>
       )}
 

@@ -1,3 +1,4 @@
+import * as React from "react"
 import { MEAL_NAMES, MEALS, type AutoPlan, type Meal } from "@mise/shared"
 import { toast } from "sonner"
 
@@ -16,6 +17,11 @@ import {
 } from "@/components/ui/field"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -111,11 +117,73 @@ export function MealPlanCard() {
                 weekStart={household.data.weekStart}
               />
             )}
+            {/* Keyed so a saved budget shows as saved. */}
+            <BudgetField
+              key={String(household.data.weeklyBudget)}
+              budget={household.data.weeklyBudget}
+            />
             <AutoPlanField autoPlan={household.data.autoPlan} />
           </FieldGroup>
         )}
       </CardContent>
     </Card>
+  )
+}
+
+/** What the week's planned meals should cost: the Plan shows the week against it, and Fill the week leans toward it. */
+function BudgetField({ budget }: { budget: number | null }) {
+  const update = useUpdateHousehold()
+  const [value, setValue] = React.useState(budget ? String(budget) : "")
+
+  function save() {
+    const text = value.trim().replace(/[$,]/g, "")
+    const next = text ? Number(text) : null
+    if (next !== null && !(next > 0)) {
+      toast.error("A budget over $0, or leave it empty")
+      return
+    }
+    if (next === budget) return
+    update.mutate(
+      { weeklyBudget: next === null ? null : Math.round(next * 100) / 100 },
+      {
+        onSuccess: () =>
+          toast.success(next === null ? "Budget cleared" : "Budget saved"),
+        onError: (error) =>
+          toast.error(
+            error instanceof ApiError ? error.message : "Couldn't save that"
+          ),
+      }
+    )
+  }
+
+  return (
+    <Field>
+      <FieldLabel htmlFor="weekly-budget">Weekly budget</FieldLabel>
+      <form
+        className="max-w-48"
+        onSubmit={(event) => {
+          event.preventDefault()
+          save()
+        }}
+      >
+        <InputGroup>
+          <InputGroupAddon>$</InputGroupAddon>
+          <InputGroupInput
+            id="weekly-budget"
+            inputMode="decimal"
+            placeholder="None"
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+            onBlur={save}
+          />
+        </InputGroup>
+      </form>
+      <FieldDescription>
+        For the week's planned meals, at your store's prices. The Plan shows the
+        week against it, and Fill the week leans toward recipes that fit what's
+        left.
+      </FieldDescription>
+    </Field>
   )
 }
 

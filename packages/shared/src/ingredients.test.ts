@@ -167,3 +167,33 @@ describe("sections", () => {
     expect(items).toEqual([{ section: "For the sauce", text: "1 cup cream" }])
   })
 })
+
+describe("describing words before a comma", () => {
+  test("keeps them with the food", () => {
+    expect(
+      parseIngredient(
+        "1 1/2 pounds skinless, boneless chicken thighs, cut into 1 1/2-inch pieces"
+      )
+    ).toMatchObject({
+      quantity: 1.5,
+      unitId: "pound",
+      food: "skinless boneless chicken thighs",
+      note: "cut into 1 1/2-inch pieces",
+    })
+    expect(parseIngredient("2 large, ripe avocados, halved")).toMatchObject({
+      food: "large ripe avocados",
+      note: "halved",
+    })
+  })
+
+  test("still splits off what's done to it", () => {
+    expect(parseIngredient("1 onion, diced")).toMatchObject({
+      food: "onion",
+      note: "diced",
+    })
+    expect(parseIngredient("4 cups vegetable oil, for frying")).toMatchObject({
+      food: "vegetable oil",
+      note: "for frying",
+    })
+  })
+})

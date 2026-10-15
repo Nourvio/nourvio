@@ -62,6 +62,7 @@ import { formatMinutes, formatRelativeDate } from "./format"
 import { GoesWith } from "./goes-with"
 import { groupBySection, IngredientList } from "./ingredient-list"
 import { RatingStars } from "./rating-stars"
+import { CostFact } from "./recipe-cost"
 import { RecipePhoto, useMakePhoto } from "./recipe-photo"
 import { TasteWarnings } from "./taste-warnings"
 import { ServingsStepper } from "./servings-stepper"
@@ -229,8 +230,8 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               {recipe.description}
             </p>
           )}
-          {(times.length > 0 || recipe.yieldText) && (
-            <dl className="flex flex-wrap gap-x-6 gap-y-2">
+          {
+            <dl className="flex flex-wrap gap-x-6 gap-y-2 empty:hidden">
               {times.map(([label, value]) => (
                 <div key={label}>
                   <dt className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -247,8 +248,9 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                   <dd className="font-medium">{recipe.yieldText}</dd>
                 </div>
               )}
+              <CostFact recipeId={recipe.id} factor={factor} />
             </dl>
-          )}
+          }
           <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
             <RatingStars
               value={recipe.rating}

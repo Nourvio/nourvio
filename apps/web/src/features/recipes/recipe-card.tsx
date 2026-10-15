@@ -1,6 +1,11 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Clock01Icon } from "@hugeicons/core-free-icons"
-import type { OnSale, RecipeSummary } from "@mise/shared"
+import {
+  costShown,
+  type OnSale,
+  type RecipeCost,
+  type RecipeSummary,
+} from "@mise/shared"
 import { Link } from "react-router"
 
 import { Badge } from "@/components/ui/badge"
@@ -21,15 +26,26 @@ export const useRecipeView = storedChoice<RecipeView>(
   "grid"
 )
 
+/** "~$3.02 a serving", once most of the recipe is priced. */
+function servingCost(cost: RecipeCost | undefined) {
+  const shown = costShown(cost)
+  return shown?.perServing
+    ? `~${shown.perServing.toLocaleString(undefined, { style: "currency", currency: "USD" })}`
+    : null
+}
+
 export function RecipeCard({
   recipe,
   onSale,
+  cost,
 }: {
   recipe: RecipeSummary
   /** What it uses that's on sale at the household's Fry's. */
   onSale?: OnSale[]
+  cost?: RecipeCost
 }) {
   const time = formatMinutes(recipe.totalMinutes)
+  const perServing = servingCost(cost)
 
   return (
     <Link
@@ -46,8 +62,8 @@ export function RecipeCard({
           <h3 className="font-heading text-base leading-snug font-semibold sm:text-lg">
             {recipe.name}
           </h3>
-          {(time || recipe.rating) && (
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          {(time || recipe.rating || perServing) && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
               {time && (
                 <span className="flex items-center gap-1">
                   <HugeiconsIcon
@@ -59,6 +75,11 @@ export function RecipeCard({
                 </span>
               )}
               <RatingStars value={recipe.rating} />
+              {perServing && (
+                <span title="About this much a serving, at your store's prices">
+                  {perServing}/serving
+                </span>
+              )}
             </div>
           )}
           {onSale?.length ? (
@@ -95,11 +116,14 @@ export function RecipeCard({
 export function RecipeRow({
   recipe,
   onSale,
+  cost,
 }: {
   recipe: RecipeSummary
   onSale?: OnSale[]
+  cost?: RecipeCost
 }) {
   const time = formatMinutes(recipe.totalMinutes)
+  const perServing = servingCost(cost)
   return (
     <Link
       to={`/recipes/${recipe.slug}`}
@@ -129,6 +153,7 @@ export function RecipeRow({
             </span>
           )}
           <RatingStars value={recipe.rating} />
+          {perServing && <span className="shrink-0">{perServing}/serving</span>}
           {recipe.lastMadeAt && (
             <span className="shrink-0 font-medium text-primary">
               Made {formatRelativeDate(recipe.lastMadeAt)}

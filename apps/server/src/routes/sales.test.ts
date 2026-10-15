@@ -163,16 +163,25 @@ describe("Fry's sales", () => {
     })
   })
 
-  test("the first check looks up the meat, seafood and produce in the recipes", async () => {
+  test("the first check looks up the recipes' foods, for sales and costs", async () => {
     const result = await check()
-    // Thighs, onion, carrots, salmon and lamb; not lentils, tortillas or rice.
-    expect(result).toEqual({ refreshed: 0, searched: 5, onSale: 2 })
+    // Every food the recipes use; meat, seafood and produce first.
+    expect(result).toEqual({ refreshed: 0, searched: 8, onSale: 2 })
+    expect(searches.slice(0, 4).sort()).toEqual([
+      "boneless chicken thighs",
+      "carrots",
+      "onion",
+      "salmon",
+    ])
     expect(searches.sort()).toEqual([
       "boneless chicken thighs",
       "carrots",
       "lamb shoulder",
+      "lentils",
       "onion",
+      "rice",
       "salmon",
+      "tortillas",
     ])
     const status = (await t.admin.get("/api/shop")).body.status as ShopStatus
     expect(status.kroger.pricesCheckedAt).not.toBeNull()

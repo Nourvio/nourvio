@@ -12,6 +12,8 @@ import {
   isoDate,
   planTotals,
   startOfWeek,
+  costFor,
+  costShown,
   weekdayOf,
   type Meal,
   type PlanEntry,
@@ -23,7 +25,9 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useChatScreen } from "@/features/chat/chat-provider"
 import { AddFromPlanDialog } from "@/features/list/add-from-plan-dialog"
+import { useRecipeCosts } from "@/features/recipes/use-recipes"
 import { useHouseholdInfo } from "@/features/settings/use-household"
+import { cn } from "@/lib/utils"
 
 import { AddEntryDialog } from "./add-entry-dialog"
 import { shortDayName, today, weekLabel } from "./dates"
@@ -155,6 +159,7 @@ export function PlanPage() {
               days={days}
               meals={meals}
               entries={entries}
+              budget={household.data?.weeklyBudget ?? null}
               onList={() => setListing(true)}
             />
           )}
@@ -230,14 +235,42 @@ function WeekSummary({
   days,
   meals,
   entries,
+  budget,
   onList,
 }: {
   days: string[]
   meals: Meal[]
   entries: PlanEntry[]
+  budget: number | null
   onList: () => void
 }) {
   const now = today()
+  const costs = useRecipeCosts().data
+  // What the week's meals cost, sides included, as far as they're priced.
+  const week = costs
+    ? entries.reduce(
+        (sum, entry) => {
+          if (!entry.recipe || entry.status === "skipped") return sum
+          const main = costFor(
+            costShown(costs[entry.recipe.id]),
+            entry.servings,
+            entry.recipe.servings
+          )
+          const side = entry.with
+            ? costFor(
+                costShown(costs[entry.with.id]),
+                entry.servings,
+                entry.with.servings
+              )
+            : 0
+          return {
+            total: sum.total + (main ?? 0) + (side ?? 0),
+            missing: sum.missing + (main === null ? 1 : 0),
+          }
+        },
+        { total: 0, missing: 0 }
+      )
+    : null
   const filled = new Set(
     entries
       .filter((entry) => meals.includes(entry.meal))
@@ -280,6 +313,34 @@ function WeekSummary({
         <span className={chip}>
           ≈ <strong className="font-semibold">{perDay.toLocaleString()}</strong>{" "}
           cal a day
+        </span>
+      )}
+      {week && week.total > 0 && (
+        <span
+          className={cn(
+            chip,
+            budget !== null &&
+              week.total > budget &&
+              "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+          )}
+          title={
+            week.missing
+              ? `${week.missing} planned ${week.missing === 1 ? "meal has" : "meals have"} no price yet`
+              : undefined
+          }
+        >
+          ≈{" "}
+          <strong className="font-semibold">
+            {week.total.toLocaleString(undefined, {
+              style: "currency",
+              currency: "USD",
+              maximumFractionDigits: 0,
+            })}
+          </strong>
+          {budget !== null
+            ? ` of your ${budget.toLocaleString(undefined, { style: "currency", currency: "USD", maximumFractionDigits: 0 })}`
+            : " for the week"}
+          {week.missing > 0 && "+"}
         </span>
       )}
     </div>

@@ -85,6 +85,10 @@ export function parseNumber(text: string): number {
   return Number(value.replace(",", "."))
 }
 
+/** Only words that describe the food, before a comma that's between them. */
+const DESCRIBING =
+  /^(?:(?:boneless|skinless|bone-in|skin-on|fresh|large|medium|small|extra[- ]large|jumbo|ripe|firm|peeled|raw|cooked|uncooked|unsalted|salted|organic|whole|frozen|thawed|softened|lean|extra[- ]lean|thick[- ]cut|thin[- ]cut|seedless|pitted|dried|toasted|plain|low[- ]sodium|unsweetened|sweetened)(?:\s+|$|\s*and\s+))+$/i
+
 /** Tidies an ingredient line: bullets gone, unicode fractions spelled out, spaces collapsed. */
 export function normalizeIngredientLine(line: string) {
   return line
@@ -177,7 +181,16 @@ export function parseIngredient(line: string): ParsedIngredient {
   const afterUnit = text.slice(cursor)
   let body = (unit ? afterUnit.replace(/^\s+of\b/i, "") : afterUnit).trim()
   let note: string | null = null
-  const comma = body.indexOf(",")
+  // A comma between describing words is part of the food: "skinless,
+  // boneless chicken thighs, cut up" is skinless boneless chicken thighs.
+  let comma = body.indexOf(",")
+  while (comma > 0 && DESCRIBING.test(body.slice(0, comma).trim())) {
+    body = `${body.slice(0, comma)}${body.slice(comma + 1)}`.replace(
+      /\s+/g,
+      " "
+    )
+    comma = body.indexOf(",", comma)
+  }
   if (comma > 0) {
     note = body.slice(comma + 1).trim() || null
     body = body.slice(0, comma).trim()

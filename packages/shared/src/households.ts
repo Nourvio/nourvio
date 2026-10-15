@@ -36,6 +36,8 @@ export type Household = {
   lists: ShoppingList[]
   /** A theme for each night's dinner, by weekday (0 is Sunday). */
   themes: WeekThemes
+  /** What the week's planned meals should cost, in dollars, or null. */
+  weeklyBudget: number | null
 }
 
 export const householdNameSchema = z
@@ -51,6 +53,12 @@ export const updateHouseholdInput = z.object({
   weekStart: z.union([z.literal(0), z.literal(1)]).optional(),
   onHand: z.array(z.string().trim().min(1).max(60)).max(200).optional(),
   themes: weekThemesSchema.optional(),
+  weeklyBudget: z
+    .number()
+    .positive("A budget over $0")
+    .max(10_000)
+    .nullable()
+    .optional(),
 })
 export type UpdateHouseholdInput = z.infer<typeof updateHouseholdInput>
 

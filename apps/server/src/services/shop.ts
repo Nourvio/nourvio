@@ -7,6 +7,7 @@ import {
   lineCost,
   listsForStore,
   MAIN_LIST,
+  onHandTest,
   packagesFor,
   parseProductSize,
   readPackAmount,
@@ -148,8 +149,11 @@ function wholeGrams(portions: FdcPortion[], known: Record<string, number>) {
   return portion ? portion.grams / portion.amount : (known.each ?? null)
 }
 
+/** What needsFor reads from a list item, or a recipe line made to look like one. */
+type NeedRow = Pick<ItemRow, "quantity" | "unitId" | "name" | "amountText">
+
 /** How much of each row is needed, every way it can be measured. */
-async function needsFor(db: Db, rows: ItemRow[]) {
+export async function needsFor(db: Db, rows: NeedRow[]) {
   const amounts = rows.map((row) =>
     row.quantity === null
       ? null
@@ -694,22 +698,30 @@ export function createShopService(
     await recordPrices(db, householdId, "kroger", [...fresh.values()], today)
 
     // Recipe foods to look up, the most used first: those with no product
-    // yet, then Mise's own picks that aren't on sale, for one that is. A
-    // product someone chose is never swapped.
+    // yet (meat, seafood and produce before the rest, which is for costs),
+    // then Mise's own picks of those that aren't on sale, for one that is.
+    // A product someone chose is never swapped, and always-on-hand food
+    // isn't bought.
     const searchedOn = { ...conn.priceSearches }
     const since = (days: number) => addDays(today, -days)
     const lookedLately = (key: string, days: number) =>
       Boolean(searchedOn[key] && searchedOn[key]! > since(days))
     const { foods } = await recipeFoods(db, householdId)
+    const atHome = onHandTest((await getHousehold(db, householdId)).onHand)
+    const forSales = (food: { section: string }) =>
+      SALE_SECTIONS.has(food.section)
     const mostUsed = [...foods.values()]
-      .filter((food) => SALE_SECTIONS.has(food.section))
-      .sort((a, b) => b.recipes - a.recipes)
+      .filter((food) => !atHome(food.name))
+      .sort(
+        (a, b) =>
+          Number(forSales(b)) - Number(forSales(a)) || b.recipes - a.recipes
+      )
     const lookup = [
       ...mostUsed.filter(
         (food) =>
           !saved.has(food.key) && !lookedLately(food.key, SEARCH_AGAIN_DAYS)
       ),
-      ...mostUsed.filter((food) => {
+      ...mostUsed.filter(forSales).filter((food) => {
         const row = saved.get(food.key)
         return (
           row &&

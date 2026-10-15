@@ -40,7 +40,7 @@ import {
   writeFilters,
   type RecipeFilters,
 } from "./recipe-filters"
-import { useRecipes } from "./use-recipes"
+import { useRecipeCosts, useRecipes } from "./use-recipes"
 
 /**
  * The library: search (on the server, through ingredients too), then diet,
@@ -71,6 +71,7 @@ export function RecipesPage() {
   const pendingReview = usePendingProposals().data?.length ?? 0
   const recipes = useRecipes({ q })
   const onSale = useDeals().data?.recipes ?? {}
+  const costs = useRecipeCosts().data ?? {}
   const all = recipes.data ?? []
   const shown = sortRecipes(filterRecipes(all, filters, onSale), filters.sort)
   const [revealed, revealMore] = useRevealed()
@@ -234,6 +235,7 @@ export function RecipesPage() {
                   key={recipe.id}
                   recipe={recipe}
                   onSale={onSale[recipe.id]}
+                  cost={costs[recipe.id]}
                 />
               ))}
             </div>
@@ -244,6 +246,7 @@ export function RecipesPage() {
                   key={recipe.id}
                   recipe={recipe}
                   onSale={onSale[recipe.id]}
+                  cost={costs[recipe.id]}
                 />
               ))}
             </div>
