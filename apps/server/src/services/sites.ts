@@ -100,6 +100,7 @@ async function toSites(
           : null,
         inLibrary: library.get(item.url) ?? null,
         publishedAt: item.publishedAt,
+        description: item.description ?? null,
       })),
     pending: row.items.filter((item) => item.recipe === null).length,
     checking: checking.has(row.id),
@@ -126,7 +127,16 @@ async function openPost(fetcher: Fetcher, item: SiteItem) {
     title: recipe.input.name,
     minutes: recipe.input.totalMinutes ?? null,
     image: recipe.imageUrls[0] ?? item.image,
+    description: shortDescription(recipe.input.description),
   }
+}
+
+/** A recipe's description cut to a line or two, at a word. */
+function shortDescription(text: string | null | undefined) {
+  const clean = text?.replace(/\s+/g, " ").trim()
+  if (!clean) return null
+  if (clean.length <= 220) return clean
+  return `${clean.slice(0, 220).replace(/\s+\S*$/, "")}…`
 }
 
 /**

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { storedChoice } from "@/lib/stored-choice"
 
-import { formatMinutes } from "./format"
+import { formatMinutes, formatRelativeDate } from "./format"
 import { RatingStars } from "./rating-stars"
 import { RecipeImage } from "./recipe-image"
 
@@ -34,8 +34,8 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
           alt={recipe.name}
           className="aspect-[4/3] w-full"
         />
-        <div className="flex flex-1 flex-col gap-2 p-4">
-          <h3 className="font-heading text-lg leading-snug font-semibold">
+        <div className="flex flex-1 flex-col gap-2 p-3 sm:p-4">
+          <h3 className="font-heading text-base leading-snug font-semibold sm:text-lg">
             {recipe.name}
           </h3>
           {(time || recipe.rating) && (
@@ -53,15 +53,22 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
               <RatingStars value={recipe.rating} />
             </div>
           )}
-          {recipe.tags.length > 0 && (
+          {(recipe.lastMadeAt || recipe.tags.length > 0) && (
             <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
-              {recipe.tags.slice(0, 3).map((tag) => (
-                <Badge key={tag} variant="secondary">
+              {recipe.lastMadeAt && (
+                <Badge className="bg-accent text-accent-foreground">
+                  Made {formatRelativeDate(recipe.lastMadeAt)}
+                </Badge>
+              )}
+              {recipe.tags.slice(0, recipe.lastMadeAt ? 2 : 3).map((tag) => (
+                <Badge key={tag} variant="secondary" className="max-sm:hidden">
                   {tag}
                 </Badge>
               ))}
-              {recipe.tags.length > 3 && (
-                <Badge variant="outline">+{recipe.tags.length - 3}</Badge>
+              {recipe.tags.length > (recipe.lastMadeAt ? 2 : 3) && (
+                <Badge variant="outline" className="max-sm:hidden">
+                  +{recipe.tags.length - (recipe.lastMadeAt ? 2 : 3)}
+                </Badge>
               )}
             </div>
           )}
@@ -98,6 +105,11 @@ export function RecipeRow({ recipe }: { recipe: RecipeSummary }) {
             </span>
           )}
           <RatingStars value={recipe.rating} />
+          {recipe.lastMadeAt && (
+            <span className="shrink-0 font-medium text-primary">
+              Made {formatRelativeDate(recipe.lastMadeAt)}
+            </span>
+          )}
           {recipe.tags.length > 0 && (
             <span className="truncate">{recipe.tags.join(", ")}</span>
           )}

@@ -67,17 +67,24 @@ export function RecipeFilterBar({
   search,
   onSearch,
   onChange,
+  all,
   shown,
-  total,
 }: {
   filters: RecipeFilters
   search: string
   onSearch: (value: string) => void
   onChange: (change: Partial<RecipeFilters>) => void
+  /** Every recipe the search found, before the filters here. */
+  all: RecipeSummary[]
   shown: RecipeSummary[]
-  total: number
 }) {
   const [managing, setManaging] = React.useState(false)
+  const total = all.length
+  // The most used tags, one tap away.
+  const quick = countTags(all).slice(0, 6)
+  const quickNames = new Set(quick.map((tag) => tag.name.toLowerCase()))
+  const isPicked = (tag: string) =>
+    filters.tags.some((t) => t.toLowerCase() === tag.toLowerCase())
   const searchBox = React.useRef<HTMLInputElement>(null)
   const active =
     filters.tags.length + filters.diets.length + (filters.time ? 1 : 0)
@@ -119,7 +126,7 @@ export function RecipeFilterBar({
   return (
     <div className="mb-6 grid gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <InputGroup className="min-w-0 flex-1 basis-64 md:max-w-md">
+        <InputGroup className="h-11 min-w-0 flex-1 basis-64 rounded-full md:max-w-lg">
           <InputGroupAddon>
             <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
           </InputGroupAddon>
@@ -183,6 +190,41 @@ export function RecipeFilterBar({
         </div>
       </div>
 
+      {quick.length > 1 && (
+        <div
+          role="group"
+          aria-label="Tags"
+          className="-mx-4 flex items-center gap-1.5 overflow-x-auto px-4 md:mx-0 md:flex-wrap md:px-0"
+        >
+          <Button
+            size="sm"
+            variant={filters.tags.length ? "outline" : "default"}
+            aria-pressed={!filters.tags.length}
+            className="shrink-0 rounded-full"
+            onClick={() => onChange({ tags: [] })}
+          >
+            All
+            <span className="tabular-nums opacity-70">{total}</span>
+          </Button>
+          {quick.map((tag) => {
+            const on = isPicked(tag.name)
+            return (
+              <Button
+                key={tag.name}
+                size="sm"
+                variant={on ? "default" : "outline"}
+                aria-pressed={on}
+                className="shrink-0 rounded-full"
+                onClick={() => toggleTag(tag.name)}
+              >
+                <span className="first-letter:uppercase">{tag.name}</span>
+                <span className="tabular-nums opacity-70">{tag.count}</span>
+              </Button>
+            )
+          })}
+        </div>
+      )}
+
       {(active > 0 || filters.q) && (
         <div className="flex flex-wrap items-center gap-2 text-sm">
           <span className="text-muted-foreground">
@@ -194,11 +236,13 @@ export function RecipeFilterBar({
               {DIET_NAMES[diet]}
             </Chip>
           ))}
-          {filters.tags.map((tag) => (
-            <Chip key={tag} onRemove={() => toggleTag(tag)}>
-              {tag}
-            </Chip>
-          ))}
+          {filters.tags
+            .filter((tag) => !quickNames.has(tag.toLowerCase()))
+            .map((tag) => (
+              <Chip key={tag} onRemove={() => toggleTag(tag)}>
+                {tag}
+              </Chip>
+            ))}
           {filters.time && (
             <Chip onRemove={() => onChange({ time: null })}>
               {timeLabel(filters.time)}

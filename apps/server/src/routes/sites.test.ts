@@ -28,6 +28,7 @@ const recipePage = (name: string) =>
   `<html><head><script type="application/ld+json">${JSON.stringify({
     "@type": "Recipe",
     name,
+    description: `A cozy ${name.toLowerCase()} for cold nights.`,
     totalTime: "PT1H",
     image: `https://cook.example/${name.toLowerCase().replace(/ /g, "-")}.jpg`,
     recipeIngredient: ["1 onion"],
@@ -140,6 +141,7 @@ describe("following recipe sites", () => {
         minutes: 60,
         publishedAt: "2026-10-12T05:00:00.000Z",
         inLibrary: null,
+        description: "A cozy classic soup for cold nights.",
       }),
       expect.objectContaining({ url: "https://cook.example/stew/" }),
     ])

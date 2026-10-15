@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCurrentUser } from "@/features/auth/current-user"
+import { SitesSpotlight } from "@/features/discover/sites-spotlight"
 
 import { AddRecipeMenu } from "./add-recipe-menu"
 import { ImportDialog } from "./import-dialog"
@@ -126,13 +127,13 @@ export function RecipesPage() {
           search={search}
           onSearch={setSearch}
           onChange={change}
+          all={all}
           shown={shown}
-          total={all.length}
         />
       )}
 
       {recipes.isPending ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 6 }, (_, i) => (
             <Card key={i} className="gap-0 overflow-hidden py-0">
               <Skeleton className="aspect-[4/3] rounded-none" />
@@ -214,7 +215,7 @@ export function RecipesPage() {
               ))}
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
               {shown.slice(0, revealed).map((recipe) => (
                 <RecipeCard key={recipe.id} recipe={recipe} />
               ))}
@@ -222,6 +223,11 @@ export function RecipesPage() {
           )}
           {shown.length > revealed && <RevealMore onReveal={revealMore} />}
         </>
+      )}
+
+      {/* Once the library's all drawn: what's new on the sites you follow. */}
+      {recipes.isSuccess && !libraryEmpty && shown.length <= revealed && (
+        <SitesSpotlight />
       )}
     </>
   )

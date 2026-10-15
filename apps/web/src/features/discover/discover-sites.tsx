@@ -26,7 +26,7 @@ import {
 const GRID = "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
 
 /** When a post went up: "Today", "3 days ago", "Oct 2". */
-function posted(iso: string | null) {
+export function posted(iso: string | null) {
   if (!iso) return undefined
   const date = new Date(iso)
   const start = (d: Date) =>
@@ -280,7 +280,7 @@ function FollowedRow({ site }: { site: FollowedSite }) {
   )
 }
 
-function FollowForm({
+export function FollowForm({
   onFollow,
   pending,
 }: {

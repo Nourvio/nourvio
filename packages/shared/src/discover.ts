@@ -145,7 +145,11 @@ export const SUGGESTED_SITES: SuggestedSite[] = [
 ]
 
 /** A recipe from a followed site's feed. */
-export type SiteRecipe = FoundRecipe & { publishedAt: string | null }
+export type SiteRecipe = FoundRecipe & {
+  publishedAt: string | null
+  /** The recipe's own short description, when the site gives one. */
+  description: string | null
+}
 
 /** A site the household follows, with its newest recipes. */
 export type FollowedSite = {

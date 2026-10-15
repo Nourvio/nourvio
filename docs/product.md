@@ -45,8 +45,10 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
 - **Finding recipes in a big library:**
   - Search by name, description, tag or ingredient.
   - Filter by diet, tags (several at once, searchable, with counts) and time ("Under 30 min"), and sort by newest, name, rating, recently made or quickest. Filters show as chips you can remove, with "12 of 140 recipes", and live in the URL so a view can be bookmarked.
+  - The six most used tags sit under the search as one-tap buttons with counts ("Dinner 5"), with "All" to clear them.
   - **Tags** can be renamed, merged (rename one to another's name) and deleted for the whole household, for tidying an imported library.
-  - **Cards or a compact list,** remembered on each device. Cards load as you scroll, so thousands of recipes open quickly, and Back from a recipe returns to the same spot. "/" jumps to the search box.
+  - **Cards or a compact list,** remembered on each device, each saying when it was last made ("Made Oct 14"). Cards load as you scroll, so thousands of recipes open quickly, and Back from a recipe returns to the same spot. "/" jumps to the search box. Phones show two cards across.
+- **From your sites,** under the library: the newest recipes from the sites the household follows, one at a time in a big spotlight (photo, site, when it was posted, the recipe's own short description, Import and Open on the site), moving on every 6 seconds with dots, arrows and the next four underneath. It holds still while the pointer or focus is on it, has a pause button, and doesn't move at all for people who've asked their device for less motion. Recipes not in the library yet come first. Before any site is followed, it offers four to start with and a box to paste any site.
 - **Goes with** (mix and match): a recipe can go with sauces, sides and the like, so "chicken + rice" or "pasta" isn't saved a hundred times over:
   - Pick particular recipes, or a whole tag ("any sauce"), so new ones join by themselves. A sauce shows what it pairs with.
   - Tap a pairing on the recipe to see the two as one: the sauce's ingredients and steps first, each under its own heading, the sauce scaled to the servings, nutrition added up and only the diet labels both share. Cooking it walks through both, and the link can be shared.

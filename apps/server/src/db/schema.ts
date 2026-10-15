@@ -446,6 +446,8 @@ export type SiteItem = {
   minutes: number | null
   publishedAt: string | null
   recipe: boolean | null
+  /** The recipe's own short description, once the post is opened. */
+  description?: string | null
 }
 
 /** A recipe site the household follows (Find recipes → Sites). */
