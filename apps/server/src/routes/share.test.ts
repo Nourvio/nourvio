@@ -95,6 +95,39 @@ describe("sharing anything into Mise", () => {
     )
   })
 
+  test("a link a Shortcut turned into a file is still a link", async () => {
+    const video = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    const linkOf = async (file: File) => {
+      const res = await shareFile(file)
+      expect(res.status).toBe(201)
+      return new URL(res.body.url).searchParams.get("link")
+    }
+    // A text file with the address.
+    expect(
+      await linkOf(new File([video], "url.txt", { type: "text/plain" }))
+    ).toBe(video)
+    // The web page itself, downloaded: its own address is in it.
+    const page = `<!DOCTYPE html><html><head><meta property="og:title" content="Tacos"><link rel="canonical" href="https://www.youtube.com/watch?v=dQw4w9WgXcQ&amp;t=1"></head><body>${"x".repeat(5000)}</body></html>`
+    expect(await linkOf(new File([page], "watch", { type: "text/html" }))).toBe(
+      `${video}&t=1`
+    )
+    // The same, with no type at all.
+    expect(await linkOf(new File([page], "watch"))).toBe(`${video}&t=1`)
+    // With the video's preview picture along with it.
+    const both = new FormData()
+    both.append("file", picture)
+    both.append("file", new File([video], "url.txt", { type: "text/plain" }))
+    const res = await t.admin.uploadForm("/api/share", both)
+    expect(new URL(res.body.url).searchParams.get("link")).toBe(video)
+    // A .webloc from the Mac.
+    const webloc = `<?xml version="1.0" encoding="UTF-8"?><plist version="1.0"><dict><key>URL</key><string>${video}</string></dict></plist>`
+    expect(
+      await linkOf(
+        new File([webloc], "Tacos.webloc", { type: "application/x-webloc" })
+      )
+    ).toBe(video)
+  })
+
   test("a long receipt that mentions a website isn't a link", async () => {
     next = "receipt"
     const text = `FRY'S FOOD STORES\n${"KRO 2% MLK 1GAL 3.49\n".repeat(20)}Track your order at https://www.frysfood.com/orders`
@@ -134,6 +167,7 @@ describe("sharing anything into Mise", () => {
     next = "other"
     expect(await open((await shareFile(picture)).body.url)).toEqual({
       kind: "unknown",
+      got: "an image",
     })
   })
 

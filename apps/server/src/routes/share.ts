@@ -1,10 +1,9 @@
-import { sharedLink } from "@mise/shared"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 
 import { requireUser } from "../auth/middleware.ts"
 import { currentHousehold, currentUser, type AppEnv } from "../context.ts"
-import type { ShareService } from "../services/share.ts"
+import { linkIn, type ShareService } from "../services/share.ts"
 import type { SignInLinks } from "../services/sign-in-links.ts"
 import { openLink, readUpload } from "./uploads.ts"
 
@@ -32,7 +31,7 @@ export function shareRoutes(share: ShareService, signInLinks: SignInLinks) {
         return c.json({ error: "Nothing came through to share" }, 400)
       }
       // A link needs nothing kept: the page imports it.
-      const link = shared.files.length ? null : sharedLink(shared.text)
+      const link = linkIn(shared)
       const path = link
         ? `/share?link=${encodeURIComponent(link)}`
         : `/share?inbox=${share.keep(currentHousehold(c), shared)}`

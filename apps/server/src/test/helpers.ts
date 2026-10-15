@@ -105,9 +105,14 @@ export function apiClient(app: App) {
   }
 
   /** A multipart upload, the way the browser sends a file. */
-  async function upload(path: string, field: string, file: File) {
+  function upload(path: string, field: string, file: File) {
     const form = new FormData()
     form.append(field, file)
+    return uploadForm(path, form)
+  }
+
+  /** A form with any number of files and fields. */
+  async function uploadForm(path: string, form: FormData) {
     const res = await app.request(path, {
       method: "POST",
       headers: { origin: "http://localhost", ...(cookie ? { cookie } : {}) },
@@ -149,6 +154,7 @@ export function apiClient(app: App) {
     patch: (path: string, body?: unknown) => request("PATCH", path, body),
     delete: (path: string) => request("DELETE", path),
     upload,
+    uploadForm,
     get signedIn() {
       return cookie !== ""
     },

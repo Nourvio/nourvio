@@ -15,7 +15,7 @@ import { forgetShared, readShared } from "./shared-files"
 type Step =
   | { state: "working"; what: string; detail?: string }
   | { state: "failed"; message: string; link?: string }
-  | { state: "unknown" }
+  | { state: "unknown"; got: string }
   | { state: "unsupported" }
 
 const hostOf = (link: string) => {
@@ -92,7 +92,7 @@ export function SharePage() {
           toast.success(`Added ${result.name} to your recipes`)
           return navigate(`/recipes/${result.slug}`, { replace: true })
         }
-        setStep({ state: "unknown" })
+        setStep({ state: "unknown", got: result.got })
       } catch (error) {
         fail(error)
       }
@@ -163,7 +163,7 @@ export function SharePage() {
               className="mt-0.5 size-4 shrink-0"
             />
             {step.state === "unknown"
-              ? "Mise couldn't tell what that was: it doesn't look like a receipt or a recipe."
+              ? `Mise couldn't tell what that was: it doesn't look like a receipt, a recipe or a link. It got ${step.got}.`
               : step.message}
           </p>
           <div className="flex flex-wrap gap-2">

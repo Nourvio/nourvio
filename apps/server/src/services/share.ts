@@ -17,6 +17,79 @@ import {
 } from "./receipts.ts"
 import { createRecipe } from "./recipes.ts"
 
+/** Text-like files are read for a link up to this size. */
+const MAX_TEXT_FILE = 2 * 1024 * 1024
+
+/**
+ * Whether a shared file is really text: a Shortcut turns a shared link into
+ * a file, a text file with the address or the web page itself, sometimes
+ * with no type at all. Pictures and PDFs aren't.
+ */
+function isTextLike(file: ReceiptFiles[number]) {
+  if (isPdf(file) || file.buffer.length > MAX_TEXT_FILE) return false
+  if (
+    file.type.startsWith("text/") ||
+    /url|uri|xml|json|webloc|internet-shortcut/.test(file.type)
+  ) {
+    return true
+  }
+  if (file.type && file.type !== "application/octet-stream") return false
+  return !file.buffer.subarray(0, 4096).includes(0)
+}
+
+/** A web page's own address: its canonical link, else its og:url. */
+function pageAddress(html: string) {
+  for (const tag of html.match(/<(link|meta)\b[^>]*>/gi) ?? []) {
+    const attr = (name: string) =>
+      tag.match(new RegExp(`\\b${name}\\s*=\\s*["']([^"']+)["']`, "i"))?.[1]
+    const isPage =
+      /^canonical$/i.test(attr("rel") ?? "") ||
+      /^og:url$/i.test(attr("property") ?? "")
+    const value = attr("href") ?? attr("content")
+    if (isPage && value && /^https?:\/\//i.test(value)) {
+      return value.replace(/&amp;/g, "&")
+    }
+  }
+  return null
+}
+
+const isHtml = (text: string) =>
+  /^\s*(<!doctype html|<html|<head)/i.test(text.slice(0, 1000))
+
+/**
+ * The link in a share, when sharing a link is the point: in the text, or in
+ * the files a Shortcut made of it (a text file with the address, a .webloc,
+ * or the web page itself, whose own address it carries). A picture that
+ * comes along is the link's preview; a PDF, or only a long text like a
+ * receipt, means it isn't a link.
+ */
+export function linkIn(shared: { files: ReceiptFiles; text: string | null }) {
+  if (shared.files.some(isPdf)) return null
+  for (const file of shared.files.filter(isTextLike)) {
+    const content = file.buffer.toString("utf8")
+    const found = isHtml(content) ? pageAddress(content) : sharedLink(content)
+    if (found) return found
+  }
+  return sharedLink(shared.text)
+}
+
+/** What came through, for "Mise couldn't tell what that was". */
+function described(shared: { files: ReceiptFiles; text: string | null }) {
+  const kinds = shared.files.map((file) =>
+    isPdf(file)
+      ? "a PDF"
+      : file.type.startsWith("image/")
+        ? "an image"
+        : isTextLike(file)
+          ? isHtml(file.buffer.toString("utf8", 0, 1000))
+            ? "a web page"
+            : "a text file"
+          : `a file (${file.type || "no type"})`
+  )
+  if (shared.text) kinds.push("some text")
+  return [...new Set(kinds)].join(" and ") || "nothing"
+}
+
 /** Something shared waits this long for Mise to open and deal with it. */
 const KEEP_MS = 30 * 60_000
 /** Recipe photos read at once, as the photo import allows. */
@@ -106,7 +179,7 @@ export function createShareService(
       )
     }
     waiting.delete(id)
-    const link = kept.files.length ? null : sharedLink(kept.text)
+    const link = linkIn(kept)
     if (link) return { kind: "link", link }
 
     const { draft, what } = await receipts.read(actor, kept)
@@ -117,7 +190,7 @@ export function createShareService(
     if (what === "receipt" || draft.items.length) {
       return { kind: "receipt", id: draft.id }
     }
-    return { kind: "unknown" }
+    return { kind: "unknown", got: described(kept) }
   }
 
   return { keep, open }

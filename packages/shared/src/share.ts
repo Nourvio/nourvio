@@ -6,8 +6,8 @@ export type ShareResult =
   | { kind: "receipt"; id: string }
   /** A recipe from photos or text, already in the library. */
   | { kind: "recipe"; slug: string; name: string }
-  /** Mise couldn't tell what it was. */
-  | { kind: "unknown" }
+  /** Mise couldn't tell what it was; `got` says what came through ("an image"). */
+  | { kind: "unknown"; got: string }
 
 /**
  * The link in what was shared, when sharing it is the point: a link on its
