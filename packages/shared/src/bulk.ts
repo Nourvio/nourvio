@@ -79,12 +79,13 @@ export const planBulkInput = z.discriminatedUnion("action", [
 ])
 export type PlanBulkInput = z.infer<typeof planBulkInput>
 
-/** Whole-week actions on the plan (`POST /api/plan/week`). */
+/**
+ * Whole-week actions on the plan (`POST /api/plan/week`). Clearing the
+ * rest of a week is a bulk delete, so it can be undone.
+ */
 export const planWeekInput = z.discriminatedUnion("action", [
   /** Last week's meals onto the same days of this one, where they're empty. */
   z.object({ action: z.literal("repeat"), start: isoDate }),
-  /** Everything planned from `from` to the end of the week comes off. */
-  z.object({ action: z.literal("clear"), from: isoDate, to: isoDate }),
 ])
 export type PlanWeekInput = z.infer<typeof planWeekInput>
 

@@ -23,7 +23,7 @@ import {
   type WeeklyItem,
   type WeeklyItemInput,
 } from "@mise/shared"
-import { and, asc, eq, gte, inArray, isNull, lte } from "drizzle-orm"
+import { and, asc, eq, gte, inArray, isNull, lte, type SQL } from "drizzle-orm"
 import { z } from "zod"
 
 import type { Db } from "../db/client.ts"
@@ -508,6 +508,36 @@ export async function addFromPlan(
   from: string,
   to: string
 ): Promise<AddFromPlanResult> {
+  const listed = await listPlanned(
+    db,
+    householdId,
+    and(gte(mealPlanEntries.date, from), lte(mealPlanEntries.date, to))!
+  )
+  const weekly = await addWeeklyItems(db, householdId)
+  return {
+    meals: listed.meals,
+    added: listed.added,
+    merged: listed.merged,
+    weekly,
+    onHand: listed.skipped,
+    inPantry: listed.inPantry,
+  }
+}
+
+/**
+ * Selected planned meals' ingredients onto the list, the way adding from
+ * the plan does it. Meals on the list already are left alone.
+ */
+export function addEntriesToList(db: Db, householdId: string, ids: string[]) {
+  return listPlanned(db, householdId, inArray(mealPlanEntries.id, ids))
+}
+
+/**
+ * Planned meals not on the list yet, of those `which` picks: their
+ * ingredients, scaled to the planned servings, onto the list, and the
+ * meals marked as listed.
+ */
+async function listPlanned(db: Db, householdId: string, which: SQL) {
   const entries = await db
     .select({
       id: mealPlanEntries.id,
@@ -521,10 +551,9 @@ export async function addFromPlan(
       and(
         eq(mealPlanEntries.householdId, householdId),
         isNull(recipes.deletedAt),
-        gte(mealPlanEntries.date, from),
-        lte(mealPlanEntries.date, to),
         eq(mealPlanEntries.status, "planned"),
-        isNull(mealPlanEntries.listedAt)
+        isNull(mealPlanEntries.listedAt),
+        which
       )
     )
 
@@ -555,15 +584,7 @@ export async function addFromPlan(
         )
       )
   }
-  const weekly = await addWeeklyItems(db, householdId)
-  return {
-    meals: entries.length,
-    added,
-    merged,
-    weekly,
-    onHand: skipped,
-    inPantry,
-  }
+  return { meals: entries.length, added, merged, skipped, inPantry }
 }
 
 /**

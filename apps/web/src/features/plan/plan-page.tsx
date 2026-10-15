@@ -3,8 +3,13 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
+  Calendar03Icon,
+  Delete02Icon,
+  MoreHorizontalIcon,
   ShoppingBasket01Icon,
+  ShoppingBasketAdd01Icon,
   SparklesIcon,
+  Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import {
   addDays,
@@ -16,26 +21,46 @@ import {
   costShown,
   weekdayOf,
   type Meal,
+  type PlanBulkInput,
   type PlanEntry,
 } from "@mise/shared"
 import { useSearchParams } from "react-router"
+import { toast } from "sonner"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useChatScreen } from "@/features/chat/chat-provider"
 import { AddFromPlanDialog } from "@/features/list/add-from-plan-dialog"
 import { useRecipeCosts } from "@/features/recipes/use-recipes"
+import {
+  SelectionBar,
+  SelectionHeader,
+  useSelectionKeepOnly,
+} from "@/features/select/selection-bar"
+import { undoable, useHidden } from "@/features/select/undo"
+import { useSelection } from "@/features/select/use-selection"
 import { useHouseholdInfo } from "@/features/settings/use-household"
+import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 import { AddEntryDialog } from "./add-entry-dialog"
 import { shortDayName, today, weekLabel } from "./dates"
-import { DayCard } from "./day-card"
+import { DayCard, type EntrySelect } from "./day-card"
 import { EditEntryDialog } from "./edit-entry-dialog"
 import { FillWeekDialog } from "./fill-week-dialog"
+import { MoveMealsDialog } from "./move-meals-dialog"
 import { findNextMeal, NextMealCard, useMinute } from "./next-meal"
-import { usePlan } from "./use-plan"
+import { usePlan, usePlanBulk, useRepeatWeek } from "./use-plan"
+
+const mealsCount = (n: number) => `${n} ${n === 1 ? "meal" : "meals"}`
 
 /**
  * The week's meals: what's next, big, then a card for each day with its
@@ -79,11 +104,85 @@ export function PlanPage() {
     )
   }
 
-  const entries = plan.data ?? []
+  const isHidden = useHidden()
+  const entries = (plan.data ?? []).filter((entry) => !isHidden(entry.id))
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i))
   const isThisWeek = start === thisWeek
   // This week, days gone by fold into a line; other weeks show every day.
   const past = isThisWeek ? days.filter((date) => date < now) : []
+  const shownDays = days.filter((date) => showPast || !past.includes(date))
+
+  // Select mode, over the meals on the days showing.
+  const selection = useSelection()
+  const bulk = usePlanBulk()
+  const repeat = useRepeatWeek()
+  const [moving, setMoving] = React.useState(false)
+  const selectable = entries
+    .filter((entry) => shownDays.includes(entry.date))
+    .map((entry) => entry.id)
+  useSelectionKeepOnly(selection, selectable)
+  const pickedIds = selectable.filter((id) => selection.isPicked(id))
+  const selectOf = (id: string): EntrySelect => ({
+    selecting: selection.selecting,
+    picked: selection.isPicked(id),
+    onToggle: () => selection.toggle(id),
+    onLongPress: () => selection.start(id),
+  })
+  // What "Clear the rest of the week" takes: meals still to come.
+  const clearable = entries.filter(
+    (entry) => entry.status === "planned" && (!isThisWeek || entry.date >= now)
+  )
+
+  const failed = (error: unknown) =>
+    toast.error(error instanceof ApiError ? error.message : "That didn't work")
+
+  /** Off the plan, with Undo. */
+  function remove(ids: string[], message: string) {
+    undoable({
+      message,
+      ids,
+      commit: () => bulk.mutateAsync({ action: "delete", ids }),
+    })
+  }
+
+  function run(input: PlanBulkInput, said: (changed: number) => string) {
+    setMoving(false)
+    bulk.mutate(input, {
+      onSuccess: ({ changed }) => {
+        toast.success(said(changed))
+        selection.done()
+      },
+      onError: failed,
+    })
+  }
+
+  function repeatLastWeek() {
+    repeat.mutate(start, {
+      onSuccess: (added) => {
+        if (!added.length) {
+          toast(
+            "Nothing to bring over: last week was empty, or those days are full"
+          )
+          return
+        }
+        toast.success(
+          `Brought over ${mealsCount(added.length)} from last week`,
+          {
+            duration: 10_000,
+            action: {
+              label: "Undo",
+              onClick: () =>
+                bulk.mutate({
+                  action: "delete",
+                  ids: added.map((entry) => entry.id),
+                }),
+            },
+          }
+        )
+      },
+      onError: failed,
+    })
+  }
   const next = isThisWeek ? findNextMeal(ahead.data ?? [], minute) : null
   const label = isThisWeek
     ? "This week"
@@ -99,28 +198,72 @@ export function PlanPage() {
         title="Plan"
         description={`${label ? `${label}, ` : ""}${weekLabel(start)}`}
         actions={
-          <>
-            <Button
-              variant="outline"
-              disabled={!plan.data || !household.data}
-              onClick={() => setFilling(true)}
-            >
-              <HugeiconsIcon
-                icon={SparklesIcon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              Fill the week
-            </Button>
-            <Button onClick={() => setListing(true)}>
-              <HugeiconsIcon
-                icon={ShoppingBasket01Icon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              Add to list
-            </Button>
-          </>
+          selection.selecting ? (
+            <SelectionHeader selection={selection} allIds={selectable} />
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                disabled={!plan.data || !household.data}
+                onClick={() => setFilling(true)}
+              >
+                <HugeiconsIcon
+                  icon={SparklesIcon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                />
+                Fill the week
+              </Button>
+              <Button onClick={() => setListing(true)}>
+                <HugeiconsIcon
+                  icon={ShoppingBasket01Icon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                />
+                Add to list
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="More plan options"
+                  >
+                    <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    disabled={!selectable.length}
+                    onSelect={() => selection.start()}
+                  >
+                    Select meals
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={repeat.isPending}
+                    onSelect={repeatLastWeek}
+                  >
+                    Repeat last week
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={!clearable.length}
+                    onSelect={() =>
+                      remove(
+                        clearable.map((entry) => entry.id),
+                        `Cleared ${mealsCount(clearable.length)}`
+                      )
+                    }
+                  >
+                    {isThisWeek
+                      ? "Clear the rest of the week"
+                      : "Clear the week"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )
         }
       />
 
@@ -185,29 +328,100 @@ export function PlanPage() {
                 onToggle={() => setShowPast((open) => !open)}
               />
             )}
-            {days
-              .filter((date) => showPast || !past.includes(date))
-              .map((date) => (
-                <DayCard
-                  key={date}
-                  date={date}
-                  isToday={date === now}
-                  isPast={date < now}
-                  meals={meals}
-                  entries={entries.filter((entry) => entry.date === date)}
-                  onAdd={(meal) => setAdding({ date, meal })}
-                  onEdit={setEditing}
-                  theme={
-                    meals.includes("dinner")
-                      ? (household.data?.themes[weekdayOf(date)] ?? null)
-                      : null
-                  }
-                />
-              ))}
+            {shownDays.map((date) => (
+              <DayCard
+                key={date}
+                date={date}
+                isToday={date === now}
+                isPast={date < now}
+                meals={meals}
+                entries={entries.filter((entry) => entry.date === date)}
+                onAdd={(meal) => setAdding({ date, meal })}
+                onEdit={setEditing}
+                selectOf={selectOf}
+                theme={
+                  meals.includes("dinner")
+                    ? (household.data?.themes[weekdayOf(date)] ?? null)
+                    : null
+                }
+              />
+            ))}
           </>
         )}
       </div>
 
+      <SelectionBar
+        selection={selection}
+        actions={[
+          {
+            label: "Move",
+            icon: Calendar03Icon,
+            onSelect: () => setMoving(true),
+          },
+          {
+            label: "Add to list",
+            icon: ShoppingBasketAdd01Icon,
+            onSelect: () =>
+              run({ action: "toList", ids: pickedIds }, (changed) =>
+                changed
+                  ? `${changed} ${changed === 1 ? "thing" : "things"} on the list`
+                  : "Those are on the list already"
+              ),
+          },
+          {
+            label: "Cooked",
+            icon: Tick02Icon,
+            onSelect: () =>
+              run(
+                { action: "status", ids: pickedIds, status: "cooked" },
+                (changed) => `Marked ${mealsCount(changed)} cooked`
+              ),
+          },
+          {
+            label: "Remove",
+            icon: Delete02Icon,
+            destructive: true,
+            onSelect: () => {
+              remove(
+                pickedIds,
+                `Removed ${mealsCount(pickedIds.length)} from the plan`
+              )
+              selection.done()
+            },
+          },
+        ]}
+        more={[
+          {
+            label: "Skip",
+            onSelect: () =>
+              run(
+                { action: "status", ids: pickedIds, status: "skipped" },
+                (changed) => `Skipped ${mealsCount(changed)}`
+              ),
+          },
+          {
+            label: "Back to planned",
+            onSelect: () =>
+              run(
+                { action: "status", ids: pickedIds, status: "planned" },
+                (changed) => `${mealsCount(changed)} back in the plan`
+              ),
+          },
+        ]}
+      />
+      <MoveMealsDialog
+        count={pickedIds.length}
+        start={start}
+        meals={meals}
+        open={moving}
+        onOpenChange={setMoving}
+        onPick={(date, meal) =>
+          run(
+            { action: "move", ids: pickedIds, date, meal },
+            (changed) => `Moved ${mealsCount(changed)} to ${shortDayName(date)}`
+          )
+        }
+      />
       <AddEntryDialog slot={adding} onClose={() => setAdding(null)} />
       <FillWeekDialog
         open={filling}

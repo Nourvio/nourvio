@@ -164,7 +164,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/updates", updateRoutes(updates))
   app.route("/api/shop", shopRoutes(ctx, shop))
   app.route("/api/extension", extensionRoutes(ctx))
-  app.route("/api/plan", planRoutes(ctx))
+  app.route("/api/plan", planRoutes(ctx, events))
   app.route("/api/list", listRoutes(ctx, events))
   app.route("/api/events", eventRoutes(events))
   app.route("/api/receipts", receiptRoutes(receipts, events, signInLinks))

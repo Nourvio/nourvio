@@ -1,7 +1,9 @@
 import type {
   AddPlanEntriesInput,
   AddPlanEntryInput,
+  BulkResult,
   MealSuggestion,
+  PlanBulkInput,
   PlanEntry,
   SuggestMealsInput,
   UpdatePlanEntryInput,
@@ -19,6 +21,46 @@ export function usePlan(from: string, to: string) {
     queryFn: async () =>
       (await api<{ entries: PlanEntry[] }>(`/plan?from=${from}&to=${to}`))
         .entries,
+  })
+}
+
+/**
+ * Selected meals all at once. It settles once the plan (and whatever else
+ * changed with it) has been fetched again.
+ */
+export function usePlanBulk() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: PlanBulkInput) =>
+      api<BulkResult>("/plan/bulk", { body: input }),
+    onSuccess: (_result, input) =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: PLAN_KEY }),
+        input.action === "toList" &&
+          queryClient.invalidateQueries({ queryKey: ["list"] }),
+        // Cooking (or taking it back) changes the pantry and when recipes
+        // were last made.
+        input.action === "status" &&
+          Promise.all([
+            queryClient.invalidateQueries({ queryKey: ["pantry"] }),
+            queryClient.invalidateQueries({ queryKey: ["recipes"] }),
+            queryClient.invalidateQueries({ queryKey: ["recipe"] }),
+          ]),
+      ]),
+  })
+}
+
+/** Last week's meals again, where the week starting `start` is empty. */
+export function useRepeatWeek() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (start: string) =>
+      (
+        await api<{ entries: PlanEntry[] }>("/plan/week", {
+          body: { action: "repeat", start },
+        })
+      ).entries,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: PLAN_KEY }),
   })
 }
 

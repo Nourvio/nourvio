@@ -31,12 +31,23 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { formatMinutes } from "@/features/recipes/format"
 import { RecipeImage } from "@/features/recipes/recipe-image"
+import { SelectMark } from "@/features/select/select-mark"
+import { useLongPress } from "@/features/select/use-selection"
 import { cn } from "@/lib/utils"
 
 import { cookLink } from "./cook-link"
 import { dayName, monthDay } from "./dates"
 import { EntryPairingDialog } from "./entry-pairing-dialog"
 import { useRemovePlanEntry, useSetEntryStatus, useSwapEntry } from "./use-plan"
+
+/** A meal's part in select mode on the Plan. */
+export type EntrySelect = {
+  selecting: boolean
+  picked: boolean
+  onToggle: () => void
+  /** A long press on a phone, which starts selecting with this one. */
+  onLongPress: () => void
+}
 
 /**
  * One day of the plan, full width, with its meals side by side when there's
@@ -52,6 +63,7 @@ export function DayCard({
   onAdd,
   onEdit,
   theme = null,
+  selectOf,
 }: {
   date: string
   isToday: boolean
@@ -62,6 +74,7 @@ export function DayCard({
   onEdit: (entry: PlanEntry) => void
   /** The night's theme, for dinner. */
   theme?: NightTheme | null
+  selectOf?: (id: string) => EntrySelect
 }) {
   const id = React.useId()
   const byMeal = new Map<Meal, PlanEntry[]>()
@@ -124,6 +137,7 @@ export function DayCard({
                     key={entry.id}
                     entry={entry}
                     onEdit={() => onEdit(entry)}
+                    select={selectOf?.(entry.id)}
                   />
                 ))}
               </ul>
@@ -180,10 +194,17 @@ function DayNutrition({ entries }: { entries: PlanEntry[] }) {
 function EntryTile({
   entry,
   onEdit,
+  select,
 }: {
   entry: PlanEntry
   onEdit: () => void
+  select?: EntrySelect
 }) {
+  const selecting = select?.selecting ?? false
+  const press = useLongPress(
+    () => select?.onLongPress(),
+    Boolean(select && !selecting)
+  )
   const [pairing, setPairing] = React.useState(false)
   const remove = useRemovePlanEntry()
   const { swap } = useSwapEntry()
@@ -195,8 +216,49 @@ function EntryTile({
   const setStatus = (status: PlanEntry["status"], message: string) =>
     setEntryStatus(entry, status, message)
 
+  if (selecting) {
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={select?.onToggle}
+          aria-pressed={select?.picked}
+          className={cn(
+            "flex min-h-17 w-full items-center gap-3 rounded-2xl bg-muted/50 p-2.5 text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+            select?.picked && "bg-accent ring-2 ring-primary"
+          )}
+        >
+          <SelectMark picked={select?.picked ?? false} className="shrink-0" />
+          <span className="grid min-w-0 flex-1 gap-0.5">
+            <span
+              className={cn(
+                "truncate font-medium",
+                skipped && "text-muted-foreground line-through"
+              )}
+            >
+              {recipe?.name ?? entry.note}
+              {entry.with && (
+                <span className="font-normal text-muted-foreground">
+                  {" "}
+                  with {entry.with.name}
+                </span>
+              )}
+            </span>
+            <span className="truncate text-xs text-muted-foreground">
+              {cooked ? "Cooked" : skipped ? "Skipped" : "Planned"}
+              {entry.listed && entry.status === "planned" && " · On the list"}
+            </span>
+          </span>
+        </button>
+      </li>
+    )
+  }
+
   return (
-    <li className="flex min-h-17 items-center gap-3 rounded-2xl bg-muted/50 p-2.5">
+    <li
+      className="flex min-h-17 items-center gap-3 rounded-2xl bg-muted/50 p-2.5"
+      {...press}
+    >
       {recipe ? (
         <RecipeImage
           src={recipe.thumbnailUrl}

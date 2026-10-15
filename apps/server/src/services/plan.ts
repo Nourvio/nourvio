@@ -1,7 +1,9 @@
 import {
+  addDays,
   daysBetween,
   type AddPlanEntryInput,
   type Nutrition,
+  type PlanBulkInput,
   type PlanEntry,
   type UpdatePlanEntryInput,
 } from "@mise/shared"
@@ -309,6 +311,105 @@ async function cooked(db: Db, householdId: string, id: string) {
 export async function deleteEntry(db: Db, householdId: string, id: string) {
   const current = await findEntry(db, householdId, id)
   await db.delete(mealPlanEntries).where(eq(mealPlanEntries.id, current.id))
+}
+
+/**
+ * Selected meals all at once (`POST /api/plan/bulk`): removed, moved to
+ * another day (and meal), or marked cooked, skipped or planned again, each
+ * as if done one at a time, so cooking still uses up the pantry. Onto the
+ * list is the route's, with the list. Returns how many changed.
+ */
+export async function bulkPlanEntries(
+  db: Db,
+  householdId: string,
+  input: Exclude<PlanBulkInput, { action: "toList" }>
+) {
+  const rows = await db
+    .select()
+    .from(mealPlanEntries)
+    .where(
+      and(
+        eq(mealPlanEntries.householdId, householdId),
+        inArray(mealPlanEntries.id, input.ids)
+      )
+    )
+    .orderBy(
+      asc(mealPlanEntries.date),
+      asc(mealPlanEntries.position),
+      asc(mealPlanEntries.createdAt)
+    )
+  if (input.action === "delete") {
+    if (rows.length) {
+      await db.delete(mealPlanEntries).where(
+        inArray(
+          mealPlanEntries.id,
+          rows.map((row) => row.id)
+        )
+      )
+    }
+    return rows.length
+  }
+  let changed = 0
+  for (const row of rows) {
+    if (input.action === "status") {
+      if (row.status === input.status) continue
+      await updateEntry(db, householdId, row.id, { status: input.status })
+    } else {
+      await updateEntry(db, householdId, row.id, {
+        date: input.date,
+        meal: input.meal,
+      })
+    }
+    changed++
+  }
+  return changed
+}
+
+/**
+ * Last week's meals again: each onto the same day and meal of the week
+ * starting `start`, where that meal is empty. Skipped ones stay behind.
+ * Returns what was added.
+ */
+export async function repeatLastWeek(
+  db: Db,
+  householdId: string,
+  start: string,
+  userId: string | null
+) {
+  const last = await listEntries(
+    db,
+    householdId,
+    addDays(start, -7),
+    addDays(start, -1)
+  )
+  const taken = new Set(
+    (await listEntries(db, householdId, start, addDays(start, 6))).map(
+      (entry) => `${entry.date}|${entry.meal}`
+    )
+  )
+  const added: PlanEntry[] = []
+  for (const entry of last) {
+    const date = addDays(entry.date, 7)
+    if (entry.status === "skipped" || taken.has(`${date}|${entry.meal}`)) {
+      continue
+    }
+    added.push(
+      await addEntry(
+        db,
+        householdId,
+        {
+          date,
+          meal: entry.meal,
+          ...(entry.recipe
+            ? { recipeId: entry.recipe.id, withRecipeId: entry.with?.id }
+            : { note: entry.note ?? "A note" }),
+          servings: entry.servings,
+        },
+        userId
+      )
+    )
+  }
+  return added
 }
 
 /**

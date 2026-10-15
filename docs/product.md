@@ -63,6 +63,11 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
   - Cautious on purpose: a label only shows when nothing in the ingredients rules it out. Plain "stock" might be chicken, soy sauce has wheat, "tortillas" are taken to be flour, and oats need to say gluten-free. Phrases like "vegetable broth", "corn tortillas", "peanut butter" and "butternut squash" are understood.
   - Each label says what ruled it out ("2 tbsp butter"), and the household can correct any recipe. Corrections stick when the recipe is edited.
   - Shown on the recipe as links to similar recipes, and available as a filter and to the assistant.
+- **New:** a recipe that hasn't been cooked yet says "New" on its card, and Recipes has a **New** quick filter. It goes by itself the first time it's made, so there's nothing to tag or untag.
+- **Select** (Recipes → Select, or a long press on a phone): tick recipes, then act on them all from a bar at the bottom.
+  - Add to plan (one each on the next open dinners, shown first), put their ingredients on the list, add or take off tags, or delete.
+  - Under More: tidy up with AI, work out nutrition, make photos (these carry on in the background), or export them as a JSON file.
+- **Recently deleted:** deleting a recipe moves it there for 30 days, with Undo straight away. While it's deleted it's off the plan, tags, costs, sales and suggestions, and it all comes back if it's restored. A link at the bottom of Recipes opens it to restore one or delete it for good; after 30 days recipes go by themselves, photos too.
 
 ### 2. Adding recipes
 
@@ -70,6 +75,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
 |---|---|
 | Link | Paste a URL. We read the structured recipe data most sites embed, and use AI when a site doesn't have it. Importing the same link twice offers the existing recipe instead. |
 | Video | Paste a TikTok, YouTube or Instagram link. We read the caption, the captions or spoken words (transcribing needs an OpenAI key) and, for short videos, frames from the video, and AI writes up the recipe. |
+| Several links | Add recipe → **Several links at once**: paste links any old way (a list from a note, a message, one per line). Mise lists the recipe pages and videos it found, skips ones already in the library, and can tag the new ones ("to try"). They import in the background, recipe pages three at a time and videos one at a time, carrying on after the page closes or the server restarts. A page follows along live with each link: waiting, importing, added, already had, or why it didn't work, with Try again and Stop. Recipes shows "Importing recipes: 6 of 10" while it runs, then how it went. |
 | Text | Paste anything, like a ChatGPT answer or an email. AI turns it into a recipe. |
 | Photo | Take one or more photos of a cookbook page or a handwritten card. AI reads them. |
 | Manual | Type ingredients one per line and steps one per line. A line starting with `#` starts a section. |
@@ -80,7 +86,7 @@ Mise puts an AI assistant at the center and builds planning, pantry and shopping
 | Discover with AI | Find recipes → **Discover with AI**: type what you're in the mood for ("cozy fall soups", "a new pasta") or tap an idea, and the assistant searches the web for about eight recipes that fit the household's tastes and rules, from at least a few different sites. Mise opens each one first and keeps only pages it can import, with their photo, time and a line on why it's a good pick. A search takes under a minute and costs about 6¢ (a small model plus a few web searches). The last twelve searches are kept to come back to. |
 | Sites | Find recipes → **Sites**: follow a recipe site by pasting its address, or pick from suggestions that are checked to work (RecipeTin Eats, BBC Good Food, Love and Lemons, Pinch of Yum, Once Upon a Chef and more). Mise reads the site's feed every few hours and opens each new post, a few seconds apart, to keep only the real recipes (not roundups, gear reviews or news), so the page shows each site's newest recipes with photos and times, ready to import. Filter by site, or unfollow any time. A site without a feed, without recipe details, or that turns Mise away shows nothing, and says so. |
 
-**Sharing in.** On Android, the installed app shows up in the share sheet, so a recipe page or a TikTok can be sent straight to Mise. iPhones don't let web apps do that; copy the link and use **Paste** in the import dialog (or an iOS Shortcut that opens `/recipes?url=…`).
+**Sharing in.** On Android, the installed app shows up in the share sheet, so a recipe page or a TikTok can be sent straight to Mise. Sharing several links at once starts the same bulk import as Several links. iPhones don't let web apps do that; copy the link and use **Paste** in the import dialog (or an iOS Shortcut that opens `/recipes?url=…`).
 
 **Cleaning up.** Imported recipes are often messy. A **Tidy up** button, or a request in chat, has the AI:
 
@@ -144,6 +150,8 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 - Mark each planned meal **cooked** (same as "I made this") or **skipped**.
 - **The assistant** knows which week you're looking at. Ask it to fill the dinners or plan easy lunches, and it offers the meals as a card you add with one tap.
 - **Food that needs using comes first:** Fill the week gives each item under "Use soon" in the pantry a recipe that uses it, as early in the week as one fits, and says so ("Uses up your spinach"). A skipped meal doesn't count toward no-repeats, so it can come straight back.
+- **Select meals** (Plan → ⋯, or a long press on a phone): move them to another day this week or next (and another meal, if you like), mark them cooked, skipped or planned again (cooking still uses up the pantry), put them on the list, or remove them with Undo.
+- **The week's ⋯ menu** also has **Repeat last week** (last week's meals onto the same days, where they're empty; skipped ones stay behind; with Undo) and **Clear the rest of the week** (what's still planned from today on, or the whole week for another week; with Undo).
 - *Later:* saved plan rules, and AI-ranked suggestions.
 
 ### 5. Shopping list
@@ -163,6 +171,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 - The assistant can offer items to add, as a card.
 - The list goes to the store (see 7), and can be split into a list per store.
 - **Lists by store.** Split the list in two or more (List → ⋯ → Split into lists by store): say Costco for meat and soda, and the main list for everything else. Each list can take whole aisles, and moving something to another list (tap it, then pick the list) teaches Mise that food goes there from now on. Tabs switch between lists, and each store's button sends only its list: Send to Fry's sends the Fry's list, Shop at Costco shows the Costco list.
+- **Select** (List → ⋯ → Select, or a long press on a phone): move items to another list or aisle (remembered for next time), make them every-week, or remove them, with Undo. ⋯ → **Clear the list** empties the list showing, with Undo. Undo keeps them hidden until they're really gone, so someone else's change in the meantime doesn't bring them back.
 
 ### 6. Pantry
 
@@ -178,6 +187,8 @@ The assistant is the center of the app. It's one tap away on every screen, and i
   - Fresh food gets a rough use-by date when it comes in (meat and fish 3 days, bread and deli 5, produce a week, nothing for onions, potatoes and other keepers). Edit or clear it any time.
   - Fresh food bought for a meal that was skipped, or went by uncooked, shows as "Bought for Tacos, which was skipped". Paprika bought for it doesn't.
 - Mark something **used up** (with an undo), or send it back to the list.
+- **Select** (Pantry → ⋯ → Select, or a long press on a phone): mark things used up (with Undo), put them on the list again (skipping what's on it already), move them to another aisle (remembered), or give them a use-by date. While selecting, the Use soon cards pick their item too.
+- **Toss the 3 past their date** on the Use soon card, and ⋯ → **Clear the pantry**, both with Undo.
 - *Later:* barcode scanning, and the assistant updating the pantry.
 
 ### 7. Store connections
