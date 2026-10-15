@@ -238,6 +238,39 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 
 **Done when:** the List shows this week's Fry's sales and savings without opening the cart review, a week the autopilot plans uses more of what's on sale and says so, and a sale item shows what it usually costs.
 
+## Milestone 12: On the home screen, with reminders
+
+**Status:** planned October 14, 2026, and on hold: the user wants it documented and built later. The user wants a morning nudge like "pull the chicken out", and a one-tap way to put Mise on the home screen that their parents could manage.
+
+Choices made in the plan, open to change when it's picked up: frozen food is known from a new **In the freezer** toggle in the pantry (otherwise thaw reminders could only guess), and reminder times are per person, so only whoever cooks gets them.
+
+What's there today: a web app manifest (name, icons, standalone), so phones can already add Mise to the home screen, but only if you know where to look. There's no service worker, so no notifications.
+
+**Part 1: "Add to home screen", made easy**
+- **Android, and Chrome or Edge on a computer:** an **Install Mise** button that opens the browser's own install prompt (`beforeinstallprompt`). One tap, then Install.
+- **iPhone and iPad:** Safari has no install prompt, so the button opens a short guide with pictures: tap **Share** (the square with the arrow), then **Add to Home Screen**, then **Add**. It points at where the Share button is in Safari and in Chrome.
+- **Where it shows:** a card on Today on phones that haven't installed it ("Put Mise on your home screen: it opens like an app, and can remind you to thaw the chicken"), dismissed for good with one tap. It's also always in the account menu and in Settings → You. Once installed it disappears (detected with `display-mode: standalone`).
+- The installed app opens on Today (the manifest's `start_url` is still `/recipes`).
+
+**Part 2: Notifications**
+- **What you get, each one switchable per person:**
+  - **Morning, at a time you pick (8:00 by default):** today's prep. "Tonight: Lime-Garlic Chicken Thighs. Take the chicken thighs out of the freezer." Also marinating that has to start this morning.
+  - **Evening, the night before (7:30 pm by default):** overnight prep for tomorrow, like "Soak the black beans" or "Move the roast to the fridge to thaw". Only sent when there's something to do.
+  - **Time to start cooking:** dinner's start time worked out from its total time and a household dinner time (6:30 pm by default). "Start the tacos now to eat at 6:30."
+  - Nothing is sent on days with nothing to do.
+- **Knowing what needs doing ahead** (once per recipe, when it's saved, and in the background for the rest of the library):
+  - Rules catch the common ones in the steps: marinate or brine for N hours or overnight, soak overnight, chill or refrigerate overnight, let rise, "the day before", "make ahead".
+  - With AI set up, the small model also reads the steps for the less obvious ones ("make the dough a day ahead") and says how long each needs. It costs a fraction of a cent per recipe.
+  - **Thawing:** the pantry gets an **In the freezer** toggle (and a quick "Freeze" when putting groceries away). Frozen food a meal uses gets a thaw reminder: the morning of for most things, the evening before for big cuts (a roast, a whole chicken, 3 lb or more). Meat that isn't in the pantry at all gets a softer line in the morning note: "Uses chicken thighs: thaw them if they're frozen."
+- **Turning it on:** Settings → You → **Notifications**: **Turn on for this device** (the browser asks first), which reminders you want and when, the devices that get them, and **Send a test**.
+- **How it works:** a service worker shows the notifications. The server signs them with its own keys (VAPID, made on first use and stored encrypted; no outside account) and sends them through each browser's push service with the `web-push` library. Subscriptions are kept per person and device, and ones the browser says are gone are removed. A scheduler checks every 5 minutes in each household's time zone, and what was sent is remembered so nothing goes out twice.
+- **Limits worth knowing:**
+  - On iPhone, notifications only work once Mise is on the home screen (iOS 16.4 or later), which is why Part 1 comes first.
+  - Notifications need Mise opened at its https address (the Cloudflare tunnel), not a local http one. The settings card says so when it's opened over http.
+  - Later, the same notifications could cover list changes ("Jamie added milk") and "An update is ready".
+
+**Done when:** the user's parents can put Mise on their phone's home screen from one button and its instructions, and on a day with frozen chicken planned for dinner, a notification at 8 a.m. says to take it out.
+
 ## Later, maybe
 
 - A site that shows Mise off, like Mealie's: what it does, screenshots or a demo, and how to set it up. The code is AGPL-3.0 (October 14, 2026), so anyone can self-host it.
