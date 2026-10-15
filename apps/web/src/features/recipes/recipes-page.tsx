@@ -21,7 +21,10 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useCurrentUser } from "@/features/auth/current-user"
-import { SitesSpotlight } from "@/features/discover/sites-spotlight"
+import {
+  FollowSitesPrompt,
+  SitesSpotlight,
+} from "@/features/discover/sites-spotlight"
 
 import { AddRecipeMenu } from "./add-recipe-menu"
 import { ImportDialog } from "./import-dialog"
@@ -78,6 +81,9 @@ export function RecipesPage() {
   }
 
   const libraryEmpty = !q && recipes.data?.length === 0
+  const narrowed = Boolean(
+    search.trim() || filters.tags.length || filters.diets.length || filters.time
+  )
   const libraryCount = !q && recipes.data?.length ? recipes.data.length : null
 
   return (
@@ -131,6 +137,9 @@ export function RecipesPage() {
           shown={shown}
         />
       )}
+
+      {/* What's new on the sites you follow: on "All", folded away while searching or filtering. */}
+      {!libraryEmpty && <SitesSpotlight hidden={narrowed} />}
 
       {recipes.isPending ? (
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
@@ -225,9 +234,9 @@ export function RecipesPage() {
         </>
       )}
 
-      {/* Once the library's all drawn: what's new on the sites you follow. */}
+      {/* Once the library's all drawn: sites to follow, if none are. */}
       {recipes.isSuccess && !libraryEmpty && shown.length <= revealed && (
-        <SitesSpotlight />
+        <FollowSitesPrompt />
       )}
     </>
   )

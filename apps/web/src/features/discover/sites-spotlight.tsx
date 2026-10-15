@@ -24,12 +24,13 @@ const ROTATE_MS = 6000
 
 /**
  * New recipes from the sites the household follows, one at a time, moving
- * on by itself. Before any are followed, a few sites to start with.
+ * on by itself. Nothing until a site is followed (see FollowSitesPrompt).
+ * `hidden` folds it away, still and out of reach, while the library is
+ * being searched or filtered.
  */
-export function SitesSpotlight() {
+export function SitesSpotlight({ hidden = false }: { hidden?: boolean }) {
   const sites = useSites()
-  if (!sites.data) return null
-  if (!sites.data.length) return <FollowPrompt />
+  if (!sites.data?.length) return null
 
   const newest = sites.data
     .flatMap((site) => site.recipes)
@@ -39,40 +40,59 @@ export function SitesSpotlight() {
   const recipes = [...fresh, ...newest.filter((r) => r.inLibrary)].slice(0, 12)
 
   return (
-    <section aria-labelledby="from-your-sites" className="grid gap-4 pt-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2
-          id="from-your-sites"
-          className="text-2xl font-semibold tracking-tight"
-        >
-          From your sites
-        </h2>
-        <Link
-          to="/discover?tab=sites"
-          className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-primary hover:underline"
-        >
-          {fresh.length ? `All ${fresh.length} new` : "Your sites"}
-          <HugeiconsIcon
-            icon={ArrowRight01Icon}
-            strokeWidth={2}
-            className="size-4"
-          />
-        </Link>
-      </div>
-      {recipes.length ? (
-        <Spotlight recipes={recipes} />
-      ) : (
-        <p className="rounded-3xl border border-dashed p-6 text-muted-foreground">
-          {sites.data.some((site) => site.checking || site.pending)
-            ? "Mise is reading your sites' newest posts. Their recipes show up here in a minute or two."
-            : "No recipes in your sites' latest posts that Mise can read yet. It looks again every few hours."}
-        </p>
+    <div
+      inert={hidden}
+      aria-hidden={hidden}
+      className={cn(
+        "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
+        hidden ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100"
       )}
-    </section>
+    >
+      {/* A little room so focus rings aren't clipped while it folds. */}
+      <div className="-m-1 min-h-0 overflow-hidden p-1">
+        <section aria-labelledby="from-your-sites" className="grid gap-4 pb-6">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2
+              id="from-your-sites"
+              className="text-2xl font-semibold tracking-tight"
+            >
+              From your sites
+            </h2>
+            <Link
+              to="/discover?tab=sites"
+              className="flex shrink-0 items-center gap-0.5 text-sm font-semibold text-primary hover:underline"
+            >
+              {fresh.length ? `All ${fresh.length} new` : "Your sites"}
+              <HugeiconsIcon
+                icon={ArrowRight01Icon}
+                strokeWidth={2}
+                className="size-4"
+              />
+            </Link>
+          </div>
+          {recipes.length ? (
+            <Spotlight recipes={recipes} paused={hidden} />
+          ) : (
+            <p className="rounded-3xl border border-dashed p-6 text-muted-foreground">
+              {sites.data.some((site) => site.checking || site.pending)
+                ? "Mise is reading your sites' newest posts. Their recipes show up here in a minute or two."
+                : "No recipes in your sites' latest posts that Mise can read yet. It looks again every few hours."}
+            </p>
+          )}
+        </section>
+      </div>
+    </div>
   )
 }
 
-function Spotlight({ recipes }: { recipes: SiteRecipe[] }) {
+function Spotlight({
+  recipes,
+  paused,
+}: {
+  recipes: SiteRecipe[]
+  /** Folded away: hold still. */
+  paused: boolean
+}) {
   const found = useImportFound()
   const [at, setAt] = React.useState(0)
   // Held while the pointer or focus is on it; stopped with the button.
@@ -85,16 +105,14 @@ function Spotlight({ recipes }: { recipes: SiteRecipe[] }) {
   const recipe = recipes[index]!
 
   React.useEffect(() => {
-    if (held || stopped || count < 2) return
+    if (paused || held || stopped || count < 2) return
     const timer = setInterval(() => {
       if (!document.hidden) setAt((current) => (current + 1) % count)
     }, ROTATE_MS)
     return () => clearInterval(timer)
-  }, [held, stopped, count])
+  }, [paused, held, stopped, count])
 
   const go = (next: number) => setAt((next + count) % count)
-  const time = formatMinutes(recipe.minutes)
-  const when = posted(recipe.publishedAt)
 
   return (
     <div
@@ -107,87 +125,65 @@ function Spotlight({ recipes }: { recipes: SiteRecipe[] }) {
         if (!event.currentTarget.contains(event.relatedTarget)) setHeld(false)
       }}
     >
+      {/* The card stays put: photos and words crossfade. */}
       <article
-        key={recipe.url}
         aria-roledescription="slide"
         aria-label={`${index + 1} of ${count}`}
-        className="animate-in overflow-hidden rounded-3xl border bg-card text-card-foreground duration-500 fade-in motion-reduce:animate-none sm:flex"
+        className="overflow-hidden rounded-3xl border bg-card text-card-foreground sm:flex"
       >
         <a
           href={recipe.url}
           target="_blank"
           rel="noreferrer"
           tabIndex={-1}
-          className="block shrink-0 sm:w-[45%]"
+          className="relative block aspect-[16/10] shrink-0 overflow-hidden bg-muted sm:aspect-auto sm:min-h-56 sm:w-2/5"
         >
-          {recipe.imageUrl ? (
-            <img
-              src={recipe.imageUrl}
-              alt=""
-              decoding="async"
-              className="aspect-[16/10] w-full bg-muted object-cover sm:aspect-auto sm:h-full sm:min-h-72"
-            />
-          ) : (
-            <div className="flex aspect-[16/10] w-full items-center justify-center bg-secondary text-muted-foreground/60 sm:aspect-auto sm:h-full sm:min-h-72">
-              <HugeiconsIcon
-                icon={CookingPotIcon}
-                strokeWidth={1.5}
-                className="size-12"
+          {recipes.map((r, i) =>
+            r.imageUrl ? (
+              <img
+                key={r.url}
+                src={r.imageUrl}
+                alt=""
+                decoding="async"
+                aria-hidden={i !== index}
+                className={cn(
+                  "absolute inset-0 size-full object-cover transition-opacity duration-700 ease-in-out motion-reduce:transition-none",
+                  i === index ? "opacity-100" : "opacity-0"
+                )}
               />
-            </div>
+            ) : (
+              <div
+                key={r.url}
+                aria-hidden="true"
+                className={cn(
+                  "absolute inset-0 flex items-center justify-center bg-secondary text-muted-foreground/60 transition-opacity duration-700 ease-in-out motion-reduce:transition-none",
+                  i === index ? "opacity-100" : "opacity-0"
+                )}
+              >
+                <HugeiconsIcon
+                  icon={CookingPotIcon}
+                  strokeWidth={1.5}
+                  className="size-12"
+                />
+              </div>
+            )
           )}
         </a>
-        <div className="grid min-w-0 flex-1 content-center gap-3 p-6 md:p-8">
-          <p className="text-xs font-semibold tracking-wide text-primary uppercase">
-            {[recipe.site, when].filter(Boolean).join(" · ")}
-          </p>
-          <h3 className="font-heading text-2xl leading-tight font-semibold md:text-3xl">
-            <a
-              href={recipe.url}
-              target="_blank"
-              rel="noreferrer"
-              className="hover:underline"
-            >
-              {recipe.title}
-            </a>
-          </h3>
-          {(recipe.description || time) && (
-            <p className="line-clamp-3 text-muted-foreground">
-              {[recipe.description, time].filter(Boolean).join(" · ")}
-            </p>
-          )}
-          <div className="flex flex-wrap gap-2 pt-1">
-            {recipe.inLibrary ? (
-              <Button variant="outline" asChild>
-                <Link to={`/recipes/${recipe.inLibrary.slug}`}>
-                  <HugeiconsIcon
-                    icon={Tick02Icon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                    className="text-primary"
-                  />
-                  In your library
-                </Link>
-              </Button>
-            ) : (
-              <Button
-                disabled={found.importing.has(recipe.url)}
-                onClick={() => found.add(recipe)}
-              >
-                {found.importing.has(recipe.url) && (
-                  <Spinner data-icon="inline-start" />
-                )}
-                {found.importing.has(recipe.url) ? "Importing…" : "Import"}
-              </Button>
-            )}
-            <Button variant="outline" asChild>
-              <a href={recipe.url} target="_blank" rel="noreferrer">
-                Open on the site
-              </a>
-            </Button>
+        <div className="grid min-w-0 flex-1 content-center gap-3 p-5 md:p-6">
+          {/* Every slide's words in one spot, so the card keeps its height. */}
+          <div className="grid">
+            {recipes.map((r, i) => (
+              <SlideWords
+                key={r.url}
+                recipe={r}
+                current={i === index}
+                importing={found.importing.has(r.url)}
+                onImport={() => found.add(r)}
+              />
+            ))}
           </div>
           {count > 1 && (
-            <div className="flex flex-wrap items-center gap-2 pt-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 variant="outline"
                 size="icon-sm"
@@ -283,9 +279,83 @@ function Spotlight({ recipes }: { recipes: SiteRecipe[] }) {
   )
 }
 
-/** Before any site is followed: what this is for, and a few to start with. */
-function FollowPrompt() {
+/** One slide's site, name, description and buttons; the others fade out of the way. */
+function SlideWords({
+  recipe,
+  current,
+  importing,
+  onImport,
+}: {
+  recipe: SiteRecipe
+  current: boolean
+  importing: boolean
+  onImport: () => void
+}) {
+  const time = formatMinutes(recipe.minutes)
+  const when = posted(recipe.publishedAt)
+  return (
+    <div
+      inert={!current}
+      aria-hidden={!current}
+      className={cn(
+        "col-start-1 row-start-1 grid content-center gap-2.5 transition-all duration-500 ease-out motion-reduce:transition-none",
+        current
+          ? "visible translate-y-0 opacity-100"
+          : "invisible translate-y-1 opacity-0"
+      )}
+    >
+      <p className="text-xs font-semibold tracking-wide text-primary uppercase">
+        {[recipe.site, when].filter(Boolean).join(" · ")}
+      </p>
+      <h3 className="font-heading text-xl leading-tight font-semibold md:text-2xl">
+        <a
+          href={recipe.url}
+          target="_blank"
+          rel="noreferrer"
+          className="hover:underline"
+        >
+          {recipe.title}
+        </a>
+      </h3>
+      {(recipe.description || time) && (
+        <p className="line-clamp-2 text-muted-foreground">
+          {[recipe.description, time].filter(Boolean).join(" · ")}
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2 pt-1">
+        {recipe.inLibrary ? (
+          <Button variant="outline" asChild>
+            <Link to={`/recipes/${recipe.inLibrary.slug}`}>
+              <HugeiconsIcon
+                icon={Tick02Icon}
+                strokeWidth={2}
+                data-icon="inline-start"
+                className="text-primary"
+              />
+              In your library
+            </Link>
+          </Button>
+        ) : (
+          <Button disabled={importing} onClick={onImport}>
+            {importing && <Spinner data-icon="inline-start" />}
+            {importing ? "Importing…" : "Import"}
+          </Button>
+        )}
+        <Button variant="outline" asChild>
+          <a href={recipe.url} target="_blank" rel="noreferrer">
+            Open on the site
+          </a>
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+/** Before any site is followed: what the spotlight is for, and a few to start with. */
+export function FollowSitesPrompt() {
+  const sites = useSites()
   const follow = useFollowSite()
+  if (!sites.data || sites.data.length) return null
   return (
     <section
       aria-labelledby="follow-sites"
