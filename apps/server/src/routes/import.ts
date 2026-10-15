@@ -1,10 +1,8 @@
 import {
-  CLEANUP_SECTIONS,
   mealieConnectionInput,
   importPageInput,
   importTextInput,
   importUrlInput,
-  type ImportResult,
 } from "@mise/shared"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
@@ -29,8 +27,7 @@ import {
 import { fetchPublic } from "../import/safe-fetch.ts"
 import { importFromPage, importFromUrl } from "../import/url.ts"
 import { systemVideoTools } from "../import/video-tools.ts"
-import { proposeCleanup } from "../services/cleanup.ts"
-import { getHousehold } from "../services/households.ts"
+import { importFollowUp } from "../services/import-follow-up.ts"
 import { createRecipe } from "../services/recipes.ts"
 
 /** Four phone photos, with some room to spare. */
@@ -50,25 +47,7 @@ export function importRoutes(
   const app = new Hono<AppEnv>()
   app.use(requireUser)
 
-  /**
-   * With auto-cleanup on, tidy each new import in the background. The
-   * suggestions wait on the recipe page; a failure here doesn't matter.
-   */
-  async function afterImport(
-    result: ImportResult,
-    actor: { userId: string; householdId: string }
-  ) {
-    if (result.duplicate) return
-    nutrition.afterSave(actor, result.recipe)
-    photos.afterCreate(actor, result.recipe)
-    if (!(await getHousehold(db, actor.householdId)).autoCleanup) return
-    void proposeCleanup(db, ai, actor.householdId, result.recipe.id, {
-      userId: actor.userId,
-      sections: [...CLEANUP_SECTIONS],
-    }).catch((error: Error) =>
-      console.warn("Tidy-up after import failed:", error.message)
-    )
-  }
+  const afterImport = importFollowUp(db, ai, nutrition, photos)
 
   const actorOf = (c: Parameters<typeof currentUser>[0]) => ({
     userId: currentUser(c).id,

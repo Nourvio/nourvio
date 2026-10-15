@@ -25,6 +25,7 @@ const MAX_TILES = 8
 const KEEP_MS = 60 * 60_000
 
 const RECEIPT_SYSTEM = `You read grocery receipts: photos, screenshots, or the text of an emailed receipt. List what was bought.
+- First, "what" it is: "receipt" for a receipt or order confirmation, "recipe" for a recipe (ingredients and steps, a recipe card, a screenshot of one), "other" for anything else.
 - One entry per product line. Skip totals, subtotals, tax, payment, change, coupons, discounts, bag fees, deposits and loyalty lines.
 - "text" is the line as printed. "name" is the plain grocery name a home cook would write on a list: "GV WHL MLK 1GAL" is "whole milk", "BNLS SKNLS CHKN THGH" is "boneless skinless chicken thighs". Leave brands out unless they're the point (Diet Pepsi).
 - "amount" is how much, as a cook would say it: "1 gal", "2.3 lb", "12 ct", "2" for two of something; null when the receipt doesn't say.
@@ -34,6 +35,7 @@ const RECEIPT_SYSTEM = `You read grocery receipts: photos, screenshots, or the t
 If it isn't a receipt, return no items.`
 
 const receiptSchema = z.object({
+  what: z.enum(["receipt", "recipe", "other"]),
   store: z.string().nullable(),
   date: z.string().nullable(),
   total: z.number().nullable(),
@@ -106,7 +108,12 @@ async function imageParts(buffer: Buffer): Promise<AiPart[]> {
   return parts
 }
 
-async function pdfText(buffer: Buffer) {
+/** A PDF, by its type or its first bytes. */
+export const isPdf = (file: ReceiptFiles[number]) =>
+  file.type === "application/pdf" ||
+  file.buffer.subarray(0, 5).toString() === "%PDF-"
+
+export async function pdfText(buffer: Buffer) {
   try {
     const pdf = await getDocumentProxy(new Uint8Array(buffer))
     const { text } = await extractText(pdf, { mergePages: true })
@@ -117,7 +124,7 @@ async function pdfText(buffer: Buffer) {
 }
 
 /** Shared or pasted text: an emailed receipt's, usually with HTML. */
-function plainText(text: string) {
+export function plainText(text: string) {
   return /<\/?[a-z][^>]*>/i.test(text)
     ? text
         .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, " ")
@@ -142,11 +149,14 @@ export function createReceiptService(db: Db, ai: AiService) {
     for (const [id, kept] of drafts) if (kept.expires < now) drafts.delete(id)
   }
 
-  /** Reads a receipt into a draft to look over; nothing's added yet. */
+  /**
+   * Reads a receipt into a draft to look over; nothing's added yet. Also
+   * says what it was: a shared screenshot may be a recipe instead.
+   */
   async function read(
     actor: AiActor & { householdId: string },
     input: { files: ReceiptFiles; text: string | null }
-  ): Promise<ReceiptDraft> {
+  ): Promise<{ draft: ReceiptDraft; what: "receipt" | "recipe" | "other" }> {
     if (input.files.length > MAX_FILES) {
       throw new HttpError(400, `Up to ${MAX_FILES} files a receipt`)
     }
@@ -159,10 +169,7 @@ export function createReceiptService(db: Db, ai: AiService) {
     const parts: AiPart[] = []
     const texts: string[] = []
     for (const file of input.files) {
-      if (
-        file.type === "application/pdf" ||
-        file.buffer.subarray(0, 5).toString() === "%PDF-"
-      ) {
+      if (isPdf(file)) {
         texts.push(await pdfText(file.buffer))
       } else if (file.type.startsWith("text/")) {
         texts.push(plainText(file.buffer.toString("utf8")))
@@ -232,7 +239,7 @@ export function createReceiptService(db: Db, ai: AiService) {
       draft,
       expires: Date.now() + KEEP_MS,
     })
-    return draft
+    return { draft, what: data.what }
   }
 
   /** A receipt read earlier (shared from another app, say), still waiting. */

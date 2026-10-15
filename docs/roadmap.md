@@ -240,7 +240,7 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 
 ## Milestone 13: Shopping together, theme nights, costs and receipts
 
-**Status:** built October 14, 2026. The user picked these four from the list of ideas. Receipt reading was checked with the real AI on a sample Walmart receipt. Found while building costs: the ingredient parser cut "skinless, boneless chicken thighs" at the first comma (the food was "skinless"); describing words before a comma now stay with the food.
+**Status:** built October 14, 2026. The user picked these four from the list of ideas. Receipt reading was checked with the real AI on a sample Walmart receipt. The user then asked for Share to Mise to take video links and handle them itself: it now works out any share (a link or video becomes a recipe, a receipt opens its review, a recipe screenshot becomes a recipe), on Android and through the iPhone Shortcut. Found while building costs: the ingredient parser cut "skinless, boneless chicken thighs" at the first comma (the food was "skinless"); describing words before a comma now stay with the food.
 
 **1. Shopping together**
 - The List updates live on every phone in the household: check off bananas and they're checked on Jamie's phone a moment later. Items added, changed or removed show up the same way.

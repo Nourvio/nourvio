@@ -13,7 +13,9 @@ import { createAiService } from "./ai/service.ts"
 import { createNutritionService } from "./services/nutrition.ts"
 import { createShopService } from "./services/shop.ts"
 import { createEventBus } from "./services/events.ts"
+import { importFollowUp } from "./services/import-follow-up.ts"
 import { createReceiptService } from "./services/receipts.ts"
+import { createShareService } from "./services/share.ts"
 import { createUpdateService } from "./services/updates.ts"
 import { createVoiceService } from "./services/voice.ts"
 import { createPhotoService } from "./services/photos.ts"
@@ -34,6 +36,7 @@ import { importRoutes } from "./routes/import.ts"
 import { joinRoutes, signupRoutes } from "./routes/join.ts"
 import { eventRoutes } from "./routes/events.ts"
 import { receiptRoutes } from "./routes/receipts.ts"
+import { shareRoutes } from "./routes/share.ts"
 import { listRoutes } from "./routes/list.ts"
 import { meRoutes } from "./routes/me.ts"
 import { nutritionRoutes } from "./routes/nutrition.ts"
@@ -51,7 +54,8 @@ import { sitesRoutes } from "./routes/sites.ts"
 import { usersRoutes } from "./routes/users.ts"
 
 /** Routes that accept photos, with their own upload size limit. */
-const UPLOAD_PATH = /^\/api\/(recipes\/[^/]+\/image|import\/photo|receipts)$/
+const UPLOAD_PATH =
+  /^\/api\/(recipes\/[^/]+\/image|import\/photo|receipts|share)$/
 
 /**
  * Form posts from another site are refused. The page's own origin can differ
@@ -83,6 +87,12 @@ export function createApp(ctx: AppContext) {
   const updates = createUpdateService(ctx.updates)
   const events = createEventBus()
   const receipts = createReceiptService(ctx.db, ai)
+  const share = createShareService(
+    ctx.db,
+    ai,
+    receipts,
+    importFollowUp(ctx.db, ai, nutrition, photos)
+  )
 
   app.use(secureHeaders())
   // Compression would hold back a streaming reply (chat, live changes).
@@ -143,6 +153,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/list", listRoutes(ctx, events))
   app.route("/api/events", eventRoutes(events))
   app.route("/api/receipts", receiptRoutes(receipts, events))
+  app.route("/api/share", shareRoutes(share))
   app.route("/api/pantry", pantryRoutes(ctx))
   app.route("/api/images", imagesRoutes(ctx))
   app.route("/api/import", importRoutes(ctx, ai, nutrition, photos))

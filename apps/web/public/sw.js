@@ -1,7 +1,7 @@
 // Mise's service worker. For now it does one thing: when Mise, installed on
 // an Android home screen, is picked in the share sheet, it keeps what was
-// shared (photos, PDFs, text or a link) and opens the page that deals with
-// it. Everything else goes straight to the network as usual.
+// shared (photos, PDFs, text or a link) and opens the page that works out
+// what it is. Everything else goes straight to the network as usual.
 
 const SHARE_CACHE = "mise-share"
 
@@ -25,12 +25,14 @@ async function receiveShare(request) {
   const link = form.get("url")
   const files = form.getAll("file").filter((file) => file instanceof File)
 
-  // A link alone, like a recipe page: straight to importing it.
-  if (!files.length && (link || /https?:\/\/\S+/.test(text))) {
-    const params = new URLSearchParams()
-    if (typeof link === "string" && link) params.set("url", link)
-    if (text) params.set("text", text)
-    return Response.redirect(`/recipes?${params}`, 303)
+  // A link (a recipe page, a video), with a line of text at most: straight
+  // to importing it. A long text that mentions a site isn't a link.
+  const found =
+    typeof link === "string" && link
+      ? link
+      : (text.match(/https?:\/\/[^\s<>"']+/) ?? [])[0]
+  if (!files.length && found && text.replace(found, "").trim().length <= 300) {
+    return Response.redirect(`/share?link=${encodeURIComponent(found)}`, 303)
   }
 
   const id = crypto.randomUUID()

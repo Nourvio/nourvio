@@ -49,6 +49,7 @@ describe("receipts into the pantry", () => {
       })
       return {
         data: {
+          what: "receipt",
           store: "Walmart",
           date: "2026-10-14",
           total: 17.46,

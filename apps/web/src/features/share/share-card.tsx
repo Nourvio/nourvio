@@ -49,7 +49,7 @@ function Copyable({ label, value }: { label: string; value: string }) {
 export function ShareCard() {
   const create = useCreateExtensionToken()
   const [key, setKey] = React.useState<string | null>(null)
-  const address = `${location.origin}/api/receipts`
+  const address = `${location.origin}/api/share`
   const secure = location.protocol === "https:"
 
   function makeKey() {
@@ -67,8 +67,10 @@ export function ShareCard() {
       <CardHeader>
         <CardTitle>Share to Mise</CardTitle>
         <CardDescription>
-          Send a receipt from your email, photos or files straight to the
-          pantry. Mise reads it and shows what it found before adding anything.
+          Share anything food to Mise and it works out the rest: a TikTok,
+          Instagram or YouTube video or a recipe page becomes a recipe, a
+          receipt from your email or photos goes to the pantry (with a look
+          first), and a screenshot of a recipe becomes one too.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-6">
@@ -77,8 +79,7 @@ export function ShareCard() {
           <p className="text-sm text-muted-foreground">
             In Chrome, open the menu (⋮) and tap <b>Add to home screen</b> or{" "}
             <b>Install app</b>. Then, in any app, tap <b>Share</b> and pick{" "}
-            <b>Mise</b>: a receipt goes to the pantry, a link or recipe photo to
-            your recipes.
+            <b>Mise</b>.
           </p>
           {!secure && (
             <p className="text-sm text-amber-700 dark:text-amber-400">
@@ -145,11 +146,11 @@ export function ShareCard() {
           )}
           {key && (
             <p className="text-sm text-muted-foreground">
-              Now, from Mail, Photos or Files, tap <b>Share</b> and then{" "}
-              <b>Send to Mise</b>. The receipt opens in Safari to look over;
-              sign in there the first time. The key is yours: someone in another
-              household needs their own. It's listed with your connected
-              extensions, where it can be removed.
+              Now, from TikTok, Instagram, YouTube, Safari, Mail, Photos or
+              Files, tap <b>Share</b> and then <b>Send to Mise</b>. Mise opens
+              in Safari to finish it; sign in there the first time. The key is
+              yours: someone in another household needs their own. It's listed
+              with your connected extensions, where it can be removed.
             </p>
           )}
         </section>

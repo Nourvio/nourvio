@@ -13,7 +13,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import { monthDay } from "@/features/plan/dates"
-import { forgetShared, readShared } from "@/features/share/shared-files"
 import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -27,38 +26,14 @@ const errorText = (error: unknown) =>
 
 /**
  * Scan a receipt into the pantry: a photo, a screenshot, a PDF or pasted
- * text; or one shared in (`?shared=` from Android, `?id=` from an iPhone
- * Shortcut). Mise reads it, then everything waits for a look.
+ * text, or one shared in and read already (`?id=`). Mise reads it, then
+ * everything waits for a look.
  */
 export function ReceiptPage() {
   const [params, setParams] = useSearchParams()
   const id = params.get("id")
-  const shared = params.get("shared")
   const read = useReadReceipt()
   const waiting = useReceipt(id)
-
-  // Shared from another app on Android: read what was handed over.
-  const started = React.useRef(false)
-  React.useEffect(() => {
-    if (!shared || started.current) return
-    started.current = true
-    void readShared(shared).then((found) => {
-      if (!found || (!found.files.length && !found.text)) {
-        toast.error("Nothing came through from the share. Try again.")
-        return
-      }
-      read.mutate(
-        found.files.length ? { files: found.files } : { text: found.text! },
-        {
-          onSuccess: (draft) => {
-            void forgetShared(shared)
-            setParams({ id: draft.id }, { replace: true })
-          },
-          onError: (error) => toast.error(errorText(error)),
-        }
-      )
-    })
-  }, [shared, read, setParams])
 
   const draft = read.data ?? waiting.data
 
