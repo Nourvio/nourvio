@@ -17,6 +17,7 @@ export const AI_TASKS = [
   "swap",
   "discover",
   "shopping",
+  "receipts",
 ] as const
 export type AiTask = (typeof AI_TASKS)[number]
 
@@ -34,6 +35,7 @@ export const AI_TASK_NAMES: Record<AiTask, string> = {
   swap: "Ingredient swaps",
   discover: "Finding recipes",
   shopping: "Picking store products",
+  receipts: "Reading receipts",
 }
 
 /**
@@ -47,6 +49,7 @@ export const LIGHT_TASK_MODELS: Partial<
   swap: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
   discover: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
   shopping: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
+  receipts: { anthropic: "claude-haiku-5-5", openai: "gpt-6-luna" },
 }
 
 /** Used when nothing else is picked. */

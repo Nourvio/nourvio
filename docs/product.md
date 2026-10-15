@@ -167,6 +167,8 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 ### 6. Pantry
 
 - **Grouped by aisle,** like the list. Type what you have ("2 lb chicken thighs", "rice"), or let it fill itself from Put away on the List.
+- **Scan a receipt** (Pantry → Scan a receipt): a photo of a paper receipt, screenshots or a PDF of an emailed one, or its pasted text. The AI reads the lines ("GV WHL MLK 1GAL" is whole milk, 1 gal) and shows them to look over: food ticked, household things not, each name and amount editable, and anything on the shopping list marked "On your list". **Add** puts the ticked ones in the pantry and takes those off the list.
+- **Sharing a receipt to Mise** (Settings → You → Share to Mise): on Android, Mise installed to the home screen shows up in the share sheet (a receipt goes to the pantry, a link or recipe photo to your recipes). On iPhone, where only App Store apps can be in the share sheet, a **Send to Mise** Shortcut does the same, set up once with a key Mise makes; it opens the receipt to look over in Safari.
 - **Amounts can be rough:** "2 lb", "half a bag", or just "have it". The same food merges when the amounts add up.
 - **Matching is forgiving but careful:** "boneless skinless chicken thighs" is "chicken thighs", but "cream cheese" isn't "cheese". There's no list of foods to set up or confirm.
 - **Always on hand** items like salt, oil and flour are assumed to be there. Tap one on the Pantry page when it runs low, and it goes on the list.

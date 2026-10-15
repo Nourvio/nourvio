@@ -26,12 +26,19 @@
     }
   ],
   "share_target": {
-    "action": "/recipes",
-    "method": "GET",
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
     "params": {
       "title": "title",
       "text": "text",
-      "url": "url"
+      "url": "url",
+      "files": [
+        {
+          "name": "file",
+          "accept": ["image/*", "application/pdf", "text/plain", "text/html"]
+        }
+      ]
     }
   }
 }

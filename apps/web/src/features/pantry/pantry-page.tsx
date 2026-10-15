@@ -4,6 +4,7 @@ import {
   Add01Icon,
   BubbleChatSparkIcon,
   FridgeIcon,
+  Invoice01Icon,
   MoreHorizontalIcon,
   ShoppingBasketAdd01Icon,
 } from "@hugeicons/core-free-icons"
@@ -14,6 +15,7 @@ import {
   type PantryItem,
   type UseSoonReason,
 } from "@mise/shared"
+import { Link } from "react-router"
 import { toast } from "sonner"
 
 import { PageHeader } from "@/components/layout/page-header"
@@ -112,6 +114,18 @@ export function PantryPage() {
           count
             ? `${count} ${count === 1 ? "thing" : "things"} at home${soon.length ? `, ${soon.length} to use soon` : ""}`
             : "What's on hand, and what to use soon."
+        }
+        actions={
+          <Button variant="outline" asChild>
+            <Link to="/pantry/receipt">
+              <HugeiconsIcon
+                icon={Invoice01Icon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+              Scan a receipt
+            </Link>
+          </Button>
         }
       />
 

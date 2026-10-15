@@ -12,6 +12,8 @@ import { CollectionPage, DiscoverPage } from "@/features/discover/discover-page"
 import { HomePage } from "@/features/home/home-page"
 import { ListPage } from "@/features/list/list-page"
 import { PantryPage } from "@/features/pantry/pantry-page"
+import { ReceiptPage } from "@/features/pantry/receipt-page"
+import { SharePage } from "@/features/share/share-page"
 import { PlanPage } from "@/features/plan/plan-page"
 import {
   EditRecipePage,
@@ -96,6 +98,8 @@ export const router = createBrowserRouter([
           { path: "list/shop", element: <ShopPage /> },
           { path: "list/costco", element: <CostcoPage /> },
           { path: "pantry", element: <PantryPage /> },
+          { path: "pantry/receipt", element: <ReceiptPage /> },
+          { path: "share", element: <SharePage /> },
           { path: "settings", element: <SettingsPage /> },
           { path: "styleguide", element: <StyleguidePage /> },
           { path: "*", element: <NotFoundPage /> },

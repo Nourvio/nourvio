@@ -22,6 +22,7 @@ import { useCurrentUser } from "@/features/auth/current-user"
 import { ExtensionCard } from "@/features/extension/extension-card"
 import { KrogerAppCard } from "@/features/shop/kroger-app-card"
 import { StoresCard } from "@/features/shop/stores-card"
+import { ShareCard } from "@/features/share/share-card"
 import { useShopStatus } from "@/features/shop/use-shop"
 import { useIsMobile } from "@/hooks/use-mobile"
 
@@ -296,6 +297,13 @@ function useSections(): Section[] {
         { id: "extension", card: <ExtensionCard /> },
         { id: "styleguide", card: <StyleGuideCard /> },
       ],
+    },
+    {
+      id: "share",
+      label: "Share to Mise",
+      tab: "you",
+      hint: "Send receipts from other apps",
+      cards: [{ id: "share", card: <ShareCard /> }],
     },
     {
       id: "people",

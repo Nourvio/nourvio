@@ -13,6 +13,7 @@ import { createAiService } from "./ai/service.ts"
 import { createNutritionService } from "./services/nutrition.ts"
 import { createShopService } from "./services/shop.ts"
 import { createEventBus } from "./services/events.ts"
+import { createReceiptService } from "./services/receipts.ts"
 import { createUpdateService } from "./services/updates.ts"
 import { createVoiceService } from "./services/voice.ts"
 import { createPhotoService } from "./services/photos.ts"
@@ -32,6 +33,7 @@ import { imagesRoutes } from "./routes/images.ts"
 import { importRoutes } from "./routes/import.ts"
 import { joinRoutes, signupRoutes } from "./routes/join.ts"
 import { eventRoutes } from "./routes/events.ts"
+import { receiptRoutes } from "./routes/receipts.ts"
 import { listRoutes } from "./routes/list.ts"
 import { meRoutes } from "./routes/me.ts"
 import { nutritionRoutes } from "./routes/nutrition.ts"
@@ -49,7 +51,7 @@ import { sitesRoutes } from "./routes/sites.ts"
 import { usersRoutes } from "./routes/users.ts"
 
 /** Routes that accept photos, with their own upload size limit. */
-const UPLOAD_PATH = /^\/api\/(recipes\/[^/]+\/image|import\/photo)$/
+const UPLOAD_PATH = /^\/api\/(recipes\/[^/]+\/image|import\/photo|receipts)$/
 
 /**
  * Form posts from another site are refused. The page's own origin can differ
@@ -80,6 +82,7 @@ export function createApp(ctx: AppContext) {
   const voice = createVoiceService(ctx.db, ai, { kokoroFetch: ctx.kokoroFetch })
   const updates = createUpdateService(ctx.updates)
   const events = createEventBus()
+  const receipts = createReceiptService(ctx.db, ai)
 
   app.use(secureHeaders())
   // Compression would hold back a streaming reply (chat, live changes).
@@ -91,7 +94,14 @@ export function createApp(ctx: AppContext) {
   )
 
   // ---- API ----
-  app.use("/api/*", csrf({ origin: isSameSite }))
+  // A request with a Mise key (the extension, an iPhone Shortcut) can't be
+  // forged by another site the way a cookie can, so it skips the check.
+  const sameSite = csrf({ origin: isSameSite })
+  app.use("/api/*", (c, next) =>
+    /^Bearer\s/i.test(c.req.header("authorization") ?? "")
+      ? next()
+      : sameSite(c, next)
+  )
   const jsonLimit = bodyLimit({
     maxSize: 1024 * 1024,
     onError: (c) => c.json({ error: "That request is too large" }, 413),
@@ -132,6 +142,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/plan", planRoutes(ctx))
   app.route("/api/list", listRoutes(ctx, events))
   app.route("/api/events", eventRoutes(events))
+  app.route("/api/receipts", receiptRoutes(receipts, events))
   app.route("/api/pantry", pantryRoutes(ctx))
   app.route("/api/images", imagesRoutes(ctx))
   app.route("/api/import", importRoutes(ctx, ai, nutrition, photos))
@@ -140,6 +151,9 @@ export function createApp(ctx: AppContext) {
   app.all("/api/*", requireUser, (c) => c.json({ error: "Not found" }, 404))
 
   // ---- Web app ----
+  // Android shares into Mise by posting here; the service worker takes it.
+  // Without one (Mise opened over plain http), say what's needed.
+  app.post("/share", (c) => c.redirect("/share?unsupported=1", 303))
   // Vite gives built assets hashed names, so they can be cached forever.
   app.use(
     "/assets/*",
