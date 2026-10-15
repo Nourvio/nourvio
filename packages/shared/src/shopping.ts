@@ -272,6 +272,24 @@ export function lineCost(line: Pick<BasketLine, "product" | "packages">) {
   return each === null || each === undefined ? null : each * line.packages
 }
 
+/** What a list item last cost at its list's store, from the product remembered for it. */
+export type ItemPrice = {
+  shop: ShopId
+  /** For the packages needed, at the sale price when there is one. */
+  total: number
+  packages: number
+  /** False when the number of packages is a guess. */
+  sure: boolean
+  sale: boolean
+  /** The product it's priced from. */
+  product: string
+  /** When that price was seen. */
+  seenAt: string
+}
+
+/** Unchecked items' prices, by item id. Items without a remembered product are left out. */
+export type ListPrices = Record<string, ItemPrice>
+
 /** The Kroger-family store a household shops at. */
 export type KrogerStore = {
   locationId: string

@@ -3,6 +3,9 @@ import { createHash, randomBytes } from "node:crypto"
 import {
   bakingDensity,
   formatAmount,
+  lineCost,
+  listsForStore,
+  MAIN_LIST,
   packagesFor,
   parseProductSize,
   readPackAmount,
@@ -10,6 +13,7 @@ import {
   type Basket,
   type BasketLine,
   type KrogerAppSettings,
+  type ListPrices,
   type Need,
   type SendBasketInput,
   type ShopId,
@@ -41,6 +45,7 @@ import {
   type KrogerApp,
   type KrogerClient,
 } from "../shop/kroger.ts"
+import { getHousehold } from "./households.ts"
 import { foodOf, listRows, listRowsForStore, toItem } from "./list.ts"
 
 type ItemRow = typeof shoppingItems.$inferSelect
@@ -912,6 +917,65 @@ export function createShopService(
     return new Map(rows.map((row) => [row.food, row.product]))
   }
 
+  /**
+   * What each unchecked item last cost at its list's store, from the
+   * products remembered for its food. No store is asked, so it's quick;
+   * Fry's prices are as fresh as the last Send to Fry's.
+   */
+  async function prices(householdId: string): Promise<ListPrices> {
+    const { lists } = await getHousehold(db, householdId)
+    const rows = (await listRows(db, householdId)).filter((row) => !row.checked)
+    // Costco has no products to price from.
+    const shops: ShopId[] = ["kroger", "walmart"]
+    const saved = await db
+      .select()
+      .from(storeProducts)
+      .where(
+        and(
+          eq(storeProducts.householdId, householdId),
+          inArray(storeProducts.shop, shops)
+        )
+      )
+    const products = new Map(
+      saved.map((row) => [`${row.shop}|${row.food}`, row])
+    )
+    const onLists = shops.map((shop) => ({
+      shop,
+      lists: listsForStore(lists, shop),
+    }))
+    const needs = await needsFor(db, rows)
+    const priced: ListPrices = {}
+    rows.forEach((row, index) => {
+      const list = row.listId ?? MAIN_LIST
+      for (const { shop, lists } of onLists) {
+        if (!lists.has(list)) continue
+        const match = products.get(`${shop}|${foodOf(row.key)}`)
+        if (!match) continue
+        const { product } = match
+        const { packages, sure } = packagesFor(
+          needs[index]!,
+          parseProductSize(product.size)
+        )
+        const total = lineCost({ product, packages })
+        if (total === null) continue
+        priced[row.id] = {
+          shop,
+          total,
+          packages,
+          sure,
+          sale:
+            product.salePrice !== null &&
+            product.price !== null &&
+            product.salePrice < product.price,
+          product: product.name,
+          seenAt: match.updatedAt.toISOString(),
+        }
+        return
+      }
+    })
+    return priced
+  }
+
   return {
     krogerAppSettings,
     saveKrogerApp,
@@ -930,5 +994,6 @@ export function createShopService(
     suggest,
     saveProduct,
     recordSent,
+    prices,
   }
 }

@@ -1,4 +1,5 @@
 import type {
+  ListPrices,
   PutAwayResult,
   AddFromPlanResult,
   ShoppingItem,
@@ -12,11 +13,22 @@ import { api } from "@/lib/api"
 
 export const LIST_KEY = ["list"] as const
 const WEEKLY_KEY = ["list", "weekly"] as const
+// Under the list's key, so it's fetched again whenever the list changes.
+const PRICES_KEY = ["list", "prices"] as const
 
 export function useList() {
   return useQuery({
     queryKey: LIST_KEY,
     queryFn: async () => (await api<{ items: ShoppingItem[] }>("/list")).items,
+  })
+}
+
+/** What's left last cost at its list's store, where Mise knows the product. */
+export function useListPrices() {
+  return useQuery({
+    queryKey: PRICES_KEY,
+    queryFn: async () =>
+      (await api<{ prices: ListPrices }>("/shop/prices")).prices,
   })
 }
 

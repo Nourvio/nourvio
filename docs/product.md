@@ -143,11 +143,12 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 - **Every week** items (Diet Pepsi, bananas) go on with each week's plan, or with one tap from the List page.
 - Grouped by store section: produce, meat, dairy, bakery, canned goods and so on. Moving an item to another section is remembered for next time.
 - Add anything by typing it ("2 lb ground beef", "paper towels").
-- Check items off while shopping. They move to "In the cart".
+- Check items off while shopping. They move to "In the cart", folded up at the bottom.
+- **A card for each store's list** at the top: what's left, about what it costs, and the way to shop it (Send to the Fry's cart, Find each at Costco). Narrow what's showing to one meal's things, every-week items or what was typed in.
+- **Badges and prices on each item:** the meals it's for, "Every week", and what it last cost at that list's store when Mise knows the product (from Send to Fry's or the Walmart extension). A "~" means the number of packages is a guess.
 - **Put away** when you're home: everything in the cart goes into the pantry, remembering which meals it was bought for. Household things (paper towels) and always-on-hand items are just cleared.
 - The assistant can offer items to add, as a card.
-- *Later:* the list goes to the store (see 7).
-- One list per household. More lists can come later if needed.
+- The list goes to the store (see 7), and can be split into a list per store.
 - **Lists by store.** Split the list in two or more (List → ⋯ → Split into lists by store): say Costco for meat and soda, and the main list for everything else. Each list can take whole aisles, and moving something to another list (tap it, then pick the list) teaches Mise that food goes there from now on. Tabs switch between lists, and each store's button sends only its list: Send to Fry's sends the Fry's list, Shop at Costco shows the Costco list.
 
 ### 6. Pantry

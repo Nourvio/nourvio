@@ -61,6 +61,11 @@ export function shopRoutes(
     c.json({ status: await shop.status(currentHousehold(c)) })
   )
 
+  /** What's left on the lists last cost, where Mise knows the product. */
+  app.get("/prices", async (c) =>
+    c.json({ prices: await shop.prices(currentHousehold(c)) })
+  )
+
   app.get("/image", async (c) => {
     const url = c.req.query("u") ?? ""
     let host = ""

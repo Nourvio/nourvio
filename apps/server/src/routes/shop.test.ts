@@ -660,6 +660,46 @@ describe("store connections: Walmart, through the extension", () => {
       await t.close()
     }
   })
+
+  test("prices what's left from the products it remembers", async () => {
+    const t = await createTestAppWithAdmin()
+    try {
+      for (const text of ["2 cans diced tomatoes", "paper towels"]) {
+        await t.admin.post("/api/list/items", { text })
+      }
+      const basket = (await t.admin.get("/api/shop/walmart/basket")).body
+        .basket as Basket
+      const id = (name: string) =>
+        basket.lines.find((l) => l.name === name)!.itemId
+      await t.admin.put(`/api/shop/walmart/products/${id("diced tomatoes")}`, {
+        product: walmart(
+          "3",
+          "Great Value Diced Tomatoes, 14.5 oz",
+          0.92,
+          "14.5 oz"
+        ),
+      })
+
+      const res = await t.admin.get("/api/shop/prices")
+      expect(res.status).toBe(200)
+      expect(Object.keys(res.body.prices)).toEqual([id("diced tomatoes")])
+      expect(res.body.prices[id("diced tomatoes")]).toMatchObject({
+        shop: "walmart",
+        packages: 2,
+        total: expect.closeTo(1.84),
+        sale: false,
+        product: "Great Value Diced Tomatoes, 14.5 oz",
+      })
+
+      // What's in the cart isn't priced.
+      await t.admin.patch(`/api/list/items/${id("diced tomatoes")}`, {
+        checked: true,
+      })
+      expect((await t.admin.get("/api/shop/prices")).body.prices).toEqual({})
+    } finally {
+      await t.close()
+    }
+  })
 })
 
 describe("store connections: packs", () => {
