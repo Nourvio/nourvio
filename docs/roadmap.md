@@ -320,11 +320,58 @@ What's there today: a web app manifest (name, icons, standalone), so phones can 
 
 **Done when:** the user's parents can put Nourvio on their phone's home screen from one button and its instructions, and on a day with frozen chicken planned for dinner, a notification at 8 a.m. says to take it out.
 
+## What Mealie users ask for
+
+On October 15, 2026 the user gathered the requests Mealie users make most often (grouped from Mealie's discussions and ranked by how often they come up and how much they matter day to day; that ranking is an assessment, not Mealie's own) and asked for what Nourvio doesn't have yet to go on the roadmap. Where it stands:
+
+| Request | Nourvio today | Still to do |
+|---|---|---|
+| Pantry and fridge inventory, taken off the shopping list | The pantry (M4), subtracted when the plan goes on the list; receipts scan straight in (M13) | Fridge, freezer or cupboard (M17) |
+| Smarter shopping lists: merged, by store, remembering usual buys | Merged across recipes, by aisle, lists by store (M9), every-week items, prices and sales | Learning what you usually buy (M17) |
+| The week's plan to a grocery list in one go | Add to list from the plan; the weekly autoplan does it by itself (M8) | Nothing |
+| Grocery store integration | The Fry's cart and prices, Walmart through the extension, Costco links (M6, M11) | Nothing for now |
+| Importing from TikTok, Instagram, Facebook and YouTube | All four (M1), and sharing straight to Nourvio (M13) | Nothing |
+| A pool of meals for the week, not pinned to days | Every planned meal is on a day | M16 |
+| Servings per planned meal, with the list to match | Yes | Nothing |
+| AI suggestions from what's at home or needs using | Fill the week puts Use soon first; "Ideas for these" on the pantry | Saying why (M15) |
+| Nutrition from the ingredients, with daily totals | Per serving on recipes, a day's total on the plan (M5) | Nothing |
+| A better phone experience | Made for phones; the cook view reads aloud; the list updates live | Working offline (M17); the install button and reminders (M12) |
+| Metric and US units | Grams for baking (an "As written / Grams" switch) | Both ways, with ml and °C (M17) |
+| Recipe management: ingredient groups, bulk tagging, translations, step photos | Sections, and bulk tagging (M14) | Translations and step photos (Later, maybe) |
+
+## Milestone 15: Deals worth having, and saying why
+
+**Status:** planned October 15, 2026, from the user's own ideas alongside the wishlist above. Builds on Fry's sales (M11) and the daily price history it keeps (`store_prices`).
+
+- **Is this sale actually good?** Each sale is judged against what Nourvio has seen the product cost, not the store's "was" price: "Lowest in 60 days", "A normal sale (it's $3.99 every few weeks)", or "Barely off: usually $4.29". Shown on the list, the deals card and recipes' sale badges, and Fill the week and the sale suggestions favor the real deals. With only a few weeks of history it says so ("Watching this price since Oct 2") rather than guessing.
+- **Buying by the package.** Nourvio knows what a package holds (a 2 lb pack of thighs, from the store's product), so buying one for a recipe that needs ½ lb leaves 1½ lb. Put away, the pantry gets what was really bought, and Fill the week (and the list itself: "1½ lb chicken left over: add Chicken Tikka?") suggests meals that use the rest before it turns.
+- **Why this recipe?** Every suggestion says why in one line, from what Nourvio knows: "You usually buy this chicken, it's 30% off this week, and you have everything else." The reasons: a usual buy, how good the sale is, what's on hand or needs using, not had lately, the household's tastes and the night's theme. The same lines in Fill the week, the weekly autoplan, the sale suggestions and the assistant's picks.
+- **How:** a price verdict in the shared package from a product's history; package sizes read from the remembered store product and compared with the amount on the list; a `purchases` record written when things are put away (food, product, amount, day), which also feeds usual buys (M17); one reason builder shared by every suggestion path.
+
+## Milestone 16: A pool of meals for the week
+
+**Status:** planned October 15, 2026, from the wishlist above.
+
+- A week can hold meals "for this week, any day": added from a recipe, by Fill the week or by the assistant, and shown above the days. The list and the pantry count them like any planned meal.
+- Drag one onto a day, or tap **Tonight**, once you know. Today offers the pool first when dinner isn't planned.
+- Whatever's left at the end of the week is offered for next week, or dropped.
+- **How:** plan entries that belong to a week rather than a day (the week's first day plus an "any day" flag), so everything that reads the plan by dates still finds them.
+
+## Milestone 17: Around the kitchen
+
+**Status:** planned October 15, 2026, from the wishlist above.
+
+- **Fridge, freezer or cupboard.** Each pantry item gets where it's kept, guessed from the food (meat in the fridge, ice cream in the freezer, rice in the cupboard) and easy to change, and the pantry can show it that way as well as by aisle. Moving something to the freezer pushes its use-by date out (meat from 3 days to 3 months), and "Take the chicken out tonight" joins the reminders planned in M12.
+- **What you usually buy.** From what's been put away, Nourvio learns what you buy often and how often ("milk about every 6 days"), and offers it when the list is made: "Milk? You last got some Oct 9." One tap adds it. Every-week items stay for the fixed ones.
+- **Metric and US, both ways.** The Grams switch becomes a units choice: as written, US, or metric (grams, ml and °C). Oven temperatures and volumes convert too, and a metric recipe can show cups.
+- **Works offline.** Recipes you've opened, this week's plan and the list are kept on the phone, so the cook view and shopping work without a signal; things checked off offline catch up once it's back.
+
 ## Later, maybe
 
 - A site that shows Nourvio off, like Mealie's: what it does, screenshots or a demo, and how to set it up. The code is AGPL-3.0 (October 14, 2026), so anyone can self-host it.
 - Meaning-based recipe search with `pgvector` ("something cozy with chicken")
-- Offline reading in the cook view (a service worker)
+- Recipe translations (by AI, kept as a version so the original stays)
+- A photo for each step
 - Barcode scanning for the pantry
 - A ChatGPT/Claude app connector (MCP). We dropped this in favor of in-app chat, but the service layer would make it easy to add (see [integrations.md](integrations.md#considered-and-dropped-chatgpt-and-claude-app-connectors-mcp)).
 
