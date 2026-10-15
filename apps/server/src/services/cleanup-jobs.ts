@@ -8,6 +8,7 @@ import { z } from "zod"
 
 import { HttpError } from "../http.ts"
 import { proposeCleanup } from "./cleanup.ts"
+import { notDeleted } from "./recipes.ts"
 
 /** Two at a time: quicker than one, gentle on rate limits. */
 const CONCURRENCY = 2
@@ -44,6 +45,7 @@ async function untidiedRecipeIds(db: Db, householdId: string) {
     .where(
       and(
         eq(recipes.householdId, householdId),
+        notDeleted,
         notExists(
           db
             .select({ id: proposals.id })

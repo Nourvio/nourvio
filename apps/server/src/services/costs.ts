@@ -13,6 +13,7 @@ import { and, asc, eq, inArray } from "drizzle-orm"
 import type { Db } from "../db/client.ts"
 import { recipeIngredients, recipes, storeProducts } from "../db/schema.ts"
 import { getHousehold } from "./households.ts"
+import { notDeleted } from "./recipes.ts"
 import { needsFor } from "./shop.ts"
 
 /** Stores whose remembered products have prices, Fry's first. */
@@ -30,9 +31,11 @@ export async function recipeCosts(
   householdId: string,
   recipeIds?: string[]
 ): Promise<Map<string, RecipeCostDetail>> {
-  const scope = recipeIds
-    ? and(eq(recipes.householdId, householdId), inArray(recipes.id, recipeIds))
-    : eq(recipes.householdId, householdId)
+  const scope = and(
+    eq(recipes.householdId, householdId),
+    notDeleted,
+    recipeIds ? inArray(recipes.id, recipeIds) : undefined
+  )
   if (recipeIds && !recipeIds.length) return new Map()
   const rows = await db
     .select({

@@ -5,7 +5,7 @@ import {
   type PlanEntry,
   type UpdatePlanEntryInput,
 } from "@mise/shared"
-import { and, asc, eq, gte, inArray, lte, max } from "drizzle-orm"
+import { and, asc, eq, gte, inArray, isNull, lte, max, or } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
@@ -105,8 +105,20 @@ function select(db: Db) {
     .select(columns)
     .from(mealPlanEntries)
     .leftJoin(recipes, eq(mealPlanEntries.recipeId, recipes.id))
-    .leftJoin(withRecipes, eq(mealPlanEntries.withRecipeId, withRecipes.id))
+    .leftJoin(
+      withRecipes,
+      and(
+        eq(mealPlanEntries.withRecipeId, withRecipes.id),
+        isNull(withRecipes.deletedAt)
+      )
+    )
 }
+
+/** Meals with a recipe in Recently deleted are off the plan until it's restored. */
+const recipeNotDeleted = or(
+  isNull(mealPlanEntries.recipeId),
+  isNull(recipes.deletedAt)
+)
 
 /** Plan entries from one date to another (both included), in order. */
 export async function listEntries(
@@ -123,7 +135,8 @@ export async function listEntries(
       and(
         eq(mealPlanEntries.householdId, householdId),
         gte(mealPlanEntries.date, from),
-        lte(mealPlanEntries.date, to)
+        lte(mealPlanEntries.date, to),
+        recipeNotDeleted
       )
     )
     .orderBy(

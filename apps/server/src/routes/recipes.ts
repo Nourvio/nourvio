@@ -1,9 +1,11 @@
 import {
   addCookNoteInput,
   addPairingsInput,
+  CLEANUP_SECTIONS,
   cleanupInput,
   isoDate,
   rateInput,
+  recipeBulkInput,
   recipeInput,
   renameTagInput,
   setDietsInput,
@@ -43,17 +45,23 @@ import { deleteImage, saveImage } from "../services/images.ts"
 import {
   createRecipe,
   deleteRecipe,
+  deleteRecipes,
   deleteTag,
   findRecipeRow,
   getRecipe,
+  listDeletedRecipes,
   listRecipes,
   listTags,
   listVersions,
+  purgeRecipes,
   renameTag,
+  restoreRecipes,
   restoreVersion,
   setRecipeFields,
+  tagRecipes,
   updateRecipe,
 } from "../services/recipes.ts"
+import { addRecipesToList } from "../services/list.ts"
 
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024
 
@@ -104,6 +112,75 @@ export function recipesRoutes(
     nutrition.afterSave(actorOf(c), recipe)
     photos.afterCreate(actorOf(c), recipe)
     return c.json({ recipe }, 201)
+  })
+
+  /** What's in Recently deleted, for 30 days after it was deleted. */
+  app.get("/deleted", async (c) =>
+    c.json({ recipes: await listDeletedRecipes(db, currentHousehold(c)) })
+  )
+
+  /**
+   * Something done to many recipes at once (Select on Recipes). Working out
+   * nutrition, making photos and tidying up carry on in the background, one
+   * recipe at a time.
+   */
+  app.post("/bulk", async (c) => {
+    const input = await readBody(c, recipeBulkInput)
+    const householdId = currentHousehold(c)
+    const actor = actorOf(c)
+    const inBackground = (task: (id: string) => Promise<unknown>) => {
+      void (async () => {
+        for (const id of input.ids) {
+          await task(id).catch((error: Error) =>
+            console.warn(`Bulk ${input.action} for ${id}:`, error.message)
+          )
+        }
+      })()
+      return input.ids.length
+    }
+    let changed = 0
+    switch (input.action) {
+      case "delete":
+        changed = await deleteRecipes(db, householdId, input.ids)
+        break
+      case "restore":
+        changed = await restoreRecipes(db, householdId, input.ids)
+        break
+      case "purge":
+        changed = await purgeRecipes(db, householdId, input.ids)
+        break
+      case "addTags":
+      case "removeTags":
+        changed = await tagRecipes(
+          db,
+          householdId,
+          input.ids,
+          input.tags,
+          input.action === "addTags"
+        )
+        break
+      case "nutrition":
+        changed = inBackground((id) => nutrition.workOut(actor, id))
+        break
+      case "photos":
+        // Recipes that have a photo already are left alone.
+        changed = inBackground((id) => photos.make(actor, id))
+        break
+      case "tidy":
+        changed = inBackground((id) =>
+          proposeCleanup(db, ai, householdId, id, {
+            userId: actor.userId,
+            sections: [...CLEANUP_SECTIONS],
+          })
+        )
+        break
+      case "toList": {
+        const result = await addRecipesToList(db, householdId, input.ids)
+        changed = result.added + result.merged
+        break
+      }
+    }
+    return c.json({ changed })
   })
 
   /** What every recipe costs at the household's stores, as far as Mise knows. */

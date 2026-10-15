@@ -1,5 +1,8 @@
 import { toIsoDate } from "@mise/shared"
 import type {
+  BulkResult,
+  DeletedRecipe,
+  RecipeBulkInput,
   RecipeCosts,
   AddCookNoteInput,
   AddCookNoteResult,
@@ -352,6 +355,34 @@ export function useDeleteRecipe() {
   return useMutation({
     mutationFn: (id: string) => api(`/recipes/${id}`, { method: "DELETE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: RECIPES_KEY }),
+  })
+}
+
+/** Something done to many recipes at once (Select on Recipes). */
+export function useRecipeBulk() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: RecipeBulkInput) =>
+      api<BulkResult>("/recipes/bulk", { body: input }),
+    onSuccess: (_, input) => {
+      void queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
+      void queryClient.invalidateQueries({ queryKey: ["recipe"] })
+      if (input.action === "toList") {
+        void queryClient.invalidateQueries({ queryKey: ["list"] })
+      }
+      if (["delete", "restore", "purge"].includes(input.action)) {
+        void queryClient.invalidateQueries({ queryKey: ["plan"] })
+      }
+    },
+  })
+}
+
+/** What's in Recently deleted. */
+export function useDeletedRecipes() {
+  return useQuery({
+    queryKey: [...RECIPES_KEY, "deleted"],
+    queryFn: async () =>
+      (await api<{ recipes: DeletedRecipe[] }>("/recipes/deleted")).recipes,
   })
 }
 

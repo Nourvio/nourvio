@@ -80,6 +80,7 @@ import { UnitToggle } from "./unit-toggle"
 import { useRecipeProposal } from "./use-cleanup"
 import {
   useDeleteRecipe,
+  useRecipeBulk,
   useMarkMade,
   useRateRecipe,
   useRecipe,
@@ -494,6 +495,7 @@ function MoreMenu({
   const photo = useRecipePhoto(recipe.id)
   const aiPhoto = useMakePhoto(recipe)
   const deleteRecipe = useDeleteRecipe()
+  const bulk = useRecipeBulk()
   const fileInput = React.useRef<HTMLInputElement>(null)
   const [historyOpen, setHistoryOpen] = React.useState(false)
   const [deleting, setDeleting] = React.useState(false)
@@ -584,7 +586,9 @@ function MoreMenu({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete {recipe.name}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the recipe, its photo and its history.
+              It goes to Recently deleted for 30 days, then it's gone for good.
+              Planned meals using it come off the plan, and back if it's
+              restored.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -594,7 +598,22 @@ function MoreMenu({
               onClick={() =>
                 deleteRecipe.mutate(recipe.id, {
                   onSuccess: () => {
-                    toast.success(`Deleted ${recipe.name}`)
+                    toast(`${recipe.name} moved to Recently deleted`, {
+                      duration: 10_000,
+                      action: {
+                        label: "Undo",
+                        // This page is gone by now, so mutate's own
+                        // callbacks wouldn't run; the promise still does.
+                        onClick: () =>
+                          void bulk
+                            .mutateAsync({
+                              action: "restore",
+                              ids: [recipe.id],
+                            })
+                            .then(() => navigate(`/recipes/${recipe.slug}`))
+                            .catch(() => toast.error("Couldn't bring it back")),
+                      },
+                    })
                     navigate("/recipes", { replace: true })
                   },
                 })

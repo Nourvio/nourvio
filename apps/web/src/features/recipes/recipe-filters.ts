@@ -20,6 +20,8 @@ export type RecipeFilters = {
   time: number | null
   /** Only recipes using something on sale at the household's Fry's. */
   sale: boolean
+  /** Only recipes not cooked yet. */
+  fresh: boolean
   sort: RecipeSort
 }
 
@@ -35,6 +37,7 @@ export function readFilters(params: URLSearchParams): RecipeFilters {
       .filter((d): d is Diet => (DIETS as readonly string[]).includes(d)),
     time: (TIMES as readonly number[]).includes(time) ? time : null,
     sale: params.get("sale") === "1",
+    fresh: params.get("new") === "1",
     sort: SORTS.some((s) => s.id === sort) ? (sort as RecipeSort) : "newest",
   }
 }
@@ -64,6 +67,10 @@ export function writeFilters(
     if (change.sale) next.set("sale", "1")
     else next.delete("sale")
   }
+  if (change.fresh !== undefined) {
+    if (change.fresh) next.set("new", "1")
+    else next.delete("new")
+  }
   if (change.sort) {
     if (change.sort === "newest") next.delete("sort")
     else next.set("sort", change.sort)
@@ -79,13 +86,14 @@ const lower = (s: string) => s.toLowerCase()
  */
 export function filterRecipes(
   recipes: RecipeSummary[],
-  filters: Pick<RecipeFilters, "tags" | "diets" | "time" | "sale">,
+  filters: Pick<RecipeFilters, "tags" | "diets" | "time" | "sale" | "fresh">,
   onSale: Record<string, unknown> = {}
 ) {
   const tags = filters.tags.map(lower)
   return recipes.filter(
     (recipe) =>
       (!filters.sale || recipe.id in onSale) &&
+      (!filters.fresh || !recipe.lastMadeAt) &&
       tags.every((tag) => recipe.tags.some((t) => lower(t) === tag)) &&
       filters.diets.every((diet) => recipe.diets.includes(diet)) &&
       (!filters.time ||

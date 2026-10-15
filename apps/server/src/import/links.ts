@@ -6,7 +6,7 @@ import { HttpError } from "../http.ts"
 import sharp from "sharp"
 
 import { saveImage } from "../services/images.ts"
-import { getRecipe } from "../services/recipes.ts"
+import { getRecipe, notDeleted } from "../services/recipes.ts"
 import type { Fetcher } from "./safe-fetch.ts"
 
 const VIDEO_HOSTS =
@@ -54,7 +54,8 @@ export async function findBySourceUrl(
     .where(
       and(
         eq(recipes.householdId, householdId),
-        inArray(recipes.sourceUrl, urls)
+        inArray(recipes.sourceUrl, urls),
+        notDeleted
       )
     )
     .limit(1)
@@ -72,7 +73,8 @@ export async function inLibrary(db: Db, householdId: string, urls: string[]) {
     .where(
       and(
         eq(recipes.householdId, householdId),
-        inArray(recipes.sourceUrl, normal)
+        inArray(recipes.sourceUrl, normal),
+        notDeleted
       )
     )
   for (const row of rows) {

@@ -31,6 +31,7 @@ export function ChatLauncher({ className }: { className?: string }) {
   const trigger = (
     <Button
       size="icon-lg"
+      data-chat-launcher
       aria-label="Open the cooking assistant"
       onClick={() => chat.setOpen(true)}
       className={cn(

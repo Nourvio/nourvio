@@ -169,6 +169,13 @@
       "when": 1792036809871,
       "tag": "0023_store_prices",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792081770833,
+      "tag": "0024_bulk_actions",
+      "breakpoints": true
     }
   ]
 }

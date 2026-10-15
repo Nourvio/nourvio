@@ -11,6 +11,7 @@ import { fetchPublic } from "./import/safe-fetch.ts"
 import { scheduleYtDlpUpdates } from "./import/video-tools.ts"
 import { startAutoPlanScheduler } from "./services/autoplan.ts"
 import { markInterruptedJobs } from "./services/cleanup-jobs.ts"
+import { purgeExpiredRecipes } from "./services/recipes.ts"
 import { startPriceScheduler } from "./services/price-checks.ts"
 import { createShopService } from "./services/shop.ts"
 import { startSitesScheduler } from "./services/sites.ts"
@@ -56,6 +57,17 @@ startAutoPlanScheduler(db, {
   },
 })
 startSitesScheduler(db, fetchPublic)
+
+// Recipes in Recently deleted for 30 days go for good, photos too.
+const purgeDeleted = () => {
+  void purgeExpiredRecipes(db)
+    .then((n) => {
+      if (n) console.log(`Removed ${n} recipes deleted 30 days ago`)
+    })
+    .catch((error) => console.error("Clearing Recently deleted failed:", error))
+}
+setTimeout(purgeDeleted, 2 * 60_000).unref()
+setInterval(purgeDeleted, 6 * 60 * 60_000).unref()
 
 // In the Docker image, keep yt-dlp current. A local install is left alone.
 if (process.env.NODE_ENV === "production") scheduleYtDlpUpdates()

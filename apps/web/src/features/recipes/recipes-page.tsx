@@ -1,12 +1,17 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  Calendar03Icon,
   Compass01Icon,
   CookBookIcon,
+  Delete02Icon,
   Link01Icon,
+  ShoppingBasketAdd01Icon,
   SparklesIcon,
+  Tag01Icon,
 } from "@hugeicons/core-free-icons"
 import { Link, useLocation, useSearchParams } from "react-router"
+import { toast } from "sonner"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -25,11 +30,30 @@ import {
   FollowSitesPrompt,
   SitesSpotlight,
 } from "@/features/discover/sites-spotlight"
+import {
+  SelectButton,
+  SelectionBar,
+  SelectionHeader,
+  useSelectionKeepOnly,
+} from "@/features/select/selection-bar"
+import { useSelection } from "@/features/select/use-selection"
 import { useDeals } from "@/features/shop/use-shop"
+import { ApiError } from "@/lib/api"
 
 import { AddRecipeMenu } from "./add-recipe-menu"
 import { ImportDialog } from "./import-dialog"
-import { RecipeCard, RecipeRow, useRecipeView } from "./recipe-card"
+import {
+  DeleteRecipesDialog,
+  exportRecipes,
+  PlanRecipesDialog,
+  TagRecipesDialog,
+} from "./bulk-dialogs"
+import {
+  RecipeCard,
+  RecipeRow,
+  useRecipeView,
+  type CardSelect,
+} from "./recipe-card"
 import { usePendingProposals } from "./use-cleanup"
 import { useImportDialog } from "./use-import"
 import { RecipeFilterBar } from "./recipe-filter-bar"
@@ -40,7 +64,12 @@ import {
   writeFilters,
   type RecipeFilters,
 } from "./recipe-filters"
-import { useRecipeCosts, useRecipes } from "./use-recipes"
+import {
+  useDeletedRecipes,
+  useRecipeBulk,
+  useRecipeCosts,
+  useRecipes,
+} from "./use-recipes"
 
 /**
  * The library: search (on the server, through ingredients too), then diet,
@@ -75,6 +104,45 @@ export function RecipesPage() {
   const all = recipes.data ?? []
   const shown = sortRecipes(filterRecipes(all, filters, onSale), filters.sort)
   const [revealed, revealMore] = useRevealed()
+  const deletedCount = useDeletedRecipes().data?.length ?? 0
+
+  // Select mode: pick recipes, then act on them all.
+  const selection = useSelection()
+  useSelectionKeepOnly(
+    selection,
+    shown.map((recipe) => recipe.id)
+  )
+  const picked = shown.filter((recipe) => selection.isPicked(recipe.id))
+  const pickedIds = picked.map((recipe) => recipe.id)
+  const bulk = useRecipeBulk()
+  const [dialog, setDialog] = React.useState<"plan" | "tags" | "delete" | null>(
+    null
+  )
+  const selectOf = (id: string): CardSelect => ({
+    selecting: selection.selecting,
+    picked: selection.isPicked(id),
+    onToggle: () => selection.toggle(id),
+    onLongPress: () => selection.start(id),
+  })
+
+  /** One of the background jobs: nutrition, photos, tidying up. */
+  function startJob(action: "nutrition" | "photos" | "tidy", what: string) {
+    bulk.mutate(
+      { action, ids: pickedIds },
+      {
+        onSuccess: ({ changed }) => {
+          toast.success(
+            `${what} for ${changed} ${changed === 1 ? "recipe" : "recipes"}. It carries on in the background.`
+          )
+          selection.done()
+        },
+        onError: (error) =>
+          toast.error(
+            error instanceof ApiError ? error.message : "That didn't work"
+          ),
+      }
+    )
+  }
 
   function change(next: Partial<RecipeFilters>) {
     setParams((current) => writeFilters(current, next), {
@@ -89,7 +157,8 @@ export function RecipesPage() {
     filters.tags.length ||
     filters.diets.length ||
     filters.time ||
-    filters.sale
+    filters.sale ||
+    filters.fresh
   )
   const libraryCount = !q && recipes.data?.length ? recipes.data.length : null
 
@@ -103,33 +172,43 @@ export function RecipesPage() {
             : "Everything you cook, in one place."
         }
         actions={
-          <>
-            {pendingReview > 0 && (
-              <Button variant="outline" asChild>
-                <Link to="/review">
-                  <HugeiconsIcon
-                    icon={SparklesIcon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                  />
-                  {pendingReview} to review
-                </Link>
-              </Button>
-            )}
-            {!libraryEmpty && (
-              <Button variant="outline" asChild>
-                <Link to="/discover">
-                  <HugeiconsIcon
-                    icon={Compass01Icon}
-                    strokeWidth={2}
-                    data-icon="inline-start"
-                  />
-                  Find recipes
-                </Link>
-              </Button>
-            )}
-            <AddRecipeMenu />
-          </>
+          selection.selecting ? (
+            <SelectionHeader
+              selection={selection}
+              allIds={shown.map((recipe) => recipe.id)}
+            />
+          ) : (
+            <>
+              {pendingReview > 0 && (
+                <Button variant="outline" asChild>
+                  <Link to="/review">
+                    <HugeiconsIcon
+                      icon={SparklesIcon}
+                      strokeWidth={2}
+                      data-icon="inline-start"
+                    />
+                    {pendingReview} to review
+                  </Link>
+                </Button>
+              )}
+              {!libraryEmpty && (
+                <Button variant="outline" asChild>
+                  <Link to="/discover">
+                    <HugeiconsIcon
+                      icon={Compass01Icon}
+                      strokeWidth={2}
+                      data-icon="inline-start"
+                    />
+                    Find recipes
+                  </Link>
+                </Button>
+              )}
+              {!libraryEmpty && (
+                <SelectButton selection={selection} disabled={!shown.length} />
+              )}
+              <AddRecipeMenu />
+            </>
+          )
         }
       />
       <ImportDialog />
@@ -215,11 +294,18 @@ export function RecipesPage() {
           {(filters.tags.length > 0 ||
             filters.diets.length > 0 ||
             filters.time ||
-            filters.sale) && (
+            filters.sale ||
+            filters.fresh) && (
             <Button
               variant="outline"
               onClick={() =>
-                change({ tags: [], diets: [], time: null, sale: false })
+                change({
+                  tags: [],
+                  diets: [],
+                  time: null,
+                  sale: false,
+                  fresh: false,
+                })
               }
             >
               Clear filters
@@ -236,6 +322,7 @@ export function RecipesPage() {
                   recipe={recipe}
                   onSale={onSale[recipe.id]}
                   cost={costs[recipe.id]}
+                  select={selectOf(recipe.id)}
                 />
               ))}
             </div>
@@ -247,6 +334,7 @@ export function RecipesPage() {
                   recipe={recipe}
                   onSale={onSale[recipe.id]}
                   cost={costs[recipe.id]}
+                  select={selectOf(recipe.id)}
                 />
               ))}
             </div>
@@ -259,6 +347,103 @@ export function RecipesPage() {
       {recipes.isSuccess && !libraryEmpty && shown.length <= revealed && (
         <FollowSitesPrompt />
       )}
+
+      {deletedCount > 0 && !selection.selecting && (
+        <p className="mt-8 text-center text-sm text-muted-foreground">
+          <Link
+            to="/recipes/deleted"
+            className="font-medium text-foreground underline underline-offset-4"
+          >
+            Recently deleted
+          </Link>{" "}
+          has {deletedCount} {deletedCount === 1 ? "recipe" : "recipes"}, kept
+          for 30 days.
+        </p>
+      )}
+
+      <SelectionBar
+        selection={selection}
+        actions={[
+          {
+            label: "Add to plan",
+            icon: Calendar03Icon,
+            onSelect: () => setDialog("plan"),
+          },
+          {
+            label: "Add to list",
+            icon: ShoppingBasketAdd01Icon,
+            onSelect: () =>
+              bulk.mutate(
+                { action: "toList", ids: pickedIds },
+                {
+                  onSuccess: ({ changed }) => {
+                    toast.success(
+                      changed
+                        ? `${changed} ${changed === 1 ? "thing" : "things"} on the list`
+                        : "Everything's on the list or at home already"
+                    )
+                    selection.done()
+                  },
+                }
+              ),
+          },
+          {
+            label: "Tags",
+            icon: Tag01Icon,
+            onSelect: () => setDialog("tags"),
+          },
+          {
+            label: "Delete",
+            icon: Delete02Icon,
+            destructive: true,
+            onSelect: () => setDialog("delete"),
+          },
+        ]}
+        more={[
+          {
+            label: "Tidy up with AI",
+            onSelect: () => startJob("tidy", "Tidying up"),
+          },
+          {
+            label: "Work out nutrition",
+            onSelect: () => startJob("nutrition", "Working out nutrition"),
+          },
+          {
+            label: "Make photos",
+            onSelect: () => startJob("photos", "Making photos"),
+          },
+          {
+            label: "Export",
+            onSelect: () =>
+              void exportRecipes(picked).catch(() =>
+                toast.error("Couldn't export those")
+              ),
+          },
+        ]}
+      />
+      <PlanRecipesDialog
+        recipes={picked}
+        open={dialog === "plan"}
+        onOpenChange={(open) => setDialog(open ? "plan" : null)}
+        onDone={() => {
+          setDialog(null)
+          selection.done()
+        }}
+      />
+      <TagRecipesDialog
+        ids={pickedIds}
+        open={dialog === "tags"}
+        onOpenChange={(open) => setDialog(open ? "tags" : null)}
+      />
+      <DeleteRecipesDialog
+        recipes={picked}
+        open={dialog === "delete"}
+        onOpenChange={(open) => setDialog(open ? "delete" : null)}
+        onDeleted={() => {
+          setDialog(null)
+          selection.done()
+        }}
+      />
     </>
   )
 }

@@ -404,6 +404,7 @@ export async function listHouseholdSummaries(
   const recipeCounts = await db
     .select({ id: recipes.householdId, n: count() })
     .from(recipes)
+    .where(isNull(recipes.deletedAt))
     .groupBy(recipes.householdId)
   const usage = await db
     .select({

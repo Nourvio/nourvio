@@ -4,7 +4,7 @@ import type {
   Pairing,
   RecipePairings,
 } from "@mise/shared"
-import { and, asc, eq, inArray, ne, or, sql } from "drizzle-orm"
+import { and, asc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm"
 import { z } from "zod"
 
 import type { Db } from "../db/client.ts"
@@ -35,6 +35,7 @@ async function recipesTagged(db: Db, householdId: string, names: string[]) {
     .where(
       and(
         eq(recipes.householdId, householdId),
+        isNull(recipes.deletedAt),
         inArray(
           sql`lower(${tags.name})`,
           names.map((n) => n.toLowerCase())
@@ -57,14 +58,23 @@ export async function getPairings(
   const rules = await db
     .select({ pairing: recipePairings, paired: recipes })
     .from(recipePairings)
-    .leftJoin(recipes, eq(recipes.id, recipePairings.pairedRecipeId))
+    .leftJoin(
+      recipes,
+      and(
+        eq(recipes.id, recipePairings.pairedRecipeId),
+        isNull(recipes.deletedAt)
+      )
+    )
     .where(eq(recipePairings.recipeId, base.id))
     .orderBy(asc(recipePairings.createdAt))
 
-  const pairings: Pairing[] = rules.map(({ pairing, paired }) =>
+  // A recipe in Recently deleted drops out, and comes back if it's restored.
+  const pairings = rules.flatMap(({ pairing, paired }): Pairing[] =>
     paired
-      ? { id: pairing.id, kind: "recipe", recipe: toOption(paired) }
-      : { id: pairing.id, kind: "tag", tag: pairing.tag! }
+      ? [{ id: pairing.id, kind: "recipe", recipe: toOption(paired) }]
+      : pairing.tag
+        ? [{ id: pairing.id, kind: "tag", tag: pairing.tag }]
+        : []
   )
   const picked = rules.flatMap((r) => (r.paired ? [r.paired] : []))
   const tagged = (
@@ -97,6 +107,7 @@ export async function getPairings(
       and(
         eq(recipePairings.householdId, householdId),
         ne(recipePairings.recipeId, base.id),
+        isNull(recipes.deletedAt),
         or(
           eq(recipePairings.pairedRecipeId, base.id),
           ownTags.length

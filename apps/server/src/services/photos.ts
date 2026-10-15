@@ -7,7 +7,12 @@ import type { Db } from "../db/client.ts"
 import { aiJobs, recipes } from "../db/schema.ts"
 import { HttpError } from "../http.ts"
 import { deleteImage, saveImage } from "./images.ts"
-import { findRecipeRow, getRecipe, setRecipeFields } from "./recipes.ts"
+import {
+  findRecipeRow,
+  getRecipe,
+  notDeleted,
+  setRecipeFields,
+} from "./recipes.ts"
 
 export type PhotoService = ReturnType<typeof createPhotoService>
 
@@ -136,7 +141,13 @@ export function createPhotoService(
     const rows = await db
       .select({ id: recipes.id })
       .from(recipes)
-      .where(and(eq(recipes.householdId, householdId), isNull(recipes.image)))
+      .where(
+        and(
+          eq(recipes.householdId, householdId),
+          notDeleted,
+          isNull(recipes.image)
+        )
+      )
       .orderBy(asc(recipes.createdAt))
     return rows.map((row) => row.id)
   }

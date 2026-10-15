@@ -290,6 +290,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   html {
     @apply font-sans;
     -webkit-tap-highlight-color: transparent;
@@ -302,4 +303,10 @@
   h3 {
     @apply font-heading;
   }
+}
+
+/* Select mode's action bar takes the chat button's place. Outside the layers,
+   so it wins over the button's own display utility. */
+html[data-selecting] [data-chat-launcher] {
+  display: none;
 }

@@ -93,8 +93,11 @@ export function RecipeFilterBar({
     filters.tags.length +
     filters.diets.length +
     (filters.time ? 1 : 0) +
-    (filters.sale ? 1 : 0)
+    (filters.sale ? 1 : 0) +
+    (filters.fresh ? 1 : 0)
   const saleCount = all.filter((recipe) => recipe.id in onSale).length
+  const newCount = all.filter((recipe) => !recipe.lastMadeAt).length
+  const special = saleCount > 0 || filters.sale || newCount > 0 || filters.fresh
 
   // "/" jumps to the search box, like most sites with one.
   React.useEffect(() => {
@@ -197,7 +200,7 @@ export function RecipeFilterBar({
         </div>
       </div>
 
-      {(quick.length > 1 || saleCount > 0 || filters.sale) && (
+      {(quick.length > 1 || special) && (
         <div
           role="group"
           aria-label="Tags"
@@ -206,15 +209,32 @@ export function RecipeFilterBar({
           <Button
             size="sm"
             variant={
-              filters.tags.length || filters.sale ? "outline" : "default"
+              filters.tags.length || filters.sale || filters.fresh
+                ? "outline"
+                : "default"
             }
-            aria-pressed={!filters.tags.length && !filters.sale}
+            aria-pressed={
+              !filters.tags.length && !filters.sale && !filters.fresh
+            }
             className="shrink-0 rounded-full"
-            onClick={() => onChange({ tags: [], sale: false })}
+            onClick={() => onChange({ tags: [], sale: false, fresh: false })}
           >
             All
             <span className="tabular-nums opacity-70">{total}</span>
           </Button>
+          {(newCount > 0 || filters.fresh) && (
+            <Button
+              size="sm"
+              variant={filters.fresh ? "default" : "outline"}
+              aria-pressed={filters.fresh}
+              className="shrink-0 rounded-full"
+              title="Not cooked yet"
+              onClick={() => onChange({ fresh: !filters.fresh })}
+            >
+              New
+              <span className="tabular-nums opacity-70">{newCount}</span>
+            </Button>
+          )}
           {(saleCount > 0 || filters.sale) && (
             <Button
               size="sm"

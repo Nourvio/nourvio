@@ -1,5 +1,6 @@
+import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Clock01Icon } from "@hugeicons/core-free-icons"
+import { Clock01Icon, Tick02Icon } from "@hugeicons/core-free-icons"
 import {
   costShown,
   type OnSale,
@@ -10,8 +11,10 @@ import { Link } from "react-router"
 
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { useLongPress } from "@/features/select/use-selection"
 import { onSaleText } from "@/features/shop/sale-text"
 import { storedChoice } from "@/lib/stored-choice"
+import { cn } from "@/lib/utils"
 
 import { formatMinutes, formatRelativeDate } from "./format"
 import { RatingStars } from "./rating-stars"
@@ -34,25 +37,116 @@ function servingCost(cost: RecipeCost | undefined) {
     : null
 }
 
+/** A card's part in Select mode on Recipes. */
+export type CardSelect = {
+  selecting: boolean
+  picked: boolean
+  onToggle: () => void
+  /** A long press on a phone, which starts selecting with this one. */
+  onLongPress: () => void
+}
+
+/**
+ * The recipe's link, or while selecting a button that picks it. A long
+ * press on a touch screen starts selecting.
+ */
+function Pressable({
+  slug,
+  name,
+  select,
+  className,
+  children,
+}: {
+  slug: string
+  name: string
+  select?: CardSelect
+  className: string
+  children: React.ReactNode
+}) {
+  const press = useLongPress(
+    () => select?.onLongPress(),
+    Boolean(select && !select.selecting)
+  )
+  if (select?.selecting) {
+    return (
+      <button
+        type="button"
+        aria-pressed={select.picked}
+        aria-label={`${select.picked ? "Unselect" : "Select"} ${name}`}
+        onClick={select.onToggle}
+        className={cn(className, "text-left")}
+      >
+        {children}
+      </button>
+    )
+  }
+  return (
+    <Link to={`/recipes/${slug}`} className={className} {...press}>
+      {children}
+    </Link>
+  )
+}
+
+/** The tick box shown on each recipe while selecting. */
+function SelectMark({
+  picked,
+  className,
+}: {
+  picked: boolean
+  className?: string
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "flex size-6 items-center justify-center rounded-lg border-2 transition-colors",
+        picked
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-muted-foreground/50 bg-card/90",
+        className
+      )}
+    >
+      {picked && (
+        <HugeiconsIcon icon={Tick02Icon} strokeWidth={3} className="size-4" />
+      )}
+    </span>
+  )
+}
+
 export function RecipeCard({
   recipe,
   onSale,
   cost,
+  select,
 }: {
   recipe: RecipeSummary
   /** What it uses that's on sale at the household's Fry's. */
   onSale?: OnSale[]
   cost?: RecipeCost
+  select?: CardSelect
 }) {
   const time = formatMinutes(recipe.totalMinutes)
   const perServing = servingCost(cost)
 
   return (
-    <Link
-      to={`/recipes/${recipe.slug}`}
+    <Pressable
+      slug={recipe.slug}
+      name={recipe.name}
+      select={select}
       className="group rounded-3xl outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
     >
-      <Card className="h-full gap-0 overflow-hidden py-0 transition-shadow group-hover:shadow-md">
+      <Card
+        className={cn(
+          "relative h-full gap-0 overflow-hidden py-0 transition-shadow group-hover:shadow-md",
+          select?.picked && "ring-2 ring-primary"
+        )}
+      >
+        {select?.selecting && (
+          <SelectMark
+            picked={select.picked}
+            className="absolute top-3 left-3 z-10"
+          />
+        )}
         <RecipeImage
           src={recipe.thumbnailUrl}
           alt={recipe.name}
@@ -87,28 +181,28 @@ export function RecipeCard({
               {onSaleText(onSale)}
             </p>
           ) : null}
-          {(recipe.lastMadeAt || recipe.tags.length > 0) && (
-            <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
-              {recipe.lastMadeAt && (
-                <Badge className="bg-accent text-accent-foreground">
-                  Made {formatRelativeDate(recipe.lastMadeAt)}
-                </Badge>
-              )}
-              {recipe.tags.slice(0, recipe.lastMadeAt ? 2 : 3).map((tag) => (
-                <Badge key={tag} variant="secondary" className="max-sm:hidden">
-                  {tag}
-                </Badge>
-              ))}
-              {recipe.tags.length > (recipe.lastMadeAt ? 2 : 3) && (
-                <Badge variant="outline" className="max-sm:hidden">
-                  +{recipe.tags.length - (recipe.lastMadeAt ? 2 : 3)}
-                </Badge>
-              )}
-            </div>
-          )}
+          <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
+            {recipe.lastMadeAt ? (
+              <Badge className="bg-accent text-accent-foreground">
+                Made {formatRelativeDate(recipe.lastMadeAt)}
+              </Badge>
+            ) : (
+              <Badge title="Not cooked yet">New</Badge>
+            )}
+            {recipe.tags.slice(0, 2).map((tag) => (
+              <Badge key={tag} variant="secondary" className="max-sm:hidden">
+                {tag}
+              </Badge>
+            ))}
+            {recipe.tags.length > 2 && (
+              <Badge variant="outline" className="max-sm:hidden">
+                +{recipe.tags.length - 2}
+              </Badge>
+            )}
+          </div>
         </div>
       </Card>
-    </Link>
+    </Pressable>
   )
 }
 
@@ -117,18 +211,28 @@ export function RecipeRow({
   recipe,
   onSale,
   cost,
+  select,
 }: {
   recipe: RecipeSummary
   onSale?: OnSale[]
   cost?: RecipeCost
+  select?: CardSelect
 }) {
   const time = formatMinutes(recipe.totalMinutes)
   const perServing = servingCost(cost)
   return (
-    <Link
-      to={`/recipes/${recipe.slug}`}
-      className="flex items-center gap-3 rounded-2xl p-2 outline-none hover:bg-secondary/60 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+    <Pressable
+      slug={recipe.slug}
+      name={recipe.name}
+      select={select}
+      className={cn(
+        "flex w-full items-center gap-3 rounded-2xl p-2 outline-none hover:bg-secondary/60 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+        select?.picked && "bg-accent/60 hover:bg-accent/60"
+      )}
     >
+      {select?.selecting && (
+        <SelectMark picked={select.picked} className="shrink-0" />
+      )}
       <RecipeImage
         src={recipe.thumbnailUrl}
         alt=""
@@ -154,16 +258,16 @@ export function RecipeRow({
           )}
           <RatingStars value={recipe.rating} />
           {perServing && <span className="shrink-0">{perServing}/serving</span>}
-          {recipe.lastMadeAt && (
-            <span className="shrink-0 font-medium text-primary">
-              Made {formatRelativeDate(recipe.lastMadeAt)}
-            </span>
-          )}
+          <span className="shrink-0 font-medium text-primary">
+            {recipe.lastMadeAt
+              ? `Made ${formatRelativeDate(recipe.lastMadeAt)}`
+              : "New"}
+          </span>
           {recipe.tags.length > 0 && (
             <span className="truncate">{recipe.tags.join(", ")}</span>
           )}
         </div>
       </div>
-    </Link>
+    </Pressable>
   )
 }

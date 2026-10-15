@@ -13,6 +13,7 @@ import {
   type Diet,
   type RecipeVersion,
   type Tag,
+  type DeletedRecipe,
 } from "@mise/shared"
 import {
   and,
@@ -23,7 +24,10 @@ import {
   exists,
   ilike,
   inArray,
+  isNotNull,
+  isNull,
   like,
+  lt,
   or,
   sql,
   type SQL,
@@ -263,11 +267,21 @@ function toSummary(
   }
 }
 
-/** A recipe in this household, by id or slug. Other households' recipes are a 404. */
+/** Recipes that aren't in Recently deleted. */
+export const notDeleted = isNull(recipes.deletedAt)
+
+/** Recently deleted recipes are kept this long, then removed for good. */
+export const KEEP_DELETED_DAYS = 30
+
+/**
+ * A recipe in this household, by id or slug. Other households' recipes are
+ * a 404, and so are ones in Recently deleted unless asked for.
+ */
 export async function findRecipeRow(
   db: Db | Tx,
   householdId: string,
-  idOrSlug: string
+  idOrSlug: string,
+  options: { deleted?: boolean } = {}
 ) {
   const where = uuidSchema.safeParse(idOrSlug).success
     ? eq(recipes.id, idOrSlug)
@@ -275,7 +289,13 @@ export async function findRecipeRow(
   const [row] = await db
     .select()
     .from(recipes)
-    .where(and(eq(recipes.householdId, householdId), where))
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        where,
+        options.deleted ? undefined : notDeleted
+      )
+    )
     .limit(1)
   if (!row) throw new HttpError(404, "That recipe doesn't exist")
   return row
@@ -284,9 +304,10 @@ export async function findRecipeRow(
 export async function getRecipe(
   db: Db | Tx,
   householdId: string,
-  idOrSlug: string
+  idOrSlug: string,
+  options: { deleted?: boolean } = {}
 ): Promise<Recipe> {
-  const row = await findRecipeRow(db, householdId, idOrSlug)
+  const row = await findRecipeRow(db, householdId, idOrSlug, options)
   const [ingredients, steps, tagMap] = await Promise.all([
     db
       .select()
@@ -340,7 +361,10 @@ export async function listRecipes(
   householdId: string,
   { q, tag }: { q?: string; tag?: string } = {}
 ) {
-  const conditions: (SQL | undefined)[] = [eq(recipes.householdId, householdId)]
+  const conditions: (SQL | undefined)[] = [
+    eq(recipes.householdId, householdId),
+    notDeleted,
+  ]
   if (q?.trim()) {
     const pattern = `%${q.trim().replace(/[\\%_]/g, (c) => `\\${c}`)}%`
     conditions.push(
@@ -532,7 +556,8 @@ export async function listTags(db: Db, householdId: string): Promise<Tag[]> {
     .select({ name: tags.name, count: count(recipeTags.recipeId) })
     .from(tags)
     .innerJoin(recipeTags, eq(recipeTags.tagId, tags.id))
-    .where(eq(tags.householdId, householdId))
+    .innerJoin(recipes, eq(recipes.id, recipeTags.recipeId))
+    .where(and(eq(tags.householdId, householdId), notDeleted))
     .groupBy(tags.id, tags.name)
     .orderBy(desc(count(recipeTags.recipeId)), asc(tags.name))
   return rows
@@ -613,14 +638,177 @@ export async function updateRecipe(
   return recipe
 }
 
+/** To Recently deleted: out of everything, gone for good in 30 days. */
 export async function deleteRecipe(
   db: Db,
   householdId: string,
   idOrSlug: string
 ) {
   const row = await findRecipeRow(db, householdId, idOrSlug)
-  await db.delete(recipes).where(eq(recipes.id, row.id))
-  await deleteImage(row.image)
+  await deleteRecipes(db, householdId, [row.id])
+}
+
+/** These recipes to Recently deleted; how many went. */
+export async function deleteRecipes(
+  db: Db,
+  householdId: string,
+  ids: string[]
+) {
+  const rows = await db
+    .update(recipes)
+    .set({ deletedAt: new Date() })
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        inArray(recipes.id, ids),
+        notDeleted
+      )
+    )
+    .returning({ id: recipes.id })
+  return rows.length
+}
+
+/** Back from Recently deleted; how many came back. */
+export async function restoreRecipes(
+  db: Db,
+  householdId: string,
+  ids: string[]
+) {
+  const rows = await db
+    .update(recipes)
+    .set({ deletedAt: null })
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        inArray(recipes.id, ids),
+        isNotNull(recipes.deletedAt)
+      )
+    )
+    .returning({ id: recipes.id })
+  return rows.length
+}
+
+/** Gone for good, from Recently deleted, photos too; how many went. */
+export async function purgeRecipes(db: Db, householdId: string, ids: string[]) {
+  const rows = await db
+    .delete(recipes)
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        inArray(recipes.id, ids),
+        isNotNull(recipes.deletedAt)
+      )
+    )
+    .returning({ image: recipes.image })
+  for (const row of rows) await deleteImage(row.image)
+  return rows.length
+}
+
+/** Everything in Recently deleted for longer than it's kept, in every household. */
+export async function purgeExpiredRecipes(db: Db, now = new Date()) {
+  const cutoff = new Date(now.getTime() - KEEP_DELETED_DAYS * 86_400_000)
+  const rows = await db
+    .delete(recipes)
+    .where(and(isNotNull(recipes.deletedAt), lt(recipes.deletedAt, cutoff)))
+    .returning({ image: recipes.image })
+  for (const row of rows) await deleteImage(row.image)
+  return rows.length
+}
+
+/** What's in Recently deleted, the most recently deleted first. */
+export async function listDeletedRecipes(
+  db: Db,
+  householdId: string
+): Promise<DeletedRecipe[]> {
+  const rows = await db
+    .select({ ...SUMMARY_COLUMNS, deletedAt: recipes.deletedAt })
+    .from(recipes)
+    .where(
+      and(eq(recipes.householdId, householdId), isNotNull(recipes.deletedAt))
+    )
+    .orderBy(desc(recipes.deletedAt))
+  return rows.map((row) => {
+    const deletedAt = row.deletedAt!
+    const goneAt = new Date(
+      deletedAt.getTime() + KEEP_DELETED_DAYS * 86_400_000
+    )
+    return {
+      ...toSummary(row, [], []),
+      deletedAt: deletedAt.toISOString(),
+      goneAt: goneAt.toISOString(),
+    }
+  })
+}
+
+/** Adds these tags to these recipes, or takes them off; how many recipes changed. */
+export async function tagRecipes(
+  db: Db,
+  householdId: string,
+  ids: string[],
+  names: string[],
+  add: boolean
+) {
+  const mine = await db
+    .select({ id: recipes.id })
+    .from(recipes)
+    .where(
+      and(
+        eq(recipes.householdId, householdId),
+        inArray(recipes.id, ids),
+        notDeleted
+      )
+    )
+  if (!mine.length) return 0
+  const recipeIds = mine.map((row) => row.id)
+  const wanted = [...new Map(names.map((n) => [n.toLowerCase(), n])).values()]
+  return db.transaction(async (tx) => {
+    const existing = await tx
+      .select()
+      .from(tags)
+      .where(
+        and(
+          eq(tags.householdId, householdId),
+          inArray(
+            sql`lower(${tags.name})`,
+            wanted.map((n) => n.toLowerCase())
+          )
+        )
+      )
+    const byName = new Map(existing.map((t) => [t.name.toLowerCase(), t.id]))
+    if (!add) {
+      const tagIds = [...byName.values()]
+      if (!tagIds.length) return 0
+      const removed = await tx
+        .delete(recipeTags)
+        .where(
+          and(
+            inArray(recipeTags.recipeId, recipeIds),
+            inArray(recipeTags.tagId, tagIds)
+          )
+        )
+        .returning({ recipeId: recipeTags.recipeId })
+      return new Set(removed.map((row) => row.recipeId)).size
+    }
+    for (const name of wanted) {
+      if (!byName.has(name.toLowerCase())) {
+        const [created] = await tx
+          .insert(tags)
+          .values({ householdId, name })
+          .returning()
+        byName.set(name.toLowerCase(), created!.id)
+      }
+    }
+    const added = await tx
+      .insert(recipeTags)
+      .values(
+        recipeIds.flatMap((recipeId) =>
+          [...byName.values()].map((tagId) => ({ recipeId, tagId }))
+        )
+      )
+      .onConflictDoNothing()
+      .returning({ recipeId: recipeTags.recipeId })
+    return new Set(added.map((row) => row.recipeId)).size
+  })
 }
 
 export async function setRecipeFields(

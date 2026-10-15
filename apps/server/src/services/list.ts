@@ -37,6 +37,7 @@ import {
 import { HttpError } from "../http.ts"
 import { readAmount, sectionsFor } from "./food.ts"
 import { mealLines } from "./meal-lines.ts"
+import { getRecipe } from "./recipes.ts"
 import { listPantry } from "./pantry.ts"
 import { getHousehold } from "./households.ts"
 
@@ -370,7 +371,6 @@ export async function addFromPlan(
   from: string,
   to: string
 ): Promise<AddFromPlanResult> {
-  const household = await getHousehold(db, householdId)
   const entries = await db
     .select({
       id: mealPlanEntries.id,
@@ -383,6 +383,7 @@ export async function addFromPlan(
     .where(
       and(
         eq(mealPlanEntries.householdId, householdId),
+        isNull(recipes.deletedAt),
         gte(mealPlanEntries.date, from),
         lte(mealPlanEntries.date, to),
         eq(mealPlanEntries.status, "planned"),
@@ -400,6 +401,40 @@ export async function addFromPlan(
     )
   }
 
+  const { added, merged, skipped, inPantry } = await addLinesToList(
+    db,
+    householdId,
+    lines
+  )
+
+  if (entries.length) {
+    await db
+      .update(mealPlanEntries)
+      .set({ listedAt: new Date() })
+      .where(
+        inArray(
+          mealPlanEntries.id,
+          entries.map((entry) => entry.id)
+        )
+      )
+  }
+  const weekly = await addWeeklyItems(db, householdId)
+  return {
+    meals: entries.length,
+    added,
+    merged,
+    weekly,
+    onHand: skipped,
+    inPantry,
+  }
+}
+
+/**
+ * Ingredient lines onto the list: combined, leaving out always-on-hand food
+ * and what the pantry has, merged into what's waiting there already.
+ */
+async function addLinesToList(db: Db, householdId: string, lines: ListLine[]) {
+  const household = await getHousehold(db, householdId)
   const isOnHand = onHandTest(household.onHand)
   const skipped: string[] = []
   const pantry = await availableInPantry(db, householdId)
@@ -471,26 +506,29 @@ export async function addFromPlan(
     }
   }
 
-  if (entries.length) {
-    await db
-      .update(mealPlanEntries)
-      .set({ listedAt: new Date() })
-      .where(
-        inArray(
-          mealPlanEntries.id,
-          entries.map((entry) => entry.id)
-        )
-      )
+  return { added, merged, skipped, inPantry }
+}
+
+/** Recipes' ingredients onto the list, as written (selected on Recipes). */
+export async function addRecipesToList(
+  db: Db,
+  householdId: string,
+  recipeIds: string[]
+) {
+  const lines: ListLine[] = []
+  for (const id of recipeIds) {
+    const recipe = await getRecipe(db, householdId, id).catch(() => null)
+    if (!recipe) continue
+    for (const ingredient of recipe.ingredients) {
+      lines.push({ text: ingredient.text, factor: 1, source: recipe.name })
+    }
   }
-  const weekly = await addWeeklyItems(db, householdId)
-  return {
-    meals: entries.length,
-    added,
-    merged,
-    weekly,
-    onHand: skipped,
-    inPantry,
-  }
+  const { added, merged, skipped, inPantry } = await addLinesToList(
+    db,
+    householdId,
+    lines
+  )
+  return { added, merged, onHand: skipped, inPantry }
 }
 
 // ---- Every-week items ----

@@ -33,7 +33,7 @@ import { getHousehold } from "./households.ts"
 import { pairingOptionsByRecipe } from "./pairings.ts"
 import { listPantry } from "./pantry.ts"
 import { listEntries } from "./plan.ts"
-import { listRecipes } from "./recipes.ts"
+import { listRecipes, notDeleted } from "./recipes.ts"
 import {
   currentDeals,
   householdToday,
@@ -431,7 +431,7 @@ async function linesByRecipe(db: Db, householdId: string) {
     })
     .from(recipeIngredients)
     .innerJoin(recipesTable, eq(recipeIngredients.recipeId, recipesTable.id))
-    .where(eq(recipesTable.householdId, householdId))
+    .where(and(eq(recipesTable.householdId, householdId), notDeleted))
   const byRecipe = new Map<string, Line[]>()
   for (const row of rows) {
     byRecipe.set(row.recipeId, [...(byRecipe.get(row.recipeId) ?? []), row])

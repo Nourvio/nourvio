@@ -29,7 +29,7 @@ import {
 } from "../nutrition/fdc.ts"
 import { gramsFor, readAmount, type Amount } from "../nutrition/grams.ts"
 import { usdaKey } from "../nutrition/settings.ts"
-import { getRecipe, setRecipeFields } from "./recipes.ts"
+import { getRecipe, notDeleted, setRecipeFields } from "./recipes.ts"
 
 export type NutritionService = ReturnType<typeof createNutritionService>
 
@@ -453,6 +453,7 @@ export function createNutritionService(
       .where(
         and(
           eq(recipes.householdId, householdId),
+          notDeleted,
           isNull(recipes.nutrition),
           exists(
             db

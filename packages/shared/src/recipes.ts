@@ -235,6 +235,13 @@ export const importTextInput = z.object({
 
 export type ImportResult = { recipe: Recipe; duplicate: boolean }
 
+/** A recipe in Recently deleted. */
+export type DeletedRecipe = RecipeSummary & {
+  deletedAt: string
+  /** When it's removed for good. */
+  goneAt: string
+}
+
 export const renameTagInput = z.object({
   /** A tag that already exists merges the two. */
   name: z.string().trim().min(1, "Name the tag").max(60),

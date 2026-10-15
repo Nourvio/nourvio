@@ -30,6 +30,7 @@ import type {
   StarterRecipe,
   StoreProduct,
   WeekThemes,
+  ImportItemState,
 } from "@mise/shared"
 import { sql } from "drizzle-orm"
 import {
@@ -239,6 +240,8 @@ export const recipes = pgTable(
     createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
+    /** In Recently deleted since then; gone for good 30 days after. */
+    deletedAt: timestamp({ withTimezone: true }),
   },
   (t) => [
     check(
@@ -612,6 +615,45 @@ export const weeklyItems = pgTable(
     createdAt: createdAt(),
   },
   (t) => [index().on(t.householdId)]
+)
+
+/** Many links imported in the background (Recipes → Paste several links). */
+export const importBatches = pgTable(
+  "import_batches",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    userId: uuid().references(() => users.id, { onDelete: "set null" }),
+    /** Added to every recipe it makes. */
+    tag: text(),
+    createdAt: createdAt(),
+    finishedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [index().on(t.householdId, t.createdAt)]
+)
+
+/** One link in a bulk import, and how it went. */
+export const importBatchItems = pgTable(
+  "import_batch_items",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    batchId: uuid()
+      .notNull()
+      .references(() => importBatches.id, { onDelete: "cascade" }),
+    position: integer().notNull(),
+    url: text().notNull(),
+    kind: text().$type<"video" | "page">().notNull(),
+    state: text().$type<ImportItemState>().notNull().default("waiting"),
+    recipeId: uuid().references(() => recipes.id, { onDelete: "set null" }),
+    error: text(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index().on(t.batchId, t.position)]
 )
 
 /** The product a household buys for a food at a store, remembered once picked. */

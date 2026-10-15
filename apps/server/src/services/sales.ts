@@ -23,6 +23,7 @@ import {
   storeProducts,
 } from "../db/schema.ts"
 import { getHousehold } from "./households.ts"
+import { notDeleted } from "./recipes.ts"
 
 /** A remembered price older than this isn't trusted to still be a sale. */
 const FRESH_DAYS = 8
@@ -136,7 +137,7 @@ export async function recipeFoods(db: Db, householdId: string) {
     })
     .from(recipeIngredients)
     .innerJoin(recipes, eq(recipeIngredients.recipeId, recipes.id))
-    .where(eq(recipes.householdId, householdId))
+    .where(and(eq(recipes.householdId, householdId), notDeleted))
   const sectionOf = await sectionsOf(db, householdId)
   const byRecipe = new Map<string, { name: string; key: string }[]>()
   const foods = new Map<

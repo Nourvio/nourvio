@@ -266,7 +266,7 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 
 ## Milestone 14: Bulk actions
 
-**Status:** planned October 15, 2026; the flows are on a Design canvas (https://claude.ai/artifact/25aJgzjDM9G1zovMf7mL9s). The user asked for Mealie-style bulk actions: adding many recipes by link (sites and videos mixed), removing many, and the same on the other pages.
+**Status:** planned October 15, 2026, and being built; the flows are on a Design canvas (https://claude.ai/artifact/25aJgzjDM9G1zovMf7mL9s). Decided: Recently deleted for 30 days, a tag for bulk imports, the Plan week actions, nothing more from Mealie. The user extended the tag idea: every recipe not cooked yet shows as **New** (a badge on the card and a New quick filter), worked out from whether it's been made, so it goes by itself the first time it's cooked. The user asked for Mealie-style bulk actions: adding many recipes by link (sites and videos mixed), removing many, and the same on the other pages.
 
 **One way to select, everywhere.** Recipes, List, Pantry and Plan get a Select mode: a Select button in the header (or the ⋯ menu), or a long-press on a phone. Items get checkboxes, the header becomes "4 selected · Select all · Done", and an action bar sits at the bottom (above the tabs on a phone): the common actions as buttons, the rest under More. Removing more than one thing asks first, then offers Undo for 10 seconds. Done, Escape or leaving the page ends it.
 
@@ -286,8 +286,6 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 **5. Plan:** select meals to move to another day, mark cooked or skipped, add to the list, or remove. The week's ⋯ menu adds Repeat last week (copies last week's meals onto empty slots) and Clear the rest of the week.
 
 **How it's built:** one bulk endpoint per page (`POST /api/recipes/bulk`, `/api/list/bulk`, `/api/pantry/bulk`, `/api/plan/bulk`) taking ids and an action, in one transaction, returning what changed (and what Undo needs to put it back); a shared select-mode hook and action bar component in the web app.
-
-**Open questions for the user:** Recently deleted for 30 days, or just confirm and Undo? A tag for bulk imports? Week actions on the Plan? Anything else Mealie does in bulk?
 
 ## Milestone 12: On the home screen, with reminders
 

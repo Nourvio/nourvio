@@ -203,7 +203,8 @@ export async function listPendingCleanups(db: Db, householdId: string) {
       and(
         eq(proposals.householdId, householdId),
         eq(proposals.kind, "cleanup"),
-        eq(proposals.status, "pending")
+        eq(proposals.status, "pending"),
+        isNull(recipes.deletedAt)
       )
     )
     .orderBy(desc(proposals.createdAt))
