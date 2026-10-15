@@ -374,9 +374,11 @@ function TonightIdeas({ date, others }: { date: string; others: PlanEntry[] }) {
             ? `New from ${onSite.site}`
             : mine?.uses.length
               ? `Uses up your ${listed(mine.uses.map((u) => u.toLowerCase()))}`
-              : mine?.onSale.length
-                ? onSaleText(mine.onSale)
-                : "From your recipes"}
+              : mine?.theme?.fits
+                ? `It's ${mine.theme.name.toLowerCase()}`
+                : mine?.onSale.length
+                  ? onSaleText(mine.onSale)
+                  : "From your recipes"}
         </p>
         <h3
           id={id}

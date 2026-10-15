@@ -12,6 +12,7 @@ import {
   isoDate,
   planTotals,
   startOfWeek,
+  weekdayOf,
   type Meal,
   type PlanEntry,
 } from "@mise/shared"
@@ -191,6 +192,11 @@ export function PlanPage() {
                   entries={entries.filter((entry) => entry.date === date)}
                   onAdd={(meal) => setAdding({ date, meal })}
                   onEdit={setEditing}
+                  theme={
+                    meals.includes("dinner")
+                      ? (household.data?.themes[weekdayOf(date)] ?? null)
+                      : null
+                  }
                 />
               ))}
           </>

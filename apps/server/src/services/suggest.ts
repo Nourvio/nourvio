@@ -1,15 +1,18 @@
 import {
   addDays,
   avoidedIn,
+  fitsTheme,
   missingDiets,
   pantryKey,
   parseIngredient,
   saleNudge,
+  themeLabel,
   toIsoDate,
   weekdayOf,
   WEEKNIGHTS,
   whyUseSoon,
   type Meal,
+  type NightTheme,
   type OnSale,
   type RecipeSummary,
   type UseSoonReason,
@@ -49,6 +52,8 @@ export type Suggestion = {
   uses: string[]
   /** What it uses that's on sale at the household's Fry's. */
   onSale: OnSale[]
+  /** The night's theme ("Taco night"), and whether this fits it. */
+  theme: { name: string; fits: boolean } | null
 }
 
 const MEAL_TAGS: Record<Meal, string[]> = {
@@ -181,7 +186,7 @@ export async function suggestMeals(
 
   // The household's rules: foods nobody should get, diets every meal fits,
   // and how long weeknight dinners can take.
-  const { tastes } = await getHousehold(db, householdId)
+  const { tastes, themes } = await getHousehold(db, householdId)
   const ruledOut = new Set(
     recipes
       .filter(
@@ -232,8 +237,27 @@ export async function suggestMeals(
     nearby.flatMap((row) => (row.withRecipeId ? [row.withRecipeId] : []))
   )
 
-  const candidatesFor = (slot: { date: string; meal: Meal }) =>
-    recipes.filter(
+  // Theme nights are for dinner: tacos on Tuesday, eat out on Friday.
+  const themeOf = (slot: { date: string; meal: Meal }): NightTheme | null =>
+    slot.meal === "dinner" ? (themes[weekdayOf(slot.date)] ?? null) : null
+  const suits = (recipe: RecipeSummary, theme: NightTheme) =>
+    fitsTheme(
+      {
+        ...recipe,
+        lines: (lines.get(recipe.id) ?? []).map((line) => line.rawText),
+      },
+      theme
+    )
+
+  /**
+   * What could go in a slot. On a theme night, what fits the theme; when
+   * nothing does, everything else, unless `strict`.
+   */
+  const candidatesFor = (
+    slot: { date: string; meal: Meal },
+    strict = false
+  ) => {
+    const all = recipes.filter(
       (recipe) =>
         !isPart(recipe) &&
         !ruledOut.has(recipe.id) &&
@@ -242,6 +266,12 @@ export async function suggestMeals(
         fits(recipe, slot.meal) &&
         !(recipe.lastMadeAt && new Date(recipe.lastMadeAt) > madeLately)
     )
+    const theme = themeOf(slot)
+    if (!theme) return all
+    if (theme.kind === "skip") return []
+    const themed = all.filter((recipe) => suits(recipe, theme))
+    return themed.length || strict ? themed : all
+  }
   const chosen = new Map<number, RecipeSummary>()
   const choose = (index: number, recipe: RecipeSummary) => {
     chosen.set(index, recipe)
@@ -257,7 +287,7 @@ export async function suggestMeals(
     if (covered.has(food)) continue
     for (const { slot, index } of order) {
       if (chosen.has(index)) continue
-      const using = candidatesFor(slot).filter((recipe) =>
+      const using = candidatesFor(slot, true).filter((recipe) =>
         usesOf.recipe(recipe.id).includes(food)
       )
       const recipe = pick(
@@ -272,8 +302,19 @@ export async function suggestMeals(
     }
   }
 
-  // Then the rest, by the usual rules.
-  for (const [index, slot] of slots.entries()) {
+  // Then the rest, by the usual rules: theme nights first, those with the
+  // fewest recipes that fit before the others, so a fish night isn't left
+  // without the one fish recipe because a night with no theme took it.
+  const UNTHEMED = 1_000_000
+  const themedCount = (slot: { date: string; meal: Meal }) => {
+    const theme = themeOf(slot)
+    if (!theme || theme.kind === "skip") return UNTHEMED
+    return candidatesFor(slot, true).length || UNTHEMED
+  }
+  const rest = [...slots.entries()].sort(
+    ([, a], [, b]) => themedCount(a) - themedCount(b)
+  )
+  for (const [index, slot] of rest) {
     if (chosen.has(index)) continue
     const recipe = pick(
       candidatesFor(slot),
@@ -323,6 +364,12 @@ export async function suggestMeals(
         onSale: (sales.get(recipe.id) ?? []).map(
           ({ section: _, ...sale }) => sale
         ),
+        theme: (() => {
+          const theme = themeOf(slot)
+          return theme
+            ? { name: themeLabel(theme), fits: suits(recipe, theme) }
+            : null
+        })(),
       },
     ]
   })

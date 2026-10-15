@@ -12,7 +12,9 @@ import {
   MEAL_NAMES,
   MEALS,
   planTotals,
+  themeLabel,
   type Meal,
+  type NightTheme,
   type PlanEntry,
 } from "@mise/shared"
 import { Link } from "react-router"
@@ -49,6 +51,7 @@ export function DayCard({
   entries,
   onAdd,
   onEdit,
+  theme = null,
 }: {
   date: string
   isToday: boolean
@@ -57,6 +60,8 @@ export function DayCard({
   entries: PlanEntry[]
   onAdd: (meal: Meal) => void
   onEdit: (entry: PlanEntry) => void
+  /** The night's theme, for dinner. */
+  theme?: NightTheme | null
 }) {
   const id = React.useId()
   const byMeal = new Map<Meal, PlanEntry[]>()
@@ -81,6 +86,11 @@ export function DayCard({
         </h2>
         <span className="text-sm text-muted-foreground">{monthDay(date)}</span>
         {isToday && <Badge className="self-center">Today</Badge>}
+        {theme && (
+          <span className="self-center rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
+            {themeLabel(theme)}
+          </span>
+        )}
         <DayNutrition entries={entries} />
       </header>
 

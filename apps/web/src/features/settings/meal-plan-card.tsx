@@ -30,6 +30,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { weekLabel } from "@/features/plan/dates"
 import { ApiError } from "@/lib/api"
 
+import { ThemeNightsField } from "./theme-nights-field"
 import {
   useHouseholdInfo,
   useRunAutoPlan,
@@ -104,6 +105,12 @@ export function MealPlanCard() {
                 <ToggleGroupItem value="1">Monday</ToggleGroupItem>
               </ToggleGroup>
             </Field>
+            {household.data.meals.includes("dinner") && (
+              <ThemeNightsField
+                themes={household.data.themes}
+                weekStart={household.data.weekStart}
+              />
+            )}
             <AutoPlanField autoPlan={household.data.autoPlan} />
           </FieldGroup>
         )}

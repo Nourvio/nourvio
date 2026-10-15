@@ -27,7 +27,10 @@ import {
 } from "./use-plan"
 
 type Slot = { date: string; meal: Meal }
-type Idea = Pick<MealSuggestion, "recipe" | "with" | "uses" | "onSale">
+type Idea = Pick<
+  MealSuggestion,
+  "recipe" | "with" | "uses" | "onSale" | "theme"
+>
 
 const slotKey = (slot: Slot) => `${slot.date}:${slot.meal}`
 
@@ -117,6 +120,7 @@ function FillWeek({
             with: idea.with,
             uses: idea.uses,
             onSale: idea.onSale,
+            theme: idea.theme,
           },
         ]
       : []
@@ -238,6 +242,10 @@ function FillWeek({
               <div className="grid min-w-0 flex-1">
                 <span className="text-xs text-muted-foreground">
                   {dayName(row.date)} · {MEAL_NAMES[row.meal]}
+                  {row.theme &&
+                    (row.theme.fits
+                      ? ` · ${row.theme.name}`
+                      : ` · nothing fits ${row.theme.name.toLowerCase()} yet`)}
                 </span>
                 <span className="truncate font-medium">
                   {row.recipe.name}

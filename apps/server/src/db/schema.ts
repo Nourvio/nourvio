@@ -29,6 +29,7 @@ import type {
   ShoppingList,
   StarterRecipe,
   StoreProduct,
+  WeekThemes,
 } from "@mise/shared"
 import { sql } from "drizzle-orm"
 import {
@@ -76,6 +77,7 @@ export const households = pgTable("households", {
       tastes?: HouseholdTastes
       autoPlan?: AutoPlan
       lists?: ShoppingList[]
+      themes?: WeekThemes
     }>()
     .notNull()
     .default({}),

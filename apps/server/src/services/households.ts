@@ -7,6 +7,7 @@ import {
   INVITE_DAYS,
   MEALS,
   NO_TASTES,
+  NO_THEMES,
   tidyOnHand,
   type AutoPlan,
   type Meal,
@@ -21,6 +22,7 @@ import {
   DEFAULT_LISTS,
   MAIN_LIST,
   type ShoppingList,
+  type WeekThemes,
 } from "@mise/shared"
 import {
   and,
@@ -66,6 +68,7 @@ function toHousehold(row: HouseholdRow): Household {
     tastes: { ...NO_TASTES, ...row.settings.tastes },
     autoPlan: { ...DEFAULT_AUTO_PLAN, ...row.settings.autoPlan },
     lists: row.settings.lists?.length ? row.settings.lists : DEFAULT_LISTS,
+    themes: row.settings.themes?.length === 7 ? row.settings.themes : NO_THEMES,
   }
 }
 
@@ -91,6 +94,7 @@ export async function updateHousehold(
     onHand?: string[]
     tastes?: HouseholdTastes
     autoPlan?: AutoPlan
+    themes?: WeekThemes
   }
 ) {
   const [current] = await db
@@ -117,6 +121,7 @@ export async function updateHousehold(
         ...(patch.onHand ? { onHand: tidyOnHand(patch.onHand) } : {}),
         ...(patch.tastes ? { tastes: patch.tastes } : {}),
         ...(patch.autoPlan ? { autoPlan: patch.autoPlan } : {}),
+        ...(patch.themes ? { themes: patch.themes } : {}),
       },
     })
     .where(eq(households.id, id))

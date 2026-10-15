@@ -155,6 +155,8 @@ export type MealSuggestion = {
   uses: string[]
   /** What it uses that's on sale at the household's Fry's. */
   onSale: OnSale[]
+  /** The night's theme ("Taco night"), and whether this fits it. */
+  theme: { name: string; fits: boolean } | null
 }
 
 export const addPlanEntriesInput = z.object({
