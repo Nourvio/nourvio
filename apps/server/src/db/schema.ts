@@ -150,7 +150,7 @@ export const sessions = pgTable(
 )
 
 /**
- * Personal API tokens, for the Mise browser extension. Only a hash is kept;
+ * Personal API tokens, for the Nourvio browser extension. Only a hash is kept;
  * the token is shown once, when it's handed to the extension.
  */
 export const apiTokens = pgTable(
@@ -444,7 +444,7 @@ export const discoveries = pgTable(
   (t) => [index().on(t.householdId, t.createdAt)]
 )
 
-/** A post in a followed site's feed; `recipe` is null until Mise opens it. */
+/** A post in a followed site's feed; `recipe` is null until Nourvio opens it. */
 export type SiteItem = {
   url: string
   title: string
@@ -667,7 +667,7 @@ export const storeProducts = pgTable(
     /** The food part of a list item's key (see foodKey). */
     food: text().notNull(),
     product: jsonb().$type<StoreProduct>().notNull(),
-    /** False while it's only Mise's suggestion. */
+    /** False while it's only Nourvio's suggestion. */
     chosen: boolean().notNull().default(false),
     updatedAt: updatedAt(),
   },
@@ -675,7 +675,7 @@ export const storeProducts = pgTable(
 )
 
 /**
- * A product's price on each day Mise saw it at the household's store, for
+ * A product's price on each day Nourvio saw it at the household's store, for
  * "usually $4.29". The sale's end comes from the store when it says.
  */
 export const storePrices = pgTable(

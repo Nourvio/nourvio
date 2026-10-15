@@ -4,7 +4,7 @@ import { requireServerAdmin, requireUser } from "../auth/middleware.ts"
 import type { AppEnv } from "../context.ts"
 import type { UpdateService } from "../services/updates.ts"
 
-/** Whether a newer Mise is on GitHub (server admin): the server admin is who updates it. */
+/** Whether a newer Nourvio is on GitHub (server admin): the server admin is who updates it. */
 export function updateRoutes(updates: UpdateService) {
   const app = new Hono<AppEnv>()
   app.use(requireUser, requireServerAdmin)

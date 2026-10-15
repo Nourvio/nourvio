@@ -150,7 +150,7 @@ function EditItem({
             onChange={setSection}
           />
           <FieldDescription>
-            Mise remembers where this goes next time.
+            Nourvio remembers where this goes next time.
           </FieldDescription>
         </Field>
         {lists.length > 1 && (

@@ -134,8 +134,8 @@ export function ShopPage() {
           <EmptyHeader>
             <EmptyTitle>Connect your store first</EmptyTitle>
             <EmptyDescription>
-              Pick your Fry's (or other Kroger) store in Settings, and Mise will
-              match the list to its products and prices.
+              Pick your Fry's (or other Kroger) store in Settings, and Nourvio
+              will match the list to its products and prices.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
@@ -219,8 +219,8 @@ export function ShopPage() {
                   </div>
                   {toCheck > 0 && (
                     <p className="text-sm text-muted-foreground">
-                      {toCheck} {toCheck === 1 ? "pick is" : "picks are"} Mise's
-                      guess. Worth a quick look.
+                      {toCheck} {toCheck === 1 ? "pick is" : "picks are"}{" "}
+                      Nourvio's guess. Worth a quick look.
                     </p>
                   )}
                   {kroger!.linked ? (
@@ -255,8 +255,8 @@ export function ShopPage() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Prices are {store}'s today, before tax. Mise can add to the
-                    cart but not take things out, so look it over there too.
+                    Prices are {store}'s today, before tax. Nourvio can add to
+                    the cart but not take things out, so look it over there too.
                   </p>
                 </>
               )}
@@ -381,7 +381,7 @@ function BasketRow({
           </p>
         )}
         <div className="mt-1 flex flex-wrap gap-1">
-          {line.suggested && <Badge variant="outline">Mise's pick</Badge>}
+          {line.suggested && <Badge variant="outline">Nourvio's pick</Badge>}
           {product?.salePrice && (
             <Badge variant="secondary">
               On sale
@@ -496,7 +496,7 @@ function ProductPicker({
         <DialogHeader>
           <DialogTitle>{line?.name}</DialogTitle>
           <DialogDescription>
-            Pick what to buy at {store}. Mise remembers it for next time.
+            Pick what to buy at {store}. Nourvio remembers it for next time.
           </DialogDescription>
         </DialogHeader>
         <Input

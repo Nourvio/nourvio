@@ -538,7 +538,7 @@ describe("store connections: Walmart, through the extension", () => {
     url: `https://www.walmart.com/ip/${id}`,
   })
 
-  test("keeps Mise's picks from the extension's searches, a hand pick over them, and what was sent", async () => {
+  test("keeps Nourvio's picks from the extension's searches, a hand pick over them, and what was sent", async () => {
     const t = await createTestAppWithAdmin()
     try {
       for (const text of [

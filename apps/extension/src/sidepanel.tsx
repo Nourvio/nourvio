@@ -67,7 +67,7 @@ function ListView() {
         setStore(searchStore as StoreKey)
       }
     })
-    // Keep up with changes made in Mise, now and then and when looked at.
+    // Keep up with changes made in Nourvio, now and then and when looked at.
     const timer = setInterval(() => {
       if (document.visibilityState === "visible") void load()
     }, 30_000)
@@ -231,8 +231,8 @@ function SidePanel() {
       <div className="stack">
         <h1>Shopping list</h1>
         <p className="muted">
-          Connect the extension to your Mise first: click the Mise icon in the
-          toolbar.
+          Connect the extension to your Nourvio first: click the Nourvio icon in
+          the toolbar.
         </p>
       </div>
     )

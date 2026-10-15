@@ -1,4 +1,4 @@
-/** Where the service worker keeps what was shared into Mise (public/sw.js). */
+/** Where the service worker keeps what was shared into Nourvio (public/sw.js). */
 const SHARE_CACHE = "mise-share"
 
 export type Shared = { files: File[]; text: string | null }
@@ -43,7 +43,7 @@ export async function forgetShared(id: string) {
 }
 
 /**
- * Registers the service worker, which is what lets Android share into Mise.
+ * Registers the service worker, which is what lets Android share into Nourvio.
  * Browsers only allow it over https, or on this computer.
  */
 export function registerServiceWorker() {
@@ -55,7 +55,7 @@ export function registerServiceWorker() {
   if (!secure) return
   window.addEventListener("load", () => {
     void navigator.serviceWorker.register("/sw.js").catch(() => {
-      // Sharing into Mise just won't be offered.
+      // Sharing into Nourvio just won't be offered.
     })
   })
 }

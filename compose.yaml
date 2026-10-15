@@ -1,4 +1,4 @@
-# Mise: the app, Postgres, and nightly database backups.
+# Nourvio: the app, Postgres, and nightly database backups.
 #
 # The app builds straight from GitHub, so this file plus a .env file is all a
 # server needs. Works in Dockge, Portainer or plain `docker compose up -d`.
@@ -9,7 +9,7 @@ services:
     build:
       # A branch, tag or commit: ...mise.git#main, ...mise.git#v0.1.0
       # Set MISE_BUILD_CONTEXT=. to build from a local checkout instead.
-      context: ${MISE_BUILD_CONTEXT:-https://github.com/kjohnson2719/mise.git#main}
+      context: ${MISE_BUILD_CONTEXT:-https://github.com/Nourvio/nourvio.git#main}
     image: mise:latest
     pull_policy: build
     restart: unless-stopped
@@ -31,8 +31,8 @@ services:
       KROGER_CLIENT_SECRET: ${KROGER_CLIENT_SECRET:-}
       # The kokoro service below. Leave empty to not use it.
       KOKORO_URL: ${KOKORO_URL-http://kokoro:8880}
-      # Where the image is built from, so Mise can tell when there's an update.
-      MISE_BUILD_CONTEXT: ${MISE_BUILD_CONTEXT:-https://github.com/kjohnson2719/mise.git#main}
+      # Where the image is built from, so Nourvio can tell when there's an update.
+      MISE_BUILD_CONTEXT: ${MISE_BUILD_CONTEXT:-https://github.com/Nourvio/nourvio.git#main}
     ports:
       - "${MISE_PORT:-3000}:3000"
     volumes:
@@ -89,9 +89,9 @@ services:
   kokoro:
     image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
     restart: unless-stopped
-    # No published ports: only Mise talks to it.
+    # No published ports: only Nourvio talks to it.
 
-  # Optional: a Cloudflare Tunnel, for reaching Mise from outside your network.
+  # Optional: a Cloudflare Tunnel, for reaching Nourvio from outside your network.
   # Set TUNNEL_TOKEN in .env, then delete the `profiles` line below
   # (or run `docker compose --profile tunnel up -d`).
   cloudflared:

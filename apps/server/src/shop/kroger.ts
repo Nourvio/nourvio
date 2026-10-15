@@ -10,7 +10,7 @@ export function krogerApi() {
   )
 }
 
-/** What a person grants Mise when they link their account. */
+/** What a person grants Nourvio when they link their account. */
 const USER_SCOPES = "cart.basic:write profile.compact product.compact"
 
 export type KrogerApp = { clientId: string; clientSecret: string }
@@ -92,7 +92,7 @@ function dayOf(value: unknown) {
     : null
 }
 
-/** A Kroger product as Mise keeps it, with the given store's price and aisle. */
+/** A Kroger product as Nourvio keeps it, with the given store's price and aisle. */
 export function toProduct(raw: any, domain = "kroger.com"): StoreProduct {
   const item = raw.items?.[0] ?? {}
   const images: any[] = raw.images ?? []

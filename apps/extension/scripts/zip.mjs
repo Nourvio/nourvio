@@ -1,5 +1,5 @@
 // Packs the built extension (dist/) into release/mise-extension.zip, which
-// Mise offers for download in Settings.
+// Nourvio offers for download in Settings.
 import {
   mkdirSync,
   readdirSync,

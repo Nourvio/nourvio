@@ -14,7 +14,7 @@ export default defineConfig({
   server: {
     // The API runs separately in development (apps/server on :3000).
     proxy: {
-      // Keep the browser's host, so links Mise makes (like Kroger's sign-in
+      // Keep the browser's host, so links Nourvio makes (like Kroger's sign-in
       // return address) point back here.
       "/api": { target: "http://localhost:3000", xfwd: true },
     },

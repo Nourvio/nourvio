@@ -50,7 +50,7 @@ const TABS: { id: TabId; label: string; blurb: string }[] = [
   {
     id: "you",
     label: "You",
-    blurb: "Your account, how Mise looks, and the browser extension.",
+    blurb: "Your account, how Nourvio looks, and the browser extension.",
   },
   {
     id: "household",
@@ -300,7 +300,7 @@ function useSections(): Section[] {
     },
     {
       id: "share",
-      label: "Share to Mise",
+      label: "Share to Nourvio",
       tab: "you",
       hint: "Send receipts from other apps",
       cards: [{ id: "share", card: <ShareCard /> }],
@@ -367,7 +367,7 @@ function useSections(): Section[] {
           ? `An update is ready: ${updates.changes.length} ${updates.changes.length === 1 ? "change" : "changes"}`
           : updates?.state === "current"
             ? "Up to date"
-            : "Whether there's a newer Mise",
+            : "Whether there's a newer Nourvio",
       cards: [{ id: "updates", card: <UpdatesCard /> }],
     },
     me.isServerAdmin && {

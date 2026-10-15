@@ -35,5 +35,5 @@ export const config = {
   builtAt: env.MISE_BUILT_AT || readBuiltAt(),
   /** Where the image is built from; the compose file passes it along. */
   buildContext:
-    env.MISE_BUILD_CONTEXT || "https://github.com/kjohnson2719/mise.git#main",
+    env.MISE_BUILD_CONTEXT || "https://github.com/Nourvio/nourvio.git#main",
 }

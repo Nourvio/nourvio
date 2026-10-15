@@ -14,7 +14,7 @@ import { openLink, readUpload } from "./uploads.ts"
 const MAX_UPLOAD = 40 * 1024 * 1024
 
 /**
- * Receipts into the pantry: read one (from Mise, or shared from an iPhone
+ * Receipts into the pantry: read one (from Nourvio, or shared from an iPhone
  * Shortcut with a key), look it over, then add what was bought.
  */
 export function receiptRoutes(

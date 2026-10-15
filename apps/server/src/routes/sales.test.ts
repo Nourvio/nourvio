@@ -325,7 +325,7 @@ describe("the daily price check", () => {
 })
 
 describe("the price check with the AI picking", () => {
-  test("looks again each week for Mise's picks, never for what someone chose", async () => {
+  test("looks again each week for Nourvio's picks, never for what someone chose", async () => {
     const asked: string[] = []
     // Picks the sale option when there is one, and turns down the crackers.
     const aiFactory: AiProviderFactory = (id) => ({

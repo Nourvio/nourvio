@@ -103,7 +103,7 @@ export type SignupInput = z.infer<typeof signupInput>
 
 /** Settings for the whole server, which only the server admin can change. */
 export type ServerSettings = {
-  /** Anyone who reaches Mise can create an account (and a household). */
+  /** Anyone who reaches Nourvio can create an account (and a household). */
   signupOpen: boolean
 }
 

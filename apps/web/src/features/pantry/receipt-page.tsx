@@ -26,7 +26,7 @@ const errorText = (error: unknown) =>
 
 /**
  * Scan a receipt into the pantry: a photo, a screenshot, a PDF or pasted
- * text, or one shared in and read already (`?id=`). Mise reads it, then
+ * text, or one shared in and read already (`?id=`). Nourvio reads it, then
  * everything waits for a look.
  */
 export function ReceiptPage() {
@@ -163,12 +163,12 @@ function Upload({
       )}
       {error && <p className="text-sm text-destructive">{error}</p>}
       <p className="text-sm text-muted-foreground">
-        Got a receipt by email? You can share it to Mise from your phone. See{" "}
+        Got a receipt by email? You can share it to Nourvio from your phone. See{" "}
         <Link
           to="/settings#share"
           className="font-medium text-foreground underline underline-offset-4"
         >
-          Share to Mise
+          Share to Nourvio
         </Link>{" "}
         in Settings.
       </p>

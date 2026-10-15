@@ -35,7 +35,7 @@ const STALE_MS = 5 * 60_000
 const SYSTEM = `You find recipes on the web for a home cook's recipe app. Search for recipes that fit the theme you're given, then call offer_recipes once with 10 to 12 of the best.
 - Each must be one recipe's own page on a site that's free to read: not a roundup, a category page, a video or a search result.
 - Well-tested sources first, such as RecipeTin Eats, BBC Good Food, Love and Lemons, Pinch of Yum, King Arthur Baking, Sally's Baking Addiction, Bon Appétit, Budget Bytes, Cookie and Kate, Minimalist Baker, Smitten Kitchen and newspapers' free recipe pages.
-- Mise can't open some sites, so leave out Serious Eats, Allrecipes, Simply Recipes and Food Network.
+- Nourvio can't open some sites, so leave out Serious Eats, Allrecipes, Simply Recipes and Food Network.
 - Make it a spread: different main ingredients and methods, never the same dish twice, and from at least five different sites (no more than two from one site).
 - Follow the household's rules strictly: nothing with a food they avoid, and only recipes that fit their diets.
 - "why" is one short sentence for the card on what makes it a good pick, like "Bright and fast, on the table in 25 minutes".
@@ -87,8 +87,8 @@ const offered = z.object({
 type Offered = z.output<typeof offered>["recipes"][number]
 
 /**
- * Opens a recipe the assistant offered and reads it as Mise would on import.
- * Null when the page won't open or isn't a recipe Mise can read.
+ * Opens a recipe the assistant offered and reads it as Nourvio would on import.
+ * Null when the page won't open or isn't a recipe Nourvio can read.
  */
 async function check(fetcher: Fetcher, pick: Offered): Promise<Found | null> {
   let url: string
@@ -228,7 +228,7 @@ export async function getDiscovery(db: Db, householdId: string, id: string) {
   return discovery!
 }
 
-/** A found recipe's photo link and page, for showing it through Mise. */
+/** A found recipe's photo link and page, for showing it through Nourvio. */
 export async function discoveredPhoto(
   db: Db,
   householdId: string,
@@ -317,7 +317,7 @@ async function search(
         ...adapter.toolResults([
           {
             id: call.id,
-            output: `Mise couldn't open these or read them as recipes, so they were left out: ${missed
+            output: `Nourvio couldn't open these or read them as recipes, so they were left out: ${missed
               .map((pick) => pick.url)
               .join(
                 ", "
@@ -355,7 +355,7 @@ export async function startDiscovery(
       )
     )
   if (running && !isStale(running)) {
-    throw new HttpError(409, "Mise is still finding the last ones")
+    throw new HttpError(409, "Nourvio is still finding the last ones")
   }
   // Fails now, rather than in the background, when there's no AI.
   await ai.resolve("discover")
@@ -391,7 +391,7 @@ export async function startDiscovery(
             : {
                 status: "failed",
                 error:
-                  "Couldn't find recipes Mise can open for that just now. Try saying it another way.",
+                  "Couldn't find recipes Nourvio can open for that just now. Try saying it another way.",
               }
         )
         .where(eq(discoveries.id, row!.id))

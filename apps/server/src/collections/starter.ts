@@ -2,7 +2,7 @@ import type { StarterCollection } from "@mise/shared"
 
 /**
  * Hand-picked recipes from free sites (and a few NYT Cooking classics),
- * each checked to import with Mise's importer in October 2026. Serious
+ * each checked to import with Nourvio's importer in October 2026. Serious
  * Eats, Simply Recipes and Allrecipes are left out: they block bursts of
  * requests, so "Import all" would stall.
  */

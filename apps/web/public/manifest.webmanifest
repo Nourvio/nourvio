@@ -1,6 +1,6 @@
 {
-  "name": "Mise",
-  "short_name": "Mise",
+  "name": "Nourvio",
+  "short_name": "Nourvio",
   "description": "Recipes, meal plans and shopping lists, with a cooking assistant.",
   "start_url": "/recipes",
   "scope": "/",

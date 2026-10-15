@@ -95,7 +95,7 @@ describe("shopping lists", () => {
     expect((await item("onion")).listId).toBe("main")
   })
 
-  test("moving something teaches Mise where that food goes", async () => {
+  test("moving something teaches Nourvio where that food goes", async () => {
     const milk = await item("milk")
     const moved = await t.admin.patch(`/api/list/items/${milk.id}`, {
       listId: "costco",

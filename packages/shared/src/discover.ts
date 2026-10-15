@@ -6,7 +6,7 @@ export type StarterRecipe = {
   title: string
   site: string
   minutes: number | null
-  /** The page's photo, fetched through Mise to show. */
+  /** The page's photo, fetched through Nourvio to show. */
   image: string | null
 }
 
@@ -23,7 +23,7 @@ export type FoundRecipe = {
   title: string
   site: string
   minutes: number | null
-  /** A photo through Mise, or null. */
+  /** A photo through Nourvio, or null. */
   imageUrl: string | null
   /** Already in the library, under this recipe. */
   inLibrary: { slug: string; name: string } | null
@@ -66,7 +66,7 @@ export const DISCOVER_THEMES = [
   "Something new to try",
 ] as const
 
-/** A recipe site with a feed, checked to work with Mise, offered to follow. */
+/** A recipe site with a feed, checked to work with Nourvio, offered to follow. */
 export type SuggestedSite = {
   name: string
   url: string
@@ -157,7 +157,7 @@ export type FollowedSite = {
   name: string
   url: string
   feedUrl: string
-  /** Newest first: only posts Mise opened and read as recipes. */
+  /** Newest first: only posts Nourvio opened and read as recipes. */
   recipes: SiteRecipe[]
   /** New posts not opened yet. */
   pending: number

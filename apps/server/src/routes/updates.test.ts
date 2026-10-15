@@ -22,15 +22,15 @@ function fakeGithub(files: string[], calls: string[] = []): typeof fetch {
   return async (input, init) => {
     const url = new URL(String(input))
     calls.push(`${url.pathname}${url.search}`)
-    expect(new Headers(init?.headers).get("user-agent")).toMatch(/^Mise\//)
-    if (url.pathname === "/repos/kjohnson2719/mise/activity") {
+    expect(new Headers(init?.headers).get("user-agent")).toMatch(/^Nourvio\//)
+    if (url.pathname === "/repos/Nourvio/nourvio/activity") {
       return json(
         [...PUSHES]
           .reverse()
           .map((push) => ({ ...push, activity_type: "push" }))
       )
     }
-    if (url.pathname === "/repos/kjohnson2719/mise/compare/262ab86...5f92224") {
+    if (url.pathname === "/repos/Nourvio/nourvio/compare/262ab86...5f92224") {
       return json({
         commits: [
           {
@@ -64,7 +64,7 @@ describe("update check", () => {
     const t = await createTestAppWithAdmin({
       updates: {
         builtAt: BUILT,
-        buildContext: "https://github.com/kjohnson2719/mise.git#main",
+        buildContext: "https://github.com/Nourvio/nourvio.git#main",
         githubFetch: fakeGithub(
           ["apps/web/src/main.tsx", "compose.yaml", "docs/roadmap.md"],
           calls
@@ -74,7 +74,7 @@ describe("update check", () => {
     try {
       expect(await status(t)).toMatchObject({
         state: "available",
-        source: { owner: "kjohnson2719", repo: "mise", branch: "main" },
+        source: { owner: "Nourvio", repo: "nourvio", branch: "main" },
         builtAt: BUILT,
         running: "262ab86",
         latest: "5f92224",
@@ -84,10 +84,10 @@ describe("update check", () => {
         ],
         setupFiles: ["compose.yaml"],
         compareUrl:
-          "https://github.com/kjohnson2719/mise/compare/262ab86...5f92224",
+          "https://github.com/Nourvio/nourvio/compare/262ab86...5f92224",
       })
       expect(calls[0]).toBe(
-        "/repos/kjohnson2719/mise/activity?ref=refs%2Fheads%2Fmain&per_page=100"
+        "/repos/Nourvio/nourvio/activity?ref=refs%2Fheads%2Fmain&per_page=100"
       )
       // Kept for a while, unless asked to check now.
       await status(t)
@@ -146,7 +146,7 @@ describe("update check", () => {
       [
         {
           builtAt: BUILT,
-          buildContext: "https://github.com/kjohnson2719/mise.git#v0.1.0",
+          buildContext: "https://github.com/Nourvio/nourvio.git#v0.1.0",
         },
         /pins it to v0\.1\.0/,
       ],

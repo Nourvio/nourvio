@@ -176,7 +176,7 @@ async function readFeed(fetcher: Fetcher, url: string) {
   return { resource, body }
 }
 
-/** Fetches and reads a feed Mise already knows the address of. */
+/** Fetches and reads a feed Nourvio already knows the address of. */
 export async function fetchFeed(fetcher: Fetcher, feedUrl: string) {
   const { resource, body } = await readFeed(fetcher, feedUrl)
   if (!isFeed(body)) throw new HttpError(422, "That isn't a feed any more")
@@ -207,7 +207,7 @@ export async function findFeed(fetcher: Fetcher, rawUrl: string) {
     } catch {
       // Neither opens.
     }
-    throw new HttpError(422, "Mise couldn't open that site")
+    throw new HttpError(422, "Nourvio couldn't open that site")
   }
   if (isFeed(page.body)) {
     const feedUrl = normalizeUrl(page.resource.url)
@@ -240,6 +240,6 @@ export async function findFeed(fetcher: Fetcher, rawUrl: string) {
   }
   throw new HttpError(
     422,
-    "Mise couldn't find a feed on that site. Not every site has one."
+    "Nourvio couldn't find a feed on that site. Not every site has one."
   )
 }

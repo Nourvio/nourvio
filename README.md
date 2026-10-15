@@ -1,4 +1,4 @@
-# Mise
+# Nourvio
 
 A self-hosted meal planner with an AI cooking assistant built in. Recipes, weekly plans, a pantry, shopping lists, nutrition and Walmart pickup orders for your household (and others you host), made to use from a phone or iPad while cooking.
 
@@ -6,11 +6,11 @@ A self-hosted meal planner with an AI cooking assistant built in. Recipes, weekl
 
 ## Run it with Docker Compose
 
-Mise runs as a small compose stack: the app, Postgres, and a job that backs up the database every night. The app image builds straight from this GitHub repo, so you only need two files on the server: `compose.yaml` and a `.env`.
+Nourvio runs as a small compose stack: the app, Postgres, and a job that backs up the database every night. The app image builds straight from this GitHub repo, so you only need two files on the server: `compose.yaml` and a `.env`.
 
 ### With Dockge (or Portainer)
 
-1. Create a new stack called `mise`.
+1. Create a new stack called `nourvio`.
 2. Paste the contents of [`compose.yaml`](compose.yaml) into the compose editor.
 3. Paste the contents of [`.env.example`](.env.example) into the `.env` editor and set `POSTGRES_PASSWORD` (see [Settings](#settings)).
 4. Deploy. The first build takes a few minutes, because Docker clones the repo and builds the web app.
@@ -19,15 +19,15 @@ Mise runs as a small compose stack: the app, Postgres, and a job that backs up t
 ### With the Docker CLI
 
 ```bash
-mkdir mise && cd mise
+mkdir nourvio && cd nourvio
 ```
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/kjohnson2719/mise/main/compose.yaml
+curl -fsSLO https://raw.githubusercontent.com/Nourvio/nourvio/main/compose.yaml
 ```
 
 ```bash
-curl -fsSL -o .env https://raw.githubusercontent.com/kjohnson2719/mise/main/.env.example
+curl -fsSL -o .env https://raw.githubusercontent.com/Nourvio/nourvio/main/.env.example
 ```
 
 Set `POSTGRES_PASSWORD` in `.env`, then start it:
@@ -54,14 +54,14 @@ docker compose up -d --build
 2. Find the code in the app's log. In Dockge, open the `mise` container's logs; with the CLI, run `docker compose logs mise`. Look for:
 
    ```
-   Welcome to Mise. Open the app to create the first
+   Welcome to Nourvio. Open the app to create the first
    account, and enter this setup code: ABCD-EFGH-JKMN
    ```
 
 3. Enter the code with your name, a username, a password (at least 10 characters) and a name for your household. You'll run the server and be your household's admin.
 4. Invite everyone else from **Settings → your household → Invite someone**. Each link works once, for 7 days; the person opens it and makes their own account. (For someone who won't open a link, like a kid, **Add without a link** lets you pick their username and password.)
 
-**Other households.** One Mise can host several households, each with its own recipes and members, all using the server's AI keys. Invite someone as above and they join *your* household; to host another family, turn on **Settings → This server → Let anyone create an account**, and each sign-up starts a new household. Leave it off when the public link is on unless you need it, since anyone who finds the address could sign up. Settings → This server lists every household with its size and AI spending, and you can delete one.
+**Other households.** One Nourvio can host several households, each with its own recipes and members, all using the server's AI keys. Invite someone as above and they join *your* household; to host another family, turn on **Settings → This server → Let anyone create an account**, and each sign-up starts a new household. Leave it off when the public link is on unless you need it, since anyone who finds the address could sign up. Settings → This server lists every household with its size and AI spending, and you can delete one.
 
 The code changes every time the app restarts until the first account exists, and it stops working after that. It's there so a stranger who reaches the page before you can't claim it.
 
@@ -74,14 +74,14 @@ Set these in `.env`, next to `compose.yaml`. Only `POSTGRES_PASSWORD` is require
 | `POSTGRES_PASSWORD` | **required** | Password for the bundled Postgres. Use letters and numbers only, because it goes into a connection URL. Generate one with `openssl rand -hex 24`. |
 | `TZ` | `UTC` | Your timezone, for meal plan dates and backup file names. For example `America/Chicago`. |
 | `MISE_PORT` | `3000` | Port on the host for the web app |
-| `MISE_BUILD_CONTEXT` | `https://github.com/kjohnson2719/mise.git#main` | What to build. End it with `#<branch>`, `#<tag>` or `#<commit>`, or set it to `.` to build from a local checkout. |
+| `MISE_BUILD_CONTEXT` | `https://github.com/Nourvio/nourvio.git#main` | What to build. End it with `#<branch>`, `#<tag>` or `#<commit>`, or set it to `.` to build from a local checkout. |
 | `PUID` / `PGID` | `1000` | User and group that own `./data/app` on the host. The app drops to this user at startup instead of running as root. |
 | `BACKUP_KEEP_DAYS` | `14` | How many days of nightly backups to keep |
-| `PUBLIC_URL` | none | The address people use to reach Mise from outside, such as `https://mise.example.com`. Set it when you turn on the tunnel. |
+| `PUBLIC_URL` | none | The address people use to reach Nourvio from outside, such as `https://nourvio.example.com`. Set it when you turn on the tunnel. |
 | `ANTHROPIC_API_KEY` | none | Claude API key. You can add it in the app under Settings instead; a key set here wins and can't be changed in the app. |
 | `OPENAI_API_KEY` | none | OpenAI API key, same as above |
-| `MISE_SECRET` | none | Encrypts API keys saved in the app. If empty, Mise creates a random one in `data/app/secret`. |
-| `YTDLP_AUTO_UPDATE` | `true` | Mise updates its copy of yt-dlp (which reads video links) at startup and weekly. Set to `false` to stop that. |
+| `MISE_SECRET` | none | Encrypts API keys saved in the app. If empty, Nourvio creates a random one in `data/app/secret`. |
+| `YTDLP_AUTO_UPDATE` | `true` | Nourvio updates its copy of yt-dlp (which reads video links) at startup and weekly. Set to `false` to stop that. |
 | `USDA_API_KEY` | none | FoodData Central key for calculated nutrition, free from [api.data.gov](https://api.data.gov/signup/). Can also be added in Settings. |
 | `KOKORO_URL` | `http://kokoro:8880` | Where the `kokoro` service answers: cook mode's free read-aloud voice. Set it empty (`KOKORO_URL=`) if you remove that service. |
 | `KROGER_CLIENT_ID` / `KROGER_CLIENT_SECRET` | none | A free Kroger developer app, for sending the list to Fry's and other Kroger stores. Can also be added in Settings → Kroger, which shows the redirect URI to register (`PUBLIC_URL` + `/api/shop/kroger/callback`). |
@@ -109,15 +109,15 @@ Everything lives in `./data`, next to `compose.yaml`:
 
 ## Moving from Mealie
 
-In **Settings → Move from Mealie**, enter Mealie's address as the Mise server sees it (for example `http://192.168.1.20:9000`) and an API token from Mealie (your profile → API Tokens). **Connect** shows how many recipes there are; **Move** brings them over with photos, ratings and last-made dates. Running it again skips recipes already moved. Afterwards, **Settings → AI → Tidy up the whole library** can clean them up.
+In **Settings → Move from Mealie**, enter Mealie's address as the Nourvio server sees it (for example `http://192.168.1.20:9000`) and an API token from Mealie (your profile → API Tokens). **Connect** shows how many recipes there are; **Move** brings them over with photos, ratings and last-made dates. Running it again skips recipes already moved. Afterwards, **Settings → AI → Tidy up the whole library** can clean them up.
 
 ## Recipes from videos
 
-Paste a TikTok, YouTube or Instagram link like any other. Mise reads the caption, the captions or (with an OpenAI key) the spoken words, and for short videos a few frames, then AI writes up the recipe. This needs an AI key, and the tools (yt-dlp and ffmpeg) come with the image.
+Paste a TikTok, YouTube or Instagram link like any other. Nourvio reads the caption, the captions or (with an OpenAI key) the spoken words, and for short videos a few frames, then AI writes up the recipe. This needs an AI key, and the tools (yt-dlp and ffmpeg) come with the image.
 
-**Instagram and the occasional YouTube video** want a signed-in session. To give Mise one, export a `cookies.txt` from a browser where you're signed in (a "Get cookies.txt" browser extension does this), and put it at `data/app/cookies.txt`. Use an account you don't mind being used this way; sites can limit accounts that fetch a lot.
+**Instagram and the occasional YouTube video** want a signed-in session. To give Nourvio one, export a `cookies.txt` from a browser where you're signed in (a "Get cookies.txt" browser extension does this), and put it at `data/app/cookies.txt`. Use an account you don't mind being used this way; sites can limit accounts that fetch a lot.
 
-**When video links stop working,** it's usually because a site changed. Mise updates yt-dlp weekly; restarting the stack makes it check right away.
+**When video links stop working,** it's usually because a site changed. Nourvio updates yt-dlp weekly; restarting the stack makes it check right away.
 
 ## Updating
 
@@ -126,7 +126,7 @@ The app rebuilds from the branch in `MISE_BUILD_CONTEXT` every time the stack st
 - **Dockge:** use **Update**, or stop and start the stack.
 - **Docker CLI:** `docker compose up -d --build`
 
-Mise tells you when there's something new: the server admin sees an **Update** badge on Settings, and Settings → This server → Updates lists the changes. When an update changes `compose.yaml`, it says so, since your stack keeps its own copy.
+Nourvio tells you when there's something new: the server admin sees an **Update** badge on Settings, and Settings → This server → Updates lists the changes. When an update changes `compose.yaml`, it says so, since your stack keeps its own copy.
 
 To stay on a fixed version, point `MISE_BUILD_CONTEXT` at a tag or commit instead of `#main`.
 
@@ -137,7 +137,7 @@ Database changes run automatically when the app starts. The nightly dumps are yo
 The compose file includes a [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) service, which is turned off by default. A tunnel needs no open ports on your router.
 
 1. In the Cloudflare dashboard, create a tunnel and copy its token.
-2. Add a public hostname, such as `mise.example.com`, pointing to `http://mise:3000`.
+2. Add a public hostname, such as `nourvio.example.com`, pointing to `http://mise:3000`.
 3. Put the token in `TUNNEL_TOKEN` in `.env`.
 4. Delete the `profiles: ["tunnel"]` line from the `cloudflared` service and redeploy. With the CLI you can run `docker compose --profile tunnel up -d` instead.
 5. Set `PUBLIC_URL` to the hostname.
@@ -177,4 +177,4 @@ The plan and the reasoning behind it are in [`docs/`](docs/README.md): what we'r
 
 ## License
 
-Copyright (C) 2026 Kyle Johnson. Mise is free software under the [GNU Affero General Public License v3.0](LICENSE) or later: run it, change it and share it. If you run a changed copy for other people over a network, offer them its source too.
+Copyright (C) 2026 Kyle Johnson. Nourvio is free software under the [GNU Affero General Public License v3.0](LICENSE) or later: run it, change it and share it. If you run a changed copy for other people over a network, offer them its source too.

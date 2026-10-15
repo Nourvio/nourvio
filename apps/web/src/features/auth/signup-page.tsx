@@ -32,7 +32,7 @@ export function SignupPage() {
     return (
       <AuthLayout
         title="Sign-up is off"
-        description="This Mise only lets people in by invite. Ask someone in your household to send you an invite link."
+        description="This Nourvio only lets people in by invite. Ask someone in your household to send you an invite link."
       >
         <Button variant="outline" className="w-full" asChild>
           <Link to="/login">Sign in instead</Link>

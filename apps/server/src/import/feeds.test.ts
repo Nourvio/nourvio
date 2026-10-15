@@ -111,7 +111,7 @@ describe("finding a site's feed", () => {
     ])
   })
 
-  test("from the feed itself, or /feed/ when the home page turns Mise away", async () => {
+  test("from the feed itself, or /feed/ when the home page turns Nourvio away", async () => {
     const direct: Fetcher = async (url) => page(ATOM, url)
     expect(
       (await findFeed(direct, "https://atom.example/feed.xml")).feedUrl

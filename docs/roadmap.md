@@ -64,7 +64,7 @@ What's left is checking the "done when" below with real keys and the real Mealie
 - Nutrition shown when a site provides it
 
 **Done when:**
-- the whole Mealie library is in Mise, bulk-cleaned and tagged, with the proposals reviewed
+- the whole Mealie library is in Nourvio, bulk-cleaned and tagged, with the proposals reviewed
 - a meal is cooked start to finish from the iPad cook view
 - AI import works with both a Claude key and an OpenAI key
 
@@ -91,7 +91,7 @@ What's left is checking the "done when" below with real keys and the real Mealie
 - Every-week items, typed items, check-off, and remembered sections
 - *Moved later:* saved plan rules and AI-ranked week suggestions (once the pantry gives them something to weigh)
 
-**Done when:** a full week is planned and shopped from the generated list. This is the point where Mise replaces Mealie day to day.
+**Done when:** a full week is planned and shopped from the generated list. This is the point where Nourvio replaces Mealie day to day.
 
 ## Milestone 4: Pantry
 
@@ -118,12 +118,12 @@ What's left is checking the "done when" below with real keys and the real Mealie
 
 **Done when:** every recipe shows per-serving nutrition with its source.
 
-## Milestone 6: Store connections and the Mise extension
+## Milestone 6: Store connections and the Nourvio extension
 
 **Status:** built October 14, 2026, steps 1 to 5 (1 and 2 in one commit), and checked for real by the user: a Fry's cart sent through their own Kroger app (which led to counting packs by what's in them), and the extension in Chrome picking Walmart products and filling the Walmart cart. The research is in [integrations.md](integrations.md#grocery-stores-connections). Decided with the user:
 
 - **Stores:** Fry's, Costco and Walmart.
-- **How each connects:** Fry's through Kroger's official cart API, and Walmart through a Mise browser extension, which also takes on other jobs like importing a recipe from any page. Costco was going to be an Instacart shopping link, but the user found Instacart's Developer Platform isn't open to the public, so Costco gets links to each item at Costco Same-Day, plus the extension's list side panel.
+- **How each connects:** Fry's through Kroger's official cart API, and Walmart through a Nourvio browser extension, which also takes on other jobs like importing a recipe from any page. Costco was going to be an Instacart shopping link, but the user found Instacart's Developer Platform isn't open to the public, so Costco gets links to each item at Costco Same-Day, plus the extension's list side panel.
 - **Accounts:** one linked store account per household, so one shared cart.
 - **Autopilot:** the weekly autopilot plans the week and builds the list, then waits. You review and tap Send; it never fills a cart by itself.
 
@@ -139,12 +139,12 @@ Build order, a commit for each:
    - Store prices and sales, and the list sorted by Fry's aisles for shopping in person.
    - After the autopilot runs, Today says "Next week is planned" and links to the review.
 3. **Costco:** the list for Costco, each item linked to its search at Costco Same-Day, checked off as you add them there.
-4. **The Mise extension, part one (any site):**
-   - Connect it to your Mise.
-   - Import the recipe on the page you're looking at. This works on sites that block Mise's server, and on recipes you can see through your own subscription.
+4. **The Nourvio extension, part one (any site):**
+   - Connect it to your Nourvio.
+   - Import the recipe on the page you're looking at. This works on sites that block Nourvio's server, and on recipes you can see through your own subscription.
    - Right-click a link or video to import it, or selected text to add it to the list.
    - Keep the week's list in a side panel while shopping any store's site, checking items off as you go.
-5. **The Mise extension, part two (Walmart):**
+5. **The Nourvio extension, part two (Walmart):**
    - Pick a product on any Walmart page for a list item ("use this for milk"), price included.
    - Fill the Walmart cart with the week's list: one item at a time, asking about items without a product yet, and ending with a summary and an estimated total.
 6. **Later:** plans that lean on Fry's sales (now milestone 11), and Costco-size packs for warehouse trips.
@@ -152,9 +152,9 @@ Build order, a commit for each:
 **Done when:**
 - After the first week's product picks, a week's list lands in the Fry's cart in a couple of minutes, and in the Walmart cart through the extension.
 - A Costco order is a few taps per item, straight from the list.
-- A recipe on a site that blocks Mise imports in one click from the extension.
+- A recipe on a site that blocks Nourvio imports in one click from the extension.
 
-**Still open:** where the extension is installed from: downloaded from Mise and loaded unpacked, or a Chrome Web Store listing (see [integrations.md](integrations.md#the-mise-browser-extension-planned)).
+**Still open:** where the extension is installed from: downloaded from Nourvio and loaded unpacked, or a Chrome Web Store listing (see [integrations.md](integrations.md#the-nourvio-browser-extension)).
 
 ## Milestone 7: A smarter assistant
 
@@ -172,7 +172,7 @@ Build order, a commit for each:
 
 **Status:** built October 14, 2026, a commit for each, in this order. Live checks: a collection recipe imported (and removed again), an AI search for cozy soups found eight importable recipes in 26 seconds for about 6¢, and following RecipeTin Eats turned its four newest posts into recipes. The weekly autopilot wasn't run live, so it didn't change the real plan; tests cover it.
 
-1. **Weekly autopilot:** on a day and time the household picks (Saturday morning, say), Mise fills the week ahead's empty meals by its rules and tastes (the free, rules-based Fill the week) and adds them to the shopping list. Today says "Next week is planned" to review. Settings has a "Run it now".
+1. **Weekly autopilot:** on a day and time the household picks (Saturday morning, say), Nourvio fills the week ahead's empty meals by its rules and tastes (the free, rules-based Fill the week) and adds them to the shopping list. Today says "Next week is planned" to review. Settings has a "Run it now".
 2. **Starter collections:** hand-picked sets of well-loved recipes from free sites (Weeknight dinners, Chicken, Pasta, Soups, Vegetarian, Baking...), each checked to import, browsed with photos, imported one at a time or all at once.
 3. **Discover with AI:** pick or type a theme ("cozy fall soups") and the assistant finds a fresh set from good sites that fits the household, on a small model with web search.
 4. **Follow recipe sites:** follow sites with feeds and see their newest recipes to import.
@@ -184,7 +184,7 @@ Build order, a commit for each:
 **Status:** built October 14, 2026. The user asked to split the list, since they get soda and meat at Costco and everything else elsewhere.
 
 - **Lists:** the household's shopping lists, each for a store (Fry's, Costco or Walmart) or for none (a party list). One is the main list, which everything goes on unless something says otherwise. A household with one list sees the List page as before.
-- **Sorting itself:** each list can take aisles ("Meat & seafood and Beverages go on the Costco list"), and moving something to another list teaches Mise where that food goes, which wins over the aisle. It applies to everything added: typed in, every-week items and the plan. Saving the lists also moves what's waiting on the main list.
+- **Sorting itself:** each list can take aisles ("Meat & seafood and Beverages go on the Costco list"), and moving something to another list teaches Nourvio where that food goes, which wins over the aisle. It applies to everything added: typed in, every-week items and the plan. Saving the lists also moves what's waiting on the main list.
 - **Shopping follows:** Send to Fry's, Shop at Costco and the extension's Walmart cart each use their store's list, or the lists for no store when a store has none. The extension's side panel can show one list.
 
 **Done when:** soda and chicken land on the Costco list by themselves, and Send to Fry's sends only the rest.
@@ -196,12 +196,12 @@ Build order, a commit for each:
 Why it sounds bad today: cook mode never picks a voice, so it gets the browser's default, usually the oldest, most robotic one on the device.
 
 **Part 1: the best voice on each device** (free, nothing to set up)
-- Mise ranks the device's voices for the reading language and picks the best: Microsoft's "Natural" voices in Edge, Siri-grade "Premium" and "Enhanced" voices on Apple devices, then Google's. Novelty voices are skipped.
+- Nourvio ranks the device's voices for the reading language and picks the best: Microsoft's "Natural" voices in Edge, Siri-grade "Premium" and "Enhanced" voices on Apple devices, then Google's. Novelty voices are skipped.
 - The cook view's text menu gets a **Voice** choice: "Best on this device" (the default) or any good voice for the language, with **Test voice**. It's remembered on each device.
 - Limits: Chrome and Firefox on Windows only have the old voices, and Apple's best ones need downloading in Settings → Accessibility → Spoken Content.
 
 **Part 2: a server voice** (free with Kokoro, or OpenAI with the key that's already there)
-- **Kokoro**: an open voice model (Apache 2.0) that sounds close to commercial ones, run as an optional container beside Mise (`ghcr.io/remsky/kokoro-fastapi-cpu`, an OpenAI-style `POST /v1/audio/speech` on port 8880). The compose file gets it as an optional service.
+- **Kokoro**: an open voice model (Apache 2.0) that sounds close to commercial ones, run as an optional container beside Nourvio (`ghcr.io/remsky/kokoro-fastapi-cpu`, an OpenAI-style `POST /v1/audio/speech` on port 8880). The compose file gets it as an optional service.
 - **OpenAI** (`gpt-4o-mini-tts`) as the alternative, told to sound like a warm, unhurried cooking teacher: about 2 to 5¢ to read a whole recipe once, counted in AI usage.
 - Settings → This server (server admin): Voice: this device's / Kokoro (its address and voice, with Test) / OpenAI (its voice).
 - `POST /api/voice/speak` returns the audio for some text. Audio is saved by provider, voice and text, so each step is made once and cooking a recipe again is instant (and free with OpenAI).
@@ -213,13 +213,13 @@ Why it sounds bad today: cook mode never picks a voice, so it gets the browser's
 
 **Status:** built October 14, 2026, and checked against the user's real Fry's. The user shops at Fry's every week and picked this from milestone 6's "Later": plans that lean on what's on sale.
 
-Found while building: Kroger does give a sale's end date (`price.expirationDate`), so "through Tue" shows. The AI picker used to skip a lone search result ("garlic clove" turned up only garlic crackers, which were kept); it now checks those too, sees sale prices, and the daily check gives Mise's own picks a fresh look each week, for one on sale.
+Found while building: Kroger does give a sale's end date (`price.expirationDate`), so "through Tue" shows. The AI picker used to skip a lone search result ("garlic clove" turned up only garlic crackers, which were kept); it now checks those too, sees sale prices, and the daily check gives Nourvio's own picks a fresh look each week, for one on sale.
 
-What's there today: Kroger's product API gives a store's regular and sale price, and Mise keeps both (`StoreProduct.salePrice`). But prices are only refreshed when the cart review (`/list/shop`) opens, so the List shows whatever was seen last, and planning never looks at them.
+What's there today: Kroger's product API gives a store's regular and sale price, and Nourvio keeps both (`StoreProduct.salePrice`). But prices are only refreshed when the cart review (`/list/shop`) opens, so the List shows whatever was seen last, and planning never looks at them.
 
 **1. Fresh prices, every day** (no new keys, a handful of Kroger calls)
-- Once a day, early morning in the household's time zone, Mise refreshes the price of every remembered Fry's product, 50 to a call. It also refreshes right before the weekly autopilot plans, so the plan sees this week's sales.
-- Recipe ingredients never bought at Fry's: Mise searches Fry's once for each **meat, seafood and produce** food in the household's recipes (the sales that change what's for dinner) and remembers its pick as a suggestion, exactly as the cart review does: the AI picks when it's set up (a fraction of a cent a batch), else the first in stock. From then on it's refreshed with the rest. At most 50 new searches a day, so a big library catches up over a few days.
+- Once a day, early morning in the household's time zone, Nourvio refreshes the price of every remembered Fry's product, 50 to a call. It also refreshes right before the weekly autopilot plans, so the plan sees this week's sales.
+- Recipe ingredients never bought at Fry's: Nourvio searches Fry's once for each **meat, seafood and produce** food in the household's recipes (the sales that change what's for dinner) and remembers its pick as a suggestion, exactly as the cart review does: the AI picks when it's set up (a fraction of a cent a batch), else the first in stock. From then on it's refreshed with the rest. At most 50 new searches a day, so a big library catches up over a few days.
 - Kroger allows an app 10,000 product calls a day; this uses well under 100.
 - Every price seen is saved by day in a new `store_prices` table (household, store, product, day, regular price, sale price, and when the sale ends if Kroger says), from the daily check, the cart review, product picks and the Walmart extension.
 
@@ -234,13 +234,13 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 - Suggestions say why: a "Thighs on sale" chip next to "Uses spinach", in Fill the week and Today's ideas card.
 - Recipes gets an **On sale** quick filter: recipes that use something on sale at Fry's this week, with the sale foods on each card.
 
-**Not in this milestone:** Kroger's digital coupons (the public API doesn't offer them), Costco (no prices to read), and planning around Walmart deals (Mise only sees Walmart prices when the extension does).
+**Not in this milestone:** Kroger's digital coupons (the public API doesn't offer them), Costco (no prices to read), and planning around Walmart deals (Nourvio only sees Walmart prices when the extension does).
 
 **Done when:** the List shows this week's Fry's sales and savings without opening the cart review, a week the autopilot plans uses more of what's on sale and says so, and a sale item shows what it usually costs.
 
 ## Milestone 13: Shopping together, theme nights, costs and receipts
 
-**Status:** built October 14, 2026. The user picked these four from the list of ideas. Receipt reading was checked with the real AI on a sample Walmart receipt. The user then asked for Share to Mise to take video links and handle them itself: it now works out any share (a link or video becomes a recipe, a receipt opens its review, a recipe screenshot becomes a recipe), on Android and through the iPhone Shortcut. Found while building costs: the ingredient parser cut "skinless, boneless chicken thighs" at the first comma (the food was "skinless"); describing words before a comma now stay with the food.
+**Status:** built October 14, 2026. The user picked these four from the list of ideas. Receipt reading was checked with the real AI on a sample Walmart receipt. The user then asked for Share to Nourvio to take video links and handle them itself: it now works out any share (a link or video becomes a recipe, a receipt opens its review, a recipe screenshot becomes a recipe), on Android and through the iPhone Shortcut. Found while building costs: the ingredient parser cut "skinless, boneless chicken thighs" at the first comma (the food was "skinless"); describing words before a comma now stay with the food.
 
 **1. Shopping together**
 - The List updates live on every phone in the household: check off bananas and they're checked on Jamie's phone a moment later. Items added, changed or removed show up the same way.
@@ -253,16 +253,16 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 - The Plan shows the theme on each night ("Taco night"), and Fill the week says why.
 
 **3. Cost per serving**
-- Each recipe's cost from the products Mise remembers at your stores: what the recipe uses of each package (2 tbsp of a $9 bottle of oil is about 30¢), at today's price. Always-on-hand items don't count.
+- Each recipe's cost from the products Nourvio remembers at your stores: what the recipe uses of each package (2 tbsp of a $9 bottle of oil is about 30¢), at today's price. Always-on-hand items don't count.
 - Shown on the recipe ("About $9.60, $2.40 a serving"), on recipe cards, and as the week's total on the Plan. Until every ingredient has a product it says how many are priced ("8 of 10 ingredients").
 - An optional weekly grocery budget (Settings → Meal plan): the Plan shows the week against it, and Fill the week leans toward recipes that fit what's left.
 - The daily price check goes on to look up the rest of the recipe foods, most used first, so more recipes get a full price.
 
 **4. Receipts into the pantry**
 - **Scan a receipt** on the Pantry page: a photo, a screenshot, a PDF, or pasted text from an emailed receipt. The AI reads the items ("GV WHL MLK 1GAL" is whole milk) and a review lists them: food ticked to go in the pantry, household things left out, and anything on the shopping list checked off with it.
-- **Sharing a receipt to Mise:**
-  - **Android:** Mise, installed to the home screen, shows up in the share sheet. A small service worker hands the shared file to the review.
-  - **iPhone:** apps on the home screen can't be in Apple's share sheet (only App Store apps can), but a Shortcut can. Settings has a **Send to Mise** guide: a few steps in the Shortcuts app with a key Mise makes for it. After that, Share → Send to Mise from Mail, Photos or Files opens the review. Once it's made, it can be shared as an iCloud link (to parents, say).
+- **Sharing a receipt to Nourvio:**
+  - **Android:** Nourvio, installed to the home screen, shows up in the share sheet. A small service worker hands the shared file to the review.
+  - **iPhone:** apps on the home screen can't be in Apple's share sheet (only App Store apps can), but a Shortcut can. Settings has a **Send to Nourvio** guide: a few steps in the Shortcuts app with a key Nourvio makes for it. After that, Share → Send to Nourvio from Mail, Photos or Files opens the review. Once it's made, it can be shared as an iCloud link (to parents, say).
 
 ## Milestone 14: Bulk actions
 
@@ -271,9 +271,9 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 **One way to select, everywhere.** Recipes, List, Pantry and Plan get a Select mode: a Select button in the header (or the ⋯ menu), or a long-press on a phone. Items get checkboxes, the header becomes "4 selected · Select all · Done", and an action bar sits at the bottom (above the tabs on a phone): the common actions as buttons, the rest under More. Removing more than one thing asks first, then offers Undo for 10 seconds. Done, Escape or leaving the page ends it.
 
 **1. Add many recipes by link** (Recipes → Add recipe → Paste several links)
-- Paste links one per line, or mixed into other text. Mise lists what it found (videos, recipe pages) and skips ones already in the library. An optional tag for everything (like "to try").
+- Paste links one per line, or mixed into other text. Nourvio lists what it found (videos, recipe pages) and skips ones already in the library. An optional tag for everything (like "to try").
 - A background job on the server, so it carries on after leaving the page: recipe pages three at a time, videos one at a time. A progress page lists each link (waiting, importing, added, already had, didn't work with the reason and Try again). Recipes shows "Importing 6 of 10" while it runs, and a toast says how it went.
-- Sharing several links to Mise at once (the iPhone Shortcut or Android) starts the same import.
+- Sharing several links to Nourvio at once (the iPhone Shortcut or Android) starts the same import.
 - How: `import_batches` and `import_batch_items` tables, so progress survives a refresh or a restart (an unfinished batch carries on when the server starts); each item runs the existing link import (`importFromUrl`, with the usual follow-up); progress reaches open pages through the live events stream.
 
 **2. Recipes, selected:** add to plan, add their ingredients to the list, add or remove tags, tidy up, work out nutrition, make photos, export (JSON), delete.
@@ -289,16 +289,16 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 
 ## Milestone 12: On the home screen, with reminders
 
-**Status:** planned October 14, 2026, and on hold: the user wants it documented and built later. The user wants a morning nudge like "pull the chicken out", and a one-tap way to put Mise on the home screen that their parents could manage.
+**Status:** planned October 14, 2026, and on hold: the user wants it documented and built later. The user wants a morning nudge like "pull the chicken out", and a one-tap way to put Nourvio on the home screen that their parents could manage.
 
 Choices made in the plan, open to change when it's picked up: frozen food is known from a new **In the freezer** toggle in the pantry (otherwise thaw reminders could only guess), and reminder times are per person, so only whoever cooks gets them.
 
-What's there today: a web app manifest (name, icons, standalone), so phones can already add Mise to the home screen, but only if you know where to look. There's no service worker, so no notifications.
+What's there today: a web app manifest (name, icons, standalone), so phones can already add Nourvio to the home screen, but only if you know where to look. There's no service worker, so no notifications.
 
 **Part 1: "Add to home screen", made easy**
-- **Android, and Chrome or Edge on a computer:** an **Install Mise** button that opens the browser's own install prompt (`beforeinstallprompt`). One tap, then Install.
+- **Android, and Chrome or Edge on a computer:** an **Install Nourvio** button that opens the browser's own install prompt (`beforeinstallprompt`). One tap, then Install.
 - **iPhone and iPad:** Safari has no install prompt, so the button opens a short guide with pictures: tap **Share** (the square with the arrow), then **Add to Home Screen**, then **Add**. It points at where the Share button is in Safari and in Chrome.
-- **Where it shows:** a card on Today on phones that haven't installed it ("Put Mise on your home screen: it opens like an app, and can remind you to thaw the chicken"), dismissed for good with one tap. It's also always in the account menu and in Settings → You. Once installed it disappears (detected with `display-mode: standalone`).
+- **Where it shows:** a card on Today on phones that haven't installed it ("Put Nourvio on your home screen: it opens like an app, and can remind you to thaw the chicken"), dismissed for good with one tap. It's also always in the account menu and in Settings → You. Once installed it disappears (detected with `display-mode: standalone`).
 - The installed app opens on Today (the manifest's `start_url` is still `/recipes`).
 
 **Part 2: Notifications**
@@ -314,15 +314,15 @@ What's there today: a web app manifest (name, icons, standalone), so phones can 
 - **Turning it on:** Settings → You → **Notifications**: **Turn on for this device** (the browser asks first), which reminders you want and when, the devices that get them, and **Send a test**.
 - **How it works:** a service worker shows the notifications. The server signs them with its own keys (VAPID, made on first use and stored encrypted; no outside account) and sends them through each browser's push service with the `web-push` library. Subscriptions are kept per person and device, and ones the browser says are gone are removed. A scheduler checks every 5 minutes in each household's time zone, and what was sent is remembered so nothing goes out twice.
 - **Limits worth knowing:**
-  - On iPhone, notifications only work once Mise is on the home screen (iOS 16.4 or later), which is why Part 1 comes first.
-  - Notifications need Mise opened at its https address (the Cloudflare tunnel), not a local http one. The settings card says so when it's opened over http.
+  - On iPhone, notifications only work once Nourvio is on the home screen (iOS 16.4 or later), which is why Part 1 comes first.
+  - Notifications need Nourvio opened at its https address (the Cloudflare tunnel), not a local http one. The settings card says so when it's opened over http.
   - Later, the same notifications could cover list changes ("Jamie added milk") and "An update is ready".
 
-**Done when:** the user's parents can put Mise on their phone's home screen from one button and its instructions, and on a day with frozen chicken planned for dinner, a notification at 8 a.m. says to take it out.
+**Done when:** the user's parents can put Nourvio on their phone's home screen from one button and its instructions, and on a day with frozen chicken planned for dinner, a notification at 8 a.m. says to take it out.
 
 ## Later, maybe
 
-- A site that shows Mise off, like Mealie's: what it does, screenshots or a demo, and how to set it up. The code is AGPL-3.0 (October 14, 2026), so anyone can self-host it.
+- A site that shows Nourvio off, like Mealie's: what it does, screenshots or a demo, and how to set it up. The code is AGPL-3.0 (October 14, 2026), so anyone can self-host it.
 - Meaning-based recipe search with `pgvector` ("something cozy with chicken")
 - Offline reading in the cook view (a service worker)
 - Barcode scanning for the pantry
@@ -332,7 +332,7 @@ What's there today: a web app manifest (name, icons, standalone), so phones can 
 
 | # | Question | Recommendation | Affects |
 |---|---|---|---|
-| 1 | Which stores should connections cover? | **Decided:** Fry's (Kroger's official cart API), Costco as links to Costco Same-Day (Instacart's API isn't open), and Walmart through the Mise extension. See milestone 6. | M6 |
+| 1 | Which stores should connections cover? | **Decided:** Fry's (Kroger's official cart API), Costco as links to Costco Same-Day (Instacart's API isn't open), and Walmart through the Nourvio extension. See milestone 6. | M6 |
 | 2 | One shared household login, or one account per person? | **Decided:** one account per person, joining by invite link. One server can host several households. | M0 |
 | 3 | Do you have a domain on Cloudflare for the tunnel? | Needed for the recommended setup | M0 |
 | 4 | Dinners only, or breakfast and lunch too? | **Decided:** each household picks; dinner by default, with breakfast, lunch and snacks optional | M3 |

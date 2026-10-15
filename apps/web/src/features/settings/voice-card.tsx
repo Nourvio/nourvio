@@ -57,8 +57,8 @@ export function VoiceCard() {
         <CardTitle>Voice</CardTitle>
         <CardDescription>
           How hands-free cook mode reads steps aloud. Kokoro sounds close to a
-          person and runs beside Mise for free; OpenAI sounds much the same and
-          costs about 2 to 5¢ to read a recipe once. Either way each step is
+          person and runs beside Nourvio for free; OpenAI sounds much the same
+          and costs about 2 to 5¢ to read a recipe once. Either way each step is
           made once and saved, so cooking a recipe again is instant.
         </CardDescription>
       </CardHeader>

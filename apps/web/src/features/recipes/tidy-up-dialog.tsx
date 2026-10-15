@@ -117,7 +117,7 @@ function TidyUp({
     tidyUp.error instanceof ApiError
       ? tidyUp.error.message
       : tidyUp.error
-        ? "Couldn't reach Mise. Check your connection."
+        ? "Couldn't reach Nourvio. Check your connection."
         : undefined
 
   return (

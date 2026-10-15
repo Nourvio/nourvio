@@ -239,7 +239,7 @@ function AutoPlanField({ autoPlan }: { autoPlan: AutoPlan }) {
               { enabled: checked === true },
               checked === true
                 ? `The week ahead will be planned every ${DAYS[autoPlan.day]}`
-                : "Mise won't plan the week by itself"
+                : "Nourvio won't plan the week by itself"
             )
           }
         />

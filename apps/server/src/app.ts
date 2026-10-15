@@ -119,7 +119,7 @@ export function createApp(ctx: AppContext) {
   )
 
   // ---- API ----
-  // A request with a Mise key (the extension, an iPhone Shortcut) can't be
+  // A request with a Nourvio key (the extension, an iPhone Shortcut) can't be
   // forged by another site the way a cookie can, so it skips the check.
   const sameSite = csrf({ origin: isSameSite })
   app.use("/api/*", (c, next) =>
@@ -180,8 +180,8 @@ export function createApp(ctx: AppContext) {
   app.all("/api/*", requireUser, (c) => c.json({ error: "Not found" }, 404))
 
   // ---- Web app ----
-  // Android shares into Mise by posting here; the service worker takes it.
-  // Without one (Mise opened over plain http), say what's needed.
+  // Android shares into Nourvio by posting here; the service worker takes it.
+  // Without one (Nourvio opened over plain http), say what's needed.
   app.post("/share", (c) => c.redirect("/share?unsupported=1", 303))
   // A one-time sign-in link from an iPhone Shortcut: sign this browser in,
   // then on to what was shared.

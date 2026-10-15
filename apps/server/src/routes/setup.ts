@@ -29,7 +29,7 @@ export function setupRoutes({ db, setupCode }: AppContext) {
 
   app.post("/", async (c) => {
     if ((await countUsers(db)) > 0) {
-      throw new HttpError(409, "Mise is already set up. Sign in instead.")
+      throw new HttpError(409, "Nourvio is already set up. Sign in instead.")
     }
     const ip = clientIp(c)
     const wait = attempts.retryAfter(ip)

@@ -2,7 +2,7 @@ import { z } from "zod"
 
 import { addDays, weekdayOf } from "./plan.ts"
 
-/** What Mise did on an autoplan run. */
+/** What Nourvio did on an autoplan run. */
 export type AutoPlanRun = {
   /** The first day of the week it planned. */
   week: string

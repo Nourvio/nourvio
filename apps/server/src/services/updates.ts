@@ -17,7 +17,7 @@ const MAX_CHANGES = 30
 /* eslint-disable @typescript-eslint/no-explicit-any -- GitHub's JSON, read defensively */
 
 /**
- * Whether GitHub has a newer Mise than this server runs. The image stamps
+ * Whether GitHub has a newer Nourvio than this server runs. The image stamps
  * when it was built (BUILT_AT); anything pushed to its branch after that,
  * touching the app rather than only docs, is an update. GitHub's history of
  * pushes says which commit was built and what's changed since.
@@ -52,7 +52,7 @@ export function createUpdateService(
     const res = await github(`https://api.github.com${path}`, {
       headers: {
         accept: "application/vnd.github+json",
-        "user-agent": `Mise/${config.version}`,
+        "user-agent": `Nourvio/${config.version}`,
         "x-github-api-version": "2022-11-28",
       },
       signal: AbortSignal.timeout(10_000),

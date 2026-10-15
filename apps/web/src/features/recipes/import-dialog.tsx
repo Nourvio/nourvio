@@ -76,7 +76,7 @@ function errorText(error: unknown, field?: string) {
   if (error instanceof ApiError) {
     return (field && error.fields[field]) || error.message
   }
-  return "Couldn't reach Mise. Check your connection."
+  return "Couldn't reach Nourvio. Check your connection."
 }
 
 /** After an import: say so, close the dialog and open the recipe. */
@@ -326,8 +326,8 @@ function NeedsAi({
         </EmptyMedia>
         <EmptyTitle>This needs AI</EmptyTitle>
         <EmptyDescription>
-          {runsServer ? "Add" : "Ask whoever runs this Mise to add"} a Claude or
-          OpenAI key in Settings, and Mise can read recipes from text and
+          {runsServer ? "Add" : "Ask whoever runs this Nourvio to add"} a Claude
+          or OpenAI key in Settings, and Nourvio can read recipes from text and
           photos.
         </EmptyDescription>
       </EmptyHeader>
@@ -376,7 +376,7 @@ function TextImport({ onDone }: { onDone: () => void }) {
           <FieldDescription>
             {importText.isPending
               ? "This can take up to half a minute."
-              : "Mise sorts it into ingredients and steps."}
+              : "Nourvio sorts it into ingredients and steps."}
           </FieldDescription>
         )}
       </Field>

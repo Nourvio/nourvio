@@ -82,7 +82,7 @@ export function MealieCard() {
                 placeholder="http://192.168.1.20:9000"
                 {...url}
                 error={form.errors.url}
-                description="The address the Mise server can reach Mealie at, such as its local IP and port."
+                description="The address the Nourvio server can reach Mealie at, such as its local IP and port."
                 onChange={(event) => {
                   url.onChange(event)
                   setFound(null)

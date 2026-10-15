@@ -196,7 +196,7 @@ describe("discovering recipes with AI", () => {
     )
   })
 
-  test("says which are in the library, and serves their photos through Mise", async () => {
+  test("says which are in the library, and serves their photos through Nourvio", async () => {
     const [latest] = (await t.admin.get("/api/discover")).body
       .discoveries as Discovery[]
     await t.admin.post("/api/import/url", {

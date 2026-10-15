@@ -767,7 +767,7 @@ function Welcome({ isServerAdmin }: { isServerAdmin: boolean }) {
     },
     {
       title: "Plan the week",
-      text: "Pick meals for each day, or let Mise fill the week from your recipes.",
+      text: "Pick meals for each day, or let Nourvio fill the week from your recipes.",
     },
     {
       title: "Shop and cook",
@@ -782,7 +782,7 @@ function Welcome({ isServerAdmin }: { isServerAdmin: boolean }) {
         </span>
         <div>
           <h2 className="font-heading text-2xl font-semibold">
-            Welcome to Mise
+            Welcome to Nourvio
           </h2>
           <p className="text-muted-foreground">Three steps to dinner.</p>
         </div>
@@ -813,7 +813,7 @@ function Welcome({ isServerAdmin }: { isServerAdmin: boolean }) {
   )
 }
 
-/** The week Mise planned by itself, to look over: shown for a few days after. */
+/** The week Nourvio planned by itself, to look over: shown for a few days after. */
 function AutoPlanNote() {
   const household = useHouseholdInfo()
   const last = household.data?.autoPlan.last
@@ -845,7 +845,7 @@ function AutoPlanNote() {
       />
       <p className="min-w-0 flex-1 text-sm">
         <span className="font-medium">
-          Mise planned {weekLabel(last.week)} for you:
+          Nourvio planned {weekLabel(last.week)} for you:
         </span>{" "}
         {last.planned} {last.planned === 1 ? "meal" : "meals"}
         {last.listed ? `, and ${last.listed} things went on the list` : ""}.

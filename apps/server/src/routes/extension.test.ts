@@ -53,7 +53,7 @@ describe("the browser extension", () => {
       if (url.endsWith(".jpg")) {
         return { url, contentType: "image/jpeg", body: photo }
       }
-      throw new Error("Mise's server isn't allowed in")
+      throw new Error("Nourvio's server isn't allowed in")
     }
     t = await createTestAppWithAdmin({ fetcher })
   })

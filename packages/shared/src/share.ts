@@ -1,6 +1,6 @@
 import { findLinks } from "./import-batch.ts"
 
-/** What a share into Mise turned out to be, and where to go next. */
+/** What a share into Nourvio turned out to be, and where to go next. */
 export type ShareResult =
   /** A link (a recipe page or a video): import it as a recipe. */
   | { kind: "link"; link: string }
@@ -8,7 +8,7 @@ export type ShareResult =
   | { kind: "receipt"; id: string }
   /** A recipe from photos or text, already in the library. */
   | { kind: "recipe"; slug: string; name: string }
-  /** Mise couldn't tell what it was; `got` says what came through ("an image"). */
+  /** Nourvio couldn't tell what it was; `got` says what came through ("an image"). */
   | { kind: "unknown"; got: string }
 
 /**

@@ -81,7 +81,7 @@ export function linksIn(shared: { files: ReceiptFiles; text: string | null }) {
   return [...new Set(fromFiles.length ? fromFiles : textLinks(shared.text))]
 }
 
-/** What came through, for "Mise couldn't tell what that was". */
+/** What came through, for "Nourvio couldn't tell what that was". */
 function described(shared: { files: ReceiptFiles; text: string | null }) {
   const kinds = shared.files.map((file) =>
     isPdf(file)
@@ -98,7 +98,7 @@ function described(shared: { files: ReceiptFiles; text: string | null }) {
   return [...new Set(kinds)].join(" and ") || "nothing"
 }
 
-/** Something shared waits this long for Mise to open and deal with it. */
+/** Something shared waits this long for Nourvio to open and deal with it. */
 const KEEP_MS = 30 * 60_000
 /** Recipe photos read at once, as the photo import allows. */
 const MAX_RECIPE_PHOTOS = 4
@@ -106,8 +106,8 @@ const MAX_RECIPE_PHOTOS = 4
 type Actor = AiActor & { userId: string; householdId: string }
 
 /**
- * Anything shared into Mise (from an iPhone Shortcut, or Android's share
- * sheet): kept for a moment, then worked out when Mise opens. A link is
+ * Anything shared into Nourvio (from an iPhone Shortcut, or Android's share
+ * sheet): kept for a moment, then worked out when Nourvio opens. A link is
  * imported as a recipe, a receipt goes to its review, and photos or text
  * of a recipe become one.
  */
@@ -132,7 +132,7 @@ export function createShareService(
     for (const [id, kept] of waiting) if (kept.expires < now) waiting.delete(id)
   }
 
-  /** Keeps what was shared until Mise opens it; returns its id. */
+  /** Keeps what was shared until Nourvio opens it; returns its id. */
   function keep(
     householdId: string,
     shared: { files: ReceiptFiles; text: string | null }

@@ -3,7 +3,7 @@ export type UpdateSource = { owner: string; repo: string; branch: string }
 
 /**
  * Where the image comes from, read from MISE_BUILD_CONTEXT:
- * "https://github.com/kjohnson2719/mise.git#main" follows main. A tag or a
+ * "https://github.com/Nourvio/nourvio.git#main" follows main. A tag or a
  * commit ("#v0.1.0", "#5f92224") is pinned, and a local folder (".") can't
  * be followed.
  */
@@ -49,7 +49,7 @@ export const SETUP_FILES = ["compose.yaml", ".env.example"]
 /** A commit since this server was built: "Lean on Fry's sales". */
 export type UpdateChange = { sha: string; title: string; at: string }
 
-/** Whether a newer Mise is on GitHub than the one running (server admin). */
+/** Whether a newer Nourvio is on GitHub than the one running (server admin). */
 export type UpdateStatus = {
   state: "current" | "available" | "unknown"
   /** Why it can't tell, when it can't. */

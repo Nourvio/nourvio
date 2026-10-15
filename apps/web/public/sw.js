@@ -1,4 +1,4 @@
-// Mise's service worker. For now it does one thing: when Mise, installed on
+// Nourvio's service worker. For now it does one thing: when Nourvio, installed on
 // an Android home screen, is picked in the share sheet, it keeps what was
 // shared (photos, PDFs, text or a link) and opens the page that works out
 // what it is. Everything else goes straight to the network as usual.

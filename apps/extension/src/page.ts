@@ -78,7 +78,7 @@ export function showNote(
     a.href = link
     a.target = "_blank"
     a.rel = "noreferrer"
-    a.textContent = " Open in Mise"
+    a.textContent = " Open in Nourvio"
     Object.assign(a.style, { color: "#fdfbf6", textDecoration: "underline" })
     note.append(a)
   }
@@ -87,7 +87,7 @@ export function showNote(
 }
 
 /**
- * On Mise's own "Connect the extension" page: takes the token the page
+ * On Nourvio's own "Connect the extension" page: takes the token the page
  * offers and tells the page it arrived. Only ever run on that page.
  */
 export function listenForToken(expectedOrigin: string) {

@@ -2,7 +2,7 @@ import { z } from "zod"
 
 /**
  * Where cook mode's voice comes from: the device's own voices, Kokoro (an
- * open voice model running beside Mise), or OpenAI.
+ * open voice model running beside Nourvio), or OpenAI.
  */
 export const VOICE_PROVIDERS = ["device", "kokoro", "openai"] as const
 export type VoiceProvider = (typeof VOICE_PROVIDERS)[number]

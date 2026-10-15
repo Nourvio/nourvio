@@ -155,7 +155,7 @@ apps/web/src/
 - **Unfinished buttons** call `comingSoon(feature, milestone)` from `lib/coming-soon.ts`, which shows a toast. That way the layout is real before the feature is.
 - **`/styleguide`** shows every building block in the current theme. Use it to check color and component changes.
 - **Home screen:**
-  - `public/manifest.webmanifest` and the icons in `public/icons/` make Mise installable.
+  - `public/manifest.webmanifest` and the icons in `public/icons/` make Nourvio installable.
   - The icons were rendered from the favicon artwork. If the logo changes, re-render them at 192, 512 (plus a full-bleed maskable 512) and 180 for Apple.
 
 ## Theme

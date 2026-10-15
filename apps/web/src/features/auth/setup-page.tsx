@@ -40,7 +40,7 @@ export function SetupPage() {
 
   return (
     <AuthLayout
-      title="Set up Mise"
+      title="Set up Nourvio"
       description="Create the first account. You'll run this server and be the admin of your household; invite everyone else afterwards."
     >
       <form onSubmit={onSubmit} noValidate className="grid gap-6">

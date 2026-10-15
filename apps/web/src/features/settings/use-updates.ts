@@ -6,7 +6,7 @@ import { api } from "@/lib/api"
 
 const UPDATES_KEY = ["updates"] as const
 
-/** Whether a newer Mise is on GitHub. Only the server admin asks: they're who updates it. */
+/** Whether a newer Nourvio is on GitHub. Only the server admin asks: they're who updates it. */
 export function useUpdates() {
   const me = useCurrentUser()
   return useQuery({

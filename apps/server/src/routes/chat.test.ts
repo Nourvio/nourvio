@@ -300,7 +300,7 @@ describe("chat", () => {
     expect(tools).toEqual(["Already have Grandma's Chili"])
   })
 
-  test("doesn't offer a page Mise can't open", async () => {
+  test("doesn't offer a page Nourvio can't open", async () => {
     chat.state.script = [
       {
         tools: [

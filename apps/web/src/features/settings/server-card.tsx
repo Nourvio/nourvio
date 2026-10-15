@@ -66,8 +66,8 @@ export function ServerCard() {
       <CardHeader>
         <CardTitle>This server</CardTitle>
         <CardDescription>
-          You run this Mise. Each household has its own recipes and plans; they
-          all use the AI keys below.
+          You run this Nourvio. Each household has its own recipes and plans;
+          they all use the AI keys below.
         </CardDescription>
       </CardHeader>
       <CardContent>

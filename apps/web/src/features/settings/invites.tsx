@@ -68,8 +68,8 @@ export function InviteDialog({ householdName }: { householdName: string }) {
   async function share() {
     try {
       await navigator.share({
-        title: `Join ${householdName} on Mise`,
-        text: `Join ${householdName} on Mise to share recipes and meal plans:`,
+        title: `Join ${householdName} on Nourvio`,
+        text: `Join ${householdName} on Nourvio to share recipes and meal plans:`,
         url: link,
       })
     } catch {

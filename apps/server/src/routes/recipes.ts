@@ -183,7 +183,7 @@ export function recipesRoutes(
     return c.json({ changed })
   })
 
-  /** What every recipe costs at the household's stores, as far as Mise knows. */
+  /** What every recipe costs at the household's stores, as far as Nourvio knows. */
   app.get("/costs", async (c) => {
     const costs = await recipeCosts(db, currentHousehold(c))
     return c.json({

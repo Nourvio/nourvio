@@ -311,7 +311,7 @@ const proposeRecipeEdit = tool({
 const tidyRecipe = tool({
   name: "tidy_recipe",
   description:
-    "Run Mise's tidy-up on a recipe: cleaner ingredient lines and steps, tags, a missing description and missing times. The person reviews the suggestions on a card.",
+    "Run Nourvio's tidy-up on a recipe: cleaner ingredient lines and steps, tags, a missing description and missing times. The person reviews the suggestions on a card.",
   input: z.object({ recipe: recipeRef }),
   runningLabel: "Tidying a recipe",
   async run(ctx, { recipe: ref }) {
@@ -668,13 +668,13 @@ const proposeImportRecipe = tool({
       }
     }
     // Some sites refuse anything that isn't a browser; don't offer what
-    // Mise can't import.
+    // Nourvio can't import.
     if (ctx.fetcher) {
       try {
         await ctx.fetcher(link)
       } catch (error) {
         return {
-          output: `Mise can't open that page (${(error as Error).message}), so it couldn't be imported. Offer a recipe from a different site instead.`,
+          output: `Nourvio can't open that page (${(error as Error).message}), so it couldn't be imported. Offer a recipe from a different site instead.`,
           label: `Couldn't open ${site.trim() || "that site"}`,
           isError: true,
         }

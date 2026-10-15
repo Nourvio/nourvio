@@ -13,7 +13,7 @@ export const SALE_LEAN_NAMES: Record<SaleLean, string> = {
 
 /** A food in the household's recipes that's on sale at its Fry's. */
 export type Deal = {
-  /** The food, as Mise matches it (see foodKey): "chicken thigh". */
+  /** The food, as Nourvio matches it (see foodKey): "chicken thigh". */
   key: string
   /** The product that's on sale. */
   product: string
@@ -48,7 +48,7 @@ export type Deals = {
 export type PriceCheck = {
   /** Remembered products whose price was refreshed. */
   refreshed: number
-  /** Recipe foods looked up at the store: new ones, and Mise's picks taking a fresh look for a sale. */
+  /** Recipe foods looked up at the store: new ones, and Nourvio's picks taking a fresh look for a sale. */
   searched: number
   /** Foods in the household's recipes on sale now. */
   onSale: number

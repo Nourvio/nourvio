@@ -27,7 +27,7 @@ export type WalmartJob = {
 
 export type SearchRequest = {
   items: { itemId: string; name: string }[]
-  /** Let Mise pick from the results (else they're only offered). */
+  /** Let Nourvio pick from the results (else they're only offered). */
   suggest: boolean
 }
 
@@ -54,7 +54,7 @@ export async function getJob() {
   return (walmartJob as WalmartJob | undefined) ?? null
 }
 
-/** The Walmart tab Mise works in: the one it used before, or a new one. */
+/** The Walmart tab Nourvio works in: the one it used before, or a new one. */
 async function walmartTab() {
   const { walmartTabId } = await chrome.storage.session.get("walmartTabId")
   if (typeof walmartTabId === "number") {
@@ -89,7 +89,7 @@ async function visit(tabId: number, url: string, mustContain: string) {
 const BLOCKED =
   "Walmart wants to check you're a person. Finish that in the Walmart tab, then try again."
 
-/** Searches Walmart for each item in the Walmart tab, then lets Mise pick (or just offers the results). */
+/** Searches Walmart for each item in the Walmart tab, then lets Nourvio pick (or just offers the results). */
 export async function runSearch(request: SearchRequest) {
   const job: WalmartJob = {
     kind: "search",

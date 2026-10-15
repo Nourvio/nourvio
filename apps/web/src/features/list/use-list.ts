@@ -25,7 +25,7 @@ export function useList() {
   })
 }
 
-/** What's left last cost at its list's store, where Mise knows the product. */
+/** What's left last cost at its list's store, where Nourvio knows the product. */
 export function useListPrices() {
   return useQuery({
     queryKey: PRICES_KEY,

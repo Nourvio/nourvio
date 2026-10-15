@@ -1,6 +1,6 @@
-# Mise
+# Nourvio
 
-Mise is a self-hosted meal planner for your household (and any others you host on the same server), with an AI cooking assistant built in. It replaces Mealie and covers:
+Nourvio is a self-hosted meal planner for your household (and any others you host on the same server), with an AI cooking assistant built in. It replaces Mealie and covers:
 
 - recipes
 - weekly meal plans
@@ -35,4 +35,4 @@ It's designed to be used from a phone or iPad while cooking.
 | Database | PostgreSQL 18 through Drizzle ORM | The usual choice in compose stacks. Fuzzy matching and full-text search help with ingredients and recipe search, and there's room for AI-powered search later. |
 | AI | Claude and OpenAI, called from the server with your own API keys | Keys go in Settings or environment variables. Chat, recipe import and cleanup all live inside the app. No ChatGPT or Claude app connectors (MCP). |
 | Hosting | One Docker container on TrueNAS | Your hardware, your data |
-| Store connections | Fry's straight into the cart (Kroger's API, built), Costco as links to Costco Same-Day, Walmart through the Mise browser extension (planned) | Kroger has a free, official cart API; Walmart only lets approved partners fill carts. See [integrations.md](integrations.md#grocery-stores-connections). |
+| Store connections | Fry's straight into the cart (Kroger's API, built), Costco as links to Costco Same-Day, Walmart through the Nourvio browser extension (planned) | Kroger has a free, official cart API; Walmart only lets approved partners fill carts. See [integrations.md](integrations.md#grocery-stores-connections). |

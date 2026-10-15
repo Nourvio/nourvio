@@ -43,8 +43,8 @@ function Copyable({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * Sharing receipts (and recipes) into Mise from other apps: Android's share
- * sheet once Mise is installed, and on iPhone a Shortcut with a key.
+ * Sharing receipts (and recipes) into Nourvio from other apps: Android's share
+ * sheet once Nourvio is installed, and on iPhone a Shortcut with a key.
  */
 export function ShareCard() {
   const create = useCreateExtensionToken()
@@ -65,9 +65,9 @@ export function ShareCard() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Share to Mise</CardTitle>
+        <CardTitle>Share to Nourvio</CardTitle>
         <CardDescription>
-          Share anything food to Mise and it works out the rest: a TikTok,
+          Share anything food to Nourvio and it works out the rest: a TikTok,
           Instagram or YouTube video or a recipe page becomes a recipe, a
           receipt from your email or photos goes to the pantry (with a look
           first), and a screenshot of a recipe becomes one too.
@@ -79,12 +79,12 @@ export function ShareCard() {
           <p className="text-sm text-muted-foreground">
             In Chrome, open the menu (⋮) and tap <b>Add to home screen</b> or{" "}
             <b>Install app</b>. Then, in any app, tap <b>Share</b> and pick{" "}
-            <b>Mise</b>.
+            <b>Nourvio</b>.
           </p>
           {!secure && (
             <p className="text-sm text-amber-700 dark:text-amber-400">
-              This needs Mise opened at its https address, like your Cloudflare
-              tunnel, not a local one.
+              This needs Nourvio opened at its https address, like your
+              Cloudflare tunnel, not a local one.
             </p>
           )}
         </section>
@@ -112,7 +112,7 @@ export function ShareCard() {
             <ol className="grid list-decimal gap-3 pl-5 text-sm marker:text-muted-foreground">
               <li>
                 Open <b>Shortcuts</b>, tap <b>+</b>, and name it{" "}
-                <b>Send to Mise</b>.
+                <b>Send to Nourvio</b>.
               </li>
               <li>
                 Tap the <b>ⓘ</b> button and turn on <b>Show in Share Sheet</b>.
@@ -147,10 +147,10 @@ export function ShareCard() {
           {key && (
             <p className="text-sm text-muted-foreground">
               Now, from TikTok, Instagram, YouTube, Safari, Mail, Photos or
-              Files, tap <b>Share</b> and then <b>Send to Mise</b>. Mise opens
-              to finish it, signed in for you by a one-time link. The key is
-              yours: someone in another household needs their own. It's listed
-              with your connected extensions, where it can be removed.
+              Files, tap <b>Share</b> and then <b>Send to Nourvio</b>. Nourvio
+              opens to finish it, signed in for you by a one-time link. The key
+              is yours: someone in another household needs their own. It's
+              listed with your connected extensions, where it can be removed.
             </p>
           )}
         </section>

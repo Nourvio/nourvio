@@ -1,5 +1,5 @@
 /**
- * Counts failures per key in a sliding window, in memory. Mise runs as a
+ * Counts failures per key in a sliding window, in memory. Nourvio runs as a
  * single process, so this doesn't need to be shared.
  */
 export class RateLimiter {

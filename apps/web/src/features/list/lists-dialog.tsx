@@ -233,9 +233,9 @@ function ListsEditor({
         </Button>
       )}
       <p className="text-sm text-muted-foreground">
-        Moving something to another list (tap it on the list) teaches Mise where
-        that food goes from then on. Things on a removed list move to the main
-        one.
+        Moving something to another list (tap it on the list) teaches Nourvio
+        where that food goes from then on. Things on a removed list move to the
+        main one.
       </p>
       <Button type="submit" disabled={save.isPending}>
         {save.isPending && <Spinner data-icon="inline-start" />}

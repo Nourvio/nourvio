@@ -235,8 +235,8 @@ function SiteRecipes({
         opening === 0 && (
           <p className="text-muted-foreground">
             No recipes in {filter ? "this site's" : "these sites'"} latest posts
-            that Mise can read. Some sites don't share recipe details, or turn
-            Mise away; it tries again every few hours.
+            that Nourvio can read. Some sites don't share recipe details, or
+            turn Nourvio away; it tries again every few hours.
           </p>
         )
       )}

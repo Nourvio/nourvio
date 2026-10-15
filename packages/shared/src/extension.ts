@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-/** A browser the Mise extension is connected in, by its token. */
+/** A browser the Nourvio extension is connected in, by its token. */
 export type ExtensionToken = {
   id: string
   /** "Chrome on Windows" */
@@ -18,7 +18,7 @@ export const createExtensionTokenInput = z.object({
 
 /**
  * A page as the browser shows it, read by the extension: its recipe data
- * (JSON-LD), photos and readable text. Works on sites that turn Mise's
+ * (JSON-LD), photos and readable text. Works on sites that turn Nourvio's
  * server away, or that need the person's own subscription.
  */
 export const importPageInput = z.object({

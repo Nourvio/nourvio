@@ -82,7 +82,7 @@ const PART_PORTION =
 const SEARCHES_PER_CHECK = 50
 /** A recipe food that turned up nothing isn't looked up again for this long. */
 const SEARCH_AGAIN_DAYS = 30
-/** Mise's own pick for a recipe food, not on sale, gets a fresh look this often. */
+/** Nourvio's own pick for a recipe food, not on sale, gets a fresh look this often. */
 const RECHECK_DAYS = 7
 /** The aisles whose sales change what's for dinner. */
 const SALE_SECTIONS = new Set(["meat-seafood", "produce"])
@@ -466,7 +466,7 @@ export function createShopService(
     return { row, store: row.store }
   }
 
-  /** Mise's pick from each item's search results: the AI's when it's set up, else the first in stock. */
+  /** Nourvio's pick from each item's search results: the AI's when it's set up, else the first in stock. */
   async function choose(
     actor: AiActor,
     items: { name: string; amount: string }[],
@@ -549,7 +549,7 @@ export function createShopService(
 
   /**
    * The list ready for the store: each unchecked item with its product
-   * (today's price), or Mise's suggestion for one, and how many to buy.
+   * (today's price), or Nourvio's suggestion for one, and how many to buy.
    */
   async function basket(householdId: string, actor: AiActor): Promise<Basket> {
     const { row: conn, store } = await requireStore(householdId)
@@ -659,7 +659,7 @@ export function createShopService(
   /**
    * Today's prices and sales for every remembered Fry's product, and a first
    * look at the meat, seafood and produce in the household's recipes that
-   * has no product yet (kept as Mise's suggestions, as the cart review
+   * has no product yet (kept as Nourvio's suggestions, as the cart review
    * does). Runs each morning and before the weekly autopilot plans.
    */
   async function checkPrices(householdId: string): Promise<PriceCheck> {
@@ -699,7 +699,7 @@ export function createShopService(
 
     // Recipe foods to look up, the most used first: those with no product
     // yet (meat, seafood and produce before the rest, which is for costs),
-    // then Mise's own picks of those that aren't on sale, for one that is.
+    // then Nourvio's own picks of those that aren't on sale, for one that is.
     // A product someone chose is never swapped, and always-on-hand food
     // isn't bought.
     const searchedOn = { ...conn.priceSearches }
@@ -968,7 +968,7 @@ export function createShopService(
   }
 
   /**
-   * The list for a store Mise can't reach itself (Walmart, through the
+   * The list for a store Nourvio can't reach itself (Walmart, through the
    * browser extension): remembered products, how many, and what was sent.
    */
   async function storeBasket(
@@ -999,7 +999,7 @@ export function createShopService(
     }
   }
 
-  /** Mise's picks from the search results the extension found, kept as suggestions. */
+  /** Nourvio's picks from the search results the extension found, kept as suggestions. */
   async function suggest(
     householdId: string,
     actor: AiActor,

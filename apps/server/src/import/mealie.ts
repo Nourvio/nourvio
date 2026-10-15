@@ -44,7 +44,7 @@ function client(base: string, token: string, fetcher: MealieFetch) {
         502,
         (error as Error).name === "TimeoutError"
           ? "Mealie took too long to answer"
-          : `Couldn't reach Mealie at ${root}${cause ? ` (${cause})` : ""}. Use an address the Mise server can reach, such as http://192.168.1.20:9000.`
+          : `Couldn't reach Mealie at ${root}${cause ? ` (${cause})` : ""}. Use an address the Nourvio server can reach, such as http://192.168.1.20:9000.`
       )
     }
     if (response.status === 401 || response.status === 403) {

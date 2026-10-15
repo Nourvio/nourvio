@@ -59,7 +59,7 @@ const aiFactory: AiProviderFactory = (id) => ({
   },
 })
 
-describe("sharing anything into Mise", () => {
+describe("sharing anything into Nourvio", () => {
   let t: Awaited<ReturnType<typeof createTestAppWithAdmin>>
   let picture: File
 
@@ -226,7 +226,7 @@ describe("sharing anything into Mise", () => {
     expect(again.headers.get("location")).toBe("/login")
     expect(again.headers.get("set-cookie")).toBeNull()
 
-    // From Mise itself, signed in, no sign-in link is needed.
+    // From Nourvio itself, signed in, no sign-in link is needed.
     const own = await t.admin.post("/api/share", {
       text: "https://example.com/r",
     })

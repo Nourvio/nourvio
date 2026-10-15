@@ -4,7 +4,7 @@ import { z } from "zod"
 export const RECEIPT_KINDS = ["food", "household", "other"] as const
 export type ReceiptKind = (typeof RECEIPT_KINDS)[number]
 
-/** A line from a receipt, as Mise read it. */
+/** A line from a receipt, as Nourvio read it. */
 export type ReceiptItem = {
   id: string
   /** As printed: "GV WHL MLK 1GAL". */

@@ -97,7 +97,9 @@ export async function importFromVideo(
     throw new HttpError(
       422,
       "That video has no caption or captions to read" +
-        (canTranscribe ? "." : ". With an OpenAI key, Mise can listen to it.")
+        (canTranscribe
+          ? "."
+          : ". With an OpenAI key, Nourvio can listen to it.")
     )
   }
 

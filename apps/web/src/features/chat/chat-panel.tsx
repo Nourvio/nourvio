@@ -149,7 +149,7 @@ function NeedsAi() {
         <EmptyDescription>
           {me.isServerAdmin
             ? "Add a Claude or OpenAI key in Settings to start chatting."
-            : "Ask whoever runs this Mise to add a Claude or OpenAI key in Settings."}
+            : "Ask whoever runs this Nourvio to add a Claude or OpenAI key in Settings."}
         </EmptyDescription>
       </EmptyHeader>
       {me.isServerAdmin && (

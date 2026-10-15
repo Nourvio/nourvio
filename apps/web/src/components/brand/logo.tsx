@@ -21,7 +21,7 @@ export function Logo({
       </span>
       {showWordmark && (
         <span className="font-heading text-xl font-semibold tracking-tight">
-          Mise
+          Nourvio
         </span>
       )}
     </span>

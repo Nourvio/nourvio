@@ -26,7 +26,7 @@ import { remoteThumbnail } from "../services/remote-images.ts"
 import { listDeals } from "../services/sales.ts"
 import type { ShopService } from "../services/shop.ts"
 
-/** Store photos Mise will fetch: the stores' own image servers only. */
+/** Store photos Nourvio will fetch: the stores' own image servers only. */
 const IMAGE_HOSTS =
   /(^|\.)(kroger\.com|walmartimages\.com|costco\.com|costco-static\.com)$/i
 
@@ -62,7 +62,7 @@ export function shopRoutes(
     c.json({ status: await shop.status(currentHousehold(c)) })
   )
 
-  /** What's left on the lists last cost, where Mise knows the product. */
+  /** What's left on the lists last cost, where Nourvio knows the product. */
   app.get("/prices", async (c) =>
     c.json({ prices: await shop.prices(currentHousehold(c)) })
   )
@@ -176,8 +176,8 @@ export function shopRoutes(
   )
 
   // ---- Walmart, through the browser extension ----
-  // Mise can't reach Walmart itself: the extension searches and fills the
-  // cart in the person's own Walmart tab, and Mise keeps the picks.
+  // Nourvio can't reach Walmart itself: the extension searches and fills the
+  // cart in the person's own Walmart tab, and Nourvio keeps the picks.
   app.get("/walmart/basket", async (c) =>
     c.json({ basket: await shop.storeBasket(currentHousehold(c), "walmart") })
   )

@@ -35,17 +35,17 @@ chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: "import-page",
-      title: "Import this recipe into Mise",
+      title: "Import this recipe into Nourvio",
       contexts: ["page"],
     })
     chrome.contextMenus.create({
       id: "import-link",
-      title: "Import this link into Mise",
+      title: "Import this link into Nourvio",
       contexts: ["link"],
     })
     chrome.contextMenus.create({
       id: "add-to-list",
-      title: "Add “%s” to the Mise shopping list",
+      title: "Add “%s” to the Nourvio shopping list",
       contexts: ["selection"],
     })
   })
@@ -152,7 +152,7 @@ chrome.runtime.onMessage.addListener((message, sender) => {
     void chrome.storage.session.set({ walmartCancel: true })
     return
   }
-  // From the popup: open Mise's connect page, then listen there for the token.
+  // From the popup: open Nourvio's connect page, then listen there for the token.
   if (message?.type === "connect" && typeof message.origin === "string") {
     void chrome.tabs
       .create({ url: `${message.origin}/extension/connect` })

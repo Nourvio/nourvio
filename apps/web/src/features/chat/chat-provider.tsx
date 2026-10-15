@@ -254,7 +254,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           fail(
             error instanceof ApiError
               ? error.message
-              : "Couldn't reach Mise. Check your connection."
+              : "Couldn't reach Nourvio. Check your connection."
           )
         }
       } finally {

@@ -15,7 +15,7 @@ import { ApiError } from "@/lib/api"
 
 import { useExtensionTokens, useRevokeExtensionToken } from "./use-extension"
 
-/** Getting the Mise browser extension, and the browsers it's connected in. */
+/** Getting the Nourvio browser extension, and the browsers it's connected in. */
 export function ExtensionCard() {
   const tokens = useExtensionTokens()
   const revoke = useRevokeExtensionToken()
@@ -26,9 +26,9 @@ export function ExtensionCard() {
         <CardTitle>Browser extension</CardTitle>
         <CardDescription>
           For Chrome, Edge and other Chromium browsers on a computer. Import the
-          recipe on any page with one click, even on sites that turn Mise away
-          or need your subscription; right-click a link to import it; and keep
-          the shopping list beside you while you shop online.
+          recipe on any page with one click, even on sites that turn Nourvio
+          away or need your subscription; right-click a link to import it; and
+          keep the shopping list beside you while you shop online.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -52,8 +52,8 @@ export function ExtensionCard() {
             </li>
             <li>Click Load unpacked and pick the unzipped folder.</li>
             <li>
-              Click the Mise icon in the toolbar, type this Mise's address, and
-              click Connect.
+              Click the Nourvio icon in the toolbar, type this Nourvio's
+              address, and click Connect.
             </li>
           </ol>
         </div>

@@ -32,7 +32,7 @@ export const RECIPES_KEY = ["recipes"] as const
 
 const recipeKey = (idOrSlug: string) => ["recipe", idOrSlug] as const
 
-/** What every recipe costs at the household's stores, as far as Mise knows. */
+/** What every recipe costs at the household's stores, as far as Nourvio knows. */
 export function useRecipeCosts() {
   return useQuery({
     queryKey: [...RECIPES_KEY, "costs"],

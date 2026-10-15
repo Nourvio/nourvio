@@ -1,11 +1,11 @@
-/** The Mise this extension is connected to, kept in the extension's storage. */
+/** The Nourvio this extension is connected to, kept in the extension's storage. */
 export type Connection = {
-  /** "https://mise.example.com" */
+  /** "https://nourvio.example.com" */
   origin: string
   token: string
-  /** The token's id, to disconnect it in Mise too. */
+  /** The token's id, to disconnect it in Nourvio too. */
   tokenId: string | null
-  /** Whose Mise it is. */
+  /** Whose Nourvio it is. */
   name: string
 }
 
@@ -28,14 +28,14 @@ export class MiseError extends Error {
   }
 }
 
-/** A Mise API call as the connected person (their extension token). */
+/** A Nourvio API call as the connected person (their extension token). */
 export async function mise<T>(
   path: string,
   init: { method?: string; body?: unknown; connection?: Connection } = {}
 ): Promise<T> {
   const connection = init.connection ?? (await getConnection())
   if (!connection) {
-    throw new MiseError(0, "Connect the extension to your Mise first.")
+    throw new MiseError(0, "Connect the extension to your Nourvio first.")
   }
   let res: Response
   try {
@@ -57,13 +57,13 @@ export async function mise<T>(
     throw new MiseError(
       res.status,
       (data as { error?: string } | null)?.error ??
-        `Mise answered ${res.status}.`
+        `Nourvio answered ${res.status}.`
     )
   }
   return data as T
 }
 
-/** "mise.example.com" or a full link, as the origin to ask the browser for. */
+/** "nourvio.example.com" or a full link, as the origin to ask the browser for. */
 export function originOf(input: string) {
   const text = input.trim()
   const url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`)

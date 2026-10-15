@@ -14,7 +14,7 @@ export type FdcFood = {
   portions: FdcPortion[]
 }
 
-/** USDA FoodData Central, as Mise uses it. */
+/** USDA FoodData Central, as Nourvio uses it. */
 export interface FdcClient {
   /** Generic foods (Foundation and SR Legacy) that match, best first. */
   search(query: string): Promise<FdcCandidate[]>
@@ -57,7 +57,7 @@ type RawPortion = {
   measureUnit?: { name?: string } | null
 }
 
-/** Reads the parts of an FDC food record that Mise uses. */
+/** Reads the parts of an FDC food record that Nourvio uses. */
 export function parseFood(raw: {
   fdcId: number
   description: string

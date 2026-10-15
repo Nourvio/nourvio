@@ -1,10 +1,10 @@
 import { z } from "zod"
 
-/** Stores Mise can shop at. */
+/** Stores Nourvio can shop at. */
 export const SHOPS = ["kroger", "costco", "walmart"] as const
 export type ShopId = (typeof SHOPS)[number]
 
-/** A product at a store, as Mise remembers it for something on the list. */
+/** A product at a store, as Nourvio remembers it for something on the list. */
 export type StoreProduct = {
   /** The store's own id (Kroger's productId, Walmart's item id). */
   id: string
@@ -13,7 +13,7 @@ export type StoreProduct = {
   brand: string | null
   /** As the store writes it: "1 gal", "16 oz", "12 ct". */
   size: string | null
-  /** The store's photo; shown through Mise (see storeImageUrl). */
+  /** The store's photo; shown through Nourvio (see storeImageUrl). */
   image: string | null
   price: number | null
   /** The price while there's a sale. */
@@ -29,7 +29,7 @@ export type StoreProduct = {
   url: string | null
 }
 
-/** A store's photo, through Mise. */
+/** A store's photo, through Nourvio. */
 export function storeImageUrl(image: string | null) {
   return image ? `/api/shop/image?u=${encodeURIComponent(image)}` : null
 }
@@ -123,7 +123,7 @@ export function parseProductSize(size: string | null): ProductSize | null {
 }
 
 /**
- * How much of something the list needs, every way Mise could work it out:
+ * How much of something the list needs, every way Nourvio could work it out:
  * a count ("2 onions"), grams and millilitres, and what one weighs.
  */
 export type Need = {
@@ -225,14 +225,14 @@ export function packagesFor(
   return { packages: 1, sure: false }
 }
 
-/** Something on the list, with the product Mise would buy for it. */
+/** Something on the list, with the product Nourvio would buy for it. */
 export type BasketLine = {
   itemId: string
   name: string
   /** As the list shows it: "1 ½ lb". */
   amount: string
   product: StoreProduct | null
-  /** Mise's pick, not chosen by anyone yet: worth a look. */
+  /** Nourvio's pick, not chosen by anyone yet: worth a look. */
   suggested: boolean
   packages: number
   /** False when the amount and package size couldn't be compared. */
@@ -324,7 +324,7 @@ export type ShopStatus = {
     linked: { by: string; at: string } | null
     /** Kroger stopped accepting the sign-in; link the account again. */
     needsRelink: boolean
-    /** When Mise last checked the store's prices and sales. */
+    /** When Nourvio last checked the store's prices and sales. */
     pricesCheckedAt: string | null
   }
 }
@@ -376,7 +376,7 @@ export const storeProductSchema = z.object({
 
 export const saveProductInput = z.object({ product: storeProductSchema })
 
-/** Each item's search results at a store, for Mise to pick from. */
+/** Each item's search results at a store, for Nourvio to pick from. */
 export const suggestProductsInput = z.object({
   items: z
     .array(

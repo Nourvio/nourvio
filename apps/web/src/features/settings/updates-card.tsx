@@ -34,7 +34,7 @@ const when = (iso: string) =>
     minute: "2-digit",
   })
 
-/** Server admin: whether GitHub has a newer Mise, what's in it, and how to get it. */
+/** Server admin: whether GitHub has a newer Nourvio, what's in it, and how to get it. */
 export function UpdatesCard() {
   const updates = useUpdates()
   const check = useCheckForUpdates()
@@ -46,7 +46,7 @@ export function UpdatesCard() {
         found.state === "available"
           ? toast.success("There's an update")
           : found.state === "current"
-            ? toast.success("Mise is up to date")
+            ? toast.success("Nourvio is up to date")
             : toast.error(found.reason ?? "Couldn't check for updates"),
       onError: (error) =>
         toast.error(
@@ -59,8 +59,8 @@ export function UpdatesCard() {
       <CardHeader>
         <CardTitle>Updates</CardTitle>
         <CardDescription>
-          Mise checks GitHub every few hours for changes since this server was
-          built.
+          Nourvio checks GitHub every few hours for changes since this server
+          was built.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4">
@@ -92,7 +92,7 @@ export function UpdatesCard() {
                   {status.state === "available"
                     ? `An update is ready: ${status.changes.length} ${status.changes.length === 1 ? "change" : "changes"}`
                     : status.state === "current"
-                      ? "Mise is up to date"
+                      ? "Nourvio is up to date"
                       : "Can't tell whether there's an update"}
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -128,9 +128,10 @@ export function UpdatesCard() {
                 <div className="grid gap-1 text-sm">
                   <p className="font-medium">To update</p>
                   <p className="text-muted-foreground">
-                    In Dockge, open the Mise stack and press <b>Update</b> (or
-                    stop and start it). Mise rebuilds from GitHub and restarts
-                    in a few minutes; database changes run by themselves.
+                    In Dockge, open the Nourvio stack and press <b>Update</b>{" "}
+                    (or stop and start it). Nourvio rebuilds from GitHub and
+                    restarts in a few minutes; database changes run by
+                    themselves.
                   </p>
                   {status.setupFiles.includes("compose.yaml") && (
                     <SetupNote>

@@ -29,7 +29,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link to="/" aria-label="Mise home">
+              <Link to="/" aria-label="Nourvio home">
                 <Logo />
               </Link>
             </SidebarMenuButton>

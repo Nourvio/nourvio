@@ -41,7 +41,7 @@ export function ConnectExtensionPage() {
       setState({
         step: "failed",
         message:
-          error instanceof ApiError ? error.message : "Couldn't reach Mise",
+          error instanceof ApiError ? error.message : "Couldn't reach Nourvio",
       })
       return
     }
@@ -95,10 +95,10 @@ export function ConnectExtensionPage() {
     return (
       <AuthLayout
         title="The extension is connected"
-        description="You can close this tab. Open the Mise extension from the toolbar on any recipe page."
+        description="You can close this tab. Open the Nourvio extension from the toolbar on any recipe page."
       >
         <Button variant="outline" className="w-full" asChild>
-          <Link to="/">Back to Mise</Link>
+          <Link to="/">Back to Nourvio</Link>
         </Button>
       </AuthLayout>
     )
@@ -106,7 +106,7 @@ export function ConnectExtensionPage() {
 
   return (
     <AuthLayout
-      title="Connect the Mise extension?"
+      title="Connect the Nourvio extension?"
       description={`It'll act as you, ${me.displayName}: importing recipes from pages you open, adding to the shopping list, and showing the list beside you while you shop. You can disconnect it in Settings any time.`}
     >
       {state.step === "failed" && (

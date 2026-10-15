@@ -148,7 +148,7 @@ function KeyField({
   const showInput = status.source !== "env" && (!status.configured || editing)
 
   function fail(e: unknown) {
-    setError(e instanceof ApiError ? e.message : "Couldn't reach Mise")
+    setError(e instanceof ApiError ? e.message : "Couldn't reach Nourvio")
   }
 
   function save(event: React.FormEvent) {

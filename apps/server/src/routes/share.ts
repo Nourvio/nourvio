@@ -14,7 +14,7 @@ const MAX_UPLOAD = 40 * 1024 * 1024
 const MAX_LINKS = 100
 
 /**
- * Sharing anything into Mise, from an iPhone Shortcut (with a key) or
+ * Sharing anything into Nourvio, from an iPhone Shortcut (with a key) or
  * Android: hand it over, then open the link that comes back.
  */
 export function shareRoutes(

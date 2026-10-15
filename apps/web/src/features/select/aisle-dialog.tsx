@@ -19,7 +19,7 @@ export function AisleDialog({
       open={open}
       onOpenChange={onOpenChange}
       title={`Move ${count === 1 ? "it" : `these ${count}`} to an aisle`}
-      description="Mise remembers, so they go there next time too."
+      description="Nourvio remembers, so they go there next time too."
     >
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
         {STORE_SECTIONS.map((section) => (

@@ -1,6 +1,6 @@
 # Integrations
 
-What Mise connects to, what we learned about each service (researched October 2026), and how we'll use it.
+What Nourvio connects to, what we learned about each service (researched October 2026), and how we'll use it.
 
 ## Recipe sites
 
@@ -53,7 +53,7 @@ Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x
   - Servings from `recipeServings` (2.x) or the yield text; times from `prepTime`, `performTime` (Mealie's cook time; `cookTime` in older versions) and `totalTime`, whether they're "1 hour 30 minutes" or ISO durations.
   - Tags and categories both become tags; rating (rounded), source link, notes, nutrition and last-made date come across.
   - Each recipe remembers its Mealie id (`external_ref`), so running it again skips what's already here.
-- Mealie's foods and units aren't imported: Mise matches foods by name (see [architecture.md](architecture.md#data-model)).
+- Mealie's foods and units aren't imported: Nourvio matches foods by name (see [architecture.md](architecture.md#data-model)).
 
 ## AI providers (Claude and OpenAI)
 
@@ -76,7 +76,7 @@ Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x
 | GPT-6 Luna | `gpt-6-luna` | $0.10 / $0.50 |
 
 - **OpenAI models and prices** change often (GPT-6 Sol and Luna launched September 22, 2026), so Settings lists whatever models the key can use. Check OpenAI's pricing page before choosing one.
-- **Photos** for recipes without one are made by OpenAI's image models; Claude can't make pictures. Mise uses `gpt-image-2.5-flare` ("fast, high-quality everyday generation"), falling back to `gpt-image-2`, `gpt-image-1.5` and `gpt-image-1-mini` if a key can't use it. Images are billed per token ($5 per million text tokens in, $30 per million image tokens out); a 1536×1024 photo at medium quality is about 340 image tokens, so roughly 1¢ (measured October 2026: 1.1–1.2¢ each). OpenAI may ask for the organization to be verified, and a new account needs credit, before it makes images. Both errors say so in the app.
+- **Photos** for recipes without one are made by OpenAI's image models; Claude can't make pictures. Nourvio uses `gpt-image-2.5-flare` ("fast, high-quality everyday generation"), falling back to `gpt-image-2`, `gpt-image-1.5` and `gpt-image-1-mini` if a key can't use it. Images are billed per token ($5 per million text tokens in, $30 per million image tokens out); a 1536×1024 photo at medium quality is about 340 image tokens, so roughly 1¢ (measured October 2026: 1.1–1.2¢ each). OpenAI may ask for the organization to be verified, and a new account needs credit, before it makes images. Both errors say so in the app.
 - **Picking models:** Settings tracks spend by provider, model and task, so we can see where a cheaper model is good enough.
 - **Web search** for the assistant uses each provider's own search tool, $10 per 1,000 searches at both. Search results add a lot of reading: a "find me a birria recipe" reply on Claude Opus 5.5 read about 52,000 tokens (about 24¢ in all), so a smaller Assistant model is worth it for heavy searching.
 
@@ -95,15 +95,15 @@ Built in **Settings → Move from Mealie** (admins). It's written for Mealie 1.x
 
 ## Grocery stores (connections)
 
-Researched again on October 14, 2026, for the common US chains: what it takes to get Mise's shopping list into each store.
+Researched again on October 14, 2026, for the common US chains: what it takes to get Nourvio's shopping list into each store.
 
 ### Three ways in
 
 | Way | What happens | Stores |
 |---|---|---|
-| **Straight into the cart** (the store's official API) | Mise matches each item to a product at your store and adds it to your cart. You pick a pickup or delivery time and pay in the store's own app. | Kroger family only |
-| **A shopping link** (Instacart) | Mise turns the list into an Instacart page. You pick the store there, check the matched products and check out on Instacart, at Instacart's prices and fees. | Most chains, Costco included |
-| **No connection** | Mise can't reach the store's cart, so it offers a list with a search link for each item. | Walmart (for now), Target, Trader Joe's, Amazon |
+| **Straight into the cart** (the store's official API) | Nourvio matches each item to a product at your store and adds it to your cart. You pick a pickup or delivery time and pay in the store's own app. | Kroger family only |
+| **A shopping link** (Instacart) | Nourvio turns the list into an Instacart page. You pick the store there, check the matched products and check out on Instacart, at Instacart's prices and fees. | Most chains, Costco included |
+| **No connection** | Nourvio can't reach the store's cart, so it offers a list with a search link for each item. | Walmart (for now), Target, Trader Joe's, Amazon |
 
 ### Store by store
 
@@ -123,29 +123,29 @@ Researched again on October 14, 2026, for the common US chains: what it takes to
 | **Amazon Fresh, Whole Foods** | Only an add-to-cart link for Amazon affiliates, which needs Amazon's product IDs | No | Later, maybe |
 | **Trader Joe's** | No online ordering at all | No | An in-store list |
 
-Instacart coverage varies by ZIP code. Mise can ask Instacart which stores it serves near the household (below) instead of relying on this table.
+Instacart coverage varies by ZIP code. Nourvio can ask Instacart which stores it serves near the household (below) instead of relying on this table.
 
 ### Kroger family (the best fit)
 
-- **Getting access:** a free, self-serve developer account at [developer.kroger.com](https://developer.kroger.com). Register an app to get a client ID and secret. Each Mise server registers its own, the way it brings its own AI keys, with the redirect address `https://<your Mise address>/api/shop/kroger/callback` (Settings → Kroger shows the exact one). `KROGER_API_URL` can point Mise at Kroger's certification environment, or a stand-in for testing.
+- **Getting access:** a free, self-serve developer account at [developer.kroger.com](https://developer.kroger.com). Register an app to get a client ID and secret. Each Nourvio server registers its own, the way it brings its own AI keys, with the redirect address `https://<your Nourvio address>/api/shop/kroger/callback` (Settings → Kroger shows the exact one). `KROGER_API_URL` can point Nourvio at Kroger's certification environment, or a stand-in for testing.
 - **What the public APIs do:**
   - Locations: finds stores near a ZIP code.
   - Products: search by word, brand or UPC. Given a store (`filter.locationId`), results include that store's regular and sale price (`price.regular`, `price.promo`), the stock level (high, low or temporarily out), and the **aisle**, with side and shelf.
   - Cart: adds items by UPC and quantity, for pickup or delivery.
   - Identity: the signed-in shopper's profile.
 - **Banners:** a store's `chain` code (`FRYS`, `RALPHS`, `KINGSOOPERS`…) gives the name shown ("Fry's") and the website for product and cart links (frysfood.com).
-- **Signing in:** the household links a Kroger account once, on Kroger's own sign-in page (OAuth authorization code with PKCE, scopes `cart.basic:write` and `profile.compact`). Product and store searches use the app's own token (`product.compact`). Mise keeps the refresh token encrypted, like the AI keys.
+- **Signing in:** the household links a Kroger account once, on Kroger's own sign-in page (OAuth authorization code with PKCE, scopes `cart.basic:write` and `profile.compact`). Product and store searches use the app's own token (`product.compact`). Nourvio keeps the refresh token encrypted, like the AI keys.
 - **Limits:**
-  - The public cart API only **adds**. It can't read, change or empty the cart, so Mise remembers what it sent and won't add the same week twice. Viewing and removing are in Kroger's Partner tier, which needs a contract; Mise doesn't need it.
+  - The public cart API only **adds**. It can't read, change or empty the cart, so Nourvio remembers what it sent and won't add the same week twice. Viewing and removing are in Kroger's Partner tier, which needs a contract; Nourvio doesn't need it.
   - Daily call limits: products 10,000, cart 5,000, locations 1,600 per endpoint. That's far more than a household uses.
-  - There's no checkout endpoint. You pick a time and pay in the Fry's (or Kroger) app, so Mise never touches payment.
+  - There's no checkout endpoint. You pick a time and pay in the Fry's (or Kroger) app, so Nourvio never touches payment.
 - **Extras that come with it:**
   - Real prices and sales give an estimated total for the week, and plans lean on what's on sale (milestone 11). Sales come with their end date (`price.expirationDate`).
   - Aisle numbers let the list sort in the order you walk your store.
 
 ### Instacart (Costco and most other chains)
 
-- **Not open to the public (October 14, 2026):** the docs describe self-serve keys, but the user found the Developer Platform isn't taking the public right now. Mise doesn't use it; Costco gets links instead (below).
+- **Not open to the public (October 14, 2026):** the docs describe self-serve keys, but the user found the Developer Platform isn't taking the public right now. Nourvio doesn't use it; Costco gets links instead (below).
 - **Getting access (as documented):** a self-serve API key from the [Instacart Developer Dashboard](https://dashboard.instacart.com), with development and production keys. It's free. Instacart's affiliate program (Tastemakers, 3%) is optional and not needed.
 - **Making the link:** `POST /idp/v1/products/products_link` with `link_type: "shopping_list"` and `line_items`. Each item has:
   - `name`: the search term
@@ -162,29 +162,29 @@ Instacart coverage varies by ZIP code. Mise can ask Instacart which stores it se
 
 - **New since the first look:** Walmart now has a Recipes and Bundle API and an AddToCart service that fill a shopper's Walmart cart from an ingredient list. They're only for approved partners, such as Pinterest's "Shop ingredients" button, eMeals (behind the WP Recipe Maker plugin's Walmart button) and Whisk/Samsung Food. There's no self-serve sign-up; it's a business deal.
 - The affiliate API (product search, item IDs, prices) is read-only and needs program approval. Walmart isn't on Instacart.
-- **Decided:** Walmart goes through the Mise browser extension (below), working in your own signed-in Walmart tab. It will break now and then when walmart.com changes and need a fix. Automating a retailer's site is a gray area under their terms; this is low volume, on your own account. It has to go slowly, since Walmart answers quick bursts with HTTP 429. Search links stay as the fallback.
+- **Decided:** Walmart goes through the Nourvio browser extension (below), working in your own signed-in Walmart tab. It will break now and then when walmart.com changes and need a fix. Automating a retailer's site is a gray area under their terms; this is low volume, on your own account. It has to go slowly, since Walmart answers quick bursts with HTTP 429. Search links stay as the fallback.
 
-### The Mise browser extension
+### The Nourvio browser extension
 
 One extension for Chrome, Edge and other Chromium browsers (Manifest V3, `apps/extension`).
 
 - **Connecting:**
-  - Type your Mise's address in the extension's popup and click Connect. The browser asks to let the extension reach that one address (an optional host permission; the extension asks for nothing else up front).
-  - The extension opens Mise's **Connect the Mise extension** page. Allowing makes a personal API token and posts it to the page, where the extension (listening on that page only, in the tab it opened) takes it. If nothing takes it within 8 seconds, the token is deleted again.
-  - Requests carry the token in an `Authorization: Bearer mise_…` header, not the session cookie. A token can do anything the person can, except make more tokens. Settings → Browser extension lists connected browsers, with Disconnect; disconnecting in the extension deletes its token in Mise too.
-  - The worker in the background talks to Mise; extension pages aren't held back by CORS for an address they have permission for.
-- **Import this page** (the popup, or right-click → Import this recipe into Mise):
-  - The extension reads the page as the browser shows it: its recipe data (JSON-LD), share photo, title and readable text, trimmed to stay well under the API's 1 MB request limit. Mise rebuilds a small page from those and reads it like a link import: recipe data first, AI otherwise.
-  - That gets past sites that block servers. Checked October 14, 2026 with a Budget Bytes recipe, which Mise's server can't open: all 17 ingredients, the time, servings and photo came through. It also works for recipes you can see through your own subscription.
-  - Mise still downloads the photo itself; most image servers don't block it. If one does, the recipe gets an AI photo when those are on.
-- **Right-click:** "Import this link into Mise" (sent to the normal link import) and "Add “…” to the Mise shopping list" on selected text (several lines or commas become several items). A note in the corner of the page says how it went.
-- **The list beside you:** the browser's side panel shows the unchecked list by aisle, checking items off in Mise as they go in the cart. **Find** puts an item's search at the store you pick (Walmart, Costco Same-Day or Fry's) in the tab beside it. It refreshes every 30 seconds while open.
+  - Type your Nourvio's address in the extension's popup and click Connect. The browser asks to let the extension reach that one address (an optional host permission; the extension asks for nothing else up front).
+  - The extension opens Nourvio's **Connect the Nourvio extension** page. Allowing makes a personal API token and posts it to the page, where the extension (listening on that page only, in the tab it opened) takes it. If nothing takes it within 8 seconds, the token is deleted again.
+  - Requests carry the token in an `Authorization: Bearer mise_…` header, not the session cookie. A token can do anything the person can, except make more tokens. Settings → Browser extension lists connected browsers, with Disconnect; disconnecting in the extension deletes its token in Nourvio too.
+  - The worker in the background talks to Nourvio; extension pages aren't held back by CORS for an address they have permission for.
+- **Import this page** (the popup, or right-click → Import this recipe into Nourvio):
+  - The extension reads the page as the browser shows it: its recipe data (JSON-LD), share photo, title and readable text, trimmed to stay well under the API's 1 MB request limit. Nourvio rebuilds a small page from those and reads it like a link import: recipe data first, AI otherwise.
+  - That gets past sites that block servers. Checked October 14, 2026 with a Budget Bytes recipe, which Nourvio's server can't open: all 17 ingredients, the time, servings and photo came through. It also works for recipes you can see through your own subscription.
+  - Nourvio still downloads the photo itself; most image servers don't block it. If one does, the recipe gets an AI photo when those are on.
+- **Right-click:** "Import this link into Nourvio" (sent to the normal link import) and "Add “…” to the Nourvio shopping list" on selected text (several lines or commas become several items). A note in the corner of the page says how it went.
+- **The list beside you:** the browser's side panel shows the unchecked list by aisle, checking items off in Nourvio as they go in the cart. **Find** puts an item's search at the store you pick (Walmart, Costco Same-Day or Fry's) in the tab beside it. It refreshes every 30 seconds while open.
 - **Walmart** (the side panel's Walmart cart, and the popup on Walmart product pages):
-  - Walmart's pages carry their data as JSON (`__NEXT_DATA__`): a search page lists its products (item id, name, price, was-price, photo, stock, whether it's an ad), and a product page has the product (with its UPC and brand). The extension reads those in its Walmart tab; Mise's server never talks to Walmart.
-  - **Finding products:** for items without one, the extension searches Walmart in the Walmart tab, one item every 1.5 seconds, keeps up to eight results (in stock and not ads first), and sends them to Mise, which picks with the small AI model (the same as for Kroger) and keeps the pick as a suggestion. The package size comes from the product's name ("…, 64 fl oz"). **Change** shows an item's results to pick from; **Use this for…** on a product page picks it directly.
+  - Walmart's pages carry their data as JSON (`__NEXT_DATA__`): a search page lists its products (item id, name, price, was-price, photo, stock, whether it's an ad), and a product page has the product (with its UPC and brand). The extension reads those in its Walmart tab; Nourvio's server never talks to Walmart.
+  - **Finding products:** for items without one, the extension searches Walmart in the Walmart tab, one item every 1.5 seconds, keeps up to eight results (in stock and not ads first), and sends them to Nourvio, which picks with the small AI model (the same as for Kroger) and keeps the pick as a suggestion. The package size comes from the product's name ("…, 64 fl oz"). **Change** shows an item's results to pick from; **Use this for…** on a product page picks it directly.
   - **Filling the cart:** for each line, the extension opens the product's page and presses Walmart's own buttons: Add to cart (`data-automation-id="atc"`), then the quantity stepper's + (`data-testid="quantity-stepper-inc-button"`, whose label says the current quantity) until the cart has enough. One every 1.5 seconds or so. Walmart sometimes moves on to an "Added to cart" page part way; the extension opens the product again and carries on from what's in the cart. Copying Walmart's own add-to-cart request instead would break with each of their releases (it's a persisted GraphQL query, `updateItems/<hash>`).
   - **Person checks:** if Walmart shows its "Robot or human?" check, the extension stops and asks you to finish it in the Walmart tab. It doesn't try to get past it.
-  - What went into the cart is recorded in Mise (`/api/shop/walmart/sent`) and left out next time unless ticked. Checked October 14, 2026 on walmart.com: reading search results, and adding 2 of a product to a guest cart (then emptying it).
+  - What went into the cart is recorded in Nourvio (`/api/shop/walmart/sent`) and left out next time unless ticked. Checked October 14, 2026 on walmart.com: reading search results, and adding 2 of a product to a guest cart (then emptying it).
   - It depends on how walmart.com works, so it will need fixes when Walmart changes those pages. Automating a retailer's site is a gray area under their terms; this is low volume, on your own account.
 - **Phones:** extensions don't run in Chrome on Android, and Safari on iPhone needs an App Store app for them. Phones keep the share sheet (Android), Paste (iPhone) and an iOS Shortcut; the extension is for the computer.
 - **Installing:** the Docker image builds the extension, and Settings → Browser extension downloads it (`GET /api/extension/download`). Unzip it, turn on Developer mode in `chrome://extensions`, and Load unpacked. A Chrome Web Store listing (it can be unlisted) would skip Developer mode, for a one-time $5 developer fee and a review of each update.
@@ -192,7 +192,7 @@ One extension for Chrome, Edge and other Chromium browsers (Manifest V3, `apps/e
 ### Costco
 
 - No API of any kind. costco.com's own cart is mostly not groceries.
-- Same-day grocery delivery is run by Instacart. Without Instacart's API, Mise links each list item to its search at Costco Same-Day, to add there by hand.
+- Same-day grocery delivery is run by Instacart. Without Instacart's API, Nourvio links each list item to its search at Costco Same-Day, to add there by hand.
 - For warehouse trips, a plain list is what's useful. Costco packs are big, so turning amounts into packages should know a Costco pack (three pounds of onions, not one onion).
 
 ### Everyone else
@@ -205,16 +205,16 @@ One extension for Chrome, Edge and other Chromium browsers (Manifest V3, `apps/e
 
 These parts are the same whatever the store:
 
-1. **A product for each list item,** picked once per store and remembered (`store_products`): name, size, UPC or store ID, last price and photo. The first time, Mise shows the store's top matches with the small AI model's pick first. After that it's automatic, and you can always swap.
-2. **Amounts turned into packages.** "3 cups chopped onion" becomes 2 onions; "1½ lb chicken thighs" becomes one 2 lb pack. This uses the grams Mise already works out for each ingredient and the product's size ("16 oz", "12 ct").
+1. **A product for each list item,** picked once per store and remembered (`store_products`): name, size, UPC or store ID, last price and photo. The first time, Nourvio shows the store's top matches with the small AI model's pick first. After that it's automatic, and you can always swap.
+2. **Amounts turned into packages.** "3 cups chopped onion" becomes 2 onions; "1½ lb chicken thighs" becomes one 2 lb pack. This uses the grams Nourvio already works out for each ingredient and the product's size ("16 oz", "12 ct").
 3. **A review before anything is sent:** each product with packages, price and any sale, plus swap, skip and a total.
 4. **Nothing extra:** what's always on hand or already in the pantry is left out, as the list does today.
 
 ## Considered and dropped: ChatGPT and Claude app connectors (MCP)
 
-We looked at letting the ChatGPT and Claude apps reach Mise through MCP (Model Context Protocol) connectors. We decided to call the providers' APIs from the server and keep the chat in the app instead. The reasons:
+We looked at letting the ChatGPT and Claude apps reach Nourvio through MCP (Model Context Protocol) connectors. We decided to call the providers' APIs from the server and keep the chat in the app instead. The reasons:
 
-- **Connectors need real login.** They connect over public HTTPS and only support OAuth or no auth. They can't send an API key, so Mise would have to act as its own OAuth server.
+- **Connectors need real login.** They connect over public HTTPS and only support OAuth or no auth. They can't send an API key, so Nourvio would have to act as its own OAuth server.
 - **ChatGPT might not be able to save anything.** OpenAI's help center lists write actions for custom connectors only on Business, Enterprise and Edu plans. On Plus, ChatGPT might only be able to read.
 - **In-app chat is a better fit.** It sits next to the recipe while cooking, knows the current screen, and works the same whatever subscription you have.
 

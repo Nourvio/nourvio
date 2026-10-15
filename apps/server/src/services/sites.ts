@@ -25,7 +25,7 @@ const REFRESH_MS = 6 * 60 * 60_000
 const KEEP = 24
 /** Posts remembered as not recipes. */
 const KEEP_SKIPPED = 100
-/** After a site turns Mise away, wait this long before trying again. */
+/** After a site turns Nourvio away, wait this long before trying again. */
 const BLOCKED_MS = 30 * 60_000
 
 /**
@@ -109,7 +109,7 @@ async function toSites(
   }))
 }
 
-/** Opens one post as Mise would to import it. "blocked" when the site turned Mise away. */
+/** Opens one post as Nourvio would to import it. "blocked" when the site turned Nourvio away. */
 async function openPost(fetcher: Fetcher, item: SiteItem) {
   let page
   try {
@@ -141,7 +141,7 @@ function shortDescription(text: string | null | undefined) {
 
 /**
  * Opens a site's new posts one at a time, a few seconds apart, keeping
- * the recipes and remembering the rest. Stops when the site turns Mise
+ * the recipes and remembering the rest. Stops when the site turns Nourvio
  * away, to try again later.
  */
 async function checkPosts(db: Db, fetcher: Fetcher, siteId: string) {
@@ -215,7 +215,7 @@ async function refreshSite(db: Db, fetcher: Fetcher, row: Row) {
       .update(followedSites)
       .set({
         checkedAt: new Date(),
-        error: "The site's feed didn't open last time. Mise will try again.",
+        error: "The site's feed didn't open last time. Nourvio will try again.",
       })
       .where(eq(followedSites.id, row.id))
     return
@@ -303,7 +303,7 @@ export async function unfollowSite(db: Db, householdId: string, id: string) {
   if (!removed.length) throw new HttpError(404, "You don't follow that site")
 }
 
-/** A post's photo link and page, for showing it through Mise. */
+/** A post's photo link and page, for showing it through Nourvio. */
 export async function sitePhoto(
   db: Db,
   householdId: string,

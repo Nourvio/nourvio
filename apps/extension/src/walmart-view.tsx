@@ -15,7 +15,7 @@ const money = (value: number) =>
 
 /**
  * Filling the Walmart cart from the list: each item's Walmart product
- * (found in your Walmart tab, picked by Mise or by you, then remembered),
+ * (found in your Walmart tab, picked by Nourvio or by you, then remembered),
  * how many, and a button that adds them on Walmart's own pages.
  */
 export function WalmartView() {
@@ -163,8 +163,8 @@ export function WalmartView() {
                   Find {missing.length === 1 ? "it" : "them"} on Walmart
                 </button>
                 <p className="muted">
-                  Mise searches in a Walmart tab, a few seconds apart, and picks
-                  the likeliest; you can change any of them.
+                  Nourvio searches in a Walmart tab, a few seconds apart, and
+                  picks the likeliest; you can change any of them.
                 </p>
               </div>
             )}
@@ -330,7 +330,7 @@ function Line({
           <p className="muted">No Walmart product yet</p>
         )}
         <div className="row" style={{ flexWrap: "wrap", gap: 6 }}>
-          {line.suggested && <span className="badge">Mise's pick</span>}
+          {line.suggested && <span className="badge">Nourvio's pick</span>}
           {product && !line.sure && (
             <span className="badge">Check how many</span>
           )}

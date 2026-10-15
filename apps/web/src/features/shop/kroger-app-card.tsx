@@ -118,9 +118,9 @@ export function KrogerAppCard() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              It's this address as you're seeing it now. If people reach Mise at
-              another address too, set PUBLIC_URL on the server so it stays the
-              same.
+              It's this address as you're seeing it now. If people reach Nourvio
+              at another address too, set PUBLIC_URL on the server so it stays
+              the same.
             </p>
 
             {data.source === "env" ? (

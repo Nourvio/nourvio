@@ -27,7 +27,9 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   if (session.isError) {
     return (
       <FullScreen>
-        <p className="text-muted-foreground">Couldn't reach the Mise server.</p>
+        <p className="text-muted-foreground">
+          Couldn't reach the Nourvio server.
+        </p>
         <Button variant="outline" onClick={() => session.refetch()}>
           Try again
         </Button>

@@ -6,8 +6,8 @@ const LINK_MS = 10 * 60_000
 /**
  * One-time links that sign a browser in and go on to a page. An iPhone
  * Shortcut gets one with what it shared: iOS opens the link in a fresh
- * browser that has never signed in to Mise, and a new one each time, so a
- * saved login can't help. Only requests made with a Mise key get them, and
+ * browser that has never signed in to Nourvio, and a new one each time, so a
+ * saved login can't help. Only requests made with a Nourvio key get them, and
  * a key can do anything a sign-in can already.
  */
 export function createSignInLinks() {
@@ -22,10 +22,10 @@ export function createSignInLinks() {
   }
 
   return {
-    /** A code that signs `userId` in, then goes to `next` (a path in Mise). */
+    /** A code that signs `userId` in, then goes to `next` (a path in Nourvio). */
     create(userId: string, next: string) {
       if (!next.startsWith("/") || next.startsWith("//")) {
-        throw new Error("A sign-in link only goes to a page in Mise")
+        throw new Error("A sign-in link only goes to a page in Nourvio")
       }
       forget()
       const code = randomBytes(32).toString("base64url")

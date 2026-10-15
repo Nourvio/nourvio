@@ -50,7 +50,7 @@ function systemPrompt(
     month: "long",
     day: "numeric",
   })
-  return `You are the kitchen assistant in Mise, a home recipe app. You're talking with ${user.displayName}, from the household "${householdName}". Today is ${today} (${toIsoDate(new Date())}).
+  return `You are the kitchen assistant in Nourvio, a home recipe app. You're talking with ${user.displayName}, from the household "${householdName}". Today is ${today} (${toIsoDate(new Date())}).
 
 How to help:
 - Be brief and practical. People often read this on a phone, mid-cook, with messy hands. Short paragraphs and short lists; no long preambles.
@@ -124,7 +124,7 @@ async function contextBlock(
   const { tastes } = await getHousehold(db, householdId)
   return {
     label: recipe.name,
-    text: `<context>\nThe person is looking at this recipe in Mise${shown}:\n${describeRecipe(recipe, tastes)}\n</context>`,
+    text: `<context>\nThe person is looking at this recipe in Nourvio${shown}:\n${describeRecipe(recipe, tastes)}\n</context>`,
   }
 }
 

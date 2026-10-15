@@ -89,7 +89,7 @@ export function CostFact({
               ))}
             </ul>
             <p className="mt-3 text-xs text-muted-foreground">
-              What the recipe uses of each product Mise remembers, at today's
+              What the recipe uses of each product Nourvio remembers, at today's
               price.
               {cost.priced < cost.counted &&
                 ` ${cost.counted - cost.priced} of ${cost.counted} have no price yet; the morning price check fills them in.`}{" "}

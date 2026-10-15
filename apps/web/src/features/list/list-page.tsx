@@ -374,7 +374,7 @@ export function ListPage() {
               </EmptyMedia>
               <EmptyTitle>The list is empty</EmptyTitle>
               <EmptyDescription>
-                Add the week's planned meals and Mise works out what to buy,
+                Add the week's planned meals and Nourvio works out what to buy,
                 grouped by aisle. Things you get every week come along too.
               </EmptyDescription>
             </EmptyHeader>
@@ -733,7 +733,7 @@ function StoreCard({
     } else {
       actions.push({
         to: "/settings#extension",
-        label: "Fill the cart with the Mise extension",
+        label: "Fill the cart with the Nourvio extension",
       })
     }
   }

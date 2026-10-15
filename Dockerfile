@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 
-# Mise: one image that serves the web app and the API.
+# Nourvio: one image that serves the web app and the API.
 # Build it from a checkout (`docker build .`) or straight from GitHub
-# (`docker build https://github.com/kjohnson2719/mise.git#main`).
+# (`docker build https://github.com/Nourvio/nourvio.git#main`).
 
 # ---- Build the web app and the browser extension ----
 FROM node:24-slim AS build

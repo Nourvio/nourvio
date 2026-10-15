@@ -37,7 +37,7 @@ if ((await countUsers(db)) === 0) {
     [
       "",
       "  ====================================================",
-      "   Welcome to Mise. Open the app to create the first",
+      "   Welcome to Nourvio. Open the app to create the first",
       `   account, and enter this setup code: ${code}`,
       "  ====================================================",
       "",
@@ -78,7 +78,8 @@ const server = serve(
     port: config.port,
     hostname: "0.0.0.0",
   },
-  (info) => console.log(`Mise ${config.version} listening on port ${info.port}`)
+  (info) =>
+    console.log(`Nourvio ${config.version} listening on port ${info.port}`)
 )
 
 function shutdown(signal: string) {

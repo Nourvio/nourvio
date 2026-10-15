@@ -75,8 +75,8 @@ export function SitesSpotlight({ hidden = false }: { hidden?: boolean }) {
           ) : (
             <p className="rounded-3xl border border-dashed p-6 text-muted-foreground">
               {sites.data.some((site) => site.checking || site.pending)
-                ? "Mise is reading your sites' newest posts. Their recipes show up here in a minute or two."
-                : "No recipes in your sites' latest posts that Mise can read yet. It looks again every few hours."}
+                ? "Nourvio is reading your sites' newest posts. Their recipes show up here in a minute or two."
+                : "No recipes in your sites' latest posts that Nourvio can read yet. It looks again every few hours."}
             </p>
           )}
         </section>
@@ -367,7 +367,7 @@ export function FollowSitesPrompt() {
         </h2>
         <p className="text-muted-foreground">
           Follow a few recipe sites and their newest recipes show up here, ready
-          to import with a tap. Mise checks them every few hours.
+          to import with a tap. Nourvio checks them every few hours.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

@@ -58,7 +58,7 @@ describe("starter collections", () => {
     expect(other!.inLibrary).toBeNull()
   })
 
-  test("serves photos through Mise, fetched once", async () => {
+  test("serves photos through Nourvio, fetched once", async () => {
     const id = STARTER_COLLECTIONS[1]!.id
     const recipe = STARTER_COLLECTIONS[1]!.recipes[2]!
     const res = await t.admin.raw(`/api/collections/${id}/2/image`)

@@ -193,7 +193,7 @@ export async function addToCartOnPage(quantity: number): Promise<{
   return { ok: true, quantity: inCart(), blocked: false, reason: null }
 }
 
-/** A Walmart product as Mise keeps it. Sponsored results are Walmart's ads. */
+/** A Walmart product as Nourvio keeps it. Sponsored results are Walmart's ads. */
 export function toProduct(raw: WalmartRaw): StoreProduct {
   const onSale = raw.was !== null && raw.price !== null && raw.was > raw.price
   return {

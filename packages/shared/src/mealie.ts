@@ -24,7 +24,7 @@ export type MealieJob = {
   total: number
   /** Imported this run. */
   imported: number
-  /** Already in Mise from an earlier import. */
+  /** Already in Nourvio from an earlier import. */
   skipped: number
   failed: number
   createdAt: string

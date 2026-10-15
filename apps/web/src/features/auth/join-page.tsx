@@ -71,7 +71,7 @@ export function JoinPage() {
   return (
     <AuthLayout
       title={title}
-      description={`${invitedBy ?? "Someone"} invited you to share recipes and plans in Mise. Make an account to join.`}
+      description={`${invitedBy ?? "Someone"} invited you to share recipes and plans in Nourvio. Make an account to join.`}
     >
       <JoinForm token={token} />
     </AuthLayout>

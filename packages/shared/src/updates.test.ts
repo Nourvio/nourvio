@@ -5,11 +5,11 @@ import { changesTheApp, parseBuildContext } from "./updates.ts"
 describe("parseBuildContext", () => {
   it("follows a GitHub branch, main when none is given", () => {
     expect(
-      parseBuildContext("https://github.com/kjohnson2719/mise.git#main")
+      parseBuildContext("https://github.com/Nourvio/nourvio.git#main")
     ).toEqual({
       kind: "branch",
-      owner: "kjohnson2719",
-      repo: "mise",
+      owner: "Nourvio",
+      repo: "nourvio",
       branch: "main",
     })
     expect(parseBuildContext("https://github.com/someone/mise-fork")).toEqual({
@@ -25,13 +25,13 @@ describe("parseBuildContext", () => {
 
   it("can't follow a tag, a commit or a local folder", () => {
     expect(
-      parseBuildContext("https://github.com/kjohnson2719/mise.git#v0.1.0")
+      parseBuildContext("https://github.com/Nourvio/nourvio.git#v0.1.0")
     ).toEqual({ kind: "pinned", ref: "v0.1.0" })
     expect(
-      parseBuildContext("https://github.com/kjohnson2719/mise.git#5f92224")
+      parseBuildContext("https://github.com/Nourvio/nourvio.git#5f92224")
     ).toEqual({ kind: "pinned", ref: "5f92224" })
     expect(parseBuildContext(".")).toBeNull()
-    expect(parseBuildContext("D:/Development/Mise")).toBeNull()
+    expect(parseBuildContext("D:/Development/Nourvio")).toBeNull()
     expect(parseBuildContext(undefined)).toBeNull()
   })
 })

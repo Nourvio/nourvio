@@ -115,7 +115,7 @@ export async function usualPrices(
   )
 }
 
-/** The aisle a food is in: where the household moved it, else Mise's guess. */
+/** The aisle a food is in: where the household moved it, else Nourvio's guess. */
 async function sectionsOf(db: Db, householdId: string) {
   const rows = await db
     .select({ food: foodSections.food, sectionId: foodSections.sectionId })

@@ -5,7 +5,7 @@ import { currentUser, type AppEnv } from "../context.ts"
 import type { ReceiptFiles } from "../services/receipts.ts"
 import type { SignInLinks } from "../services/sign-in-links.ts"
 
-/** Mise's own address, for links a Shortcut opens. */
+/** Nourvio's own address, for links a Shortcut opens. */
 export function publicOrigin(c: Context<AppEnv>) {
   if (config.publicUrl) return new URL(config.publicUrl).origin
   const proto =
@@ -19,9 +19,9 @@ export function publicOrigin(c: Context<AppEnv>) {
 }
 
 /**
- * The link to open after a share. Sent with a Mise key (an iPhone
+ * The link to open after a share. Sent with a Nourvio key (an iPhone
  * Shortcut), it signs in first: iOS opens it in a browser that isn't signed
- * in to Mise, and a fresh one each time.
+ * in to Nourvio, and a fresh one each time.
  */
 export function openLink(
   c: Context<AppEnv>,
@@ -34,7 +34,7 @@ export function openLink(
 }
 
 /**
- * What was sent, however it came: a form with files and text (Mise, a
+ * What was sent, however it came: a form with files and text (Nourvio, a
  * Shortcut, Android's share sheet), JSON with `text` (and `url`), or a file
  * as the whole body, as some Shortcuts send it.
  */

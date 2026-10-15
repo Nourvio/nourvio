@@ -39,7 +39,7 @@ export function voiceDir() {
 
 /**
  * Cook mode's server voice: Kokoro (an open voice model running beside
- * Mise) or OpenAI, with the audio saved so each step is only made once.
+ * Nourvio) or OpenAI, with the audio saved so each step is only made once.
  */
 export function createVoiceService(
   db: Db,

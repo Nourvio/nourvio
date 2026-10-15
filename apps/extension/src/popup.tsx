@@ -53,7 +53,7 @@ function Brand() {
   return (
     <div className="brand">
       <img src="icons/48.png" alt="" />
-      <h1>Mise</h1>
+      <h1>Nourvio</h1>
     </div>
   )
 }
@@ -72,12 +72,12 @@ function Connect() {
       setError("That doesn't look like an address.")
       return
     }
-    // The browser asks the person to let the extension talk to their Mise.
+    // The browser asks the person to let the extension talk to their Nourvio.
     const granted = await chrome.permissions.request({
       origins: [`${origin}/*`],
     })
     if (!granted) {
-      setError("The extension needs to reach your Mise to connect.")
+      setError("The extension needs to reach your Nourvio to connect.")
       return
     }
     await chrome.runtime.sendMessage({ type: "connect", origin })
@@ -88,15 +88,15 @@ function Connect() {
     <form className="stack" onSubmit={connect}>
       <Brand />
       <p className="muted">
-        Connect to your Mise to import recipes from any page and keep the
+        Connect to your Nourvio to import recipes from any page and keep the
         shopping list beside you.
       </p>
       <input
         type="text"
         value={address}
         onChange={(event) => setAddress(event.target.value)}
-        placeholder="mise.example.com"
-        aria-label="Your Mise's address"
+        placeholder="nourvio.example.com"
+        aria-label="Your Nourvio's address"
         autoFocus
       />
       {error && <p className="error">{error}</p>}
@@ -104,7 +104,7 @@ function Connect() {
         Connect
       </button>
       <p className="muted">
-        Your browser asks to let the extension reach that address, then Mise
+        Your browser asks to let the extension reach that address, then Nourvio
         opens to confirm it's you.
       </p>
     </form>
@@ -223,7 +223,8 @@ function Connected({ connection }: { connection: Connection }) {
             </span>
           ) : (
             <p className="muted">
-              No recipe data on this page; Mise's AI can still try to read it.
+              No recipe data on this page; Nourvio's AI can still try to read
+              it.
             </p>
           )}
           {state.step === "imported" ? (
@@ -236,7 +237,7 @@ function Connected({ connection }: { connection: Connection }) {
               <button
                 onClick={() => open(`/recipes/${state.result.recipe.slug}`)}
               >
-                Open in Mise
+                Open in Nourvio
               </button>
             </>
           ) : (
@@ -267,7 +268,7 @@ function Connected({ connection }: { connection: Connection }) {
           style={{ flex: 1 }}
           onClick={() => open("/")}
         >
-          Open Mise
+          Open Nourvio
         </button>
       </div>
       <div className="row spread">
@@ -323,7 +324,7 @@ function WalmartPick({ product }: { product: StoreProduct }) {
           .join(" · ")}
       </p>
       {saved ? (
-        <p>Mise will buy this for {saved} at Walmart from now on.</p>
+        <p>Nourvio will buy this for {saved} at Walmart from now on.</p>
       ) : items === null ? (
         !error && <p className="muted">Loading the list…</p>
       ) : items.length ? (

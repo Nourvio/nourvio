@@ -13,7 +13,7 @@ import { config } from "../config.ts"
 import { currentUser, type AppContext, type AppEnv } from "../context.ts"
 import { HttpError, readBody } from "../http.ts"
 
-/** The Mise browser extension: connecting it (its API tokens) and downloading it. */
+/** The Nourvio browser extension: connecting it (its API tokens) and downloading it. */
 export function extensionRoutes({ db }: AppContext) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
@@ -22,10 +22,10 @@ export function extensionRoutes({ db }: AppContext) {
     c.json({ tokens: await listApiTokens(db, currentUser(c).id) })
   )
 
-  // Only from Mise itself, signed in: a token can't make more tokens.
+  // Only from Nourvio itself, signed in: a token can't make more tokens.
   app.post("/tokens", async (c) => {
     if (c.get("viaToken")) {
-      throw new HttpError(403, "Connect the extension from Mise, signed in")
+      throw new HttpError(403, "Connect the extension from Nourvio, signed in")
     }
     const { name } = await readBody(c, createExtensionTokenInput)
     return c.json(await createApiToken(db, currentUser(c).id, name), 201)
@@ -48,7 +48,7 @@ export function extensionRoutes({ db }: AppContext) {
     }
     return c.body(new Uint8Array(zip), 200, {
       "content-type": "application/zip",
-      "content-disposition": 'attachment; filename="mise-extension.zip"',
+      "content-disposition": 'attachment; filename="nourvio-extension.zip"',
       "cache-control": "no-cache",
     })
   })

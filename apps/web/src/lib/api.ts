@@ -29,7 +29,7 @@ export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
   return data as T
 }
 
-/** Calls the Mise API (`/api` + path). Sends and receives JSON. */
+/** Calls the Nourvio API (`/api` + path). Sends and receives JSON. */
 export async function api<T = void>(
   path: string,
   { method, body }: Options = {}

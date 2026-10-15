@@ -105,8 +105,8 @@ export function DiscoverWithAi() {
         </div>
         <p className="text-xs text-muted-foreground">
           The assistant searches the web for recipes that fit your household's
-          tastes and rules, and Mise checks each one opens. A search takes about
-          a minute and costs a few cents.
+          tastes and rules, and Nourvio checks each one opens. A search takes
+          about a minute and costs a few cents.
         </p>
       </section>
 

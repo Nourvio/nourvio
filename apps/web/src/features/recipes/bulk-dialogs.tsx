@@ -313,13 +313,13 @@ export async function exportRecipes(recipes: RecipeSummary[]) {
     full.push((await api<{ recipe: unknown }>(`/recipes/${recipe.id}`)).recipe)
   }
   const blob = new Blob(
-    [JSON.stringify({ exportedFrom: "Mise", recipes: full }, null, 2)],
+    [JSON.stringify({ exportedFrom: "Nourvio", recipes: full }, null, 2)],
     { type: "application/json" }
   )
   const url = URL.createObjectURL(blob)
   const link = document.createElement("a")
   link.href = url
-  link.download = `mise-recipes-${today()}.json`
+  link.download = `nourvio-recipes-${today()}.json`
   link.click()
   URL.revokeObjectURL(url)
 }

@@ -116,7 +116,7 @@ export const updateListItemInput = z.object({
   amount: z.string().trim().max(60).optional(),
   sectionId: z.enum(STORE_SECTION_IDS).optional(),
   checked: z.boolean().optional(),
-  /** Move it to another list; Mise remembers the food goes there. */
+  /** Move it to another list; Nourvio remembers the food goes there. */
   listId: listId.optional(),
 })
 export type UpdateListItemInput = z.infer<typeof updateListItemInput>

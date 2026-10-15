@@ -29,7 +29,7 @@ const hostOf = (link: string) => {
 const VIDEO_SITES = /(tiktok|instagram|youtube|youtu\.be|facebook|fb\.watch)/i
 
 /**
- * Something shared into Mise, worked out on its own: a link (a recipe page
+ * Something shared into Nourvio, worked out on its own: a link (a recipe page
  * or a video) is imported, a receipt opens its review, and photos or text of
  * a recipe become one. `?link=` and `?inbox=` come from the server (an
  * iPhone Shortcut), `?id=` from the service worker (Android).
@@ -64,7 +64,7 @@ export function SharePage() {
         state: "working",
         what: `Importing the recipe from ${hostOf(url)}…`,
         detail: VIDEO_SITES.test(url)
-          ? "Videos take a minute or two: Mise watches and listens for the recipe."
+          ? "Videos take a minute or two: Nourvio watches and listens for the recipe."
           : undefined,
       })
       try {
@@ -133,7 +133,7 @@ export function SharePage() {
   if (!link && !inbox && !cached && step.state === "working") {
     return (
       <>
-        <PageHeader title="Shared to Mise" />
+        <PageHeader title="Shared to Nourvio" />
         <p className="text-muted-foreground">Nothing was shared.</p>
       </>
     )
@@ -141,7 +141,7 @@ export function SharePage() {
 
   return (
     <>
-      <PageHeader title="Shared to Mise" />
+      <PageHeader title="Shared to Nourvio" />
       {step.state === "working" ? (
         <div className="grid max-w-xl gap-1.5">
           <p className="flex items-center gap-2 font-medium">
@@ -153,7 +153,7 @@ export function SharePage() {
         </div>
       ) : step.state === "unsupported" ? (
         <p className="max-w-xl text-muted-foreground">
-          Sharing into Mise needs it opened at its https address (your
+          Sharing into Nourvio needs it opened at its https address (your
           Cloudflare tunnel, say), installed to the home screen from there.
         </p>
       ) : (
@@ -165,7 +165,7 @@ export function SharePage() {
               className="mt-0.5 size-4 shrink-0"
             />
             {step.state === "unknown"
-              ? `Mise couldn't tell what that was: it doesn't look like a receipt, a recipe or a link. It got ${step.got}.`
+              ? `Nourvio couldn't tell what that was: it doesn't look like a receipt, a recipe or a link. It got ${step.got}.`
               : step.message}
           </p>
           <div className="flex flex-wrap gap-2">

@@ -150,7 +150,7 @@ describe("following recipe sites", () => {
     )
   })
 
-  test("serves photos through Mise, the recipe's own over the feed's", async () => {
+  test("serves photos through Nourvio, the recipe's own over the feed's", async () => {
     const [site] = await sites()
     const photo = await t.admin.raw(site!.recipes[0]!.imageUrl!)
     expect(photo.status).toBe(200)
@@ -205,7 +205,7 @@ describe("following recipe sites", () => {
     })
   })
 
-  test("waits when a site turns Mise away, keeping the posts to open later", async () => {
+  test("waits when a site turns Nourvio away, keeping the posts to open later", async () => {
     const res = await t.admin.post("/api/sites", {
       url: "https://guarded.example/",
     })

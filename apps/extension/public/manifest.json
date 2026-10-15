@@ -1,11 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Mise",
+  "name": "Nourvio",
   "version": "0.1.0",
-  "description": "Import recipes into your Mise in one click, and keep the shopping list beside you while you shop.",
+  "description": "Import recipes into your Nourvio in one click, and keep the shopping list beside you while you shop.",
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Mise",
+    "default_title": "Nourvio",
     "default_icon": {
       "16": "icons/16.png",
       "32": "icons/32.png",

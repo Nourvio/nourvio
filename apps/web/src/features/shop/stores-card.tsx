@@ -43,8 +43,8 @@ export function StoresCard() {
       <CardHeader>
         <CardTitle>Stores</CardTitle>
         <CardDescription>
-          Send the shopping list to your store. Mise never touches payment: you
-          check out in the store's own app.
+          Send the shopping list to your store. Nourvio never touches payment:
+          you check out in the store's own app.
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-5">
@@ -72,7 +72,7 @@ export function StoresCard() {
         <div className="grid gap-1">
           <h3 className="font-medium">Walmart</h3>
           <p className="text-sm text-muted-foreground">
-            Coming with the Mise browser extension, which fills your Walmart
+            Coming with the Nourvio browser extension, which fills your Walmart
             cart from your own signed-in tab.
           </p>
         </div>
@@ -317,8 +317,8 @@ function KrogerSection({
                 Link the {kroger.store.banner} account
               </Button>
               <p className="text-xs text-muted-foreground">
-                You sign in on {kroger.store.banner}'s own page. Mise can only
-                add to that account's cart; it can't see orders or pay.
+                You sign in on {kroger.store.banner}'s own page. Nourvio can
+                only add to that account's cart; it can't see orders or pay.
               </p>
             </div>
           ) : (

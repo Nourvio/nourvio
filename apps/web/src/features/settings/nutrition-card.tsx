@@ -41,7 +41,7 @@ export function NutritionCard() {
     status && status.source !== "env" && (!status.configured || editing)
 
   function fail(e: unknown) {
-    setError(e instanceof ApiError ? e.message : "Couldn't reach Mise")
+    setError(e instanceof ApiError ? e.message : "Couldn't reach Nourvio")
   }
 
   function submit(event: React.FormEvent) {
@@ -68,9 +68,9 @@ export function NutritionCard() {
       <CardHeader>
         <CardTitle>Nutrition data</CardTitle>
         <CardDescription>
-          With a free USDA FoodData Central key, Mise calculates nutrition from
-          each recipe's ingredients. Without one, the AI estimates it. A recipe
-          site's own numbers are used first either way.
+          With a free USDA FoodData Central key, Nourvio calculates nutrition
+          from each recipe's ingredients. Without one, the AI estimates it. A
+          recipe site's own numbers are used first either way.
         </CardDescription>
       </CardHeader>
       <CardContent>

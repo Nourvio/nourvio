@@ -105,7 +105,7 @@ const escapeHtml = (text: string) =>
 /**
  * Imports a page the browser extension read in the person's own browser:
  * its recipe data, photos and text, put back together as a small page and
- * read like any link. Gets past sites that turn Mise's server away.
+ * read like any link. Gets past sites that turn Nourvio's server away.
  */
 export async function importFromPage(
   db: Db,
@@ -151,7 +151,7 @@ async function readWithAi(
   if (!(await options.ai.status()).available) {
     throw new HttpError(
       422,
-      "That page doesn't include recipe data Mise can read. With an AI key set up in Settings, Mise can read pages like this; for now, try pasting the recipe text."
+      "That page doesn't include recipe data Nourvio can read. With an AI key set up in Settings, Nourvio can read pages like this; for now, try pasting the recipe text."
     )
   }
   const { text } = pageText(html)

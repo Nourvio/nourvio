@@ -75,9 +75,9 @@ export function CostcoPage() {
             <Panel title="How it works">
               <p className="text-sm text-muted-foreground">
                 Costco Same-Day is run by Instacart, and neither lets apps fill
-                a cart, so Mise opens each item's search for you. Sign in there
-                once with your Costco membership and the links go straight to
-                the results.
+                a cart, so Nourvio opens each item's search for you. Sign in
+                there once with your Costco membership and the links go straight
+                to the results.
               </p>
               <p className="text-sm text-muted-foreground">
                 Costco packs are big: one usually covers more than a recipe
