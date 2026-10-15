@@ -1,4 +1,6 @@
 import type {
+  BulkResult,
+  ListBulkInput,
   ListPrices,
   PutAwayResult,
   AddFromPlanResult,
@@ -35,6 +37,19 @@ export function useListPrices() {
 function useRefresh() {
   const queryClient = useQueryClient()
   return () => queryClient.invalidateQueries({ queryKey: LIST_KEY })
+}
+
+/**
+ * Selected items all at once. It settles once the list has been fetched
+ * again, so Undo's hidden items don't flash back.
+ */
+export function useListBulk() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: ListBulkInput) =>
+      api<BulkResult>("/list/bulk", { body: input }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: LIST_KEY }),
+  })
 }
 
 export function useAddListItem() {

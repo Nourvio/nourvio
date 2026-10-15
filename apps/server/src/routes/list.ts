@@ -1,6 +1,7 @@
 import {
   addFromPlanInput,
   addListItemInput,
+  listBulkInput,
   onHandInput,
   updateListItemInput,
   weeklyItemInput,
@@ -21,6 +22,7 @@ import {
   addManualItem,
   addWeeklyItem,
   addWeeklyItems,
+  bulkListItems,
   clearChecked,
   deleteItem,
   deleteWeeklyItem,
@@ -68,6 +70,14 @@ export function listRoutes({ db }: AppContext, events: EventBus) {
   app.delete("/items/:id", async (c) => {
     await deleteItem(db, currentHousehold(c), c.req.param("id"))
     return c.body(null, 204)
+  })
+
+  /** Selected items, all at once. */
+  app.post("/bulk", async (c) => {
+    const input = await readBody(c, listBulkInput)
+    return c.json({
+      changed: await bulkListItems(db, currentHousehold(c), input),
+    })
   })
 
   app.post("/clear-checked", async (c) =>

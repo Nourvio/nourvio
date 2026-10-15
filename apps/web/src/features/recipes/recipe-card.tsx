@@ -1,6 +1,6 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Clock01Icon, Tick02Icon } from "@hugeicons/core-free-icons"
+import { Clock01Icon } from "@hugeicons/core-free-icons"
 import {
   costShown,
   type OnSale,
@@ -11,6 +11,7 @@ import { Link } from "react-router"
 
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { SelectMark } from "@/features/select/select-mark"
 import { useLongPress } from "@/features/select/use-selection"
 import { onSaleText } from "@/features/shop/sale-text"
 import { storedChoice } from "@/lib/stored-choice"
@@ -84,32 +85,6 @@ function Pressable({
     <Link to={`/recipes/${slug}`} className={className} {...press}>
       {children}
     </Link>
-  )
-}
-
-/** The tick box shown on each recipe while selecting. */
-function SelectMark({
-  picked,
-  className,
-}: {
-  picked: boolean
-  className?: string
-}) {
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        "flex size-6 items-center justify-center rounded-lg border-2 transition-colors",
-        picked
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-muted-foreground/50 bg-card/90",
-        className
-      )}
-    >
-      {picked && (
-        <HugeiconsIcon icon={Tick02Icon} strokeWidth={3} className="size-4" />
-      )}
-    </span>
   )
 }
 

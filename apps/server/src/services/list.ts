@@ -12,6 +12,7 @@ import {
   subtractAmounts,
   toIsoDate,
   type AddFromPlanResult,
+  type ListBulkInput,
   type ListLine,
   type PantryItem,
   type ShopId,
@@ -283,6 +284,112 @@ export async function clearChecked(db: Db, householdId: string) {
     )
     .returning({ id: shoppingItems.id })
   return removed.length
+}
+
+/**
+ * Selected items all at once (`POST /api/list/bulk`): removed, moved to
+ * another list or aisle (remembered for next time, as moving one is), or
+ * made every-week. Returns how many changed.
+ */
+export async function bulkListItems(
+  db: Db,
+  householdId: string,
+  input: ListBulkInput
+) {
+  const rows = await db
+    .select()
+    .from(shoppingItems)
+    .where(
+      and(
+        eq(shoppingItems.householdId, householdId),
+        inArray(shoppingItems.id, input.ids)
+      )
+    )
+  if (!rows.length) return 0
+  const ids = rows.map((row) => row.id)
+  const foods = [...new Set(rows.map((row) => foodKey(row.name)))]
+
+  switch (input.action) {
+    case "delete": {
+      await db.delete(shoppingItems).where(inArray(shoppingItems.id, ids))
+      return rows.length
+    }
+    case "move": {
+      const { lists } = await getHousehold(db, householdId)
+      if (
+        input.listId !== MAIN_LIST &&
+        !lists.some((list) => list.id === input.listId)
+      ) {
+        throw new HttpError(404, "That list isn't here any more")
+      }
+      await db
+        .update(shoppingItems)
+        .set({ listId: storedList(lists, input.listId) })
+        .where(inArray(shoppingItems.id, ids))
+      await db
+        .insert(foodLists)
+        .values(
+          foods.map((food) => ({ householdId, food, listId: input.listId }))
+        )
+        .onConflictDoUpdate({
+          target: [foodLists.householdId, foodLists.food],
+          set: { listId: input.listId },
+        })
+      return rows.length
+    }
+    case "aisle": {
+      await db
+        .update(shoppingItems)
+        .set({ sectionId: input.sectionId })
+        .where(inArray(shoppingItems.id, ids))
+      await db
+        .insert(foodSections)
+        .values(
+          foods.map((food) => ({
+            householdId,
+            food,
+            sectionId: input.sectionId,
+          }))
+        )
+        .onConflictDoUpdate({
+          target: [foodSections.householdId, foodSections.food],
+          set: { sectionId: input.sectionId },
+        })
+      return rows.length
+    }
+    case "weekly": {
+      const weekly = await db
+        .select({ name: weeklyItems.name })
+        .from(weeklyItems)
+        .where(eq(weeklyItems.householdId, householdId))
+      const have = new Set(weekly.map((item) => foodKey(item.name)))
+      const fresh = rows.filter((row) => {
+        const food = foodKey(row.name)
+        if (have.has(food)) return false
+        have.add(food)
+        return true
+      })
+      if (fresh.length) {
+        await db.insert(weeklyItems).values(
+          fresh.map((row) => ({
+            householdId,
+            name: row.name,
+            amount: toItem(row).amount || null,
+            sectionId: row.sectionId,
+          }))
+        )
+      }
+      // Typed-in ones become this week's every-week line, so adding the
+      // every-week items doesn't put them on twice.
+      for (const row of rows.filter((row) => row.source === "manual")) {
+        await db
+          .update(shoppingItems)
+          .set({ key: `${foodKey(row.name)}|weekly`, source: "weekly" })
+          .where(eq(shoppingItems.id, row.id))
+      }
+      return fresh.length
+    }
+  }
 }
 
 /** Adds the every-week items that aren't already on the list. */

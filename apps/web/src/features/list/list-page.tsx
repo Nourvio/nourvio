@@ -2,11 +2,15 @@ import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
+  ArrowDataTransferHorizontalIcon,
   ArrowRight01Icon,
   Calendar03Icon,
+  Delete02Icon,
   FridgeIcon,
   MoreHorizontalIcon,
+  RepeatIcon,
   ShoppingBasket01Icon,
+  Store01Icon,
 } from "@hugeicons/core-free-icons"
 import {
   DEFAULT_LISTS,
@@ -14,6 +18,7 @@ import {
   SHOPS,
   STORE_SECTIONS,
   type ItemPrice,
+  type ListBulkInput,
   type ListPrices,
   type Person,
   type ShoppingItem,
@@ -49,6 +54,16 @@ import {
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { monthDay } from "@/features/plan/dates"
+import { AisleDialog } from "@/features/select/aisle-dialog"
+import { SelectMark } from "@/features/select/select-mark"
+import {
+  SelectionBar,
+  SelectionHeader,
+  useSelectionKeepOnly,
+  type SelectionAction,
+} from "@/features/select/selection-bar"
+import { undoable, useHidden } from "@/features/select/undo"
+import { useLongPress, useSelection } from "@/features/select/use-selection"
 import { useHouseholdInfo } from "@/features/settings/use-household"
 import { saleThrough } from "@/features/shop/sale-text"
 import { useShopStatus } from "@/features/shop/use-shop"
@@ -64,6 +79,7 @@ import {
   useAddListItem,
   useClearChecked,
   useList,
+  useListBulk,
   useListPrices,
   usePutAway,
   useUpdateListItem,
@@ -75,6 +91,17 @@ const SHOP_NAMES = { kroger: "Fry's", costco: "Costco", walmart: "Walmart" }
 
 const money = (value: number) =>
   value.toLocaleString(undefined, { style: "currency", currency: "USD" })
+
+const things = (n: number) => `${n} ${n === 1 ? "thing" : "things"}`
+
+/** An item's part in select mode. */
+type RowSelect = {
+  selecting: boolean
+  picked: boolean
+  onToggle: () => void
+  /** A long press on a phone, which starts selecting with this one. */
+  onLongPress: () => void
+}
 
 /** The list last looked at on this device. */
 function readChosenList() {
@@ -127,7 +154,8 @@ export function ListPage() {
     }
   }
 
-  const all = list.data ?? []
+  const isHidden = useHidden()
+  const all = (list.data ?? []).filter((item) => !isHidden(item.id))
   // With several lists, the one chosen; else everything.
   const items = split ? all.filter((item) => item.listId === current.id) : all
   const toGet = items.filter((item) => !item.checked)
@@ -141,6 +169,58 @@ export function ListPage() {
   })).filter((section) => section.items.length)
   const priced = toGet.some((item) => prices[item.id])
   const totalLeft = all.filter((item) => !item.checked).length
+
+  // Select mode: what's showing, the cart too when it's open.
+  const selection = useSelection()
+  const bulk = useListBulk()
+  const [choosingAisle, setChoosingAisle] = React.useState(false)
+  const selectable = [...showing, ...(showCart ? got : [])].map(
+    (item) => item.id
+  )
+  useSelectionKeepOnly(selection, selectable)
+  const pickedIds = selectable.filter((id) => selection.isPicked(id))
+  const selectOf = (id: string): RowSelect => ({
+    selecting: selection.selecting,
+    picked: selection.isPicked(id),
+    onToggle: () => selection.toggle(id),
+    onLongPress: () => selection.start(id),
+  })
+
+  /** Removes these from the list, with Undo. */
+  function remove(ids: string[], message: string) {
+    undoable({
+      message,
+      ids,
+      commit: () => bulk.mutateAsync({ action: "delete", ids }),
+    })
+  }
+
+  function run(input: ListBulkInput, said: (changed: number) => string) {
+    bulk.mutate(input, {
+      onSuccess: ({ changed }) => {
+        toast.success(said(changed))
+        selection.done()
+      },
+      onError: (error) =>
+        toast.error(
+          error instanceof ApiError ? error.message : "That didn't work"
+        ),
+    })
+  }
+
+  const moves: SelectionAction[] = split
+    ? lists
+        .filter((other) => other.id !== current.id)
+        .map((other) => ({
+          label: `Move to ${other.name}`,
+          icon: ArrowDataTransferHorizontalIcon,
+          onSelect: () =>
+            run(
+              { action: "move", ids: pickedIds, listId: other.id },
+              (changed) => `Moved ${things(changed)} to ${other.name}`
+            ),
+        }))
+    : []
 
   function putAwayChecked() {
     putAway.mutate(undefined, {
@@ -176,52 +256,79 @@ export function ListPage() {
               : "Nothing left to get."
         }
         actions={
-          <>
-            <Button onClick={() => setFromPlan(true)}>
-              <HugeiconsIcon
-                icon={Calendar03Icon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              Add from plan
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  aria-label="More list options"
-                >
-                  <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem onSelect={() => setManaging(true)}>
-                  {split ? "Edit lists" : "Split into lists by store"}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => setWeekly(true)}>
-                  Every week items
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => setOnHand(true)}>
-                  Always on hand
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  disabled={!got.length}
-                  onSelect={putAwayChecked}
-                >
-                  Put checked items away
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={!got.length}
-                  onSelect={clearChecked}
-                >
-                  Clear checked items
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
+          selection.selecting ? (
+            <SelectionHeader selection={selection} allIds={selectable} />
+          ) : (
+            <>
+              <Button onClick={() => setFromPlan(true)}>
+                <HugeiconsIcon
+                  icon={Calendar03Icon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                />
+                Add from plan
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="More list options"
+                  >
+                    <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem
+                    disabled={!selectable.length}
+                    onSelect={() => selection.start()}
+                  >
+                    Select
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setManaging(true)}>
+                    {split ? "Edit lists" : "Split into lists by store"}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setWeekly(true)}>
+                    Every week items
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setOnHand(true)}>
+                    Always on hand
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={!got.length}
+                    onSelect={putAwayChecked}
+                  >
+                    Put checked items away
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!got.length}
+                    onSelect={clearChecked}
+                  >
+                    Clear checked items
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={!items.length}
+                    onSelect={() =>
+                      remove(
+                        items.map((item) => item.id),
+                        split
+                          ? `Cleared the ${current.name} list`
+                          : "Cleared the list"
+                      )
+                    }
+                  >
+                    {split
+                      ? `Clear the ${current.name} list`
+                      : "Clear the list"}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )
         }
       />
 
@@ -339,6 +446,7 @@ export function ListPage() {
                       price={prices[item.id]}
                       priced={priced}
                       onEdit={() => setEditing(item)}
+                      select={selectOf(item.id)}
                     />
                   ))}
                 </ul>
@@ -414,6 +522,7 @@ export function ListPage() {
                         item={item}
                         priced={false}
                         onEdit={() => setEditing(item)}
+                        select={selectOf(item.id)}
                       />
                     ))}
                   </ul>
@@ -424,6 +533,50 @@ export function ListPage() {
         )}
       </div>
 
+      <SelectionBar
+        selection={selection}
+        actions={[
+          ...(moves.length === 1 ? moves : []),
+          {
+            label: "Aisle",
+            icon: Store01Icon,
+            onSelect: () => setChoosingAisle(true),
+          },
+          {
+            label: "Every week",
+            icon: RepeatIcon,
+            onSelect: () =>
+              run({ action: "weekly", ids: pickedIds }, (changed) =>
+                changed
+                  ? `${things(changed)} on the list every week now`
+                  : "Those are every week already"
+              ),
+          },
+          {
+            label: "Remove",
+            icon: Delete02Icon,
+            destructive: true,
+            onSelect: () => {
+              remove(pickedIds, `Removed ${things(pickedIds.length)}`)
+              selection.done()
+            },
+          },
+        ]}
+        more={moves.length > 1 ? moves : []}
+      />
+      <AisleDialog
+        count={pickedIds.length}
+        open={choosingAisle}
+        onOpenChange={setChoosingAisle}
+        onPick={(sectionId) => {
+          setChoosingAisle(false)
+          run(
+            { action: "aisle", ids: pickedIds, sectionId },
+            (changed) =>
+              `Moved ${things(changed)} to ${STORE_SECTIONS.find((section) => section.id === sectionId)?.name}`
+          )
+        }}
+      />
       <AddFromPlanDialog open={fromPlan} onOpenChange={setFromPlan} />
       <WeeklyItemsDialog open={weekly} onOpenChange={setWeekly} />
       <OnHandDialog open={onHand} onOpenChange={setOnHand} />
@@ -773,14 +926,21 @@ function ItemRow({
   price,
   priced,
   onEdit,
+  select,
 }: {
   item: ShoppingItem
   price?: ItemPrice
   /** Whether anything on this list has a price, so the column lines up. */
   priced: boolean
   onEdit: () => void
+  select?: RowSelect
 }) {
   const update = useUpdateListItem()
+  const press = useLongPress(
+    () => select?.onLongPress(),
+    Boolean(select && !select.selecting)
+  )
+  const selecting = select?.selecting ?? false
   const badges: { text: string; kind: "sale" | "meal" | "weekly" }[] =
     item.checked
       ? []
@@ -806,25 +966,44 @@ function ItemRow({
   // A narrow card: badges under the name. A wide one: all in a line.
   return (
     <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3.5 gap-y-1 py-3 @2xl:grid-cols-[auto_minmax(0,1fr)_auto_auto] @2xl:gap-x-4">
-      <Checkbox
-        className={cn(
-          "col-start-1 row-start-1 size-6 rounded-md",
-          badges.length > 0 && "row-span-2 @2xl:row-span-1"
-        )}
-        checked={item.checked}
-        aria-label={`${item.checked ? "Uncheck" : "Check off"} ${item.name}`}
-        onCheckedChange={(on) =>
-          update.mutate({ id: item.id, checked: on === true })
-        }
-      />
+      {selecting ? (
+        // The name below is the button; the box is a bigger place to tap.
+        <span
+          onClick={select?.onToggle}
+          className={cn(
+            "col-start-1 row-start-1 cursor-pointer",
+            badges.length > 0 && "row-span-2 @2xl:row-span-1"
+          )}
+        >
+          <SelectMark picked={select?.picked ?? false} />
+        </span>
+      ) : (
+        <Checkbox
+          className={cn(
+            "col-start-1 row-start-1 size-6 rounded-md",
+            badges.length > 0 && "row-span-2 @2xl:row-span-1"
+          )}
+          checked={item.checked}
+          aria-label={`${item.checked ? "Uncheck" : "Check off"} ${item.name}`}
+          onCheckedChange={(on) =>
+            update.mutate({ id: item.id, checked: on === true })
+          }
+        />
+      )}
       <button
         type="button"
-        onClick={onEdit}
+        onClick={selecting ? select?.onToggle : onEdit}
+        {...(selecting ? {} : press)}
         className={cn(
           "col-start-2 row-start-1 flex min-w-0 items-baseline gap-1.5 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
-          item.checked && "text-muted-foreground line-through"
+          item.checked && !selecting && "text-muted-foreground line-through"
         )}
-        aria-label={`Edit ${item.name}`}
+        aria-pressed={selecting ? select?.picked : undefined}
+        aria-label={
+          selecting
+            ? `${select?.picked ? "Unselect" : "Select"} ${item.name}`
+            : `Edit ${item.name}`
+        }
       >
         <span className="truncate font-medium first-letter:uppercase">
           {item.name}

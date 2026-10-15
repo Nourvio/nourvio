@@ -1,7 +1,6 @@
 import * as React from "react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import { MoreHorizontalIcon } from "@hugeicons/core-free-icons"
-import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -146,53 +145,6 @@ function BarButton({
       {action.label}
     </Button>
   )
-}
-
-/**
- * Removes something with a way back: it's hidden at once, and only really
- * removed after 10 seconds (or as soon as the page is left) unless Undo is
- * pressed.
- */
-export function undoable({
-  message,
-  hide,
-  restore,
-  commit,
-}: {
-  message: string
-  /** Takes it off the screen now (the cached data, say). */
-  hide: () => void
-  /** Puts it back on Undo. */
-  restore: () => void
-  /** Really removes it. */
-  commit: () => Promise<unknown>
-}) {
-  let settled = false
-  const finish = () => {
-    if (settled) return
-    settled = true
-    window.removeEventListener("pagehide", finish)
-    void commit().catch(() => {
-      restore()
-      toast.error("That didn't work, so it's back")
-    })
-  }
-  hide()
-  window.addEventListener("pagehide", finish)
-  toast(message, {
-    duration: 10_000,
-    action: {
-      label: "Undo",
-      onClick: () => {
-        if (settled) return
-        settled = true
-        window.removeEventListener("pagehide", finish)
-        restore()
-      },
-    },
-    onAutoClose: finish,
-    onDismiss: finish,
-  })
 }
 
 /** For a page's own header: a Select button that starts select mode. */
