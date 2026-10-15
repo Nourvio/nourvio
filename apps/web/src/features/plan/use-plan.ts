@@ -141,3 +141,48 @@ export function useAddPlanEntries() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: PLAN_KEY }),
   })
 }
+
+/** Swaps a planned meal for another recipe that suits it, with an undo. */
+export function useSwapEntry() {
+  const suggestOne = useSuggestMeal()
+  const update = useUpdatePlanEntry()
+  function swap(entry: PlanEntry) {
+    const { recipe } = entry
+    if (!recipe) return
+    const onError = (error: unknown) =>
+      toast.error(
+        error instanceof ApiError ? error.message : "Couldn't swap that"
+      )
+    suggestOne.mutate(
+      { slots: [{ date: entry.date, meal: entry.meal }], exclude: [recipe.id] },
+      {
+        onSuccess: ([next]) => {
+          if (!next) {
+            toast("No other ideas for this one. More recipes, more variety.")
+            return
+          }
+          update.mutate(
+            { id: entry.id, recipeId: next.recipe.id },
+            {
+              onSuccess: () =>
+                toast.success(`Swapped in ${next.recipe.name}`, {
+                  action: {
+                    label: "Undo",
+                    onClick: () =>
+                      update.mutate({
+                        id: entry.id,
+                        recipeId: recipe.id,
+                        servings: entry.servings ?? undefined,
+                      }),
+                  },
+                }),
+              onError,
+            }
+          )
+        },
+        onError,
+      }
+    )
+  }
+  return { swap, isPending: suggestOne.isPending || update.isPending }
+}

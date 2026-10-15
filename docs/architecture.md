@@ -330,7 +330,7 @@ The parser lives in the shared package, so the server and browser use the same c
 | Add | Link, Text, Photo and Manual tabs |
 | Review | A queue of AI proposals waiting for you, such as bulk cleanup results |
 | Find recipes | Tabs for starter collections (photo cards; a collection's page lists its recipes with Import and Import all) and Discover with AI (a theme box, ideas, results and earlier searches) and Sites (newest recipes from followed sites, filterable by site, with following and suggestions to the side). `?tab=` picks the tab, `?search=` the search shown and `?site=` the site |
-| Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, Add to list, and calories per day |
+| Plan | The next meal planned (`nextPlannedMeal` in `packages/shared/src/plan.ts`: breakfast until 11, lunch until 3 pm, then dinner; cooked or skipped meals move it on), then a full-width card per day with its meals side by side; this week's days gone by fold into a line. Fill the week, re-roll, Something else, mark cooked/skipped, Add to list, meals planned, what isn't on the list yet, and calories per day |
 | List | A card for each list (store): what's left, how much is in the cart, about what it costs, and the way to shop it: Send to the Fry's cart (`/list/shop`: each item's Fry's product, packages, prices and sales, a total, then add to the cart), Find each at Costco (`/list/costco`: each item linked to its Costco Same-Day search, `sameday.costco.com/store/costco/s?k=`) or the Walmart extension. Tapping a card shows that list: filters by meal, every week and added by hand, then a card for each aisle, each item with badges for the meals it's for and its last-seen price, and the cart folded up at the bottom with **Put away**. Every-week and always-on-hand items are in the ⋯ menu |
 | Pantry | One column, full width: Use soon (near use-by dates, and fresh leftovers from skipped meals; **Ideas for these** asks the assistant), buttons that jump to an aisle, a card for each aisle (every item with the meals it's for, its use-by date, and **Used up** and **List** buttons), and always-on-hand items last |
 | Chat | Available on every screen (see below) |
@@ -340,7 +340,7 @@ The parser lives in the shared package, so the server and browser use the same c
 
 - **Phone:** a bottom tab bar (Today, Recipes, Plan, List, Pantry) and a floating chat button. Chat opens as a full-height bottom drawer.
 - **iPad and desktop:** a sidebar for navigation. Chat opens as a side panel next to the recipe or cook view, so you can read and ask at the same time.
-- **Using a wide screen:** pages fill the width rather than keeping a phone-width column. Today has a side column of panels (`components/layout/page-layout.tsx`: what's next and food to use soon). The Plan's days flow into two or three columns like a paper planner. The List, the Pantry and Settings stack their cards full width instead; a list or pantry row puts its badges beside the name when its card is wide enough (a container query), and under it when it isn't.
+- **Using a wide screen:** pages fill the width rather than keeping a phone-width column. Today has a side column of panels (`components/layout/page-layout.tsx`: what's next and food to use soon). The Plan, the List, the Pantry and Settings stack their cards full width instead. Inside a card, container queries decide the layout: a plan day puts its meals side by side when it's wide enough, and a list or pantry row puts its badges beside the name.
 
 ### shadcn/ui components we expect to use
 

@@ -29,22 +29,17 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { formatMinutes } from "@/features/recipes/format"
 import { RecipeImage } from "@/features/recipes/recipe-image"
-import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
 import { cookLink } from "./cook-link"
 import { dayName, monthDay } from "./dates"
 import { EntryPairingDialog } from "./entry-pairing-dialog"
-import {
-  useRemovePlanEntry,
-  useSetEntryStatus,
-  useSuggestMeal,
-  useUpdatePlanEntry,
-} from "./use-plan"
+import { useRemovePlanEntry, useSetEntryStatus, useSwapEntry } from "./use-plan"
 
 /**
- * One day of the plan. Meals with something planned are listed in order;
- * empty meals shrink to small "+ Lunch" buttons, so a sparse week stays tidy.
+ * One day of the plan, full width, with its meals side by side when there's
+ * room. Empty meals are a "+ Add lunch" box in their place; on a narrow card
+ * they shrink to small buttons after what's planned.
  */
 export function DayCard({
   date,
@@ -63,77 +58,94 @@ export function DayCard({
   onAdd: (meal: Meal) => void
   onEdit: (entry: PlanEntry) => void
 }) {
+  const id = React.useId()
   const byMeal = new Map<Meal, PlanEntry[]>()
   for (const entry of entries) {
     byMeal.set(entry.meal, [...(byMeal.get(entry.meal) ?? []), entry])
   }
   // A meal the household stopped planning still shows if something's in it.
-  const filled = MEALS.filter((meal) => byMeal.has(meal))
-  const empty = meals.filter((meal) => !byMeal.has(meal))
+  const shown = MEALS.filter((meal) => meals.includes(meal) || byMeal.has(meal))
 
   return (
     <section
-      aria-label={`${dayName(date)}, ${monthDay(date)}`}
+      aria-labelledby={id}
       className={cn(
-        "grid gap-3 rounded-2xl border bg-card p-4 text-card-foreground",
+        "@container grid gap-3.5 rounded-3xl border bg-card p-5 text-card-foreground md:px-6",
         isToday && "border-primary ring-1 ring-primary",
         isPast && !isToday && "opacity-75"
       )}
     >
-      <header className="flex items-baseline gap-2">
-        <h2 className="text-lg font-semibold">{dayName(date)}</h2>
+      <header className="flex items-baseline gap-2.5">
+        <h2 id={id} className="text-xl font-semibold tracking-tight">
+          {dayName(date)}
+        </h2>
         <span className="text-sm text-muted-foreground">{monthDay(date)}</span>
         {isToday && <Badge className="self-center">Today</Badge>}
         <DayNutrition entries={entries} />
       </header>
 
-      {filled.map((meal) => (
-        <div key={meal} className="grid gap-1.5">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-              {MEAL_NAMES[meal]}
-            </p>
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              aria-label={`Add to ${MEAL_NAMES[meal].toLowerCase()}`}
-              onClick={() => onAdd(meal)}
-            >
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
-            </Button>
-          </div>
-          <ul className="grid gap-1">
-            {byMeal.get(meal)!.map((entry) => (
-              <EntryRow
-                key={entry.id}
-                entry={entry}
-                onEdit={() => onEdit(entry)}
-              />
-            ))}
-          </ul>
-        </div>
-      ))}
-
-      {empty.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {empty.map((meal) => (
-            <Button
+      <div
+        className="flex flex-wrap gap-2 @2xl:grid @2xl:grid-cols-(--meal-columns) @2xl:gap-3"
+        style={
+          {
+            "--meal-columns": `repeat(${shown.length}, minmax(0, 1fr))`,
+          } as React.CSSProperties
+        }
+      >
+        {shown.map((meal) =>
+          byMeal.has(meal) ? (
+            <div key={meal} className="grid basis-full content-start gap-1.5">
+              <div className="flex h-6 items-center justify-between">
+                <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  {MEAL_NAMES[meal]}
+                </p>
+                <Button
+                  variant="ghost"
+                  size="icon-xs"
+                  aria-label={`Add another to ${MEAL_NAMES[meal].toLowerCase()}`}
+                  onClick={() => onAdd(meal)}
+                >
+                  <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
+                </Button>
+              </div>
+              <ul className="grid gap-1.5">
+                {byMeal.get(meal)!.map((entry) => (
+                  <EntryTile
+                    key={entry.id}
+                    entry={entry}
+                    onEdit={() => onEdit(entry)}
+                  />
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div
               key={meal}
-              variant="outline"
-              size="sm"
-              className="rounded-full border-dashed text-muted-foreground"
-              onClick={() => onAdd(meal)}
+              className="order-last grid content-start gap-1.5 @2xl:order-none"
             >
-              <HugeiconsIcon
-                icon={Add01Icon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              {MEAL_NAMES[meal]}
-            </Button>
-          ))}
-        </div>
-      )}
+              <p className="hidden h-6 text-xs leading-6 font-semibold tracking-wide text-muted-foreground uppercase @2xl:block">
+                {MEAL_NAMES[meal]}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-full border-dashed bg-transparent text-muted-foreground @2xl:h-17 @2xl:w-full @2xl:rounded-2xl"
+                onClick={() => onAdd(meal)}
+              >
+                <HugeiconsIcon
+                  icon={Add01Icon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                />
+                <span className="@2xl:hidden">{MEAL_NAMES[meal]}</span>
+                <span className="hidden @2xl:inline">
+                  Add {MEAL_NAMES[meal].toLowerCase()}
+                </span>
+              </Button>
+            </div>
+          )
+        )}
+      </div>
     </section>
   )
 }
@@ -154,11 +166,17 @@ function DayNutrition({ entries }: { entries: PlanEntry[] }) {
   )
 }
 
-function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
+/** A planned meal: its photo, name and what's worth knowing, with everything else in a menu. */
+function EntryTile({
+  entry,
+  onEdit,
+}: {
+  entry: PlanEntry
+  onEdit: () => void
+}) {
   const [pairing, setPairing] = React.useState(false)
-  const update = useUpdatePlanEntry()
   const remove = useRemovePlanEntry()
-  const suggestOne = useSuggestMeal()
+  const { swap } = useSwapEntry()
   const { setStatus: setEntryStatus } = useSetEntryStatus()
   const { recipe } = entry
   const servings = entry.servings ?? recipe?.servings ?? null
@@ -167,55 +185,16 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
   const setStatus = (status: PlanEntry["status"], message: string) =>
     setEntryStatus(entry, status, message)
 
-  /** Swaps in another recipe that suits the meal, with an undo. */
-  function swap() {
-    if (!recipe) return
-    const onError = (error: unknown) =>
-      toast.error(
-        error instanceof ApiError ? error.message : "Couldn't swap that"
-      )
-    suggestOne.mutate(
-      { slots: [{ date: entry.date, meal: entry.meal }], exclude: [recipe.id] },
-      {
-        onSuccess: ([next]) => {
-          if (!next) {
-            toast("No other ideas for this one. More recipes, more variety.")
-            return
-          }
-          update.mutate(
-            { id: entry.id, recipeId: next.recipe.id },
-            {
-              onSuccess: () =>
-                toast.success(`Swapped in ${next.recipe.name}`, {
-                  action: {
-                    label: "Undo",
-                    onClick: () =>
-                      update.mutate({
-                        id: entry.id,
-                        recipeId: recipe.id,
-                        servings: entry.servings ?? undefined,
-                      }),
-                  },
-                }),
-              onError,
-            }
-          )
-        },
-        onError,
-      }
-    )
-  }
-
   return (
-    <li className="flex items-center gap-3 rounded-xl py-1">
+    <li className="flex min-h-17 items-center gap-3 rounded-2xl bg-muted/50 p-2.5">
       {recipe ? (
         <RecipeImage
           src={recipe.thumbnailUrl}
           alt=""
-          className={cn("size-11 shrink-0 rounded-lg", skipped && "opacity-50")}
+          className={cn("size-12 shrink-0 rounded-xl", skipped && "opacity-50")}
         />
       ) : (
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
           <HugeiconsIcon icon={Note01Icon} strokeWidth={2} className="size-5" />
         </span>
       )}
@@ -263,13 +242,14 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
               On the list ·
             </span>
           )}
-          {recipe &&
-            [
-              servings && `${servings} servings`,
-              formatMinutes(recipe.totalMinutes),
-            ]
-              .filter(Boolean)
-              .join(" · ")}
+          {recipe
+            ? [
+                servings && `${servings} servings`,
+                formatMinutes(recipe.totalMinutes),
+              ]
+                .filter(Boolean)
+                .join(" · ")
+            : !cooked && !skipped && "A note"}
         </span>
       </div>
       <DropdownMenu>
@@ -277,6 +257,7 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
           <Button
             variant="ghost"
             size="icon-sm"
+            className="rounded-full"
             aria-label={`Options for ${recipe?.name ?? entry.note}`}
           >
             <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
@@ -292,9 +273,9 @@ function EntryRow({ entry, onEdit }: { entry: PlanEntry; onEdit: () => void }) {
             </DropdownMenuItem>
           )}
           {recipe && entry.status === "planned" && (
-            <DropdownMenuItem onSelect={swap}>
+            <DropdownMenuItem onSelect={() => swap(entry)}>
               <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} />
-              Suggest something else
+              Something else
             </DropdownMenuItem>
           )}
           {entry.status !== "cooked" && recipe && (

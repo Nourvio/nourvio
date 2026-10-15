@@ -37,9 +37,13 @@ import {
   weekLabel,
 } from "@/features/plan/dates"
 import {
+  findNextMeal,
+  NextMealCard,
+  useMinute,
+} from "@/features/plan/next-meal"
+import {
   useAddPlanEntry,
   usePlan,
-  useSetEntryStatus,
   useSuggestMeal,
 } from "@/features/plan/use-plan"
 import { formatMinutes, formatRelativeDate } from "@/features/recipes/format"
@@ -67,7 +71,8 @@ export function HomePage() {
   const recipes = useRecipes()
   const household = useHouseholdInfo()
   const meals = household.data?.meals ?? DEFAULT_MEALS
-  const hour = new Date().getHours()
+  const minute = useMinute()
+  const hour = minute.getHours()
   const greeting =
     hour < 5 || hour >= 17
       ? "Good evening"
@@ -83,14 +88,7 @@ export function HomePage() {
       a.position - b.position
   )
   const todays = entries.filter((entry) => entry.date === now)
-  // The meal of the day it is now: breakfast, then lunch, then dinner.
-  const nowMeal = hour < 11 ? 0 : hour < 15 ? 1 : 2
-  const upNext = todays.find(
-    (entry) =>
-      entry.status === "planned" &&
-      entry.meal !== "snack" &&
-      MEALS.indexOf(entry.meal) >= nowMeal
-  )
+  const upNext = findNextMeal(todays, minute)
   const wantIdea =
     plan.isSuccess &&
     !upNext &&
@@ -127,7 +125,7 @@ export function HomePage() {
                 {plan.isPending ? (
                   <Skeleton className="h-56 rounded-3xl" />
                 ) : upNext ? (
-                  <UpNext entry={upNext} />
+                  <NextMealCard entry={upNext} headingLevel={3} />
                 ) : wantIdea ? (
                   <DinnerIdea date={now} />
                 ) : todays.length === 0 ? (
@@ -163,85 +161,6 @@ export function HomePage() {
         </>
       )}
     </div>
-  )
-}
-
-/** The next meal to cook today, big, with a way straight into cooking it. */
-function UpNext({ entry }: { entry: PlanEntry }) {
-  const { setStatus, isPending } = useSetEntryStatus()
-  const { recipe } = entry
-  const servings = entry.servings ?? recipe?.servings ?? null
-  const details = [
-    servings && `${servings} servings`,
-    formatMinutes(recipe?.totalMinutes),
-    entry.listed && "On the list",
-  ].filter(Boolean)
-  const href = recipe
-    ? `/recipes/${recipe.slug}${entry.with ? `?with=${entry.with.slug}` : ""}`
-    : null
-
-  return (
-    <article className="overflow-hidden rounded-3xl border bg-card text-card-foreground sm:flex">
-      {recipe && href && <HeroPhoto to={href} src={recipe.thumbnailUrl} />}
-      <div className="grid min-w-0 flex-1 content-center gap-4 p-5 md:p-6">
-        <div className="grid gap-1.5">
-          <p className="text-xs font-semibold tracking-wide text-primary uppercase">
-            {entry.meal === "dinner"
-              ? "Tonight"
-              : `${MEAL_NAMES[entry.meal]} today`}
-          </p>
-          <h3 className="font-heading text-2xl leading-tight font-semibold md:text-3xl">
-            {href ? (
-              <Link to={href} className="hover:underline">
-                {recipe!.name}
-              </Link>
-            ) : (
-              entry.note
-            )}
-            {entry.with && (
-              <span className="font-normal text-muted-foreground">
-                {" "}
-                with {entry.with.name}
-              </span>
-            )}
-          </h3>
-          {details.length > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {details.join(" · ")}
-            </p>
-          )}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {recipe && (
-            <Button size="lg" asChild>
-              <Link to={cookLink(entry)}>
-                <HugeiconsIcon
-                  icon={CookingPotIcon}
-                  strokeWidth={2}
-                  data-icon="inline-start"
-                />
-                Start cooking
-              </Link>
-            </Button>
-          )}
-          <Button
-            size="lg"
-            variant="outline"
-            disabled={isPending}
-            onClick={() =>
-              setStatus(entry, "cooked", recipe ? "Marked as cooked" : "Done")
-            }
-          >
-            <HugeiconsIcon
-              icon={Tick02Icon}
-              strokeWidth={2}
-              data-icon="inline-start"
-            />
-            {recipe ? "Mark cooked" : "Done"}
-          </Button>
-        </div>
-      </div>
-    </article>
   )
 }
 

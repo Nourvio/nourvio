@@ -211,3 +211,35 @@ export function planTotals(entries: PlanEntry[]): PlanTotals {
   }
   return { ...totals, counted, meals: meals.length }
 }
+
+/** The meal of the day it is: breakfast until 11, lunch until 3 pm, then dinner. */
+export function mealOfTheHour(hour: number): Meal {
+  return hour < 11 ? "breakfast" : hour < 15 ? "lunch" : "dinner"
+}
+
+/**
+ * The next meal to cook: the first one still planned from the meal of the
+ * hour today onwards. Cooking it, skipping it, or its time going by moves on
+ * to the next; dinner lasts until midnight. Snacks don't count.
+ */
+export function nextPlannedMeal<
+  T extends Pick<PlanEntry, "date" | "meal" | "position" | "status">,
+>(entries: T[], today: string, hour: number): T | null {
+  const from = MEALS.indexOf(mealOfTheHour(hour))
+  return (
+    entries
+      .filter(
+        (entry) =>
+          entry.status === "planned" &&
+          entry.meal !== "snack" &&
+          (entry.date > today ||
+            (entry.date === today && MEALS.indexOf(entry.meal) >= from))
+      )
+      .sort(
+        (a, b) =>
+          a.date.localeCompare(b.date) ||
+          MEALS.indexOf(a.meal) - MEALS.indexOf(b.meal) ||
+          a.position - b.position
+      )[0] ?? null
+  )
+}

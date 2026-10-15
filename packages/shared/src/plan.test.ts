@@ -3,6 +3,7 @@ import { describe, expect, test } from "vitest"
 import {
   addDays,
   daysBetween,
+  nextPlannedMeal,
   planTotals,
   startOfWeek,
   weekdayOf,
@@ -94,5 +95,50 @@ describe("planTotals", () => {
       fat: 24,
       counted: 1,
     })
+  })
+})
+
+describe("nextPlannedMeal", () => {
+  const meal = (
+    date: string,
+    which: PlanEntry["meal"],
+    status: PlanEntry["status"] = "planned"
+  ) => ({ date, meal: which, position: 0, status })
+  const today = "2026-10-14"
+
+  test("only dinner planned: it's next all day", () => {
+    const dinner = meal(today, "dinner")
+    expect(nextPlannedMeal([dinner], today, 8)).toBe(dinner)
+    expect(nextPlannedMeal([dinner], today, 13)).toBe(dinner)
+    expect(nextPlannedMeal([dinner], today, 22)).toBe(dinner)
+  })
+
+  test("lunch first, then dinner once lunch is cooked or 3 pm comes", () => {
+    const lunch = meal(today, "lunch")
+    const dinner = meal(today, "dinner")
+    expect(nextPlannedMeal([dinner, lunch], today, 10)).toBe(lunch)
+    expect(nextPlannedMeal([dinner, lunch], today, 14)).toBe(lunch)
+    expect(nextPlannedMeal([dinner, lunch], today, 15)).toBe(dinner)
+    const cooked = meal(today, "lunch", "cooked")
+    expect(nextPlannedMeal([dinner, cooked], today, 12)).toBe(dinner)
+  })
+
+  test("after tonight, the next day's first meal", () => {
+    const tomorrow = meal(addDays(today, 1), "lunch")
+    const dinner = meal(today, "dinner", "cooked")
+    expect(nextPlannedMeal([dinner, tomorrow], today, 19)).toBe(tomorrow)
+    expect(
+      nextPlannedMeal([meal(today, "dinner", "skipped")], today, 18)
+    ).toBeNull()
+  })
+
+  test("leaves out snacks and days gone by", () => {
+    expect(
+      nextPlannedMeal(
+        [meal(today, "snack"), meal(addDays(today, -1), "dinner")],
+        today,
+        9
+      )
+    ).toBeNull()
   })
 })

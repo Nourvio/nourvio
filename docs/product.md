@@ -118,7 +118,11 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 ### 4. Meal planning
 
 - **Tastes and rules** (Settings, for anyone in the household): foods someone doesn't eat or is allergic to, diets every meal must fit, how long weeknight dinners can take, and notes for the assistant ("no fish on Mondays"). Fill the week, dinner ideas and the assistant follow them; a recipe that breaks one says so on its page (allergies in red). Mention one to the assistant in passing ("Jamie can't stand mushrooms") and it offers to remember it.
-- A week view, one day at a time. Each household picks which meals it plans (breakfast, lunch, dinner, snacks; dinner by default) and whether weeks start on Sunday or Monday. Empty meals shrink to small "+ Lunch" buttons, so a sparse week stays tidy.
+- A week view, one day at a time. Each household picks which meals it plans (breakfast, lunch, dinner, snacks; dinner by default) and whether weeks start on Sunday or Monday.
+  - Each day is a full-width card with its meals side by side, and an empty meal is a "+ Add lunch" box in its place. On a phone the meals stack, and empty ones shrink to small "+ Lunch" buttons.
+  - This week's days gone by fold into one line ("Sun – Tue · 3 cooked: …") until you open them.
+  - Above the days: how many meals are planned, how many aren't on the list yet (tap to add them), and calories a day.
+- **What's next**, big, at the top of this week (and on Today): the next meal still planned, with Start cooking, Mark cooked, Something else and Skip. It goes by the time of day: breakfast is "This morning" until 11, lunch "This afternoon" until 3 pm, dinner "Tonight". Cooking or skipping it, or its time going by, moves on to the next one, so with only dinners planned it's always "Tonight", and after tonight it's "Tomorrow night".
 - Add a recipe to a meal, or a note instead ("leftovers", "eating out"). A recipe page has a Plan button too.
 - **Fill the week** suggests recipes for the empty meals, from today on:
   - No repeats: nothing planned or made within two weeks, and a recipe and its versions ("Pancakes (dairy-free)") count as one dish.
@@ -198,7 +202,7 @@ Our stores are Fry's, Costco and Walmart (see [roadmap.md](roadmap.md#milestone-
 
 - A mobile-first layout that also works well on iPad and desktop. It can be added to the home screen and runs like an app.
 - **Today,** the home page:
-  - **What's next:** the next meal planned today, big, with Start cooking and Mark cooked. With nothing planned for dinner, it offers one idea at a time from the library (using up what needs using first), planned for tonight with a tap.
+  - **What's next:** the next meal planned today, big, with Start cooking and Mark cooked (the same card as the Plan's, by the same time-of-day rule). With nothing planned for dinner, it offers one idea at a time from the library (using up what needs using first), planned for tonight with a tap.
   - The next few days of the plan, food to use soon (each with a link to recipes that use it), what's left on the shopping list, favorites not made in three weeks, and what was added lately.
   - A new household gets three steps to start instead.
 - **The cook view:**
