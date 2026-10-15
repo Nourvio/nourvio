@@ -2,7 +2,7 @@
 
 What comes over from the REFERENCE app, what's new, what changes on the way, and the order to build it in. The features are described in full in the REFERENCE docs ([product.md](../apps/REFERENCE/docs/product.md), [roadmap.md](../apps/REFERENCE/docs/roadmap.md)); this page only says where each one lands.
 
-**The first release, 0.1, has everything the REFERENCE app does, plus new work** (decided October 15, 2026): the platform (household AI keys, API keys, SSO, export, translations, units both ways, belonging to more than one household), the pool of meals (M16), fridge, freezer or cupboard and usual buys (M17), working offline (M17), reminders and the install button (M12), smarter deals and saying why (M15), and webhooks and an MCP server.
+**The first release, 0.1, has everything the REFERENCE app does, plus new work** (decided October 15, 2026): the platform (SQLite or Postgres, household AI keys, API keys, SSO, export, translations, units both ways, belonging to more than one household, guided tours), the pool of meals (M16), fridge, freezer or cupboard and usual buys (M17), working offline (M17), reminders and the install button (M12), smarter deals and saying why (M15), and webhooks and an MCP server.
 
 Nothing carries over from the REFERENCE app's data, names or schema. Merran starts with a fresh database; migrations matter from 0.1 on.
 
@@ -10,7 +10,7 @@ Nothing carries over from the REFERENCE app's data, names or schema. Merran star
 
 Everything here is in 0.1 unless it says **Later**.
 
-- **Core:** needs nothing but Postgres.
+- **Core:** needs nothing beyond Merran itself, on SQLite or Postgres.
 - **AI:** needs an AI key, at the server or the household.
 - **Module:** a [module](platform.md#modules-everything-optional), with its own setup.
 - **Later:** after 0.1.
@@ -47,7 +47,7 @@ Everything here is in 0.1 unless it says **Later**.
 |---|---|---|---|
 | Link import from recipe data (JSON-LD) | M1 | Core | Honest user agent; sites that block servers are left to the extension |
 | Typed in | M1 | Core | |
-| Several links at once | M14 | Core | Runs on pg-boss |
+| Several links at once | M14 | Core | Runs on the job runner |
 | Text, photos, pages without recipe data | M1 | AI | Works with any model that can read images |
 | Video links | M1 | Module | |
 | Mealie import | M1 | Core | **Also from a Mealie backup file,** so the server needn't reach Mealie |
@@ -112,6 +112,7 @@ Everything here is in 0.1 unless it says **Later**.
 | **Webhooks** | Later, maybe | Core | New. See [platform.md](platform.md#webhooks) |
 | **MCP server** | Dropped in REFERENCE | Core | New, now that API keys exist. See [platform.md](platform.md#mcp-server) |
 | Update badge | Built | Core | From GitHub releases |
+| **Guided tours, ⓘ explanations, a glossary and a Help menu** | New | Core | driver.js. See [platform.md](platform.md#help-and-guided-tours) |
 
 ## Not coming over
 
@@ -122,7 +123,8 @@ Everything here is in 0.1 unless it says **Later**.
 | Every household on the server's AI keys | Server and household keys, with a policy ([platform.md](platform.md#whose-key-pays)) |
 | Tokens with their owner's full rights | API keys with permissions, a household and an expiry ([platform.md](platform.md#api-keys)) |
 | Drafts and sign-in states kept in memory | In the database, with an expiry |
-| Hand-written sign-in, schedules and AI provider code | Better Auth, pg-boss, AI SDK ([stack.md](stack.md)) |
+| Postgres only, with the schema in Drizzle | SQLite or Postgres, with the schema in MikroORM entities ([stack.md](stack.md#sqlite-or-postgres)) |
+| Hand-written sign-in, schedules and AI provider code | Better Auth, a proper job runner, AI SDK ([stack.md](stack.md)) |
 | Prices in dollars, US units and aisles, "Fry's" in the code | Currency, units, aisles and stores by country |
 | The `mise` and Nourvio names | Merran everywhere |
 
@@ -136,13 +138,14 @@ Each phase ends with something that runs and can be tried, on `edge` images. 0.1
 - CI with every check in [open-source.md](open-source.md#keeping-the-code-healthy), Renovate, release-please, and `edge` images published to GHCR
 - The settings schema and the module registry, with `GET /api/v1/capabilities`
 - Hono with OpenAPI routes, the generated client, `/api/docs`
-- Drizzle and Postgres; pg-boss; the storage interface; the one fetch helper; the internal event stream
+- MikroORM entities with migrations generated for SQLite and Postgres, every test on both, and `merran db copy`; the job runner; the storage interface; the one fetch helper; the internal event stream
 - pino logs, request ids, health checks, the Problems page, Sentry when a DSN is set
 - i18next from the first string; locale, units and currency plumbing
 - The web shell: TanStack Router and Query, shadcn on Base UI, the three palettes, `/styleguide`, the phone and desktop layouts
+- The tour framework: driver.js styled to the palettes, tours registered per page and per role, steps skipped for modules that are off, what each person has seen saved, the ⓘ explanations and the Help menu. Each later phase adds the tours for its own pages.
 - The docs site skeleton, and the compose file
 
-**Done when:** a fresh `docker compose up` from the `edge` image shows the setup page, and CI is green with every check running.
+**Done when:** a fresh `docker run` of the `edge` image, with nothing set, shows the setup page on SQLite; the same image does on Postgres; and CI is green with every check running on both.
 
 ### Phase 1: Accounts, households and keys
 

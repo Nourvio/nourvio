@@ -34,10 +34,10 @@ What it takes to run Merran as a public project: the name and license, how peopl
 
 ## A good first hour for contributors
 
-- **One command to start:** `pnpm install`, then `pnpm dev`, which starts Postgres in Docker and the app with a sample household (recipes, a week planned, a list) already signed in.
+- **One command to start:** `pnpm install`, then `pnpm dev`, which starts the app on SQLite (no Docker needed) with a sample household (recipes, a week planned, a list) already signed in. `pnpm dev:postgres` does the same on Postgres in Docker.
 - **No keys needed:** a fake AI provider gives canned but realistic answers, so the assistant, import and tidy-up can be worked on for free. Real keys are optional.
-- **A dev container** for VS Code and Codespaces, for people who'd rather not install Node and Postgres.
-- **Guides for the common additions:** a store, an importer, an AI provider, a language. Each is an adapter with a test template.
+- **A dev container** for VS Code and Codespaces, for people who'd rather not install Node.
+- **Guides for the common additions:** a store, an importer, an AI provider, a language, a guided tour. Each comes with a test template.
 - **`/styleguide`** stays, showing every component in every palette.
 
 ## Keeping the code healthy
@@ -48,14 +48,14 @@ CI runs on every pull request:
 |---|---|
 | Typecheck, lint, format | The basics |
 | knip | No unused files, exports or dependencies |
-| Unit and route tests (PGlite) | Fast, on every push |
-| The same tests on real Postgres 18 | Catches what PGlite doesn't |
+| Unit and route tests on SQLite in memory | Fast, on every push |
+| The same tests on Postgres 16 and 18 | Everything works on both databases |
 | Household isolation test, generated from the schema | No household-owned table without one (see [platform.md](platform.md#keeping-households-apart)) |
-| Migration check | The schema and the committed migrations agree, and migrations apply to a copy of the last release's database |
+| Migration check | The entities and both databases' generated migrations agree, the migrations apply to a copy of the last release's database on each, and `merran db copy` moves the sample household from SQLite to Postgres |
 | OpenAPI diff | No unannounced breaking change to the public API |
 | Translation check | No user-facing string missing from the English file |
 | Contrast check | Every palette still passes WCAG (carried over) |
-| Playwright | A few real flows against the built image: set up, import a recipe, plan a week, make the list, cook |
+| Playwright | A few real flows against the built image: set up, import a recipe, plan a week, make the list, cook; and every guided tour's steps find their element, on a phone and a desktop layout |
 | Image build | The Docker image builds and starts healthy |
 | Bundle size | The web app doesn't quietly double |
 

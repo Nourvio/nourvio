@@ -1,14 +1,14 @@
 # Platform
 
-How Merran is put together underneath the features: modules and settings, accounts and households, API keys and the public API, AI keys at the server and household level, jobs, files, keeping households apart, security, and languages. The features themselves are in [scope.md](scope.md) and, in detail, in the REFERENCE app's [product.md](../apps/REFERENCE/docs/product.md).
+How Merran is put together underneath the features: modules and settings, accounts and households, API keys and the public API, AI keys at the server and household level, the database, jobs, files, keeping households apart, security, languages, and help and guided tours. The features themselves are in [scope.md](scope.md) and, in detail, in the REFERENCE app's [product.md](../apps/REFERENCE/docs/product.md).
 
 ## Modules: everything optional
 
-Merran's core needs only Postgres. Everything that reaches outside the server, costs money or needs another container is a **module**: off until it has what it needs, and the app says what's missing instead of showing broken buttons.
+Merran's core needs nothing but Merran itself: it runs on SQLite out of the box, or on Postgres when `DATABASE_URL` points at one. Everything that reaches outside the server, costs money or needs another container is a **module**: off until it has what it needs, and the app says what's missing instead of showing broken buttons.
 
 | Module | What it adds | Needs | On by default? |
 |---|---|---|---|
-| **Core** | Accounts and households, recipes (typed in, or imported from a link's recipe data), cook view, plan, list, pantry, export and import, the API | Postgres | Always |
+| **Core** | Accounts and households, recipes (typed in, or imported from a link's recipe data), cook view, plan, list, pantry, export and import, the API, guided tours and help | A database: SQLite (built in) or Postgres | Always |
 | **AI** | The assistant, AI import (text, photos, pages without recipe data), tidy up, swaps, cooking notes into edits, Discover, receipts, AI nutrition estimates | An AI key at the server or the household (see [AI](#ai)) | When a key exists |
 | **AI photos** | A photo for recipes without one | An AI key with an image model | Off |
 | **Video import** | TikTok, YouTube, Instagram and Facebook links | yt-dlp and ffmpeg (in the image), an AI key | On |
@@ -49,7 +49,7 @@ Settings live at three levels, and each one says which level it's at:
 - **Environment variables set server settings and lock them.** A setting from the environment shows in Settings as "Set on the server" and can't be changed there. Everything else can be changed in the app, so most people never edit `.env`.
 - **One schema** describes every setting: its environment variable, type, default, level and help text. Startup checks it and stops with one clear list of what's wrong. The configuration reference in the docs is generated from it, so it can't drift.
 - **Names:** environment variables start with `MERRAN_` (`MERRAN_SECRET`, `MERRAN_PUBLIC_URL`), except well-known ones like `DATABASE_URL`, `TZ` and provider keys (`ANTHROPIC_API_KEY`).
-- **Only the database is required.** The compose file sets it, so a first install needs one value: the Postgres password.
+- **Nothing is required.** Without `DATABASE_URL`, Merran keeps a SQLite database in its data folder; with a `postgres://` address it uses Postgres. A first install has nothing to fill in.
 
 ## Accounts and households
 
@@ -112,7 +112,7 @@ Household admins add them in Settings → Household → Webhooks, for Home Assis
 
 - **Events:** the plan changed, a meal was cooked or skipped, the list changed, something went in or out of the pantry, a recipe was added or changed, a bulk import finished, the weekly autoplan ran, something's due to be used soon. One event stream inside Merran feeds the live updates, webhooks and notifications, so they always agree.
 - **Each webhook** has an address, the events it wants, and a secret. Deliveries are signed in the Standard Webhooks format (an HMAC of the body, a timestamp and an id), so the receiver can check they came from Merran and aren't replayed.
-- **Delivery** runs on pg-boss: retries with backoff for about a day, then the webhook is paused and its household admins are told. Each webhook shows its recent deliveries with their responses, and **Send a test**.
+- **Delivery** runs on the job runner: retries with backoff for about a day, then the webhook is paused and its household admins are told. Each webhook shows its recent deliveries with their responses, and **Send a test**.
 - **Payloads** carry ids and a short summary, not whole recipes, so a leaked webhook log reveals little. The receiver can fetch more through the API.
 - **The home network:** Home Assistant usually lives on the same network as Merran, but letting any household make the server call local addresses is a risk on a shared server. So webhooks to private addresses are refused unless the server admin allows them (for every household, or chosen ones).
 
@@ -209,9 +209,27 @@ The same encryption covers every other secret Merran stores: Kroger tokens, SMTP
 
 **Stores are adapters.** A store adapter can do some of: search products, read prices and sales, add to a cart, link an account. Kroger has an official API. Walmart works through the extension in the person's own tab. **Link-only stores** (Costco Same-Day, Target, Tesco, Albert Heijn...) are just a name, a country and a search address, so adding one is a few lines, and households pick stores from their own country.
 
+## The database
+
+SQLite or Postgres, with one schema defined in TypeScript (see [stack.md](stack.md#sqlite-or-postgres)).
+
+- **Which one:** SQLite, unless `DATABASE_URL` is a Postgres address. Settings → This server shows which is in use. Postgres 16 or newer.
+- **When to pick Postgres:** more than a few households, lots of people changing things at the same moment, or a Postgres you already run and back up. SQLite handles a household's day easily.
+- **SQLite's one rule:** the data folder must be on a local disk, not a network share (NFS or SMB), because SQLite's locking isn't reliable over a network. Merran checks at startup and warns. It runs in WAL mode with a busy timeout, so reading never waits on a write.
+- **Keeping the schema portable** (checked in review, and by running every test on both):
+  - ids are UUIDv7 strings, the same on both, which also keeps export and import simple
+  - money is a whole number of the smallest unit (cents) plus a currency, never a float
+  - times are stored in UTC and turned into the household's time zone in code
+  - JSON columns hold data that's read whole; anything filtered or sorted gets its own column
+  - names compared without case (tags, foods) get a lowercase key column rather than relying on a database's collation
+  - no Postgres arrays or enums: lists get their own table or go in JSON, and fixed choices are checked strings
+- **Search** has one interface and two engines: Postgres full-text search with `pg_trgm` for typos, and SQLite's FTS5 with its trigram tokenizer. Both run the same test cases ("chiken thigh" finds chicken thighs).
+- **Later, meaning-based search** would use `pgvector` on Postgres and `sqlite-vec` on SQLite.
+- **One process.** Merran runs as one server process on either database. Several copies behind a load balancer isn't supported.
+
 ## Jobs
 
-pg-boss runs everything in the background, in Postgres (see [stack.md](stack.md#pg-boss-instead-of-hand-rolled-schedules)).
+Merran's own job runner does everything in the background, from a `jobs` table in the database, on SQLite or Postgres (see [stack.md](stack.md#a-job-runner-of-our-own-instead-of-hand-rolled-schedules)).
 
 | Job | When |
 |---|---|
@@ -228,7 +246,7 @@ pg-boss runs everything in the background, in Postgres (see [stack.md](stack.md#
 | Telemetry, if opted in | Daily |
 | Update check | Every 6 hours, unless turned off |
 
-- Work in progress survives restarts. Nothing important is kept only in memory: receipt drafts, the share inbox and pending Kroger sign-ins move to the database (with an expiry) or to pg-boss.
+- Work in progress survives restarts. Nothing important is kept only in memory: receipt drafts, the share inbox and pending Kroger sign-ins move to the database, with an expiry, or become jobs.
 - Each household gets a fair share, so one household's 500-recipe tidy-up doesn't hold up another's import.
 - Settings → This server → **Jobs** shows what's running, what failed and why, with Retry and Cancel.
 
@@ -255,7 +273,7 @@ One server hosting several households is a core promise, so isolation can't rely
 - **Every household-owned table carries `household_id`,** child tables included (ingredients, steps, versions, chat messages), so a scope can be checked on any row.
 - **The isolation test is generated from the schema.** CI lists every table with `household_id` and fails if one has no test showing another household can't read, change or delete it.
 - **Shared tables** are only for data that belongs to no one: USDA foods and matches, units, the model catalog.
-- **Considered:** Postgres row-level security as a second lock. Drizzle can describe the policies, but it means setting the household on every connection and transaction. Worth adding later if the scoped layer ever proves leaky.
+- **Not database rules:** Postgres's row-level security could be a second lock, but SQLite has nothing like it, so the scoped layer and the generated tests are what keep households apart on both.
 
 ## Security
 
@@ -266,7 +284,7 @@ Carried over from the REFERENCE app, plus what a public project needs:
 - **Headers:** a Content Security Policy, `frame-ancestors 'none'`, HSTS behind HTTPS, and no inline scripts beyond the theme script (hashed).
 - **Behind a proxy:** a `MERRAN_TRUSTED_PROXIES` setting decides whose `X-Forwarded-For` is believed, so rate limits see real addresses and can't be dodged with a made-up header.
 - **Uploads:** size limits, and file types checked from the content, not the name.
-- **Rate limits** on sign-in, sign-up, invites, AI calls, imports and API keys, kept in Postgres so restarts don't reset them.
+- **Rate limits** on sign-in, sign-up, invites, AI calls, imports and API keys, kept in the database so restarts don't reset them.
 - **Secrets** never logged or sent to the browser; see [Keeping keys safe](#keeping-keys-safe).
 - **Reporting problems:** `SECURITY.md` and GitHub's private vulnerability reporting; see [open-source.md](open-source.md#security-reports).
 
@@ -280,3 +298,22 @@ Carried over from the REFERENCE app, plus what a public project needs:
 - **The assistant** answers in the person's language.
 - **Starter collections and suggested sites** are data files per language, open to contributions.
 - **Nutrition:** USDA at first. Open Food Facts and national food databases can be added as nutrition sources later.
+
+## Help and guided tours
+
+New people get a short tour of each page the first time they open it, and every Merran word that needs explaining has an explanation a tap away. The tours use driver.js (decided October 15, 2026; see [stack.md](stack.md#driverjs-for-guided-tours)).
+
+- **A tour for each main page:** Today, Recipes, a recipe, the cook view, Plan, List, Pantry, the assistant and Settings. Three to six steps each, pointing at the real thing on screen and saying what it is and why you'd use it, in plain words: "Every week: things you buy every week whatever's planned, like bananas. They go on the list with each week's plan."
+- **The right tour for each person:**
+  - **The server admin,** after setup: Settings → This server, step by step: AI keys and who may use them, sign-up, inviting people, backups, and where problems and updates show up.
+  - **A new household's admin:** inviting people, the meals the household plans, tastes and rules, its lists and stores, and adding its own AI key if the server doesn't cover it.
+  - **Everyone else:** each page, the first time they open it.
+  - The new household's "three steps to start" on Today (from the REFERENCE app) stays, and each step can open its tour.
+- **Only what's there:** steps for modules that are off are skipped, so nobody's shown an AI button they don't have. A household admin may get one step instead, saying what turning it on would add.
+- **Phone and desktop:** the same tour points at the bottom tabs on a phone and the sidebar on a computer. Steps find their element by a `data-tour` name, not by where it sits, and a Playwright check fails if a step's element isn't on its page.
+- **Never in the way:** one tour at a time, with Skip and **Don't show tours** on every step. Never while cooking, never over a dialog, keyboard friendly (arrows and Escape), and still for people who've asked their device for less motion. The highlight and popovers use the palette's colors, light and dark.
+- **Words explained:** Merran's own terms (Every week, Always on hand, Use soon, the week's pool, theme nights, Goes with, proposals and Review, whose key pays...) get a small ⓘ beside them that opens a two-line explanation. The same text makes the **Glossary** in Help and on the docs site, so each explanation is written once.
+- **A Help menu** (the ? in the top bar, and in the account menu): Show me around this page, the glossary, what's new, and the docs.
+- **What's new:** a release can include a short tour of a new feature, shown once, after the update, to the people it's for.
+- **Remembered per person** in the database (which tours, at which version), so a tour seen on the phone isn't shown again on the iPad. A tour that changes a lot gets a new version and can be offered again.
+- **Translated** like everything else, through i18next.

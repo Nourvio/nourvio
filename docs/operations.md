@@ -28,7 +28,7 @@ Two different needs, handled separately.
 **2. A built-in Problems page** (always on, nothing sent anywhere)
 - The server keeps the last few hundred errors in the database (message, where, when, request id, how often), with no personal data.
 - Settings → This server → **Problems** lists them, grouped, so a server admin without Sentry can still see what's going wrong.
-- **Copy diagnostics** puts together what a bug report needs: version, install method, modules on, Postgres version, the recent problems. Personal data is left out, and it's shown before copying.
+- **Copy diagnostics** puts together what a bug report needs: version, install method, modules on, the database (SQLite, or Postgres and its version), the recent problems. Personal data is left out, and it's shown before copying.
 - **Report a problem** opens a new GitHub issue with the diagnostics filled in. Nothing is sent unless the person submits that issue themselves.
 
 **Not in 0.1: crash reports sent to the Merran project.** Running a collector, and the privacy promises that come with it, isn't worth it while the Problems page and prefilled issues cover bug reports.
@@ -60,7 +60,7 @@ Knowing roughly how many servers run Merran, on which versions, and which module
 - **See what's sent.** Settings shows the exact JSON of the next report.
 - **What's sent, once a day:**
   - a random install id (not derived from anything; **Reset** makes a new one)
-  - Merran version, install method (Docker image, source), CPU architecture, Postgres major version
+  - Merran version, install method (Docker image, source), CPU architecture, the database (SQLite, or Postgres and its major version)
   - which modules are on (yes or no each)
   - which kinds of AI provider are set up (Anthropic, OpenAI, OpenAI-compatible, none), not models or keys
   - counts in ranges: households (1, 2–5, 6–20, more), people, recipes (under 100, 100–500...)
@@ -102,13 +102,19 @@ Every outside call Merran can make, when, and how to stop it. This table also go
 - **Prebuilt images on GitHub's registry:** `ghcr.io/merran-app/merran`, for `amd64` and `arm64` (so a Raspberry Pi 4 or 5 works).
 - **Tags:** `1.4.2`, `1.4`, `1`, `latest` (the newest release) and `edge` (every commit to main, for testers).
 - **Signed and described:** each image is signed with cosign and carries an SBOM and build provenance, so anyone can check it came from this repo's CI.
-- **One image with everything,** yt-dlp and ffmpeg included (about 100 MB of the image). Modules that aren't wanted are turned off rather than built out.
+- **One image with everything,** yt-dlp and ffmpeg included (about 100 MB of the image), and Postgres's `pg_dump` so Merran can back up either database itself. Modules that aren't wanted are turned off rather than built out.
 - **Running as a normal user:** the container drops to `PUID`/`PGID` as in the REFERENCE app, or runs as any user set in compose.
 
-### The compose file
+### Running it
 
-- `merran` (the image), `db` (`postgres:18`) and `db-backup` (nightly dumps), plus optional services behind profiles: `voice` (Kokoro) and `tunnel` (cloudflared).
-- **One value to fill in:** `POSTGRES_PASSWORD`. Everything else has a default or is set in the app.
+- **The quickest way is one container, on SQLite,** with nothing to fill in:
+
+  ```bash
+  docker run -d --name merran -p 3000:3000 -v ./data:/data ghcr.io/merran-app/merran
+  ```
+
+- **The compose file** does the same, with room to grow: `merran` alone by default, plus optional services behind profiles: `postgres` (`postgres:18`), `voice` (Kokoro) and `tunnel` (cloudflared).
+- **For Postgres:** `docker compose --profile postgres up -d`, with `POSTGRES_PASSWORD` set in `.env`. The compose file points `DATABASE_URL` at it. An existing Postgres works too: set `DATABASE_URL` and skip the profile.
 - `docker compose --profile voice up -d` adds Kokoro; no editing the file.
 
 ### Where people run it
@@ -122,7 +128,7 @@ Every outside call Merran can make, when, and how to stop it. This table also go
 | Kubernetes | A Helm chart | When someone asks |
 | CasaOS, Umbrel, YunoHost | Their app stores | When someone asks |
 
-**What it needs:** about 1 GB of RAM for Merran and Postgres together; Kokoro adds 1 to 2 GB. Two CPU cores are plenty.
+**What it needs:** about 512 MB of RAM on SQLite, or 1 GB with Postgres alongside; Kokoro adds 1 to 2 GB. Two CPU cores are plenty. On SQLite, the data folder must be on a local disk, not a network share (see [platform.md](platform.md#the-database)).
 
 ### Reaching it from outside
 
@@ -132,18 +138,31 @@ Docs for each common way in: a Cloudflare Tunnel (in the compose file), Tailscal
 
 - **Semantic versions.** `0.x` while the API and export format may still change; `1.0` once they're promised stable.
 - **release-please** reads conventional commit messages, keeps `CHANGELOG.md` and opens a release pull request. Merging it tags the release, builds and signs the images, attaches the browser extension's zips, and writes the GitHub release notes.
-- **Database changes run at startup.** Before applying any, Merran takes a dump into `data/backups` (`pre-1.5.0-<date>.dump`), so a bad update can always be undone.
+- **Database changes run at startup.** Before applying any, Merran backs the database up into `data/backups` (`pre-1.5.0-<date>`), so a bad update can always be undone.
 - **Downgrades aren't supported,** and the release notes say when an update can't be undone without that dump.
 - **The update check** asks GitHub for the latest release (not commits, as the REFERENCE app did), every 6 hours. The server admin sees an Update badge and the release notes, with the commands for their install method. `MERRAN_UPDATE_CHECK=false` turns it off.
 - **Support:** the latest minor version gets fixes. Security fixes go to the latest minor of the current major.
 
 ## Backups and restore
 
-- **Nightly database dumps** by `db-backup`, kept for `BACKUP_KEEP_DAYS` (14 by default), as in the REFERENCE app.
+- **Nightly backups by Merran itself,** on either database, so there's no separate backup container: SQLite's online backup (a consistent copy while Merran keeps running) or `pg_dump` for Postgres, into `data/backups`, kept for `MERRAN_BACKUP_KEEP_DAYS` (14 by default). The time is a setting.
 - **Files** (photos, the secret key) are in `data/`, next to the compose file. The docs say plainly: back up the whole `data` folder, and keep `data/app/secret` (or `MERRAN_SECRET`) with it, or saved keys must be entered again.
 - **Download a backup** (server admin, Settings → This server): the database and files in one archive.
 - **Restoring** is documented step by step, and CI restores a dump into a fresh install on every release to prove the steps work.
 - **A household export** (see [platform.md](platform.md#export-and-import)) is the way to move one household, not a backup of the server.
+
+## Moving from SQLite to Postgres
+
+A server that started on SQLite and outgrew it moves with one command, keeping everything:
+
+```bash
+docker compose exec merran merran db copy --to postgres://merran:<password>@db:5432/merran
+```
+
+- It copies every table, in order, into an empty Postgres at the same schema version, then checks the row counts match.
+- Then set `DATABASE_URL` to the Postgres address and restart. The SQLite file is left alone, so going back is just unsetting `DATABASE_URL`.
+- It works the other way too (Postgres to SQLite), for anyone shrinking a server.
+- CI runs it on every change to the schema, on the sample household, so it can't quietly break.
 
 ## A public demo
 
