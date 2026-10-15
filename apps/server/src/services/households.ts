@@ -7,6 +7,7 @@ import {
   INVITE_DAYS,
   MEALS,
   NO_TASTES,
+  tidyOnHand,
   type AutoPlan,
   type Meal,
   type CreatedInvite,
@@ -61,7 +62,7 @@ function toHousehold(row: HouseholdRow): Household {
     autoCleanup: row.settings.autoCleanup ?? false,
     meals: row.settings.meals ?? DEFAULT_MEALS,
     weekStart: row.settings.weekStart ?? 0,
-    onHand: row.settings.onHand ?? DEFAULT_ON_HAND,
+    onHand: tidyOnHand(row.settings.onHand ?? DEFAULT_ON_HAND),
     tastes: { ...NO_TASTES, ...row.settings.tastes },
     autoPlan: { ...DEFAULT_AUTO_PLAN, ...row.settings.autoPlan },
     lists: row.settings.lists?.length ? row.settings.lists : DEFAULT_LISTS,
@@ -113,15 +114,7 @@ export async function updateHousehold(
         ...(patch.weekStart === undefined
           ? {}
           : { weekStart: patch.weekStart }),
-        ...(patch.onHand
-          ? {
-              onHand: [
-                ...new Set(
-                  patch.onHand.map((item) => item.trim().toLowerCase())
-                ),
-              ].filter(Boolean),
-            }
-          : {}),
+        ...(patch.onHand ? { onHand: tidyOnHand(patch.onHand) } : {}),
         ...(patch.tastes ? { tastes: patch.tastes } : {}),
         ...(patch.autoPlan ? { autoPlan: patch.autoPlan } : {}),
       },

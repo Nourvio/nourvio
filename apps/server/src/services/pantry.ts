@@ -3,6 +3,7 @@ import {
   combineLines,
   formatAmount,
   guessUseBy,
+  onHandTest,
   pantryKey,
   parseIngredient,
   STORE_SECTIONS,
@@ -235,7 +236,7 @@ export async function putAway(
   householdId: string
 ): Promise<PutAwayResult> {
   const household = await getHousehold(db, householdId)
-  const onHand = new Set(household.onHand.map(pantryKey))
+  const isOnHand = onHandTest(household.onHand)
   const checked = await db
     .select()
     .from(shoppingItems)
@@ -248,7 +249,7 @@ export async function putAway(
   const today = toIsoDate(new Date())
   let stored = 0
   for (const item of checked) {
-    if (item.sectionId === "household" || onHand.has(pantryKey(item.name))) {
+    if (item.sectionId === "household" || isOnHand(item.name)) {
       continue
     }
     await store(db, householdId, {

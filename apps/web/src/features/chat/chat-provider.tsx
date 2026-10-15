@@ -58,6 +58,8 @@ type ChatApi = ChatState & {
   useScreen: boolean
   setUseScreen(use: boolean): void
   send(message: string): Promise<void>
+  /** Opens the panel on a new conversation that starts with this question. */
+  ask(message: string): void
   stop(): void
   newChat(): void
   openConversation(id: string): Promise<void>
@@ -141,7 +143,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const send = React.useCallback(
-    async (message: string) => {
+    async (message: string, fresh = false) => {
       const text = message.trim()
       if (!text || abortRef.current) return
       const abort = new AbortController()
@@ -153,29 +155,32 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           ? { recipeId: shown.recipeId, scale: shown.scale }
           : { weekStart: shown.weekStart }
       const now = new Date().toISOString()
-      setState((s) => ({
-        ...s,
-        streaming: true,
-        error: null,
-        draft: "",
-        messages: [
-          ...s.messages,
-          {
-            id: `pending-${now}`,
-            role: "user",
-            parts: [{ type: "text", text }],
-            contextLabel: shown ? screenLabel(shown) : null,
-            createdAt: now,
-          },
-          {
-            id: STREAMING_ID,
-            role: "assistant",
-            parts: [],
-            contextLabel: null,
-            createdAt: now,
-          },
-        ],
-      }))
+      setState((s) => {
+        const from = fresh ? { ...EMPTY, open: true } : s
+        return {
+          ...from,
+          streaming: true,
+          error: null,
+          draft: "",
+          messages: [
+            ...from.messages,
+            {
+              id: `pending-${now}`,
+              role: "user",
+              parts: [{ type: "text", text }],
+              contextLabel: shown ? screenLabel(shown) : null,
+              createdAt: now,
+            },
+            {
+              id: STREAMING_ID,
+              role: "assistant",
+              parts: [],
+              contextLabel: null,
+              createdAt: now,
+            },
+          ],
+        }
+      })
 
       const fail = (error: string) =>
         setState((s) => ({
@@ -196,7 +201,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           headers: { "content-type": "application/json" },
           credentials: "same-origin",
           body: JSON.stringify({
-            conversationId: state.conversation?.id,
+            conversationId: fresh ? undefined : state.conversation?.id,
             message: text,
             context,
           }),
@@ -263,6 +268,18 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const stop = React.useCallback(() => abortRef.current?.abort(), [])
 
+  const ask = React.useCallback(
+    (message: string) => {
+      // A reply still coming in: leave the question ready to send after it.
+      if (abortRef.current) {
+        setState((s) => ({ ...s, open: true, draft: message }))
+      } else {
+        void send(message, true)
+      }
+    },
+    [send]
+  )
+
   const newChat = React.useCallback(() => {
     abortRef.current?.abort()
     setState((s) => ({ ...EMPTY, open: s.open, draft: s.draft }))
@@ -306,6 +323,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     useScreen,
     setUseScreen,
     send,
+    ask,
     stop,
     newChat,
     openConversation,

@@ -352,7 +352,7 @@ export function OnHandDialog({
       open={open}
       onOpenChange={onOpenChange}
       title="Always on hand"
-      description="Left off lists made from the plan, like salt and pepper."
+      description="Left off lists made from the plan. Each covers its kinds: salt takes in kosher and sea salt, and pepper takes in black pepper."
     >
       {open && <OnHand />}
     </ResponsiveDialog>

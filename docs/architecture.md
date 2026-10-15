@@ -332,7 +332,7 @@ The parser lives in the shared package, so the server and browser use the same c
 | Find recipes | Tabs for starter collections (photo cards; a collection's page lists its recipes with Import and Import all) and Discover with AI (a theme box, ideas, results and earlier searches) and Sites (newest recipes from followed sites, filterable by site, with following and suggestions to the side). `?tab=` picks the tab, `?search=` the search shown and `?site=` the site |
 | Plan | Week view with Fill the week, re-roll, Suggest something else, mark cooked/skipped, Add to list, and calories per day |
 | List | Shopping list grouped by section, with every-week items, always-on-hand items and a **Shop** menu: Send to Fry's (`/list/shop`: each item's Fry's product, packages, prices and sales, a total, then add to the cart) and Shop at Costco (`/list/costco`: each item linked to its Costco Same-Day search, `sameday.costco.com/store/costco/s?k=`) |
-| Pantry | Use soon (near use-by dates, and fresh leftovers from skipped meals), everything else by aisle, and always-on-hand items |
+| Pantry | One column, full width: Use soon (near use-by dates, and fresh leftovers from skipped meals; **Ideas for these** asks the assistant), buttons that jump to an aisle, a card for each aisle (every item with the meals it's for, its use-by date, and **Used up** and **List** buttons), and always-on-hand items last |
 | Chat | Available on every screen (see below) |
 | Settings | Five tabs: **You** (account, appearance, browser extension), **Household** (people and invites, tastes and rules, meal plan and the weekly autopilot), **Shopping** (lists, stores, always on hand, every week), **Library** (tidying up, nutrition and photos for the whole library) and, for the server admin, **This server** (sign-up and households, AI, connections: Kroger and the USDA key, Mealie). On a tablet or computer the tab's cards stack full width (`?tab=`); on a phone it's a list of sections, each with how it's set up now, that open on their own (`?section=`). A link to a card (`/settings#mealie`) opens its tab or section |
 
@@ -340,7 +340,7 @@ The parser lives in the shared package, so the server and browser use the same c
 
 - **Phone:** a bottom tab bar (Today, Recipes, Plan, List, Pantry) and a floating chat button. Chat opens as a full-height bottom drawer.
 - **iPad and desktop:** a sidebar for navigation. Chat opens as a side panel next to the recipe or cook view, so you can read and ask at the same time.
-- **Using a wide screen:** pages fill the width rather than keeping a phone-width column. Today, the List and the Pantry have a side column of panels (`components/layout/page-layout.tsx`: what's next and to use soon, how the shop is going and what it's for, Use soon and Always on hand). The List's and Pantry's aisles, and the Plan's days, flow into two or three columns like a paper planner.
+- **Using a wide screen:** pages fill the width rather than keeping a phone-width column. Today and the List have a side column of panels (`components/layout/page-layout.tsx`: what's next and to use soon, how the shop is going and what it's for). The List's aisles and the Plan's days flow into two or three columns like a paper planner. The Pantry and Settings stack their cards full width instead; a pantry row puts its tags beside the name when its card is wide enough (a container query), and under it when it isn't.
 
 ### shadcn/ui components we expect to use
 

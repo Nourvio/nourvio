@@ -5,6 +5,7 @@ import {
   formatAmount,
   listsForStore,
   MAIN_LIST,
+  onHandTest,
   pantryKey,
   parseIngredient,
   STORE_SECTIONS,
@@ -399,12 +400,12 @@ export async function addFromPlan(
     )
   }
 
-  const onHand = new Set(household.onHand.map(foodKey))
+  const isOnHand = onHandTest(household.onHand)
   const skipped: string[] = []
   const pantry = await availableInPantry(db, householdId)
   const inPantry: string[] = []
   const combined = combineLines(lines).filter((item) => {
-    if (onHand.has(foodOf(item.key))) {
+    if (isOnHand(item.name)) {
       skipped.push(item.name)
       return false
     }

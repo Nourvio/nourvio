@@ -31,16 +31,6 @@ export type WeeklyItem = {
   sectionId: StoreSectionId
 }
 
-/** Things assumed to be at home, left off lists made from the plan. */
-export const DEFAULT_ON_HAND = [
-  "salt",
-  "black pepper",
-  "pepper",
-  "salt and pepper",
-  "water",
-  "ice",
-]
-
 /** The list everything goes on unless a rule or a move says otherwise. It can't be removed. */
 export const MAIN_LIST = "main"
 

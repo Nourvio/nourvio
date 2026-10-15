@@ -237,6 +237,36 @@ describe("shopping list", () => {
     expect(find(await list(), "bread")).toMatchObject({ amount: "2 slices" })
   })
 
+  test("counts every kind of salt and pepper as on hand", async () => {
+    await t.admin.patch("/api/household", {
+      onHand: ["Salt", "Black Pepper", "Pepper", "Salt and Pepper", "ice"],
+    })
+    expect((await t.admin.get("/api/household")).body.household.onHand).toEqual(
+      ["salt", "pepper", "ice"]
+    )
+    const recipe = (
+      await t.admin.post("/api/recipes", {
+        name: "Scrambled eggs",
+        ingredients: [
+          "3 eggs",
+          "1 pinch kosher salt",
+          "freshly ground black pepper",
+        ],
+      })
+    ).body.recipe
+    await t.admin.post("/api/plan/entries", {
+      date: "2026-10-20",
+      meal: "breakfast",
+      recipeId: recipe.id,
+    })
+    const res = await t.admin.post("/api/list/from-plan", {
+      from: "2026-10-20",
+      to: "2026-10-20",
+    })
+    expect(res.body.onHand).toHaveLength(2)
+    expect(res.body.added).toBe(1)
+  })
+
   test("manages every-week items", async () => {
     const items = (await t.admin.get("/api/list/weekly")).body.items
     expect(items).toHaveLength(1)

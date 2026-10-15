@@ -156,6 +156,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 - **Amounts can be rough:** "2 lb", "half a bag", or just "have it". The same food merges when the amounts add up.
 - **Matching is forgiving but careful:** "boneless skinless chicken thighs" is "chicken thighs", but "cream cheese" isn't "cheese". There's no list of foods to set up or confirm.
 - **Always on hand** items like salt, oil and flour are assumed to be there. Tap one on the Pantry page when it runs low, and it goes on the list.
+  - Each covers its kinds: "salt" takes in kosher and sea salt, "pepper" takes in black pepper (not bell or white pepper), and "salt and pepper" in a recipe needs both. So the list holds one of each, and repeats fold together (Salt, Black Pepper, Pepper and Salt and Pepper become Salt and Pepper).
 - **Cooked** meals take their ingredients out, scaled to the servings planned. Amounts that compare are subtracted; food bought for that meal without one is used up; "have it" staples stay. Marking the meal back to planned puts it all back.
 - **Use soon** is at the top:
   - Fresh food gets a rough use-by date when it comes in (meat and fish 3 days, bread and deli 5, produce a week, nothing for onions, potatoes and other keepers). Edit or clear it any time.
