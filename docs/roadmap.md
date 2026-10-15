@@ -240,6 +240,7 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 
 ## Later, maybe
 
+- A site that shows Mise off, like Mealie's: what it does, screenshots or a demo, and how to set it up. The code is AGPL-3.0 (October 14, 2026), so anyone can self-host it.
 - Meaning-based recipe search with `pgvector` ("something cozy with chicken")
 - Offline reading in the cook view (a service worker)
 - Barcode scanning for the pantry

@@ -174,3 +174,7 @@ More in [docs/development.md](docs/development.md).
 ## Docs
 
 The plan and the reasoning behind it are in [`docs/`](docs/README.md): what we're building, the architecture, outside services, deployment, and how to work on the code.
+
+## License
+
+Copyright (C) 2026 Kyle Johnson. Mise is free software under the [GNU Affero General Public License v3.0](LICENSE) or later: run it, change it and share it. If you run a changed copy for other people over a network, offer them its source too.
