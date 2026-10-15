@@ -50,9 +50,17 @@ const KOKORO_LANGUAGES: Record<string, string> = {
   z: "Mandarin",
 }
 
+/** A Kokoro voice id: "af_heart", "af_v0bella", "af_amelia_inno". */
+const KOKORO_VOICE_ID = /^[a-z]{2}_[a-z0-9]+(?:_[a-z0-9]+)*$/
+
 /** Kokoro's English voices, the ones that read English recipes well. */
 export function isEnglishKokoroVoice(id: string) {
   return /^[ab][fm]_/.test(id)
+}
+
+/** Kokoro keeps its first model's voices ("af_v0bella"), older takes on ones it still has. */
+export function isOldKokoroVoice(id: string) {
+  return /^[a-z]{2}_v0/.test(id)
 }
 
 /** "af_heart" → "Heart, American", "bm_george" → "George, British". */
@@ -107,7 +115,7 @@ export const updateVoiceSettingsInput = z.object({
     .optional(),
   kokoroVoice: z
     .string()
-    .regex(/^[a-z]{2}_[a-z0-9]+$/, "A Kokoro voice, like af_heart")
+    .regex(KOKORO_VOICE_ID, "A Kokoro voice, like af_heart")
     .optional(),
   openaiVoice: z.enum(OPENAI_VOICES).optional(),
 })
@@ -117,7 +125,7 @@ export type UpdateVoiceSettingsInput = z.infer<typeof updateVoiceSettingsInput>
 export const previewVoiceInput = z.discriminatedUnion("provider", [
   z.object({
     provider: z.literal("kokoro"),
-    voice: z.string().regex(/^[a-z]{2}_[a-z0-9]+$/),
+    voice: z.string().regex(KOKORO_VOICE_ID),
     /** A Kokoro address not saved yet; else the saved one. */
     kokoroUrl: z
       .url({ protocol: /^https?$/ })

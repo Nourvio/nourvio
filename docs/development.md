@@ -40,7 +40,7 @@ Run these from the repo root.
 | Command | What it does |
 |---|---|
 | `npm install` | Installs all workspaces |
-| `npm run db:up` / `db:down` | Starts or stops a local Postgres 18 in Docker (`compose.dev.yaml`). It matches `DATABASE_URL` in `.env.example`. |
+| `npm run db:up` / `db:down` | Starts or stops a local Postgres 18 and Kokoro (cook mode's voice) in Docker (`compose.dev.yaml`). They match `DATABASE_URL` and `KOKORO_URL` in `.env.example`. |
 | `npm run dev` | Starts Vite on :5173 and the API on :3000 (restarting it on changes). Vite forwards `/api` to the API. |
 | `npm test` | Runs the server tests (Vitest) against PGlite, an in-memory Postgres, so Docker isn't needed |
 | `npm run build` | Typechecks and builds every workspace |

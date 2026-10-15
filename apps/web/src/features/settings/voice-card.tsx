@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { PlayIcon, StopIcon } from "@hugeicons/core-free-icons"
 import {
   isEnglishKokoroVoice,
+  isOldKokoroVoice,
   KOKORO_VOICES,
   kokoroVoiceKind,
   kokoroVoiceName,
@@ -92,15 +93,17 @@ function VoiceForm({ saved }: { saved: VoiceSettings }) {
     urlChanged ||
     kokoroVoice !== saved.kokoro.voice ||
     openaiVoice !== saved.openai.voice
-  // Kokoro's own list, the friendliest first and English ones unless asked;
-  // the known few when it can't be reached.
+  // Kokoro's own list, the friendliest first and English ones unless asked,
+  // without its first model's older voices; the known few when it can't be reached.
   const kokoroAll = saved.kokoro.voices.length
     ? [
         ...KOKORO_VOICES.map((v) => v.id).filter((id) =>
           saved.kokoro.voices.includes(id)
         ),
         ...saved.kokoro.voices.filter(
-          (id) => !KOKORO_VOICES.some((v) => v.id === id)
+          (id) =>
+            !KOKORO_VOICES.some((v) => v.id === id) &&
+            (!isOldKokoroVoice(id) || id === kokoroVoice)
         ),
       ]
     : KOKORO_VOICES.map((v) => v.id)

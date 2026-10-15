@@ -1,5 +1,5 @@
-# Postgres for local development: `npm run db:up` / `npm run db:down`.
-# Matches DATABASE_URL in .env.example.
+# Postgres for local development, and Kokoro for cook mode's voice:
+# `npm run db:up` / `npm run db:down`. Matches .env.example.
 
 name: mise-dev
 
@@ -14,6 +14,12 @@ services:
       - "5432:5432"
     volumes:
       - mise-dev-db:/var/lib/postgresql
+
+  # Cook mode's read-aloud voice, at KOKORO_URL=http://localhost:8880.
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    ports:
+      - "8880:8880"
 
 volumes:
   mise-dev-db:

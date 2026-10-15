@@ -163,7 +163,7 @@ npm run dev
 ```
 
 - `.env` gives the API its `DATABASE_URL`. The example already points at the local database.
-- `npm run db:up` starts that local Postgres in Docker.
+- `npm run db:up` starts that local Postgres in Docker, and Kokoro for cook mode's voice (its image takes about 5 GB, downloaded on the first start).
 - `npm run dev` starts the web app on http://localhost:5173 and the API on :3000. Vite forwards `/api` to the API. The setup code prints in the same terminal.
 - `npm test` runs the server tests against an in-memory Postgres, so it doesn't need Docker.
 
