@@ -2,7 +2,8 @@ import { createRoute, z } from "@hono/zod-openapi"
 import { pino } from "pino"
 import { describe, expect, test } from "vitest"
 import { ApiError, handleError } from "./errors.ts"
-import { createRouter, requestLogger } from "./router.ts"
+import { requestLogger } from "./middleware/request-logger.ts"
+import { createRouter } from "./router.ts"
 
 const echo = createRoute({
   method: "get",

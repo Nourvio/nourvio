@@ -1,12 +1,31 @@
 import { pino } from "pino"
-import { describe, expect, test } from "vitest"
+import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { createApp } from "./app.ts"
-import { loadConfig } from "./config.ts"
+import { loadConfig } from "./core/config.ts"
+import type { Database } from "./db/orm.ts"
+import { createTestDatabase, testDatabaseKind } from "./test/database.ts"
+
+let db: Database
+let close: () => Promise<void>
+
+beforeAll(async () => {
+  ;({ db, close } = await createTestDatabase())
+})
+
+afterAll(() => close())
 
 function testApp() {
+  const config = loadConfig({})
   return createApp({
-    config: loadConfig({}),
+    config: {
+      ...config,
+      database:
+        testDatabaseKind === "postgres"
+          ? { kind: "postgres", url: "postgres://test" }
+          : config.database,
+    },
     logger: pino({ level: "silent" }),
+    db,
   })
 }
 
@@ -18,6 +37,16 @@ describe("the app", () => {
     expect(await res.json()).toEqual({
       status: "ok",
       version: expect.any(String),
+    })
+  })
+
+  test("ready says the database answers and is up to date", async () => {
+    const res = await testApp().request("/api/v1/health/ready")
+
+    expect(res.status).toBe(200)
+    expect(await res.json()).toEqual({
+      status: "ready",
+      database: testDatabaseKind,
     })
   })
 

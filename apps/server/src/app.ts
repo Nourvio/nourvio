@@ -1,10 +1,12 @@
 import { Scalar } from "@scalar/hono-api-reference"
 import { requestId } from "hono/request-id"
 import { secureHeaders } from "hono/secure-headers"
-import type { AppDeps } from "./context.ts"
+import type { AppDeps } from "./core/context.ts"
 import { ErrorSchema, handleError, handleNotFound } from "./http/errors.ts"
-import { createRouter, requestLogger } from "./http/router.ts"
-import { healthRoutes } from "./routes/health.ts"
+import { entityManager } from "./http/middleware/entity-manager.ts"
+import { requestLogger } from "./http/middleware/request-logger.ts"
+import { createRouter } from "./http/router.ts"
+import { healthRoutes } from "./http/routes/health.ts"
 
 export const API_BASE = "/api/v1"
 const SPEC_PATH = `${API_BASE}/openapi.json`
@@ -15,6 +17,7 @@ export function createApp(deps: AppDeps) {
   app.use(requestId())
   app.use(secureHeaders())
   app.use(requestLogger(deps.logger))
+  app.use(entityManager(deps.db))
 
   app.route(API_BASE, healthRoutes(deps))
 

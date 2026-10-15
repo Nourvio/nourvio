@@ -5,3 +5,4 @@ pnpm-lock.yaml
 dist/
 docs/
 apps/REFERENCE/
+apps/server/src/db/migrations/

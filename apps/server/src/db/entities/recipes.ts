@@ -1,0 +1,84 @@
+import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
+import { householdFilter, notDeletedFilter } from "../scope.ts"
+import { createdAt, id, updatedAt } from "./base.ts"
+import { householdRef } from "./households.ts"
+import { RecipeIngredient } from "./recipe_ingredients.ts"
+import { RecipeStep } from "./recipe_steps.ts"
+import { User } from "./users.ts"
+
+export const RECIPE_ORIGINS = [
+  "link",
+  "video",
+  "text",
+  "photo",
+  "manual",
+  "assistant",
+  "mealie",
+  "paprika",
+  "merran",
+] as const
+
+export type NutritionSource = "site" | "calculated" | "estimate"
+
+/** Per serving. */
+export type Nutrition = {
+  source: NutritionSource
+  calories?: number
+  protein?: number
+  carbs?: number
+  fat?: number
+  fiber?: number
+  sugar?: number
+  sodium?: number
+  /** Ingredient lines that couldn't be counted. */
+  missing?: string[]
+}
+
+export const Recipe = defineEntity({
+  name: "Recipe",
+  tableName: "recipes",
+  properties: {
+    id: id(),
+    household: () => householdRef(),
+    /** Unique in the household, for addresses like /recipes/lemon-chicken. */
+    slug: p.string(),
+    name: p.string(),
+    description: p.text().nullable(),
+    image: p.string().nullable(),
+    imageByAi: p.boolean().default(false),
+    sourceUrl: p.text().nullable(),
+    servings: p.double().nullable(),
+    yieldText: p.string().nullable(),
+    prepMinutes: p.integer().nullable(),
+    cookMinutes: p.integer().nullable(),
+    totalMinutes: p.integer().nullable(),
+    notes: p.text().nullable(),
+    /** 1 to 5. */
+    rating: p.smallint().nullable(),
+    nutrition: p.json<Nutrition>().nullable(),
+    /** The household's corrections to the diet labels worked out from the ingredients. */
+    dietOverrides: p.json<Record<string, boolean>>().nullable(),
+    origin: p.enum(RECIPE_ORIGINS),
+    lastMadeAt: p.datetime().nullable(),
+    /** Set while the recipe is in Recently deleted. */
+    deletedAt: p.datetime().nullable().index(),
+    createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+    ingredients: () =>
+      p
+        .oneToMany(RecipeIngredient)
+        .mappedBy("recipe")
+        .orderBy({ position: "asc" }),
+    steps: () =>
+      p.oneToMany(RecipeStep).mappedBy("recipe").orderBy({ position: "asc" }),
+  },
+  uniques: [{ properties: ["household", "slug"] }],
+  indexes: [{ properties: ["household", "sourceUrl"] }],
+  filters: { ...householdFilter, ...notDeletedFilter },
+})
+export type Recipe = InferEntity<typeof Recipe>
+
+/** The `recipe` property of a recipe's lines, steps and the like. */
+export const recipeRef = () =>
+  p.manyToOne(Recipe).ref().deleteRule("cascade").index()

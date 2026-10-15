@@ -3,7 +3,7 @@ import type { ErrorHandler, NotFoundHandler } from "hono"
 import { HTTPException } from "hono/http-exception"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import type { ZodError } from "zod"
-import type { AppEnv } from "../context.ts"
+import type { AppEnv } from "../core/context.ts"
 
 /** The one shape every error response has. */
 export const ErrorSchema = z

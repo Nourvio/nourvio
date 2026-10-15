@@ -1,0 +1,85 @@
+// One file per table, named after the table.
+
+import { Account } from "./accounts.ts"
+import { Aisle } from "./aisles.ts"
+import { CookNote } from "./cook_notes.ts"
+import { FoodPlacement } from "./food_placements.ts"
+import { HouseholdMember } from "./household_members.ts"
+import { Household } from "./households.ts"
+import { PantryItem } from "./pantry_items.ts"
+import { PlanEntry } from "./plan_entries.ts"
+import { Purchase } from "./purchases.ts"
+import { RecipeIngredient } from "./recipe_ingredients.ts"
+import { RecipePairing } from "./recipe_pairings.ts"
+import { RecipeStep } from "./recipe_steps.ts"
+import { RecipeTag } from "./recipe_tags.ts"
+import { RecipeVersion } from "./recipe_versions.ts"
+import { Recipe } from "./recipes.ts"
+import { Session } from "./sessions.ts"
+import { ShoppingItem } from "./shopping_items.ts"
+import { ShoppingList } from "./shopping_lists.ts"
+import { Tag } from "./tags.ts"
+import { User } from "./users.ts"
+import { Verification } from "./verifications.ts"
+import { WeeklyItem } from "./weekly_items.ts"
+
+export * from "./accounts.ts"
+export * from "./aisles.ts"
+export * from "./cook_notes.ts"
+export * from "./food_placements.ts"
+export * from "./household_members.ts"
+export * from "./households.ts"
+export * from "./pantry_items.ts"
+export * from "./plan_entries.ts"
+export * from "./purchases.ts"
+export * from "./recipe_ingredients.ts"
+export * from "./recipe_pairings.ts"
+export * from "./recipe_steps.ts"
+export * from "./recipe_tags.ts"
+export * from "./recipe_versions.ts"
+export * from "./recipes.ts"
+export * from "./sessions.ts"
+export * from "./shopping_items.ts"
+export * from "./shopping_lists.ts"
+export * from "./tags.ts"
+export * from "./users.ts"
+export * from "./verifications.ts"
+export * from "./weekly_items.ts"
+
+/** Every entity. A new one goes here, or the database won't know about it. */
+export const entities = [
+  Account,
+  Aisle,
+  CookNote,
+  FoodPlacement,
+  Household,
+  HouseholdMember,
+  PantryItem,
+  PlanEntry,
+  Purchase,
+  Recipe,
+  RecipeIngredient,
+  RecipePairing,
+  RecipeStep,
+  RecipeTag,
+  RecipeVersion,
+  Session,
+  ShoppingItem,
+  ShoppingList,
+  Tag,
+  User,
+  Verification,
+  WeeklyItem,
+]
+
+/**
+ * Tables that belong to no household. Every other table must be
+ * household-owned, which a test checks.
+ */
+export const SHARED_TABLES = [
+  "accounts",
+  "households",
+  "sessions",
+  "users",
+  "verifications",
+]
