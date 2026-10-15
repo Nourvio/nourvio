@@ -31,6 +31,8 @@ services:
       KROGER_CLIENT_SECRET: ${KROGER_CLIENT_SECRET:-}
       # The kokoro service below. Leave empty to not use it.
       KOKORO_URL: ${KOKORO_URL-http://kokoro:8880}
+      # Where the image is built from, so Mise can tell when there's an update.
+      MISE_BUILD_CONTEXT: ${MISE_BUILD_CONTEXT:-https://github.com/kjohnson2719/mise.git#main}
     ports:
       - "${MISE_PORT:-3000}:3000"
     volumes:

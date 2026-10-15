@@ -238,7 +238,7 @@ Our stores are Fry's, Costco and Walmart (see [roadmap.md](roadmap.md#milestone-
 - **Joining:** a household admin sends an invite link (single use, a week long), and the person makes their own account. Admins can also add someone directly with a username and password.
 - **Sign-up** is off by default. When the server admin turns it on, anyone who reaches Mise can create an account, which starts a new household.
 - **Household admins** invite, remove and reset people, rename the household and manage tidying up.
-- **The server admin** (whoever set Mise up) also manages the AI keys and models, sign-up, the list of households and the Mealie import. All households use the server's AI keys, and Settings shows each one's spending.
+- **The server admin** (whoever set Mise up) also manages the AI keys and models, sign-up, the list of households and the Mealie import. When there's a newer Mise on GitHub, they see an **Update** badge on Settings and a dot on their avatar; Settings → This server → Updates lists what's new and how to update in Dockge, and warns when the update changes compose.yaml. All households use the server's AI keys, and Settings shows each one's spending.
 - **Appearance is personal:** light, dark or follow the device, plus a choice of three palettes (Sage & Cream by default, Paprika & Linen, Cast Iron & Saffron). For now it's saved on each device. Once accounts exist it follows the person.
 - Reachable on the home network and from anywhere through a public URL.
 

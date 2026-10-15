@@ -32,6 +32,12 @@ export type AppContext = {
   krogerFetch?: typeof fetch
   /** How Kokoro (the read-aloud voice) is reached. Tests swap in a fake; defaults to fetch. */
   kokoroFetch?: typeof fetch
+  /** The update check: how GitHub is reached, and the build it compares. Tests swap these in. */
+  updates?: {
+    githubFetch?: typeof fetch
+    builtAt?: string | null
+    buildContext?: string
+  }
 }
 
 export type AppEnv = {

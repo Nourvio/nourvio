@@ -19,11 +19,13 @@ How Mise runs on the home server and why it's set up this way. Step-by-step setu
 
 - **The compose file builds straight from GitHub.** `build.context` is the repo URL (`https://github.com/kjohnson2719/mise.git#main` by default, or whatever `MISE_BUILD_CONTEXT` says). Docker clones that ref and builds the [`Dockerfile`](../Dockerfile), so the server needs no checkout and no registry.
 - **`pull_policy: build` rebuilds every time the stack starts.** That's what makes Dockge's Update button pick up new commits. Docker's build cache keeps the rebuild quick when little has changed.
-- **Pinning a version:** point `MISE_BUILD_CONTEXT` at a tag (`#v0.3.0`) or a commit.
-- **The Dockerfile has three stages:**
+- **Pinning a version:** point `MISE_BUILD_CONTEXT` at a tag (`#v0.3.0`) or a commit. A pinned server doesn't look for updates.
+- **"An update is ready":** the compose file passes `MISE_BUILD_CONTEXT` into the container, and the image stamps when its source was fetched (`BUILT_AT`). Every 6 hours Mise asks GitHub (no key: its public push history and a compare) what's been pushed to that branch since. Pushes that only touch docs or tests don't count. The server admin sees an **Update** badge on Settings and the changes in Settings → This server → Updates.
+- **The Dockerfile has four stages:**
   1. Build the web app with Vite.
   2. Install only the server's production dependencies, about 6 MB.
-  3. A `node:24-slim` runtime that runs the server's TypeScript directly. Node 24 strips the types, so there's no compile step.
+  3. Stamp the build time. It copies the whole build context first, so the stamp is reused when nothing in the image changed and redone when something did.
+  4. A `node:24-slim` runtime that runs the server's TypeScript directly. Node 24 strips the types, so there's no compile step.
 - **CI** ([`.github/workflows/ci.yml`](../.github/workflows/ci.yml)) typechecks, lints and builds every push, and also builds the Docker image, so a broken Dockerfile shows up on GitHub before a deploy does.
 
 ## Data

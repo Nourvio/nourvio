@@ -11,14 +11,17 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { useUpdateAvailable } from "@/features/settings/use-updates"
 
 import { isSectionActive, PRIMARY_NAV } from "./nav-items"
 
 export function AppSidebar() {
   const { pathname } = useLocation()
+  const updateReady = useUpdateAvailable()
 
   return (
     <Sidebar collapsible="icon" variant="inset">
@@ -63,13 +66,23 @@ export function AppSidebar() {
             <SidebarMenuButton
               asChild
               isActive={pathname.startsWith("/settings")}
-              tooltip="Settings"
+              tooltip={updateReady ? "Settings · update ready" : "Settings"}
             >
-              <NavLink to="/settings">
-                <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
+              <NavLink to={updateReady ? "/settings#updates" : "/settings"}>
+                <span className="relative flex">
+                  <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
+                  {updateReady && (
+                    <span className="absolute -top-0.5 -right-0.5 hidden size-2 rounded-full bg-primary ring-2 ring-sidebar group-data-[collapsible=icon]:block" />
+                  )}
+                </span>
                 <span>Settings</span>
               </NavLink>
             </SidebarMenuButton>
+            {updateReady && (
+              <SidebarMenuBadge className="rounded-full bg-primary px-2 text-primary-foreground peer-hover/menu-button:text-primary-foreground peer-data-active/menu-button:text-primary-foreground">
+                Update
+              </SidebarMenuBadge>
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

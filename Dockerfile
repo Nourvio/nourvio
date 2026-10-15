@@ -29,6 +29,13 @@ COPY apps/extension/package.json apps/extension/
 COPY packages/shared/package.json packages/shared/
 RUN npm ci --omit=dev --workspace @mise/server --ignore-scripts
 
+# ---- When this build's source was fetched, for "an update is available" ----
+# Copying the whole build context makes the stamp new whenever anything in
+# the image changes; it runs first, right after the source arrives.
+FROM node:24-slim AS stamp
+COPY . /src
+RUN date -u +%Y-%m-%dT%H:%M:%SZ > /built-at
+
 # ---- Runtime ----
 FROM node:24-slim
 ARG MISE_VERSION=dev
@@ -76,6 +83,7 @@ COPY apps/server apps/server
 COPY --from=build /app/apps/web/dist apps/web/dist
 COPY --from=build /app/apps/extension/release apps/extension/release
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/mise-entrypoint
+COPY --from=stamp /built-at BUILT_AT
 RUN mkdir -p /data
 
 EXPOSE 3000

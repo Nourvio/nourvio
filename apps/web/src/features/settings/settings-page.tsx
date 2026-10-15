@@ -38,7 +38,9 @@ import { ListsCard, OnHandCard, WeeklyCard } from "./shopping-cards"
 import { TastesCard } from "./tastes-card"
 import { TidyUpCard } from "./tidy-up-card"
 import { useAiStatus } from "./use-ai"
+import { UpdatesCard } from "./updates-card"
 import { useHouseholdInfo } from "./use-household"
+import { useUpdateAvailable, useUpdates } from "./use-updates"
 import { VoiceCard } from "./voice-card"
 
 type TabId = "you" | "household" | "shopping" | "library" | "server"
@@ -123,6 +125,7 @@ function TabbedSettings({
   target: Section | undefined
 }) {
   const [params, setParams] = useSearchParams()
+  const updateReady = useUpdateAvailable()
   const tabs = TABS.filter((tab) => sections.some((s) => s.tab === tab.id))
   const asked = tabs.find((tab) => tab.id === params.get("tab"))
   const current =
@@ -140,6 +143,12 @@ function TabbedSettings({
           {tabs.map((tab) => (
             <TabsTrigger key={tab.id} value={tab.id}>
               {tab.label}
+              {tab.id === "server" && updateReady && (
+                <span
+                  className="size-1.5 rounded-full bg-primary"
+                  aria-label="An update is ready"
+                />
+              )}
             </TabsTrigger>
           ))}
         </TabsList>
@@ -245,6 +254,7 @@ function useSections(): Section[] {
   const ai = useAiStatus().data
   const household = useHouseholdInfo().data
   const kroger = useShopStatus().data?.kroger
+  const updates = useUpdates().data
   const admin = me.role === "admin"
   const withAi = Boolean(ai?.available)
 
@@ -339,6 +349,18 @@ function useSections(): Section[] {
       tab: "library",
       hint: "Tidying up, nutrition and photos",
       cards: library,
+    },
+    me.isServerAdmin && {
+      id: "updates",
+      label: "Updates",
+      tab: "server",
+      hint:
+        updates?.state === "available"
+          ? `An update is ready: ${updates.changes.length} ${updates.changes.length === 1 ? "change" : "changes"}`
+          : updates?.state === "current"
+            ? "Up to date"
+            : "Whether there's a newer Mise",
+      cards: [{ id: "updates", card: <UpdatesCard /> }],
     },
     me.isServerAdmin && {
       id: "signup",

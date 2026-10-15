@@ -5,6 +5,7 @@ import { migrate } from "drizzle-orm/pglite/migrator"
 
 import { createApp } from "../app.ts"
 import { SetupCode } from "../auth/setup-code.ts"
+import type { AppContext } from "../context.ts"
 import type { Db } from "../db/client.ts"
 import { migrationsFolder } from "../db/migrate.ts"
 import * as schema from "../db/schema.ts"
@@ -28,6 +29,7 @@ export async function createTestApp({
   autoPhotos = false,
   krogerFetch,
   kokoroFetch,
+  updates,
 }: {
   fetcher?: Fetcher
   aiFactory?: AiProviderFactory
@@ -39,6 +41,7 @@ export async function createTestApp({
   autoPhotos?: boolean
   krogerFetch?: typeof fetch
   kokoroFetch?: typeof fetch
+  updates?: AppContext["updates"]
 } = {}) {
   const client = new PGlite({ extensions: { pg_trgm } })
   const pglite = drizzle({ client, schema, casing: "snake_case" })
@@ -61,6 +64,8 @@ export async function createTestApp({
     autoPhotos,
     krogerFetch,
     kokoroFetch,
+    // No GitHub in tests unless one asks for it.
+    updates: updates ?? { builtAt: null },
   })
   return { app, db, code, close: () => client.close() }
 }

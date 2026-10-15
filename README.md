@@ -126,6 +126,8 @@ The app rebuilds from the branch in `MISE_BUILD_CONTEXT` every time the stack st
 - **Dockge:** use **Update**, or stop and start the stack.
 - **Docker CLI:** `docker compose up -d --build`
 
+Mise tells you when there's something new: the server admin sees an **Update** badge on Settings, and Settings → This server → Updates lists the changes. When an update changes `compose.yaml`, it says so, since your stack keeps its own copy.
+
 To stay on a fixed version, point `MISE_BUILD_CONTEXT` at a tag or commit instead of `#main`.
 
 Database changes run automatically when the app starts. The nightly dumps are your way back if an update goes wrong.

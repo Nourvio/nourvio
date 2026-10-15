@@ -12,6 +12,7 @@ import { secureHeaders } from "hono/secure-headers"
 import { createAiService } from "./ai/service.ts"
 import { createNutritionService } from "./services/nutrition.ts"
 import { createShopService } from "./services/shop.ts"
+import { createUpdateService } from "./services/updates.ts"
 import { createVoiceService } from "./services/voice.ts"
 import { createPhotoService } from "./services/photos.ts"
 import { loadSession, requireUser } from "./auth/middleware.ts"
@@ -40,6 +41,7 @@ import { recipesRoutes } from "./routes/recipes.ts"
 import { serverRoutes } from "./routes/server.ts"
 import { setupRoutes } from "./routes/setup.ts"
 import { shopRoutes } from "./routes/shop.ts"
+import { updateRoutes } from "./routes/updates.ts"
 import { voiceRoutes } from "./routes/voice.ts"
 import { sitesRoutes } from "./routes/sites.ts"
 import { usersRoutes } from "./routes/users.ts"
@@ -74,6 +76,7 @@ export function createApp(ctx: AppContext) {
   const photos = createPhotoService(ctx.db, ai, { auto: ctx.autoPhotos })
   const shop = createShopService(ctx.db, ai, { krogerFetch: ctx.krogerFetch })
   const voice = createVoiceService(ctx.db, ai, { kokoroFetch: ctx.kokoroFetch })
+  const updates = createUpdateService(ctx.updates)
 
   app.use(secureHeaders())
   // Compression would hold back a streaming chat reply, so skip it there.
@@ -118,6 +121,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/discover", discoverRoutes(ctx, ai))
   app.route("/api/sites", sitesRoutes(ctx))
   app.route("/api/voice", voiceRoutes(voice))
+  app.route("/api/updates", updateRoutes(updates))
   app.route("/api/shop", shopRoutes(ctx, shop))
   app.route("/api/extension", extensionRoutes(ctx))
   app.route("/api/plan", planRoutes(ctx))
