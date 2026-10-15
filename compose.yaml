@@ -29,6 +29,8 @@ services:
       USDA_API_KEY: ${USDA_API_KEY:-}
       KROGER_CLIENT_ID: ${KROGER_CLIENT_ID:-}
       KROGER_CLIENT_SECRET: ${KROGER_CLIENT_SECRET:-}
+      # The kokoro service below. Leave empty to not use it.
+      KOKORO_URL: ${KOKORO_URL-http://kokoro:8880}
     ports:
       - "${MISE_PORT:-3000}:3000"
     volumes:
@@ -76,6 +78,16 @@ services:
           find /backups -name 'mise-*.dump' -mtime +$$BACKUP_KEEP_DAYS -delete
           sleep 86400
         done
+
+  # Reads recipe steps aloud in hands-free cook mode, in a natural voice
+  # (Kokoro, an open voice model). Free, and nothing leaves your server.
+  # Settings → This server → Voice picks it, OpenAI, or each device's own.
+  # It needs about 1-2 GB of disk and RAM. Not wanted? Delete this service and
+  # set KOKORO_URL= (empty) in .env.
+  kokoro:
+    image: ghcr.io/remsky/kokoro-fastapi-cpu:latest
+    restart: unless-stopped
+    # No published ports: only Mise talks to it.
 
   # Optional: a Cloudflare Tunnel, for reaching Mise from outside your network.
   # Set TUNNEL_TOKEN in .env, then delete the `profiles` line below

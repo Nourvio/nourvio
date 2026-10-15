@@ -18,6 +18,14 @@ const IMAGE_MODELS = [
 /** The first image model that worked, tried first next time. */
 let imageModel: string | null = null
 
+/** Speech models, best first: the newer one takes directions on how to sound. */
+export const SPEECH_MODELS = ["gpt-4o-mini-tts", "tts-1"]
+let speechModel: string | null = null
+
+/** How the newer speech model reads a recipe step. */
+const SPEECH_STYLE =
+  "A warm, unhurried cooking teacher reading a recipe step aloud in a home kitchen. Clear and friendly, never rushed, with a short pause between sentences."
+
 function modelMissing(error: unknown) {
   return (
     error instanceof OpenAI.APIError &&
@@ -287,6 +295,31 @@ export function createOpenAiProvider(apiKey: string): AiProvider {
       } catch (error) {
         throw providerError("openai", error)
       }
+    },
+
+    async speak(text, voice) {
+      const models = speechModel
+        ? [speechModel, ...SPEECH_MODELS.filter((m) => m !== speechModel)]
+        : SPEECH_MODELS
+      let lastError: unknown
+      for (const model of models) {
+        try {
+          const result = await client.audio.speech.create({
+            model,
+            voice,
+            input: text,
+            response_format: "mp3",
+            ...(model === "tts-1" ? {} : { instructions: SPEECH_STYLE }),
+          })
+          speechModel = model
+          return { audio: Buffer.from(await result.arrayBuffer()), model }
+        } catch (error) {
+          lastError = error
+          if (modelMissing(error)) continue
+          throw providerError("openai", error)
+        }
+      }
+      throw providerError("openai", lastError)
     },
 
     async generateImage(prompt) {

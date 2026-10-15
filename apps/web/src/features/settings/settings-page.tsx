@@ -39,6 +39,7 @@ import { TastesCard } from "./tastes-card"
 import { TidyUpCard } from "./tidy-up-card"
 import { useAiStatus } from "./use-ai"
 import { useHouseholdInfo } from "./use-household"
+import { VoiceCard } from "./voice-card"
 
 type TabId = "you" | "household" | "shopping" | "library" | "server"
 
@@ -367,6 +368,13 @@ function useSections(): Section[] {
         { id: "kroger", card: <KrogerAppCard /> },
         { id: "nutrition-data", card: <NutritionCard /> },
       ],
+    },
+    me.isServerAdmin && {
+      id: "voice",
+      label: "Voice",
+      tab: "server",
+      hint: "How cook mode reads aloud",
+      cards: [{ id: "voice", card: <VoiceCard /> }],
     },
     me.isServerAdmin && {
       id: "mealie",

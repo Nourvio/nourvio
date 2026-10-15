@@ -83,6 +83,7 @@ Set these in `.env`, next to `compose.yaml`. Only `POSTGRES_PASSWORD` is require
 | `MISE_SECRET` | none | Encrypts API keys saved in the app. If empty, Mise creates a random one in `data/app/secret`. |
 | `YTDLP_AUTO_UPDATE` | `true` | Mise updates its copy of yt-dlp (which reads video links) at startup and weekly. Set to `false` to stop that. |
 | `USDA_API_KEY` | none | FoodData Central key for calculated nutrition, free from [api.data.gov](https://api.data.gov/signup/). Can also be added in Settings. |
+| `KOKORO_URL` | `http://kokoro:8880` | Where the `kokoro` service answers: cook mode's free read-aloud voice. Set it empty (`KOKORO_URL=`) if you remove that service. |
 | `KROGER_CLIENT_ID` / `KROGER_CLIENT_SECRET` | none | A free Kroger developer app, for sending the list to Fry's and other Kroger stores. Can also be added in Settings → Kroger, which shows the redirect URI to register (`PUBLIC_URL` + `/api/shop/kroger/callback`). |
 | `TUNNEL_TOKEN` | none | Cloudflare Tunnel token, only if you enable the tunnel (below) |
 

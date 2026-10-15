@@ -40,10 +40,13 @@ export function handsFreeSupported() {
  */
 export function useHandsFree({
   enabled,
+  serverVoice = false,
   onCommand,
   onDenied,
 }: {
   enabled: boolean
+  /** The server reads aloud (Kokoro or OpenAI) instead of the device's voice. */
+  serverVoice?: boolean
   onCommand: (command: CookCommand) => void
   /** The microphone was refused. */
   onDenied: () => void
@@ -53,11 +56,72 @@ export function useHandsFree({
   const recognition = React.useRef<Recognition | null>(null)
   const speaking = React.useRef(false)
   const enabledRef = React.useRef(enabled)
+  const serverRef = React.useRef(serverVoice)
   const handlers = React.useRef({ onCommand, onDenied })
   React.useEffect(() => {
     enabledRef.current = enabled
+    serverRef.current = serverVoice
     handlers.current = { onCommand, onDenied }
   })
+
+  // The server's voice plays through one AudioContext, which the tap that
+  // turns hands-free on unlocks, so later steps can play by themselves
+  // (phones only allow sound that a tap started).
+  const audio = React.useRef<AudioContext | null>(null)
+  const playing = React.useRef<AudioBufferSourceNode | null>(null)
+  const clips = React.useRef(new Map<string, Promise<AudioBuffer>>())
+  /** Each thing said takes a turn; a newer one cancels the older. */
+  const turn = React.useRef(0)
+  React.useEffect(
+    () => () => {
+      void audio.current?.close().catch(() => {})
+    },
+    []
+  )
+
+  const context = React.useCallback(() => {
+    if (!audio.current) {
+      const Context =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext
+      audio.current = new Context()
+    }
+    return audio.current
+  }, [])
+
+  /** The server's reading of some text, fetched once a visit. */
+  const clip = React.useCallback(
+    (spoken: string) => {
+      let found = clips.current.get(spoken)
+      if (!found) {
+        found = fetch("/api/voice/speak", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ text: spoken }),
+        })
+          .then((res) => {
+            if (!res.ok) throw new Error(`The server voice said ${res.status}`)
+            return res.arrayBuffer()
+          })
+          .then((data) => context().decodeAudioData(data))
+        found.catch(() => clips.current.delete(spoken))
+        clips.current.set(spoken, found)
+      }
+      return found
+    },
+    [context]
+  )
+
+  const stopClip = React.useCallback(() => {
+    try {
+      playing.current?.stop()
+    } catch {
+      // Not started, or done.
+    }
+    playing.current = null
+  }, [])
 
   const listen = React.useCallback(() => {
     try {
@@ -114,53 +178,109 @@ export function useHandsFree({
         // Already stopped.
       }
       window.speechSynthesis?.cancel()
+      try {
+        playing.current?.stop()
+      } catch {
+        // Not playing.
+      }
       setListening(false)
       setHeard(null)
     }
   }, [enabled, listen])
 
-  /** Reads text aloud, pausing listening meanwhile. */
+  /**
+   * Reads text aloud, pausing listening meanwhile: in the server's voice
+   * when there is one (the device's voice fills in if it fails or takes too
+   * long), else the device's.
+   */
   const speak = React.useCallback(
     (text: string) => {
-      if (!("speechSynthesis" in window) || !text.trim()) return
-      window.speechSynthesis.cancel()
+      if (!text.trim()) return
+      const spoken = forSpeech(text)
+      const mine = ++turn.current
+      window.speechSynthesis?.cancel()
+      stopClip()
       speaking.current = true
       try {
         recognition.current?.abort()
       } catch {
         // Not listening.
       }
-      const utterance = new SpeechSynthesisUtterance(forSpeech(text))
-      // The voice chosen on this device, or the best one it has.
-      const voice = chosenVoice()
-      if (voice) utterance.voice = voice
-      utterance.lang = voice?.lang ?? readingLanguage()
+
       let done = false
+      let fallback: ReturnType<typeof setTimeout> | undefined
       const finished = () => {
         if (done) return
         done = true
         clearTimeout(fallback)
+        // Something newer is being said; it carries on from here.
+        if (turn.current !== mine) return
         speaking.current = false
         if (enabledRef.current) listen()
       }
       // Some browsers never say they've finished (no voices installed, say):
-      // listen again after about as long as it would take to read.
-      const fallback = setTimeout(
-        finished,
-        Math.min(60_000, 1500 + text.length * 90)
+      // listen again after about as long as it takes to read.
+      const listenAfter = (ms: number) => {
+        clearTimeout(fallback)
+        fallback = setTimeout(finished, ms)
+      }
+      const onDevice = () => {
+        if (done || turn.current !== mine) return
+        if (!("speechSynthesis" in window)) return finished()
+        listenAfter(Math.min(60_000, 1500 + spoken.length * 90))
+        const utterance = new SpeechSynthesisUtterance(spoken)
+        // The voice chosen on this device, or the best one it has.
+        const voice = chosenVoice()
+        if (voice) utterance.voice = voice
+        utterance.lang = voice?.lang ?? readingLanguage()
+        utterance.onend = finished
+        utterance.onerror = finished
+        window.speechSynthesis.speak(utterance)
+      }
+
+      if (!serverRef.current) return onDevice()
+      const sound = context()
+      // While this may still be the tap that asked, so phones allow it.
+      if (sound.state === "suspended") void sound.resume().catch(() => {})
+      const tooSlow = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("The server voice took too long")),
+          20_000
+        )
       )
-      utterance.onend = finished
-      utterance.onerror = finished
-      window.speechSynthesis.speak(utterance)
+      Promise.race([clip(spoken), tooSlow])
+        .then((buffer) => {
+          if (done || turn.current !== mine) return
+          const source = sound.createBufferSource()
+          source.buffer = buffer
+          source.connect(sound.destination)
+          source.onended = finished
+          playing.current = source
+          listenAfter(buffer.duration * 1000 + 1500)
+          source.start()
+        })
+        .catch(onDevice)
     },
-    [listen]
+    [listen, clip, context, stopClip]
+  )
+
+  /** Gets the server's reading of some text ready, so it plays straight away when wanted. */
+  const prepare = React.useCallback(
+    (text: string) => {
+      if (serverRef.current && text.trim()) {
+        clip(forSpeech(text)).catch(() => {})
+      }
+    },
+    [clip]
   )
 
   const stopSpeaking = React.useCallback(() => {
+    turn.current++
+    stopClip()
     window.speechSynthesis?.cancel()
-  }, [])
+  }, [stopClip])
 
-  return { listening, heard, speak, stopSpeaking }
+  return { listening, heard, speak, prepare, stopSpeaking }
 }
 
 const SPOKEN_UNITS: [RegExp, string][] = [

@@ -1,5 +1,8 @@
 import * as React from "react"
-import { goodVoices } from "@mise/shared"
+import { goodVoices, type VoiceStatus } from "@mise/shared"
+import { useQuery } from "@tanstack/react-query"
+
+import { api } from "@/lib/api"
 
 const VOICE_KEY = "mise.cookVoice"
 const listeners = new Set<() => void>()
@@ -77,4 +80,15 @@ export function testVoice(choice?: string) {
   if (voice) utterance.voice = voice
   utterance.lang = voice?.lang ?? readingLanguage()
   window.speechSynthesis.speak(utterance)
+}
+
+export const VOICE_KEY_QUERY = ["voice"] as const
+
+/** Whether the server reads aloud (Kokoro or OpenAI), rather than the device. */
+export function useServerVoice() {
+  return useQuery({
+    queryKey: VOICE_KEY_QUERY,
+    queryFn: async () => (await api<{ status: VoiceStatus }>("/voice")).status,
+    staleTime: 5 * 60_000,
+  })
 }

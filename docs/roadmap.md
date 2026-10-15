@@ -191,7 +191,7 @@ Build order, a commit for each:
 
 ## Milestone 10: A better cook-mode voice
 
-**Status:** Part 1 built October 14, 2026; Part 2 planned. The user found hands-free cook mode's narrator robotic and asked for something like ElevenLabs, ideally free and without another API key.
+**Status:** built October 14, 2026. Tested with a stand-in Kokoro and OpenAI (the real Kokoro container runs once the Dockge stack is redeployed). The user found hands-free cook mode's narrator robotic and asked for something like ElevenLabs, ideally free and without another API key.
 
 Why it sounds bad today: cook mode never picks a voice, so it gets the browser's default, usually the oldest, most robotic one on the device.
 

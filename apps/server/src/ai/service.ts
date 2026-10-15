@@ -34,6 +34,8 @@ import type {
 
 /** What a web search costs on top of tokens: $10 per 1,000 at both providers (October 2026). */
 const WEB_SEARCH_USD = 0.01
+/** OpenAI's newer speech model, per minute of audio. Checked October 2026. */
+const SPEECH_USD_PER_MINUTE = 0.015
 
 const SETTINGS_KEY = "ai"
 
@@ -321,6 +323,48 @@ export function createAiService(
     return null
   }
 
+  /** Whether a configured provider can read aloud (OpenAI). */
+  async function canSpeak() {
+    const available = await keys()
+    return AI_PROVIDERS.some(
+      (id) => available[id] && factory(id, available[id]!.key).speak
+    )
+  }
+
+  /**
+   * Text read aloud as MP3, with whichever configured provider can (OpenAI).
+   * Records roughly what it cost: speech is priced by the minute (or, for
+   * the older model, by the character), not by tokens.
+   */
+  async function speak(actor: AiActor, text: string, voice: string) {
+    const available = await keys()
+    for (const id of AI_PROVIDERS) {
+      const found = available[id]
+      if (!found) continue
+      const provider = factory(id, found.key)
+      if (!provider.speak) continue
+      const { audio, model } = await provider.speak(text, voice)
+      const minutes = text.split(/\s+/).length / 150
+      await db.insert(aiUsage).values({
+        ...actor,
+        provider: id,
+        model,
+        task: "voice",
+        inputTokens: Math.ceil(text.length / 4),
+        outputTokens: 0,
+        costUsd:
+          model === "tts-1"
+            ? (text.length * 15) / 1_000_000
+            : minutes * SPEECH_USD_PER_MINUTE,
+      })
+      return audio
+    }
+    throw new HttpError(
+      400,
+      "Reading aloud with OpenAI needs an OpenAI key. The server admin can add one in Settings → AI."
+    )
+  }
+
   /**
    * A picture from a description, with whichever configured provider can
    * make one (OpenAI). Records what it cost.
@@ -374,6 +418,8 @@ export function createAiService(
   }
 
   return {
+    canSpeak,
+    speak,
     getSettings,
     updateSettings,
     status,

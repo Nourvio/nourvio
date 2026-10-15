@@ -30,6 +30,8 @@ export type AppContext = {
   autoPhotos?: boolean
   /** How Kroger's API is reached. Tests swap in a fake; defaults to fetch. */
   krogerFetch?: typeof fetch
+  /** How Kokoro (the read-aloud voice) is reached. Tests swap in a fake; defaults to fetch. */
+  kokoroFetch?: typeof fetch
 }
 
 export type AppEnv = {

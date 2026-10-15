@@ -64,7 +64,13 @@ import { storedChoice } from "@/lib/stored-choice"
 import { cn } from "@/lib/utils"
 
 import { handsFreeSupported, spokenDuration, useHandsFree } from "./hands-free"
-import { readingLanguage, testVoice, useVoiceChoice, useVoices } from "./voices"
+import {
+  readingLanguage,
+  testVoice,
+  useServerVoice,
+  useVoiceChoice,
+  useVoices,
+} from "./voices"
 import { ingredientsInStep, splitDurations } from "./step-text"
 import { NewTimerButton, startTimer, TimerChips } from "./timers"
 import { useWakeLock } from "./use-wake-lock"
@@ -333,14 +339,21 @@ function CookView({
     )
     return `${amount}${rest}`.trim()
   }
-  const pageText = () =>
-    onPrep
-      ? `Get ready. Gather ${allIngredients.length} ingredients. Say "ingredients" to hear them, or "next" to start.`
-      : step
-        ? `Step ${stepIndex + 1}. ${step.text}`
-        : "This recipe has no steps yet."
+  const textForPage = (page: number) => {
+    if (hasPrep && page === 0) {
+      return `Get ready. Gather ${allIngredients.length} ingredients. Say "ingredients" to hear them, or "next" to start.`
+    }
+    const number = page - (hasPrep ? 1 : 0)
+    const pageStep = steps[number]
+    return pageStep
+      ? `Step ${number + 1}. ${pageStep.text}`
+      : "This recipe has no steps yet."
+  }
+  const pageText = () => textForPage(index)
+  const serverVoice = useServerVoice().data?.server ?? false
   const voice = useHandsFree({
     enabled: handsFree,
+    serverVoice,
     onDenied: () => {
       setHandsFree(false)
       toast.error(
@@ -426,6 +439,8 @@ function CookView({
     if (!handsFree || lastRead.current === index) return
     lastRead.current = index
     voice.speak(pageText())
+    // The server voice gets the next step ready while this one is read.
+    if (index + 1 < pages) voice.prepare(textForPage(index + 1))
     // pageText reads the page for `index`; only a page change reads again.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [handsFree, index])
@@ -839,6 +854,7 @@ function TextSizeMenu({
 /** Which of the device's voices reads steps aloud, with a sentence to try it. */
 function VoiceChoices() {
   const voices = useVoices()
+  const server = useServerVoice().data?.server ?? false
   const [choice, setChoice] = useVoiceChoice()
   const options = goodVoices(voices, readingLanguage())
   const best = options[0]
@@ -851,6 +867,11 @@ function VoiceChoices() {
     <>
       <DropdownMenuSeparator />
       <DropdownMenuLabel>Voice</DropdownMenuLabel>
+      {server && (
+        <p className="px-2 pb-1 text-xs text-muted-foreground">
+          This server reads steps in its own voice. These fill in when it can't.
+        </p>
+      )}
       {options.length ? (
         <>
           <DropdownMenuRadioGroup value={value} onValueChange={setChoice}>

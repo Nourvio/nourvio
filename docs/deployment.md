@@ -12,6 +12,7 @@ How Mise runs on the home server and why it's set up this way. Step-by-step setu
 | `mise` | built from this repo | Serves the web app and the API on port 3000 |
 | `db` | `postgres:18` | The database. It has no published port, so only the app can reach it. |
 | `db-backup` | `postgres:18` | Runs `pg_dump` once a day into `./data/backups` |
+| `kokoro` | `ghcr.io/remsky/kokoro-fastapi-cpu` | Reads recipe steps aloud in hands-free cook mode, in a natural voice (Kokoro, an open voice model). About 1 to 2 GB of disk and RAM; to go without it, delete the service and set `KOKORO_URL=` (empty) |
 | `cloudflared` | `cloudflare/cloudflared` | Optional Cloudflare Tunnel, off by default |
 
 ## How the image gets built
@@ -31,7 +32,7 @@ Everything persistent is a bind mount under `./data`, next to the compose file, 
 
 | Path on the host | Mounted at | Holds |
 |---|---|---|
-| `data/app` | `/data` in `mise` | Recipe photos, and later the signing/encryption key (`secret`) |
+| `data/app` | `/data` in `mise` | Recipe photos, cook mode's read-aloud audio (`voice/`), and the signing/encryption key (`secret`) |
 | `data/postgres` | `/var/lib/postgresql` in `db` | The database files |
 | `data/backups` | `/backups` in `db-backup` | Nightly dumps, `mise-YYYY-MM-DD.dump` |
 

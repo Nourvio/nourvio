@@ -20,8 +20,11 @@ export const AI_TASKS = [
 ] as const
 export type AiTask = (typeof AI_TASKS)[number]
 
-/** What usage is recorded against: the tasks above, plus making photos (an image model, not picked per task). */
-export type AiUsageTask = AiTask | "photos"
+/**
+ * What usage is recorded against: the tasks above, plus making photos and
+ * reading aloud (their own models, not picked per task).
+ */
+export type AiUsageTask = AiTask | "photos" | "voice"
 
 export const AI_TASK_NAMES: Record<AiTask, string> = {
   import: "Importing recipes",

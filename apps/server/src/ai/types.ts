@@ -43,6 +43,8 @@ export interface AiProvider {
     audio: Buffer,
     filename: string
   ): Promise<{ text: string; model: string; usage: AiUsage }>
+  /** Text read aloud, as MP3. Only OpenAI has this; Claude doesn't speak. */
+  speak?(text: string, voice: string): Promise<{ audio: Buffer; model: string }>
   /** A picture from a description. Only OpenAI has this; Claude doesn't make images. */
   generateImage?(
     prompt: string
