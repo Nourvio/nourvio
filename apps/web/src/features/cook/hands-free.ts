@@ -1,6 +1,8 @@
 import * as React from "react"
 import { parseCookCommand, type CookCommand } from "@mise/shared"
 
+import { chosenVoice, readingLanguage } from "./voices"
+
 // The Web Speech API isn't in TypeScript's DOM types everywhere, so just
 // what's used here.
 type RecognitionResult = { isFinal: boolean; 0: { transcript: string } }
@@ -129,7 +131,10 @@ export function useHandsFree({
         // Not listening.
       }
       const utterance = new SpeechSynthesisUtterance(forSpeech(text))
-      utterance.lang = navigator.language || "en-US"
+      // The voice chosen on this device, or the best one it has.
+      const voice = chosenVoice()
+      if (voice) utterance.voice = voice
+      utterance.lang = voice?.lang ?? readingLanguage()
       let done = false
       const finished = () => {
         if (done) return

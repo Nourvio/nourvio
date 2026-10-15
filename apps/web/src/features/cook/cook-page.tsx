@@ -7,10 +7,13 @@ import {
   Mic01Icon,
   TextFontIcon,
   Timer02Icon,
+  VolumeHighIcon,
 } from "@hugeicons/core-free-icons"
 import {
   formatIngredient,
+  goodVoices,
   pairRecipes,
+  voiceLabel,
   type CookCommand,
   type Recipe,
   type RecipeIngredient,
@@ -35,9 +38,11 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Spinner } from "@/components/ui/spinner"
@@ -59,6 +64,7 @@ import { storedChoice } from "@/lib/stored-choice"
 import { cn } from "@/lib/utils"
 
 import { handsFreeSupported, spokenDuration, useHandsFree } from "./hands-free"
+import { readingLanguage, testVoice, useVoiceChoice, useVoices } from "./voices"
 import { ingredientsInStep, splitDurations } from "./step-text"
 import { NewTimerButton, startTimer, TimerChips } from "./timers"
 import { useWakeLock } from "./use-wake-lock"
@@ -802,13 +808,15 @@ function TextSizeMenu({
         <Button
           variant="outline"
           size="icon"
-          aria-label="Text size"
-          title="Text size"
+          aria-label={
+            handsFreeSupported() ? "Text size and voice" : "Text size"
+          }
+          title={handsFreeSupported() ? "Text size and voice" : "Text size"}
         >
           <HugeiconsIcon icon={TextFontIcon} strokeWidth={2} />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
+      <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuLabel>Text size</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={value}
@@ -822,7 +830,65 @@ function TextSizeMenu({
             Extra large
           </DropdownMenuRadioItem>
         </DropdownMenuRadioGroup>
+        {handsFreeSupported() && <VoiceChoices />}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+/** Which of the device's voices reads steps aloud, with a sentence to try it. */
+function VoiceChoices() {
+  const voices = useVoices()
+  const [choice, setChoice] = useVoiceChoice()
+  const options = goodVoices(voices, readingLanguage())
+  const best = options[0]
+  // A voice chosen before that's no longer offered still shows as picked.
+  const value =
+    choice === "auto" || options.some((v) => v.voiceURI === choice)
+      ? choice
+      : "auto"
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuLabel>Voice</DropdownMenuLabel>
+      {options.length ? (
+        <>
+          <DropdownMenuRadioGroup value={value} onValueChange={setChoice}>
+            <DropdownMenuRadioItem value="auto">
+              <span className="grid">
+                Best on this device
+                {best && (
+                  <span className="text-xs text-muted-foreground">
+                    {voiceLabel(best)}
+                  </span>
+                )}
+              </span>
+            </DropdownMenuRadioItem>
+            {options.map((voice) => (
+              <DropdownMenuRadioItem
+                key={voice.voiceURI}
+                value={voice.voiceURI}
+              >
+                {voiceLabel(voice)}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+          <DropdownMenuItem
+            onSelect={(event) => {
+              // Stay open, to try another.
+              event.preventDefault()
+              testVoice(value)
+            }}
+          >
+            <HugeiconsIcon icon={VolumeHighIcon} strokeWidth={2} />
+            Test voice
+          </DropdownMenuItem>
+        </>
+      ) : (
+        <p className="px-2 pb-2 text-sm text-muted-foreground">
+          This device has no voices for reading aloud.
+        </p>
+      )}
+    </>
   )
 }

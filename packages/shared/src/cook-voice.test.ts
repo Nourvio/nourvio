@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest"
 
-import { parseCookCommand } from "./cook-voice.ts"
+import {
+  goodVoices,
+  parseCookCommand,
+  voiceLabel,
+  voiceScore,
+} from "./cook-voice.ts"
 
 describe("parseCookCommand", () => {
   test("reads the short commands, with or without filler", () => {
@@ -68,5 +73,62 @@ describe("parseCookCommand", () => {
       kind: "howMuch",
       food: "butter",
     })
+  })
+})
+
+describe("choosing a voice", () => {
+  const voice = (name: string, lang = "en-US", isDefault = false) => ({
+    name,
+    lang,
+    default: isDefault,
+  })
+  const voices = [
+    voice("Microsoft David - English (United States)", "en-US", true),
+    voice("Microsoft Aria Online (Natural) - English (United States)"),
+    voice("Google US English"),
+    voice("Google UK English Female", "en-GB"),
+    voice("Zarvox"),
+    voice("Bad News"),
+    voice("Ava (Premium)"),
+    voice("Amélie", "fr-CA"),
+  ]
+
+  test("natural voices first, then Google's, then the rest", () => {
+    expect(goodVoices(voices, "en-US").map((v) => v.name)).toEqual([
+      "Ava (Premium)",
+      "Microsoft Aria Online (Natural) - English (United States)",
+      "Google US English",
+      "Google UK English Female",
+      "Microsoft David - English (United States)",
+    ])
+  })
+
+  test("leaves out joke voices and other languages", () => {
+    const names = goodVoices(voices, "en-US").map((v) => v.name)
+    expect(names).not.toContain("Zarvox")
+    expect(names).not.toContain("Bad News")
+    expect(names).not.toContain("Amélie")
+    expect(voiceScore(voice("Amélie", "fr-CA"), "en-US")).toBe(-1)
+  })
+
+  test("prefers the exact language when quality is equal", () => {
+    expect(
+      goodVoices(
+        [
+          voice("Google UK English Female", "en-GB"),
+          voice("Google US English"),
+        ],
+        "en-US"
+      )[0]!.name
+    ).toBe("Google US English")
+  })
+
+  test("short labels", () => {
+    expect(
+      voiceLabel(
+        voice("Microsoft Aria Online (Natural) - English (United States)")
+      )
+    ).toBe("Aria Online (Natural)")
+    expect(voiceLabel(voice("Google US English"))).toBe("US English")
   })
 })

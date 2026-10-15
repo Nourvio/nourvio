@@ -189,6 +189,26 @@ Build order, a commit for each:
 
 **Done when:** soda and chicken land on the Costco list by themselves, and Send to Fry's sends only the rest.
 
+## Milestone 10: A better cook-mode voice
+
+**Status:** Part 1 built October 14, 2026; Part 2 planned. The user found hands-free cook mode's narrator robotic and asked for something like ElevenLabs, ideally free and without another API key.
+
+Why it sounds bad today: cook mode never picks a voice, so it gets the browser's default, usually the oldest, most robotic one on the device.
+
+**Part 1: the best voice on each device** (free, nothing to set up)
+- Mise ranks the device's voices for the reading language and picks the best: Microsoft's "Natural" voices in Edge, Siri-grade "Premium" and "Enhanced" voices on Apple devices, then Google's. Novelty voices are skipped.
+- The cook view's text menu gets a **Voice** choice: "Best on this device" (the default) or any good voice for the language, with **Test voice**. It's remembered on each device.
+- Limits: Chrome and Firefox on Windows only have the old voices, and Apple's best ones need downloading in Settings → Accessibility → Spoken Content.
+
+**Part 2: a server voice** (free with Kokoro, or OpenAI with the key that's already there)
+- **Kokoro**: an open voice model (Apache 2.0) that sounds close to commercial ones, run as an optional container beside Mise (`ghcr.io/remsky/kokoro-fastapi-cpu`, an OpenAI-style `POST /v1/audio/speech` on port 8880). The compose file gets it as an optional service.
+- **OpenAI** (`gpt-4o-mini-tts`) as the alternative, told to sound like a warm, unhurried cooking teacher: about 2 to 5¢ to read a whole recipe once, counted in AI usage.
+- Settings → This server (server admin): Voice: this device's / Kokoro (its address and voice, with Test) / OpenAI (its voice).
+- `POST /api/voice/speak` returns the audio for some text. Audio is saved by provider, voice and text, so each step is made once and cooking a recipe again is instant (and free with OpenAI).
+- The cook view plays it, getting the next step's audio ready while the current one is read (Kokoro on an older CPU takes a few seconds to start), and pauses listening for commands meanwhile. When the server voice fails, it falls back to the device's voice.
+
+**Done when:** cooking hands-free in Chrome on Windows sounds like a person, not a 2005 GPS, and turning the server voice off goes back to the device's best voice.
+
 ## Later, maybe
 
 - Meaning-based recipe search with `pgvector` ("something cozy with chicken")
