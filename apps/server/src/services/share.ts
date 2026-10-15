@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { sharedLink, type ShareResult } from "@mise/shared"
+import { sharedLink, sharedLinks, type ShareResult } from "@mise/shared"
 
 import type { AiActor, AiService } from "../ai/service.ts"
 import type { AiPart } from "../ai/types.ts"
@@ -56,21 +56,29 @@ function pageAddress(html: string) {
 const isHtml = (text: string) =>
   /^\s*(<!doctype html|<html|<head)/i.test(text.slice(0, 1000))
 
+/** The links in some shared text: several, one, or none. */
+function textLinks(text: string | null) {
+  const one = sharedLink(text)
+  return sharedLinks(text) ?? (one ? [one] : [])
+}
+
 /**
- * The link in a share, when sharing a link is the point: in the text, or in
- * the files a Shortcut made of it (a text file with the address, a .webloc,
- * or the web page itself, whose own address it carries). A picture that
- * comes along is the link's preview; a PDF, or only a long text like a
- * receipt, means it isn't a link.
+ * The links in a share, when sharing links is the point: in the text, or in
+ * the files a Shortcut made of them (a text file with the address, a
+ * .webloc, or the web page itself, whose own address it carries). Usually
+ * one; several start a bulk import. A picture that comes along is the
+ * link's preview; a PDF, or only a long text like a receipt, means it isn't
+ * links. The files win over the text, which may be the same link again.
  */
-export function linkIn(shared: { files: ReceiptFiles; text: string | null }) {
-  if (shared.files.some(isPdf)) return null
-  for (const file of shared.files.filter(isTextLike)) {
+export function linksIn(shared: { files: ReceiptFiles; text: string | null }) {
+  if (shared.files.some(isPdf)) return []
+  const fromFiles = shared.files.filter(isTextLike).flatMap((file) => {
     const content = file.buffer.toString("utf8")
-    const found = isHtml(content) ? pageAddress(content) : sharedLink(content)
-    if (found) return found
-  }
-  return sharedLink(shared.text)
+    if (!isHtml(content)) return textLinks(content)
+    const address = pageAddress(content)
+    return address ? [address] : []
+  })
+  return [...new Set(fromFiles.length ? fromFiles : textLinks(shared.text))]
 }
 
 /** What came through, for "Mise couldn't tell what that was". */
@@ -179,7 +187,7 @@ export function createShareService(
       )
     }
     waiting.delete(id)
-    const link = linkIn(kept)
+    const [link] = linksIn(kept)
     if (link) return { kind: "link", link }
 
     const { draft, what } = await receipts.read(actor, kept)

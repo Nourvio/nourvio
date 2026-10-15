@@ -3,18 +3,25 @@ import { bodyLimit } from "hono/body-limit"
 
 import { requireUser } from "../auth/middleware.ts"
 import { currentHousehold, currentUser, type AppEnv } from "../context.ts"
-import { linkIn, type ShareService } from "../services/share.ts"
+import type { ImportBatchService } from "../services/import-batches.ts"
+import { linksIn, type ShareService } from "../services/share.ts"
 import type { SignInLinks } from "../services/sign-in-links.ts"
 import { openLink, readUpload } from "./uploads.ts"
 
 /** Photos, screenshots and PDFs, together. */
 const MAX_UPLOAD = 40 * 1024 * 1024
+/** Links imported from one share, as a bulk import allows. */
+const MAX_LINKS = 100
 
 /**
  * Sharing anything into Mise, from an iPhone Shortcut (with a key) or
  * Android: hand it over, then open the link that comes back.
  */
-export function shareRoutes(share: ShareService, signInLinks: SignInLinks) {
+export function shareRoutes(
+  share: ShareService,
+  signInLinks: SignInLinks,
+  batches: ImportBatchService
+) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
 
@@ -30,11 +37,21 @@ export function shareRoutes(share: ShareService, signInLinks: SignInLinks) {
       if (!shared.files.length && !shared.text) {
         return c.json({ error: "Nothing came through to share" }, 400)
       }
-      // A link needs nothing kept: the page imports it.
-      const link = linkIn(shared)
-      const path = link
-        ? `/share?link=${encodeURIComponent(link)}`
-        : `/share?inbox=${share.keep(currentHousehold(c), shared)}`
+      // A link needs nothing kept: the page imports it. Several start
+      // importing now, and the page follows along.
+      const links = linksIn(shared)
+      let path: string
+      if (links.length > 1) {
+        const batch = await batches.start(
+          { userId: currentUser(c).id, householdId: currentHousehold(c) },
+          { urls: links.slice(0, MAX_LINKS) }
+        )
+        path = `/recipes/import/${batch.id}`
+      } else if (links.length) {
+        path = `/share?link=${encodeURIComponent(links[0]!)}`
+      } else {
+        path = `/share?inbox=${share.keep(currentHousehold(c), shared)}`
+      }
       return c.json({ url: openLink(c, signInLinks, path) }, 201)
     }
   )

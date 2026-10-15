@@ -7,9 +7,10 @@ import { shrinkImage } from "@/lib/shrink-image"
 
 import { RECIPES_KEY } from "./use-recipes"
 
-export type ImportTab = "link" | "text" | "photo"
+/** The dialog's tabs, and "links" for several at once (its own view). */
+export type ImportTab = "link" | "text" | "photo" | "links"
 
-const IMPORT_TABS: ImportTab[] = ["link", "text", "photo"]
+const IMPORT_TABS: ImportTab[] = ["link", "text", "photo", "links"]
 
 /** Params the import dialog owns, including the ones a share sheet sends. */
 const IMPORT_PARAMS = ["import", "url", "text", "title"]

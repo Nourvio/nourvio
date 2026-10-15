@@ -64,6 +64,8 @@ export async function createTestApp({
     autoPhotos,
     krogerFetch,
     kokoroFetch,
+    // Each test starts on an empty database, with nothing to carry on.
+    resumeImports: false,
     // No GitHub in tests unless one asks for it.
     updates: updates ?? { builtAt: null },
   })

@@ -13,6 +13,9 @@ import { createAiService } from "./ai/service.ts"
 import { createNutritionService } from "./services/nutrition.ts"
 import { createShopService } from "./services/shop.ts"
 import { createEventBus } from "./services/events.ts"
+import { createImportBatchService } from "./services/import-batches.ts"
+import { fetchPublic } from "./import/safe-fetch.ts"
+import { systemVideoTools } from "./import/video-tools.ts"
 import { importFollowUp } from "./services/import-follow-up.ts"
 import { createReceiptService } from "./services/receipts.ts"
 import { createShareService } from "./services/share.ts"
@@ -90,12 +93,21 @@ export function createApp(ctx: AppContext) {
   const events = createEventBus()
   const receipts = createReceiptService(ctx.db, ai)
   const signInLinks = createSignInLinks()
-  const share = createShareService(
-    ctx.db,
+  const afterImport = importFollowUp(ctx.db, ai, nutrition, photos)
+  const share = createShareService(ctx.db, ai, receipts, afterImport)
+  const importBatches = createImportBatchService(ctx.db, {
     ai,
-    receipts,
-    importFollowUp(ctx.db, ai, nutrition, photos)
-  )
+    fetcher: ctx.fetcher ?? fetchPublic,
+    videoTools: ctx.videoTools ?? systemVideoTools,
+    afterImport,
+    events,
+  })
+  // Bulk imports a restart cut off carry on.
+  if (ctx.resumeImports !== false) {
+    void importBatches
+      .resume()
+      .catch((error) => console.error("Couldn't carry on bulk imports:", error))
+  }
 
   app.use(secureHeaders())
   // Compression would hold back a streaming reply (chat, live changes).
@@ -156,10 +168,13 @@ export function createApp(ctx: AppContext) {
   app.route("/api/list", listRoutes(ctx, events))
   app.route("/api/events", eventRoutes(events))
   app.route("/api/receipts", receiptRoutes(receipts, events, signInLinks))
-  app.route("/api/share", shareRoutes(share, signInLinks))
+  app.route("/api/share", shareRoutes(share, signInLinks, importBatches))
   app.route("/api/pantry", pantryRoutes(ctx))
   app.route("/api/images", imagesRoutes(ctx))
-  app.route("/api/import", importRoutes(ctx, ai, nutrition, photos))
+  app.route(
+    "/api/import",
+    importRoutes(ctx, ai, nutrition, photos, importBatches)
+  )
   app.route("/api/ai", aiRoutes(ctx, ai))
   app.route("/api/chat", chatRoutes(ctx, ai))
   app.all("/api/*", requireUser, (c) => c.json({ error: "Not found" }, 404))

@@ -1,5 +1,5 @@
 import * as React from "react"
-import type { Recipe } from "@mise/shared"
+import type { LinkPreview, Recipe } from "@mise/shared"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
@@ -8,6 +8,7 @@ import {
   Link01Icon,
   Note01Icon,
   SparklesIcon,
+  Video01Icon,
 } from "@hugeicons/core-free-icons"
 import { Link, useNavigate } from "react-router"
 import { toast } from "sonner"
@@ -45,11 +46,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { useCurrentUser } from "@/features/auth/current-user"
 import { useAiStatus } from "@/features/settings/use-ai"
 import { ApiError } from "@/lib/api"
+import { cn } from "@/lib/utils"
 
+import { linkLabel } from "./format"
 import {
   findLink,
   useImportDialog,
@@ -58,6 +62,8 @@ import {
   useImportUrl,
   type ImportTab,
 } from "./use-import"
+import { useLinkPreview, useStartImportBatch } from "./use-import-batches"
+import { useTags } from "./use-recipes"
 
 const MAX_PHOTOS = 4
 
@@ -90,50 +96,57 @@ export function ImportDialog() {
   return (
     <Dialog open={tab !== null} onOpenChange={(next) => !next && close()}>
       <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>Add a recipe</DialogTitle>
-          <DialogDescription>
-            Bring in a recipe from anywhere. You can tidy it up after.
-          </DialogDescription>
-        </DialogHeader>
-        <Tabs
-          value={tab ?? "link"}
-          onValueChange={(value) => open(value as ImportTab)}
-          className="min-w-0 gap-4"
-        >
-          <TabsList className="w-full">
-            <TabsTrigger value="link">
-              <HugeiconsIcon icon={Link01Icon} strokeWidth={2} />
-              Link
-            </TabsTrigger>
-            <TabsTrigger value="text">
-              <HugeiconsIcon icon={Note01Icon} strokeWidth={2} />
-              Text
-            </TabsTrigger>
-            <TabsTrigger value="photo">
-              <HugeiconsIcon icon={Camera01Icon} strokeWidth={2} />
-              Photo
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="link">
-            {/* Remount when a different link is shared in. */}
-            <LinkImport
-              key={sharedLink}
-              initialUrl={sharedLink}
-              onDone={close}
-            />
-          </TabsContent>
-          <TabsContent value="text">
-            <NeedsAi onDone={close}>
-              <TextImport onDone={close} />
-            </NeedsAi>
-          </TabsContent>
-          <TabsContent value="photo">
-            <NeedsAi onDone={close}>
-              <PhotoImport onDone={close} />
-            </NeedsAi>
-          </TabsContent>
-        </Tabs>
+        {tab === "links" ? (
+          <SeveralLinks onBack={() => open("link")} onDone={close} />
+        ) : (
+          <>
+            <DialogHeader>
+              <DialogTitle>Add a recipe</DialogTitle>
+              <DialogDescription>
+                Bring in a recipe from anywhere. You can tidy it up after.
+              </DialogDescription>
+            </DialogHeader>
+            <Tabs
+              value={tab ?? "link"}
+              onValueChange={(value) => open(value as ImportTab)}
+              className="min-w-0 gap-4"
+            >
+              <TabsList className="w-full">
+                <TabsTrigger value="link">
+                  <HugeiconsIcon icon={Link01Icon} strokeWidth={2} />
+                  Link
+                </TabsTrigger>
+                <TabsTrigger value="text">
+                  <HugeiconsIcon icon={Note01Icon} strokeWidth={2} />
+                  Text
+                </TabsTrigger>
+                <TabsTrigger value="photo">
+                  <HugeiconsIcon icon={Camera01Icon} strokeWidth={2} />
+                  Photo
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="link">
+                {/* Remount when a different link is shared in. */}
+                <LinkImport
+                  key={sharedLink}
+                  initialUrl={sharedLink}
+                  onDone={close}
+                  onSeveral={() => open("links")}
+                />
+              </TabsContent>
+              <TabsContent value="text">
+                <NeedsAi onDone={close}>
+                  <TextImport onDone={close} />
+                </NeedsAi>
+              </TabsContent>
+              <TabsContent value="photo">
+                <NeedsAi onDone={close}>
+                  <PhotoImport onDone={close} />
+                </NeedsAi>
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )
@@ -142,9 +155,12 @@ export function ImportDialog() {
 function LinkImport({
   initialUrl,
   onDone,
+  onSeveral,
 }: {
   initialUrl: string
   onDone: () => void
+  /** Over to pasting several links at once. */
+  onSeveral: () => void
 }) {
   const navigate = useNavigate()
   const opened = useOpenImported(onDone)
@@ -214,9 +230,21 @@ function LinkImport({
           <FieldError>{error}</FieldError>
         ) : (
           <FieldDescription>
-            {importUrl.isPending && isVideo
-              ? "Watching the video. This can take a minute."
-              : "Works with most recipe sites, and with TikTok, YouTube and Instagram videos."}
+            {importUrl.isPending && isVideo ? (
+              "Watching the video. This can take a minute."
+            ) : (
+              <>
+                Works with most recipe sites, and with TikTok, YouTube and
+                Instagram videos. Got several?{" "}
+                <button
+                  type="button"
+                  onClick={onSeveral}
+                  className="font-medium text-foreground underline underline-offset-4"
+                >
+                  Paste them all at once
+                </button>
+              </>
+            )}
           </FieldDescription>
         )}
       </Field>
@@ -483,5 +511,190 @@ function PhotoImport({ onDone }: { onDone: () => void }) {
         </Button>
       </DialogFooter>
     </form>
+  )
+}
+
+/** "6 new: 4 recipe pages and 2 videos. 2 you have already are skipped." */
+function linksLine(links: LinkPreview[], more: number, aiReady: boolean) {
+  const fresh = links.filter((link) => !link.existing)
+  const videos = fresh.filter((link) => link.kind === "video").length
+  const pages = fresh.length - videos
+  const had = links.length - fresh.length
+  const kinds = [
+    pages && `${pages} recipe ${pages === 1 ? "page" : "pages"}`,
+    videos && `${videos} ${videos === 1 ? "video" : "videos"}`,
+  ].filter(Boolean)
+  return [
+    fresh.length
+      ? `${fresh.length} new: ${kinds.join(" and ")}.`
+      : "Nothing new.",
+    had && `${had} you have already ${had === 1 ? "is" : "are"} skipped.`,
+    more && "Only the first 100 links; add the rest after.",
+    videos &&
+      !aiReady &&
+      "Videos need AI, which isn't set up, so those won't work yet.",
+  ]
+    .filter(Boolean)
+    .join(" ")
+}
+
+/**
+ * Several links at once (`?import=links`): pasted any old way, checked
+ * against the library, then imported in the background with a page to
+ * follow along.
+ */
+function SeveralLinks({
+  onBack,
+  onDone,
+}: {
+  onBack: () => void
+  onDone: () => void
+}) {
+  const navigate = useNavigate()
+  const ai = useAiStatus()
+  const tags = useTags().data ?? []
+  const start = useStartImportBatch()
+  const [text, setText] = React.useState("")
+  const [tag, setTag] = React.useState("")
+  const preview = useLinkPreview(text)
+  const links = preview.data?.links ?? []
+  const fresh = links.filter((link) => !link.existing)
+  const error = errorText(start.error, "urls")
+  const tagsId = React.useId()
+  const canPaste =
+    typeof navigator !== "undefined" && Boolean(navigator.clipboard?.readText)
+
+  async function paste() {
+    try {
+      const pasted = await navigator.clipboard.readText()
+      setText((current) => (current.trim() ? `${current}\n${pasted}` : pasted))
+    } catch {
+      // The browser said no; pasting into the box still works.
+    }
+  }
+
+  function submit() {
+    start.mutate(
+      { urls: fresh.map((link) => link.url), tag: tag.trim() || null },
+      {
+        onSuccess: ({ batch }) => {
+          onDone()
+          navigate(`/recipes/import/${batch.id}`)
+        },
+      }
+    )
+  }
+
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Add several recipes</DialogTitle>
+        <DialogDescription>
+          Recipe pages and videos, mixed however you like. They import in the
+          background, so you can carry on.
+        </DialogDescription>
+      </DialogHeader>
+      <form
+        className="grid min-w-0 gap-4"
+        onSubmit={(event) => {
+          event.preventDefault()
+          submit()
+        }}
+      >
+        <Field data-invalid={error ? true : undefined}>
+          <div className="flex items-center justify-between gap-2">
+            <FieldLabel htmlFor="import-links">Links</FieldLabel>
+            {canPaste && (
+              <Button type="button" variant="ghost" size="xs" onClick={paste}>
+                Paste
+              </Button>
+            )}
+          </div>
+          <Textarea
+            id="import-links"
+            autoFocus
+            rows={5}
+            className="max-h-[30dvh] min-h-28"
+            placeholder="One per line, or mixed into any text"
+            value={text}
+            aria-invalid={error ? true : undefined}
+            onChange={(event) => setText(event.target.value)}
+          />
+          {error ? (
+            <FieldError>{error}</FieldError>
+          ) : (
+            <FieldDescription aria-live="polite">
+              {links.length
+                ? linksLine(
+                    links,
+                    preview.data?.more ?? 0,
+                    Boolean(ai.data?.available)
+                  )
+                : "Paste a list from a note, a message or anywhere else."}
+            </FieldDescription>
+          )}
+        </Field>
+
+        {links.length > 0 && (
+          <ul className="grid max-h-44 gap-0.5 overflow-y-auto rounded-2xl border p-1.5">
+            {links.map((link) => (
+              <li
+                key={link.url}
+                className={cn(
+                  "flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-sm",
+                  link.existing && "text-muted-foreground"
+                )}
+              >
+                <HugeiconsIcon
+                  icon={link.kind === "video" ? Video01Icon : Link01Icon}
+                  strokeWidth={2}
+                  className="size-4 shrink-0 text-muted-foreground"
+                />
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 truncate",
+                    link.existing && "line-through"
+                  )}
+                >
+                  {linkLabel(link.url)}
+                </span>
+                {link.existing && (
+                  <span className="shrink-0 text-xs">Have it</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <Field>
+          <FieldLabel htmlFor="import-links-tag">
+            Tag them (optional)
+          </FieldLabel>
+          <Input
+            id="import-links-tag"
+            list={tagsId}
+            maxLength={40}
+            placeholder="to try"
+            value={tag}
+            onChange={(event) => setTag(event.target.value)}
+          />
+          <datalist id={tagsId}>
+            {tags.map((option) => (
+              <option key={option.name} value={option.name} />
+            ))}
+          </datalist>
+        </Field>
+
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={onBack}>
+            Just one link
+          </Button>
+          <Button type="submit" disabled={!fresh.length || start.isPending}>
+            {start.isPending && <Spinner data-icon="inline-start" />}
+            {fresh.length ? `Import ${fresh.length}` : "Import"}
+          </Button>
+        </DialogFooter>
+      </form>
+    </>
   )
 }

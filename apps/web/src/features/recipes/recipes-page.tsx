@@ -42,6 +42,7 @@ import { ApiError } from "@/lib/api"
 
 import { AddRecipeMenu } from "./add-recipe-menu"
 import { ImportDialog } from "./import-dialog"
+import { ImportChip } from "./import-chip"
 import {
   DeleteRecipesDialog,
   exportRecipes,
@@ -212,6 +213,7 @@ export function RecipesPage() {
         }
       />
       <ImportDialog />
+      <ImportChip />
 
       {!libraryEmpty && (
         <RecipeFilterBar

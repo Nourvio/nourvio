@@ -46,6 +46,7 @@ export type ImportBatchSummary = {
   /** Finished one way or another. */
   done: number
   added: number
+  failed: number
   finishedAt: string | null
 }
 

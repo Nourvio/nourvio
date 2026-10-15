@@ -26,3 +26,14 @@ export function formatRelativeDate(iso: string) {
 function startOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate())
 }
+
+/** "seriouseats.com/best-chili": a link that isn't a recipe yet. */
+export function linkLabel(url: string) {
+  try {
+    const { hostname, pathname } = new URL(url)
+    const path = pathname.replace(/\/+$/, "")
+    return `${hostname.replace(/^(www|m)\./, "")}${path}`
+  } catch {
+    return url
+  }
+}

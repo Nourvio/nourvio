@@ -1,3 +1,5 @@
+import { findLinks } from "./import-batch.ts"
+
 /** What a share into Mise turned out to be, and where to go next. */
 export type ShareResult =
   /** A link (a recipe page or a video): import it as a recipe. */
@@ -20,4 +22,17 @@ export function sharedLink(text: string | null | undefined) {
   if (!match) return null
   const rest = text.replace(match[0], "").trim()
   return rest.length <= 300 ? match[0].replace(/[).,;]+$/, "") : null
+}
+
+/**
+ * Several links shared at once (a list of recipes from a note): two or more,
+ * with no more around them than a single shared link may have. Null for
+ * fewer, or for a long text like a receipt that's full of links.
+ */
+export function sharedLinks(text: string | null | undefined) {
+  if (!text) return null
+  const links = findLinks(text)
+  if (links.length < 2) return null
+  const rest = links.reduce((left, link) => left.split(link).join(""), text)
+  return rest.replace(/\s+/g, " ").trim().length <= 300 ? links : null
 }

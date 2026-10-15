@@ -5,6 +5,7 @@ import {
   Compass01Icon,
   Globe02Icon,
   Link01Icon,
+  LinkSquare02Icon,
   Note01Icon,
   PencilEdit01Icon,
 } from "@hugeicons/core-free-icons"
@@ -46,6 +47,10 @@ export function AddRecipeMenu() {
         <DropdownMenuItem onSelect={() => importDialog.open("link")}>
           <HugeiconsIcon icon={Link01Icon} strokeWidth={2} />
           From a link or video
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => importDialog.open("links")}>
+          <HugeiconsIcon icon={LinkSquare02Icon} strokeWidth={2} />
+          Several links at once
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => importDialog.open("text")}>
           <HugeiconsIcon icon={Note01Icon} strokeWidth={2} />

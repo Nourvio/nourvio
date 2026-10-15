@@ -1,8 +1,10 @@
 import {
+  importBatchInput,
   mealieConnectionInput,
   importPageInput,
   importTextInput,
   importUrlInput,
+  previewLinksInput,
 } from "@mise/shared"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
@@ -27,6 +29,7 @@ import {
 import { fetchPublic } from "../import/safe-fetch.ts"
 import { importFromPage, importFromUrl } from "../import/url.ts"
 import { systemVideoTools } from "../import/video-tools.ts"
+import type { ImportBatchService } from "../services/import-batches.ts"
 import { importFollowUp } from "../services/import-follow-up.ts"
 import { createRecipe } from "../services/recipes.ts"
 
@@ -42,7 +45,8 @@ export function importRoutes(
   }: AppContext,
   ai: AiService,
   nutrition: NutritionService,
-  photos: PhotoService
+  photos: PhotoService,
+  batches: ImportBatchService
 ) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
@@ -67,6 +71,47 @@ export function importRoutes(
     await afterImport(result, actor)
     return c.json(result, result.duplicate ? 200 : 201)
   })
+
+  // Several links at once: which are new, then a batch in the background.
+  app.post("/links", async (c) => {
+    const { text } = await readBody(c, previewLinksInput)
+    return c.json(await batches.preview(currentHousehold(c), text))
+  })
+
+  app.post("/batch", async (c) => {
+    const input = await readBody(c, importBatchInput)
+    return c.json({ batch: await batches.start(actorOf(c), input) }, 201)
+  })
+
+  app.get("/batch/current", async (c) =>
+    c.json({ batch: await batches.current(currentHousehold(c)) })
+  )
+
+  app.get("/batch/:id", async (c) =>
+    c.json({ batch: await batches.get(currentHousehold(c), c.req.param("id")) })
+  )
+
+  app.post("/batch/:id/stop", async (c) =>
+    c.json({
+      batch: await batches.stop(currentHousehold(c), c.req.param("id")),
+    })
+  )
+
+  app.post("/batch/:id/retry", async (c) =>
+    c.json({
+      batch: await batches.retry(currentHousehold(c), c.req.param("id")),
+    })
+  )
+
+  app.post("/batch/:id/items/:itemId/retry", async (c) =>
+    c.json({
+      batch: await batches.retry(
+        currentHousehold(c),
+        c.req.param("id"),
+        c.req.param("itemId")
+      ),
+    })
+  )
 
   // From the browser extension: a page as the person's browser shows it.
   app.post("/page", async (c) => {

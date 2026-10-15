@@ -113,11 +113,13 @@ export function SharePage() {
       try {
         const { url } = await apiUpload<{ url: string }>("/share", form)
         void forgetShared(id)
-        const next = new URL(url, location.origin).searchParams
-        const nextLink = next.get("link")
-        const nextInbox = next.get("inbox")
+        const next = new URL(url, location.origin)
+        const nextLink = next.searchParams.get("link")
+        const nextInbox = next.searchParams.get("inbox")
         if (nextLink) await importLink(nextLink)
         else if (nextInbox) await openShared(nextInbox)
+        // Several links: they're importing already.
+        else navigate(next.pathname, { replace: true })
       } catch (error) {
         fail(error)
       }

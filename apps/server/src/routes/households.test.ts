@@ -6,6 +6,8 @@ import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import {
   discoveries,
   followedSites,
+  importBatchItems,
+  importBatches,
   invites,
   shopConnections,
   storePrices,
@@ -177,6 +179,47 @@ describe("households", () => {
       expect(
         (await neighbor.raw(`/api/discover/${found!.id}/0/image`)).status
       ).toBe(404)
+    })
+
+    test("bulk imports", async () => {
+      const household = (await t.admin.get("/api/household")).body.household
+      const [batch] = await t.db
+        .insert(importBatches)
+        .values({ householdId: household.id, finishedAt: new Date() })
+        .returning()
+      const [item] = await t.db
+        .insert(importBatchItems)
+        .values({
+          householdId: household.id,
+          batchId: batch!.id,
+          position: 0,
+          url: "https://example.com/soup",
+          kind: "page",
+          state: "failed",
+          error: "Couldn't reach that site",
+        })
+        .returning()
+      expect(
+        (await t.admin.get(`/api/import/batch/${batch!.id}`)).body.batch.items
+      ).toHaveLength(1)
+      expect((await neighbor.get("/api/import/batch/current")).body.batch).toBe(
+        null
+      )
+      for (const path of [
+        `/api/import/batch/${batch!.id}/stop`,
+        `/api/import/batch/${batch!.id}/retry`,
+        `/api/import/batch/${batch!.id}/items/${item!.id}/retry`,
+      ]) {
+        expect((await neighbor.post(path)).status).toBe(404)
+      }
+      expect(
+        (await neighbor.get(`/api/import/batch/${batch!.id}`)).status
+      ).toBe(404)
+      const [still] = await t.db
+        .select()
+        .from(importBatchItems)
+        .where(eq(importBatchItems.id, item!.id))
+      expect(still!.state).toBe("failed")
     })
 
     test("followed sites", async () => {

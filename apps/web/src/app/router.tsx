@@ -13,6 +13,7 @@ import { HomePage } from "@/features/home/home-page"
 import { ListPage } from "@/features/list/list-page"
 import { PantryPage } from "@/features/pantry/pantry-page"
 import { DeletedPage } from "@/features/recipes/deleted-page"
+import { ImportBatchPage } from "@/features/recipes/import-batch-page"
 import { ReceiptPage } from "@/features/pantry/receipt-page"
 import { SharePage } from "@/features/share/share-page"
 import { PlanPage } from "@/features/plan/plan-page"
@@ -90,6 +91,7 @@ export const router = createBrowserRouter([
           { path: "recipes", element: <RecipesPage /> },
           { path: "recipes/new", element: <NewRecipePage /> },
           { path: "recipes/deleted", element: <DeletedPage /> },
+          { path: "recipes/import/:id", element: <ImportBatchPage /> },
           { path: "recipes/:slug", element: <RecipePage /> },
           { path: "recipes/:slug/edit", element: <EditRecipePage /> },
           { path: "review", element: <ReviewPage /> },

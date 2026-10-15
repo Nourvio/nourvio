@@ -28,6 +28,8 @@ export type AppContext = {
   autoNutrition?: boolean
   /** Make photos for new recipes without one, when the server's AI setting allows. On unless turned off (tests). */
   autoPhotos?: boolean
+  /** Carry on bulk imports a restart interrupted. On unless turned off (tests). */
+  resumeImports?: boolean
   /** How Kroger's API is reached. Tests swap in a fake; defaults to fetch. */
   krogerFetch?: typeof fetch
   /** How Kokoro (the read-aloud voice) is reached. Tests swap in a fake; defaults to fetch. */
