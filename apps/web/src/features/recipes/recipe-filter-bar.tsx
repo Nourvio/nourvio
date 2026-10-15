@@ -69,6 +69,7 @@ export function RecipeFilterBar({
   onChange,
   all,
   shown,
+  onSale = {},
 }: {
   filters: RecipeFilters
   search: string
@@ -77,6 +78,8 @@ export function RecipeFilterBar({
   /** Every recipe the search found, before the filters here. */
   all: RecipeSummary[]
   shown: RecipeSummary[]
+  /** Recipes using something on sale at the household's Fry's, by id. */
+  onSale?: Record<string, unknown>
 }) {
   const [managing, setManaging] = React.useState(false)
   const total = all.length
@@ -87,7 +90,11 @@ export function RecipeFilterBar({
     filters.tags.some((t) => t.toLowerCase() === tag.toLowerCase())
   const searchBox = React.useRef<HTMLInputElement>(null)
   const active =
-    filters.tags.length + filters.diets.length + (filters.time ? 1 : 0)
+    filters.tags.length +
+    filters.diets.length +
+    (filters.time ? 1 : 0) +
+    (filters.sale ? 1 : 0)
+  const saleCount = all.filter((recipe) => recipe.id in onSale).length
 
   // "/" jumps to the search box, like most sites with one.
   React.useEffect(() => {
@@ -190,7 +197,7 @@ export function RecipeFilterBar({
         </div>
       </div>
 
-      {quick.length > 1 && (
+      {(quick.length > 1 || saleCount > 0 || filters.sale) && (
         <div
           role="group"
           aria-label="Tags"
@@ -198,14 +205,28 @@ export function RecipeFilterBar({
         >
           <Button
             size="sm"
-            variant={filters.tags.length ? "outline" : "default"}
-            aria-pressed={!filters.tags.length}
+            variant={
+              filters.tags.length || filters.sale ? "outline" : "default"
+            }
+            aria-pressed={!filters.tags.length && !filters.sale}
             className="shrink-0 rounded-full"
-            onClick={() => onChange({ tags: [] })}
+            onClick={() => onChange({ tags: [], sale: false })}
           >
             All
             <span className="tabular-nums opacity-70">{total}</span>
           </Button>
+          {(saleCount > 0 || filters.sale) && (
+            <Button
+              size="sm"
+              variant={filters.sale ? "default" : "outline"}
+              aria-pressed={filters.sale}
+              className="shrink-0 rounded-full"
+              onClick={() => onChange({ sale: !filters.sale })}
+            >
+              On sale
+              <span className="tabular-nums opacity-70">{saleCount}</span>
+            </Button>
+          )}
           {quick.map((tag) => {
             const on = isPicked(tag.name)
             return (

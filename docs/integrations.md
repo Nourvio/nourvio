@@ -140,7 +140,7 @@ Instacart coverage varies by ZIP code. Mise can ask Instacart which stores it se
   - Daily call limits: products 10,000, cart 5,000, locations 1,600 per endpoint. That's far more than a household uses.
   - There's no checkout endpoint. You pick a time and pay in the Fry's (or Kroger) app, so Mise never touches payment.
 - **Extras that come with it:**
-  - Real prices and sales give an estimated total for the week. Later, plans could lean on what's on sale.
+  - Real prices and sales give an estimated total for the week, and plans lean on what's on sale (milestone 11). Sales come with their end date (`price.expirationDate`).
   - Aisle numbers let the list sort in the order you walk your store.
 
 ### Instacart (Costco and most other chains)

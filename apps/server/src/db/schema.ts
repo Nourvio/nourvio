@@ -629,6 +629,27 @@ export const storeProducts = pgTable(
   (t) => [primaryKey({ columns: [t.householdId, t.shop, t.food] })]
 )
 
+/**
+ * A product's price on each day Mise saw it at the household's store, for
+ * "usually $4.29". The sale's end comes from the store when it says.
+ */
+export const storePrices = pgTable(
+  "store_prices",
+  {
+    householdId: uuid()
+      .notNull()
+      .references(() => households.id, { onDelete: "cascade" }),
+    shop: text().$type<ShopId>().notNull(),
+    productId: text().notNull(),
+    /** In the household's time zone. */
+    day: date({ mode: "string" }).notNull(),
+    price: real(),
+    salePrice: real(),
+    saleEnds: date({ mode: "string" }),
+  },
+  (t) => [primaryKey({ columns: [t.householdId, t.shop, t.productId, t.day] })]
+)
+
 /** A signed-in Kroger account, its tokens encrypted. */
 export type KrogerAccount = {
   accessToken: string
@@ -653,6 +674,10 @@ export const shopConnections = pgTable(
     account: jsonb().$type<KrogerAccount>(),
     /** What was last sent to the cart: list item id → packages. */
     lastSent: jsonb().$type<{ at: string; items: Record<string, number> }>(),
+    /** When the daily price check last ran. */
+    pricesCheckedAt: timestamp({ withTimezone: true }),
+    /** Recipe foods looked up at the store, and the day: not again for a while. */
+    priceSearches: jsonb().$type<Record<string, string>>(),
     updatedAt: updatedAt(),
   },
   (t) => [primaryKey({ columns: [t.householdId, t.shop] })]

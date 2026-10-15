@@ -16,6 +16,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { formatMinutes } from "@/features/recipes/format"
 import { RecipeImage } from "@/features/recipes/recipe-image"
+import { onSaleText } from "@/features/shop/sale-text"
 import { ApiError } from "@/lib/api"
 
 import { dayName, today } from "./dates"
@@ -26,7 +27,7 @@ import {
 } from "./use-plan"
 
 type Slot = { date: string; meal: Meal }
-type Idea = Pick<MealSuggestion, "recipe" | "with" | "uses">
+type Idea = Pick<MealSuggestion, "recipe" | "with" | "uses" | "onSale">
 
 const slotKey = (slot: Slot) => `${slot.date}:${slot.meal}`
 
@@ -115,6 +116,7 @@ function FillWeek({
             recipe: idea.recipe,
             with: idea.with,
             uses: idea.uses,
+            onSale: idea.onSale,
           },
         ]
       : []
@@ -249,6 +251,10 @@ function FillWeek({
                 {row.uses.length > 0 ? (
                   <span className="truncate text-xs font-medium text-amber-700 dark:text-amber-400">
                     Uses up your {row.uses.join(", ").toLowerCase()}
+                  </span>
+                ) : row.onSale.length > 0 ? (
+                  <span className="truncate text-xs font-medium text-primary">
+                    {onSaleText(row.onSale)}
                   </span>
                 ) : row.recipe.totalMinutes ? (
                   <span className="text-xs text-muted-foreground">

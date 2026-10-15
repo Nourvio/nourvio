@@ -18,6 +18,8 @@ export type RecipeFilters = {
   diets: Diet[]
   /** Ready in at most this many minutes. */
   time: number | null
+  /** Only recipes using something on sale at the household's Fry's. */
+  sale: boolean
   sort: RecipeSort
 }
 
@@ -32,6 +34,7 @@ export function readFilters(params: URLSearchParams): RecipeFilters {
       .getAll("diet")
       .filter((d): d is Diet => (DIETS as readonly string[]).includes(d)),
     time: (TIMES as readonly number[]).includes(time) ? time : null,
+    sale: params.get("sale") === "1",
     sort: SORTS.some((s) => s.id === sort) ? (sort as RecipeSort) : "newest",
   }
 }
@@ -57,6 +60,10 @@ export function writeFilters(
     if (change.time) next.set("time", String(change.time))
     else next.delete("time")
   }
+  if (change.sale !== undefined) {
+    if (change.sale) next.set("sale", "1")
+    else next.delete("sale")
+  }
   if (change.sort) {
     if (change.sort === "newest") next.delete("sort")
     else next.set("sort", change.sort)
@@ -66,14 +73,19 @@ export function writeFilters(
 
 const lower = (s: string) => s.toLowerCase()
 
-/** The recipes that pass the tag, diet and time filters (search is done by the server). */
+/**
+ * The recipes that pass the tag, diet, time and sale filters (search is done
+ * by the server). `onSale` has the recipes using something on sale.
+ */
 export function filterRecipes(
   recipes: RecipeSummary[],
-  filters: Pick<RecipeFilters, "tags" | "diets" | "time">
+  filters: Pick<RecipeFilters, "tags" | "diets" | "time" | "sale">,
+  onSale: Record<string, unknown> = {}
 ) {
   const tags = filters.tags.map(lower)
   return recipes.filter(
     (recipe) =>
+      (!filters.sale || recipe.id in onSale) &&
       tags.every((tag) => recipe.tags.some((t) => lower(t) === tag)) &&
       filters.diets.every((diet) => recipe.diets.includes(diet)) &&
       (!filters.time ||

@@ -1,9 +1,11 @@
 import type {
   Basket,
   BasketLine,
+  Deals,
   KrogerAppSettings,
   KrogerModality,
   KrogerStore,
+  PriceCheck,
   SendBasketInput,
   ShopStatus,
   StoreProduct,
@@ -21,6 +23,7 @@ const SHOP_KEY = ["shop"] as const
 const STATUS_KEY = [...SHOP_KEY, "status"] as const
 const APP_KEY = [...SHOP_KEY, "kroger-app"] as const
 export const BASKET_KEY = [...SHOP_KEY, "basket", "kroger"] as const
+const DEALS_KEY = [...SHOP_KEY, "deals"] as const
 
 /** The household's store connections. */
 export function useShopStatus() {
@@ -181,6 +184,33 @@ export function useSendBasket() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: BASKET_KEY })
       queryClient.invalidateQueries({ queryKey: STATUS_KEY })
+    },
+  })
+}
+
+/** This week's sales at the household's Fry's, and the recipes they're in. */
+export function useDeals(enabled = true) {
+  return useQuery({
+    queryKey: DEALS_KEY,
+    queryFn: async () => (await api<{ deals: Deals }>("/shop/deals")).deals,
+    staleTime: 5 * 60_000,
+    enabled,
+  })
+}
+
+/** Checks today's prices and sales now, rather than waiting for the morning. */
+export function useCheckPrices() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async () =>
+      (
+        await api<{ check: PriceCheck }>("/shop/kroger/prices", {
+          method: "POST",
+        })
+      ).check,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: SHOP_KEY })
+      queryClient.invalidateQueries({ queryKey: ["list", "prices"] })
     },
   })
 }

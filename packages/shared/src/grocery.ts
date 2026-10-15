@@ -108,6 +108,19 @@ export function guessSection(
 export const HOW_MUCH =
   /\s+(to taste|as needed|if needed|for (serving|garnish|drizzling|frying|dusting|the pan|greasing)|optional)\b.*$/i
 
+function lineFoodName(parsed: ReturnType<typeof parseIngredient>) {
+  return (parsed.food ?? parsed.text).replace(HOW_MUCH, "").trim()
+}
+
+/**
+ * The thing to buy in an ingredient line, as the list would have it: its
+ * name ("chicken thighs") and its key ("chicken thigh"), or null.
+ */
+export function lineFood(text: string) {
+  const name = lineFoodName(parseIngredient(text))
+  return name ? { name, key: foodKey(name) } : null
+}
+
 export type ListLine = {
   /** An ingredient line as written, "1 ½ cups milk". */
   text: string
@@ -154,7 +167,7 @@ export function combineLines(lines: ListLine[]): CombinedItem[] {
 
   for (const line of lines) {
     const parsed = parseIngredient(line.text)
-    const name = (parsed.food ?? parsed.text).replace(HOW_MUCH, "").trim()
+    const name = lineFoodName(parsed)
     if (!name) continue
     const food = foodKey(name)
     const unit = parsed.unitId ? UNIT_BY_ID.get(parsed.unitId) : undefined

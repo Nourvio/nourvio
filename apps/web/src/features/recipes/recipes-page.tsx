@@ -25,6 +25,7 @@ import {
   FollowSitesPrompt,
   SitesSpotlight,
 } from "@/features/discover/sites-spotlight"
+import { useDeals } from "@/features/shop/use-shop"
 
 import { AddRecipeMenu } from "./add-recipe-menu"
 import { ImportDialog } from "./import-dialog"
@@ -69,8 +70,9 @@ export function RecipesPage() {
   const importDialog = useImportDialog()
   const pendingReview = usePendingProposals().data?.length ?? 0
   const recipes = useRecipes({ q })
+  const onSale = useDeals().data?.recipes ?? {}
   const all = recipes.data ?? []
-  const shown = sortRecipes(filterRecipes(all, filters), filters.sort)
+  const shown = sortRecipes(filterRecipes(all, filters, onSale), filters.sort)
   const [revealed, revealMore] = useRevealed()
 
   function change(next: Partial<RecipeFilters>) {
@@ -82,7 +84,11 @@ export function RecipesPage() {
 
   const libraryEmpty = !q && recipes.data?.length === 0
   const narrowed = Boolean(
-    search.trim() || filters.tags.length || filters.diets.length || filters.time
+    search.trim() ||
+    filters.tags.length ||
+    filters.diets.length ||
+    filters.time ||
+    filters.sale
   )
   const libraryCount = !q && recipes.data?.length ? recipes.data.length : null
 
@@ -135,6 +141,7 @@ export function RecipesPage() {
           onChange={change}
           all={all}
           shown={shown}
+          onSale={onSale}
         />
       )}
 
@@ -206,10 +213,13 @@ export function RecipesPage() {
           </p>
           {(filters.tags.length > 0 ||
             filters.diets.length > 0 ||
-            filters.time) && (
+            filters.time ||
+            filters.sale) && (
             <Button
               variant="outline"
-              onClick={() => change({ tags: [], diets: [], time: null })}
+              onClick={() =>
+                change({ tags: [], diets: [], time: null, sale: false })
+              }
             >
               Clear filters
             </Button>
@@ -220,13 +230,21 @@ export function RecipesPage() {
           {view === "list" ? (
             <div className="-mx-2 grid gap-x-6 gap-y-0.5 lg:grid-cols-2">
               {shown.slice(0, revealed).map((recipe) => (
-                <RecipeRow key={recipe.id} recipe={recipe} />
+                <RecipeRow
+                  key={recipe.id}
+                  recipe={recipe}
+                  onSale={onSale[recipe.id]}
+                />
               ))}
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
               {shown.slice(0, revealed).map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
+                <RecipeCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  onSale={onSale[recipe.id]}
+                />
               ))}
             </div>
           )}

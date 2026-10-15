@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import type { Nutrition } from "./recipes.ts"
+import type { OnSale } from "./sales.ts"
 
 /** What a planned recipe is made with: "with Peanut Sauce". */
 export type PlanPairing = {
@@ -152,6 +153,8 @@ export type MealSuggestion = {
   with: { id: string; slug: string; name: string } | null
   /** Pantry food it uses up that needs using soon. */
   uses: string[]
+  /** What it uses that's on sale at the household's Fry's. */
+  onSale: OnSale[]
 }
 
 export const addPlanEntriesInput = z.object({

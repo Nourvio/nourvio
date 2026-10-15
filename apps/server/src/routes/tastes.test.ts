@@ -71,8 +71,10 @@ describe("household tastes and rules", () => {
       diets: [],
       weeknightMinutes: null,
       notes: ["No fish on Mondays"],
+      sales: "some",
     })
     expect((await setTastes({ weeknightMinutes: 5 })).status).toBe(400)
+    expect((await setTastes({ sales: "always" })).status).toBe(400)
   })
 
   test("suggestions leave out what someone doesn't eat or is allergic to", async () => {

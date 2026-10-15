@@ -41,6 +41,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
+import { saleThrough } from "./sale-text"
 import {
   useBasket,
   usePickProduct,
@@ -381,7 +382,12 @@ function BasketRow({
         )}
         <div className="mt-1 flex flex-wrap gap-1">
           {line.suggested && <Badge variant="outline">Mise's pick</Badge>}
-          {product?.salePrice && <Badge variant="secondary">On sale</Badge>}
+          {product?.salePrice && (
+            <Badge variant="secondary">
+              On sale
+              {product.saleEnds && ` ${saleThrough(product.saleEnds)}`}
+            </Badge>
+          )}
           {product?.inStock === false && (
             <Badge variant="destructive">Out of stock</Badge>
           )}
@@ -431,6 +437,12 @@ function BasketRow({
         {product?.salePrice && product.price && (
           <p className="text-xs text-muted-foreground line-through">
             {money(product.price * packages)}
+          </p>
+        )}
+        {line.usual !== null && (
+          <p className="text-xs text-muted-foreground">
+            usually {money(line.usual)}
+            {packages > 1 && " each"}
           </p>
         )}
       </div>

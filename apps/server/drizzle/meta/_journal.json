@@ -162,6 +162,13 @@
       "when": 1792020235373,
       "tag": "0022_shopping_lists",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792036809871,
+      "tag": "0023_store_prices",
+      "breakpoints": true
     }
   ]
 }

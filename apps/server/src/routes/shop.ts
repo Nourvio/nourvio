@@ -23,6 +23,7 @@ import {
 import { HttpError, readBody } from "../http.ts"
 import { fetchPublic } from "../import/safe-fetch.ts"
 import { remoteThumbnail } from "../services/remote-images.ts"
+import { listDeals } from "../services/sales.ts"
 import type { ShopService } from "../services/shop.ts"
 
 /** Store photos Mise will fetch: the stores' own image servers only. */
@@ -46,7 +47,7 @@ function redirectUri(c: Context<AppEnv>) {
 
 /** Store connections, the review before sending, and store photos. */
 export function shopRoutes(
-  { fetcher = fetchPublic }: AppContext,
+  { db, fetcher = fetchPublic }: AppContext,
   shop: ShopService
 ) {
   const app = new Hono<AppEnv>()
@@ -64,6 +65,11 @@ export function shopRoutes(
   /** What's left on the lists last cost, where Mise knows the product. */
   app.get("/prices", async (c) =>
     c.json({ prices: await shop.prices(currentHousehold(c)) })
+  )
+
+  /** This week's sales at the household's Fry's, and the recipes they're in. */
+  app.get("/deals", async (c) =>
+    c.json({ deals: await listDeals(db, currentHousehold(c)) })
   )
 
   app.get("/image", async (c) => {
@@ -143,6 +149,10 @@ export function shopRoutes(
   // ---- Shopping ----
   app.get("/kroger/basket", async (c) =>
     c.json({ basket: await shop.basket(currentHousehold(c), actor(c)) })
+  )
+  /** Checks today's prices and sales now, rather than waiting for the morning. */
+  app.post("/kroger/prices", async (c) =>
+    c.json({ check: await shop.checkPrices(currentHousehold(c)) })
   )
   app.get("/kroger/search", async (c) =>
     c.json({

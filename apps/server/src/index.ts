@@ -1,5 +1,6 @@
 import { serve } from "@hono/node-server"
 
+import { createAiService } from "./ai/service.ts"
 import { createApp } from "./app.ts"
 import { SetupCode } from "./auth/setup-code.ts"
 import { config } from "./config.ts"
@@ -10,6 +11,8 @@ import { fetchPublic } from "./import/safe-fetch.ts"
 import { scheduleYtDlpUpdates } from "./import/video-tools.ts"
 import { startAutoPlanScheduler } from "./services/autoplan.ts"
 import { markInterruptedJobs } from "./services/cleanup-jobs.ts"
+import { startPriceScheduler } from "./services/price-checks.ts"
+import { createShopService } from "./services/shop.ts"
 import { startSitesScheduler } from "./services/sites.ts"
 import { countUsers } from "./services/users.ts"
 
@@ -41,8 +44,17 @@ if ((await countUsers(db)) === 0) {
   )
 }
 
-// Households that plan their week ahead by themselves.
-startAutoPlanScheduler(db)
+// Fry's prices each morning, and households that plan their week ahead by
+// themselves (with that week's sales checked first).
+const shop = createShopService(db, createAiService(db))
+startPriceScheduler(db, shop)
+startAutoPlanScheduler(db, {
+  beforePlan: async (householdId) => {
+    if ((await shop.status(householdId)).kroger.store) {
+      await shop.checkPrices(householdId)
+    }
+  },
+})
 startSitesScheduler(db, fetchPublic)
 
 // In the Docker image, keep yt-dlp current. A local install is left alone.

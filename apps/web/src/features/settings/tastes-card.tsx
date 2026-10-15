@@ -5,9 +5,12 @@ import {
   DIET_NAMES,
   DIETS,
   NO_TASTES,
+  SALE_LEAN_NAMES,
+  SALE_LEANS,
   WEEKNIGHT_MINUTES,
   type Diet,
   type HouseholdTastes,
+  type SaleLean,
 } from "@mise/shared"
 import { toast } from "sonner"
 
@@ -182,6 +185,32 @@ export function TastesCard() {
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
+            </Field>
+
+            <Field>
+              <FieldLabel>Lean on sales</FieldLabel>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                value={tastes.sales}
+                onValueChange={(value) =>
+                  value &&
+                  save({ sales: value as SaleLean }, "Sales setting updated")
+                }
+                className="flex-wrap justify-start"
+                disabled={update.isPending}
+              >
+                {SALE_LEANS.map((lean) => (
+                  <ToggleGroupItem key={lean} value={lean}>
+                    {SALE_LEAN_NAMES[lean]}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <FieldDescription>
+                Fill the week and the weekly autopilot favor recipes whose meat,
+                fish or produce is on sale at your Fry's, and say so. A little
+                still puts your favorites first.
+              </FieldDescription>
             </Field>
 
             <Field>

@@ -85,6 +85,13 @@ function money(value: unknown) {
     : null
 }
 
+/** "2026-10-20T23:59:59Z" → "2026-10-20": when a sale ends, if Kroger says. */
+function dayOf(value: unknown) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)
+    ? value.slice(0, 10)
+    : null
+}
+
 /** A Kroger product as Mise keeps it, with the given store's price and aisle. */
 export function toProduct(raw: any, domain = "kroger.com"): StoreProduct {
   const item = raw.items?.[0] ?? {}
@@ -102,6 +109,7 @@ export function toProduct(raw: any, domain = "kroger.com"): StoreProduct {
     sizes[0]
   const regular = money(item.price?.regular)
   const promo = money(item.price?.promo)
+  const onSale = promo !== null && regular !== null && promo < regular
   const aisle = raw.aisleLocations?.[0]
   const aisleNumber = Number(aisle?.number)
   const stock = item.inventory?.stockLevel
@@ -113,7 +121,8 @@ export function toProduct(raw: any, domain = "kroger.com"): StoreProduct {
     size: item.size ? String(item.size) : null,
     image: typeof photo?.url === "string" ? photo.url : null,
     price: regular,
-    salePrice: promo && regular && promo < regular ? promo : null,
+    salePrice: onSale ? promo : null,
+    saleEnds: onSale ? dayOf(item.price?.expirationDate?.value) : null,
     aisle: aisle?.description ? String(aisle.description) : null,
     aisleNumber:
       Number.isFinite(aisleNumber) && aisleNumber > 0 ? aisleNumber : null,

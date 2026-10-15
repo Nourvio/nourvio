@@ -124,7 +124,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 
 ### 4. Meal planning
 
-- **Tastes and rules** (Settings, for anyone in the household): foods someone doesn't eat or is allergic to, diets every meal must fit, how long weeknight dinners can take, and notes for the assistant ("no fish on Mondays"). Fill the week, dinner ideas and the assistant follow them; a recipe that breaks one says so on its page (allergies in red). Mention one to the assistant in passing ("Jamie can't stand mushrooms") and it offers to remember it.
+- **Tastes and rules** (Settings, for anyone in the household): foods someone doesn't eat or is allergic to, diets every meal must fit, how long weeknight dinners can take, how much to lean on Fry's sales, and notes for the assistant ("no fish on Mondays"). Fill the week, dinner ideas and the assistant follow them; a recipe that breaks one says so on its page (allergies in red). Mention one to the assistant in passing ("Jamie can't stand mushrooms") and it offers to remember it.
 - A week view, one day at a time. Each household picks which meals it plans (breakfast, lunch, dinner, snacks; dinner by default) and whether weeks start on Sunday or Monday.
   - Each day is a full-width card with its meals side by side, and an empty meal is a "+ Add lunch" box in its place. On a phone the meals stack, and empty ones shrink to small "+ Lunch" buttons.
   - This week's days gone by fold into one line ("Sun – Tue · 3 cooked: …") until you open them.
@@ -134,6 +134,7 @@ The assistant is the center of the app. It's one tap away on every screen, and i
 - **Fill the week** suggests recipes for the empty meals, from today on:
   - No repeats: nothing planned or made within two weeks, and a recipe and its versions ("Pancakes (dairy-free)") count as one dish.
   - Favors high ratings, recipes not tried yet, recipes tagged for the meal, and quick dinners on weeknights.
+  - Leans on what's on sale at your Fry's, and says so ("Chicken thighs on sale"): meat and fish count most, produce less. **Lean on sales** in Tastes and rules is off, a little (the default, so favorites still come first) or a lot.
   - Breakfast, lunch and snacks only use recipes tagged for them. Dinner takes anything that isn't clearly another meal.
   - Re-roll any idea, or leave that meal empty, before adding them all.
 - **Suggest something else** on any planned meal swaps in another recipe, with an undo.
@@ -183,9 +184,10 @@ Our stores are Fry's, Costco and Walmart (see [roadmap.md](roadmap.md#milestone-
 - **Fry's: straight into the cart** (List → **Send to Fry's**). Once a household admin picks the store and links the household's Fry's account in Settings → Stores:
   - Each item gets a product at that Fry's. The first time, Mise suggests one (the small AI model picks from Fry's search results, so "chicken thighs" isn't dog treats); after that it remembers. **Change** searches Fry's to pick another, and that's remembered too.
   - Recipe amounts become packages: 2 cups of milk is one gallon, 3 onions is 3 onions or one 3 lb bag, 2 cans is 2 cans, and an every-week "2 × 12-pack" is one 24-pack (or two 12-packs). When the amount and the package can't be compared (4 cloves of garlic, a bulb sold by the each), it says **Check how many**.
-  - Fry's prices for that store today, sales, stock and the aisle show on each line, with a total.
+  - Fry's prices for that store today, sales (and when they end), stock and the aisle show on each line, with a total. A good price says what it usually costs.
   - **Add to Fry's cart** sends the ticked lines. Pick a pickup or delivery time and pay in the Fry's app or website. Kroger's API can only add, so what was sent is marked **Sent** and left out next time unless ticked.
   - Works the same for any Kroger store: Ralphs, King Soopers, Smith's, Harris Teeter and the rest.
+- **Fry's sales, every morning:** with a Fry's store picked, Mise checks its prices each morning (or **Check now** in Settings → Stores). It refreshes every product it remembers and looks up the meat, fish and produce in your recipes. On the List, a sale item says **Sale · save $4.00**, and each store's card adds up what the sales save. Recipes has an **On sale** filter for recipes that use something on sale this week, and their cards say what. Fill the week, Today's ideas and the weekly autopilot lean on them.
 - **Costco** (List → Shop → **Shop at Costco**): Costco has no way for apps to fill a cart, so the list for Costco links each item to its search at Costco Same-Day (run by Instacart; sign in there once with your membership). Check items off as they go in.
 - **Shopping any store's site:** the extension keeps the list in the browser's side panel; check things off as they go in the cart, and **Find** searches Walmart, Costco Same-Day or Fry's for an item in the tab beside it.
 - **Walmart: through the Mise browser extension** (its side panel → **Walmart cart**). Walmart doesn't let apps fill carts, so the extension works in your own signed-in Walmart tab:

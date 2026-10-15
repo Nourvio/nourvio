@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { DIET_NAMES, DIETS, dietsFor, type Diet } from "./diets.ts"
+import { SALE_LEANS, type SaleLean } from "./sales.ts"
 
 /** A food the household doesn't eat: who doesn't, and whether it's an allergy. */
 export type AvoidedFood = {
@@ -18,6 +19,8 @@ export type HouseholdTastes = {
   weeknightMinutes: number | null
   /** For the assistant: "no fish on Mondays", "the kids like it mild". */
   notes: string[]
+  /** How much suggestions lean on what's on sale at the household's Fry's. */
+  sales: SaleLean
 }
 
 export const NO_TASTES: HouseholdTastes = {
@@ -25,6 +28,7 @@ export const NO_TASTES: HouseholdTastes = {
   diets: [],
   weeknightMinutes: null,
   notes: [],
+  sales: "some",
 }
 
 const avoidedFood = z.object({
@@ -38,6 +42,7 @@ export const householdTastesInput = z.object({
   diets: z.array(z.enum(DIETS)).max(DIETS.length),
   weeknightMinutes: z.number().int().min(10).max(240).nullable(),
   notes: z.array(z.string().trim().min(1).max(200)).max(50),
+  sales: z.enum(SALE_LEANS).default("some"),
 })
 
 /** Choices for the weeknight dinner limit. */
@@ -197,5 +202,6 @@ export function mergeTastes(
         ? added.weeknightMinutes
         : current.weeknightMinutes,
     notes,
+    sales: added.sales ?? current.sales,
   }
 }

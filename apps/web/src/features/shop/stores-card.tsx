@@ -23,6 +23,7 @@ import { useCurrentUser } from "@/features/auth/current-user"
 import { ApiError } from "@/lib/api"
 
 import {
+  useCheckPrices,
   useKrogerStores,
   useLinkKroger,
   useSaveKrogerSettings,
@@ -77,6 +78,61 @@ export function StoresCard() {
         </div>
       </CardContent>
     </Card>
+  )
+}
+
+/** "Today at 6:02 AM", "Yesterday at 6:01 AM", or "Oct 12". */
+function checkedWhen(iso: string) {
+  const at = new Date(iso)
+  const days = Math.round(
+    (new Date().setHours(0, 0, 0, 0) - new Date(iso).setHours(0, 0, 0, 0)) /
+      86_400_000
+  )
+  const time = at.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  })
+  if (days === 0) return `today at ${time}`
+  if (days === 1) return `yesterday at ${time}`
+  return at.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+}
+
+/** When the store's prices and sales were last checked, and a way to check now. */
+function PricesRow({ kroger }: { kroger: ShopStatus["kroger"] }) {
+  const check = useCheckPrices()
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="text-sm text-muted-foreground">
+        Prices and sales are checked each morning
+        {kroger.pricesCheckedAt
+          ? `, last ${checkedWhen(kroger.pricesCheckedAt)}.`
+          : "."}
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={check.isPending}
+        onClick={() =>
+          check.mutate(undefined, {
+            onSuccess: (result) =>
+              toast.success(
+                result.onSale
+                  ? `${result.onSale} ${result.onSale === 1 ? "food" : "foods"} in your recipes on sale`
+                  : "Nothing in your recipes is on sale right now"
+              ),
+            onError: (error) =>
+              toast.error(
+                error instanceof ApiError
+                  ? error.message
+                  : "Couldn't check prices"
+              ),
+          })
+        }
+      >
+        {check.isPending && <Spinner data-icon="inline-start" />}
+        Check now
+      </Button>
+    </div>
   )
 }
 
@@ -214,6 +270,8 @@ function KrogerSection({
               <ToggleGroupItem value="DELIVERY">Delivery</ToggleGroupItem>
             </ToggleGroup>
           </div>
+
+          <PricesRow kroger={kroger} />
 
           {kroger.needsRelink && (
             <p className="flex items-center gap-2 text-sm text-destructive">

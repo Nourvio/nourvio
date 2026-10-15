@@ -49,6 +49,7 @@ import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { monthDay } from "@/features/plan/dates"
 import { useHouseholdInfo } from "@/features/settings/use-household"
+import { saleThrough } from "@/features/shop/sale-text"
 import { useShopStatus } from "@/features/shop/use-shop"
 import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
@@ -547,6 +548,11 @@ function StoreCard({
     return price ? [price.total] : []
   })
   const total = costs.reduce((sum, cost) => sum + cost, 0)
+  const sales = left.flatMap((item) => {
+    const saved = prices[item.id]?.saved
+    return saved ? [saved] : []
+  })
+  const saved = sales.reduce((sum, value) => sum + value, 0)
 
   // Where it's shopped: its store, or any for a list without one.
   const actions: { to: string; label: string }[] = []
@@ -602,6 +608,12 @@ function StoreCard({
           </>
         )}
       </span>
+      {saved > 0 && (
+        <span className="text-sm font-medium text-primary">
+          Saving about {money(saved)} with {sales.length}{" "}
+          {sales.length === 1 ? "sale" : "sales"}
+        </span>
+      )}
       <Progress
         value={items.length ? (got / items.length) * 100 : 0}
         aria-label={`${got} of ${items.length} in the cart`}
@@ -698,11 +710,22 @@ function QuickAdd({ list }: { list?: ShoppingList }) {
   )
 }
 
-/** "Fry's price on Oct 14, for 2 × Great Value Diced Tomatoes". */
+/**
+ * "Fry's price on Oct 14, for 2 × Great Value Diced Tomatoes. On sale
+ * through Tue. Usually $4.29 each."
+ */
 function priceNote(price: ItemPrice) {
   const packs = price.packages > 1 ? `${price.packages} × ` : ""
   const guess = price.sure ? "" : " (a guess at how many)"
-  return `${SHOP_NAMES[price.shop]} price on ${monthDay(price.seenAt.slice(0, 10))}, for ${packs}${price.product}${guess}`
+  return [
+    `${SHOP_NAMES[price.shop]} price on ${monthDay(price.seenAt.slice(0, 10))}, for ${packs}${price.product}${guess}.`,
+    price.sale &&
+      `On sale${price.saleEnds ? ` ${saleThrough(price.saleEnds)}` : ""}.`,
+    price.usual !== null &&
+      `Usually ${money(price.usual)}${price.packages > 1 ? " each" : ""}.`,
+  ]
+    .filter(Boolean)
+    .join(" ")
 }
 
 function ItemRow({
@@ -718,14 +741,28 @@ function ItemRow({
   onEdit: () => void
 }) {
   const update = useUpdateListItem()
-  const badges = item.checked
-    ? []
-    : [
-        ...item.recipes.map((name) => ({ text: `For ${name}`, meal: true })),
-        ...(item.source === "weekly"
-          ? [{ text: "Every week", meal: false }]
-          : []),
-      ]
+  const badges: { text: string; kind: "sale" | "meal" | "weekly" }[] =
+    item.checked
+      ? []
+      : [
+          ...(price?.sale
+            ? [
+                {
+                  text: price.saved
+                    ? `Sale · save ${money(price.saved)}`
+                    : "On sale",
+                  kind: "sale" as const,
+                },
+              ]
+            : []),
+          ...item.recipes.map((name) => ({
+            text: `For ${name}`,
+            kind: "meal" as const,
+          })),
+          ...(item.source === "weekly"
+            ? [{ text: "Every week", kind: "weekly" as const }]
+            : []),
+        ]
   // A narrow card: badges under the name. A wide one: all in a line.
   return (
     <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3.5 gap-y-1 py-3 @2xl:grid-cols-[auto_minmax(0,1fr)_auto_auto] @2xl:gap-x-4">
@@ -765,9 +802,11 @@ function ItemRow({
               key={badge.text}
               className={cn(
                 "inline-block max-w-full truncate rounded-full px-2.5 py-0.5 text-xs font-medium",
-                badge.meal
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-secondary text-muted-foreground"
+                badge.kind === "sale"
+                  ? "bg-primary/10 text-primary"
+                  : badge.kind === "meal"
+                    ? "bg-accent text-accent-foreground"
+                    : "bg-secondary text-muted-foreground"
               )}
             >
               {badge.text}

@@ -53,6 +53,7 @@ import { formatMinutes, formatRelativeDate } from "@/features/recipes/format"
 import { RecipeImage } from "@/features/recipes/recipe-image"
 import { useRecipes } from "@/features/recipes/use-recipes"
 import { useHouseholdInfo } from "@/features/settings/use-household"
+import { onSaleText } from "@/features/shop/sale-text"
 import { ApiError } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -373,7 +374,9 @@ function TonightIdeas({ date, others }: { date: string; others: PlanEntry[] }) {
             ? `New from ${onSite.site}`
             : mine?.uses.length
               ? `Uses up your ${listed(mine.uses.map((u) => u.toLowerCase()))}`
-              : "From your recipes"}
+              : mine?.onSale.length
+                ? onSaleText(mine.onSale)
+                : "From your recipes"}
         </p>
         <h3
           id={id}

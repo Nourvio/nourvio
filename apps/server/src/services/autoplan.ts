@@ -108,8 +108,15 @@ export async function saveAutoPlan(
   return updateHousehold(db, householdId, { autoPlan: next })
 }
 
+/** Before a household's week is planned, such as checking this week's sales. */
+export type BeforePlan = (householdId: string) => Promise<unknown>
+
 /** Runs every household's plan that's due. Safe to call often. */
-export async function runDueAutoPlans(db: Db, now = new Date()) {
+export async function runDueAutoPlans(
+  db: Db,
+  now = new Date(),
+  beforePlan?: BeforePlan
+) {
   const rows = await db
     .select({ id: households.id })
     .from(households)
@@ -123,6 +130,10 @@ export async function runDueAutoPlans(db: Db, now = new Date()) {
       await updateHousehold(db, id, {
         autoPlan: { ...household.autoPlan, handledWeek: due.week },
       })
+      // Planned without fresh prices rather than not at all.
+      await beforePlan?.(id).catch((error) =>
+        console.error(`Before planning for household ${id}:`, error)
+      )
       const run = await planWeek(db, id, due, household.autoPlan.addToList)
       const latest = await getHousehold(db, id)
       await updateHousehold(db, id, {
@@ -138,9 +149,13 @@ export async function runDueAutoPlans(db: Db, now = new Date()) {
 }
 
 /** Checks for due plans every few minutes while the server runs. */
-export function startAutoPlanScheduler(db: Db, everyMs = 5 * 60_000) {
+export function startAutoPlanScheduler(
+  db: Db,
+  options: { everyMs?: number; beforePlan?: BeforePlan } = {}
+) {
+  const everyMs = options.everyMs ?? 5 * 60_000
   const check = () => {
-    void runDueAutoPlans(db).catch((error) =>
+    void runDueAutoPlans(db, new Date(), options.beforePlan).catch((error) =>
       console.error("Autoplan check failed:", error)
     )
   }

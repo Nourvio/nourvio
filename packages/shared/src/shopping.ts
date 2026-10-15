@@ -18,6 +18,8 @@ export type StoreProduct = {
   price: number | null
   /** The price while there's a sale. */
   salePrice: number | null
+  /** The sale's last day, when the store says ("2026-10-20"). */
+  saleEnds?: string | null
   /** "Aisle 12", at the household's store. */
   aisle: string | null
   /** For walking the store in order. */
@@ -237,6 +239,8 @@ export type BasketLine = {
   sure: boolean
   /** Sent to the store already. */
   sent: boolean
+  /** What a package usually costs, when today's price is well under it. */
+  usual: number | null
 }
 
 /** The list, ready to send to a store. */
@@ -281,6 +285,12 @@ export type ItemPrice = {
   /** False when the number of packages is a guess. */
   sure: boolean
   sale: boolean
+  /** What the sale takes off, for the packages needed. */
+  saved: number | null
+  /** The sale's last day, when the store says. */
+  saleEnds: string | null
+  /** What a package usually costs, when today's price is well under it. */
+  usual: number | null
   /** The product it's priced from. */
   product: string
   /** When that price was seen. */
@@ -314,6 +324,8 @@ export type ShopStatus = {
     linked: { by: string; at: string } | null
     /** Kroger stopped accepting the sign-in; link the account again. */
     needsRelink: boolean
+    /** When Mise last checked the store's prices and sales. */
+    pricesCheckedAt: string | null
   }
 }
 
@@ -351,6 +363,11 @@ export const storeProductSchema = z.object({
   image: webLink.nullable(),
   price: z.number().nonnegative().max(10_000).nullable(),
   salePrice: z.number().nonnegative().max(10_000).nullable(),
+  saleEnds: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
   aisle: z.string().trim().max(60).nullable(),
   aisleNumber: z.number().nullable(),
   inStock: z.boolean().nullable(),

@@ -1,10 +1,11 @@
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Clock01Icon } from "@hugeicons/core-free-icons"
-import type { RecipeSummary } from "@mise/shared"
+import type { OnSale, RecipeSummary } from "@mise/shared"
 import { Link } from "react-router"
 
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { onSaleText } from "@/features/shop/sale-text"
 import { storedChoice } from "@/lib/stored-choice"
 
 import { formatMinutes, formatRelativeDate } from "./format"
@@ -20,7 +21,14 @@ export const useRecipeView = storedChoice<RecipeView>(
   "grid"
 )
 
-export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
+export function RecipeCard({
+  recipe,
+  onSale,
+}: {
+  recipe: RecipeSummary
+  /** What it uses that's on sale at the household's Fry's. */
+  onSale?: OnSale[]
+}) {
   const time = formatMinutes(recipe.totalMinutes)
 
   return (
@@ -53,6 +61,11 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
               <RatingStars value={recipe.rating} />
             </div>
           )}
+          {onSale?.length ? (
+            <p className="line-clamp-2 text-sm font-medium text-primary">
+              {onSaleText(onSale)}
+            </p>
+          ) : null}
           {(recipe.lastMadeAt || recipe.tags.length > 0) && (
             <div className="mt-auto flex flex-wrap gap-1.5 pt-1">
               {recipe.lastMadeAt && (
@@ -79,7 +92,13 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
 }
 
 /** A compact row, for scanning a big library. */
-export function RecipeRow({ recipe }: { recipe: RecipeSummary }) {
+export function RecipeRow({
+  recipe,
+  onSale,
+}: {
+  recipe: RecipeSummary
+  onSale?: OnSale[]
+}) {
   const time = formatMinutes(recipe.totalMinutes)
   return (
     <Link
@@ -93,6 +112,11 @@ export function RecipeRow({ recipe }: { recipe: RecipeSummary }) {
       />
       <div className="grid min-w-0 flex-1 gap-0.5">
         <p className="truncate font-medium">{recipe.name}</p>
+        {onSale?.length ? (
+          <p className="truncate text-sm font-medium text-primary">
+            {onSaleText(onSale)}
+          </p>
+        ) : null}
         <div className="flex min-w-0 items-center gap-3 text-sm text-muted-foreground">
           {time && (
             <span className="flex shrink-0 items-center gap-1">

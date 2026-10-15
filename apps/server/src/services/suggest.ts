@@ -4,11 +4,13 @@ import {
   missingDiets,
   pantryKey,
   parseIngredient,
+  saleNudge,
   toIsoDate,
   weekdayOf,
   WEEKNIGHTS,
   whyUseSoon,
   type Meal,
+  type OnSale,
   type RecipeSummary,
   type UseSoonReason,
 } from "@mise/shared"
@@ -24,6 +26,12 @@ import { getHousehold } from "./households.ts"
 import { pairingOptionsByRecipe } from "./pairings.ts"
 import { listPantry } from "./pantry.ts"
 import { listRecipes } from "./recipes.ts"
+import {
+  currentDeals,
+  householdToday,
+  recipeFoods,
+  recipeSales,
+} from "./sales.ts"
 
 /** Don't suggest what was planned (and not skipped) or made this many days around the week. */
 const NO_REPEAT_DAYS = 14
@@ -39,6 +47,8 @@ export type Suggestion = {
   with: { id: string; slug: string; name: string } | null
   /** Pantry food it uses up that needs using soon. */
   uses: string[]
+  /** What it uses that's on sale at the household's Fry's. */
+  onSale: OnSale[]
 }
 
 const MEAL_TAGS: Record<Meal, string[]> = {
@@ -185,6 +195,26 @@ export async function suggestMeals(
       )
       .map((recipe) => recipe.id)
   )
+  // What's on sale at the household's Fry's, and how much to lean on it.
+  const sales =
+    tastes.sales === "off"
+      ? (new Map() as ReturnType<typeof recipeSales>)
+      : recipeSales(
+          (await recipeFoods(db, householdId)).byRecipe,
+          (
+            await currentDeals(
+              db,
+              householdId,
+              await householdToday(db, householdId)
+            )
+          ).deals
+        )
+  const nudge = (recipe: RecipeSummary) =>
+    saleNudge(
+      (sales.get(recipe.id) ?? []).map((sale) => sale.section),
+      tastes.sales
+    )
+
   const tooLong = (recipe: RecipeSummary, slot: { date: string; meal: Meal }) =>
     tastes.weeknightMinutes !== null &&
     slot.meal === "dinner" &&
@@ -230,7 +260,11 @@ export async function suggestMeals(
       const using = candidatesFor(slot).filter((recipe) =>
         usesOf.recipe(recipe.id).includes(food)
       )
-      const recipe = pick(using, (r) => weight(r, slot.meal, slot.date), random)
+      const recipe = pick(
+        using,
+        (r) => weight(r, slot.meal, slot.date) + nudge(r),
+        random
+      )
       if (!recipe) continue
       choose(index, recipe)
       for (const name of usesOf.recipe(recipe.id)) covered.add(name)
@@ -243,7 +277,8 @@ export async function suggestMeals(
     if (chosen.has(index)) continue
     const recipe = pick(
       candidatesFor(slot),
-      (r) => weight(r, slot.meal, slot.date) + usesOf.recipe(r.id).length,
+      (r) =>
+        weight(r, slot.meal, slot.date) + usesOf.recipe(r.id).length + nudge(r),
       random
     )
     if (recipe) choose(index, recipe)
@@ -285,6 +320,9 @@ export async function suggestMeals(
         },
         with: pairWith(recipe),
         uses: usesOf.recipe(recipe.id),
+        onSale: (sales.get(recipe.id) ?? []).map(
+          ({ section: _, ...sale }) => sale
+        ),
       },
     ]
   })

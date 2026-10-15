@@ -147,7 +147,7 @@ Build order, a commit for each:
 5. **The Mise extension, part two (Walmart):**
    - Pick a product on any Walmart page for a list item ("use this for milk"), price included.
    - Fill the Walmart cart with the week's list: one item at a time, asking about items without a product yet, and ending with a summary and an estimated total.
-6. **Later:** plans that lean on Fry's sales, and Costco-size packs for warehouse trips.
+6. **Later:** plans that lean on Fry's sales (now milestone 11), and Costco-size packs for warehouse trips.
 
 **Done when:**
 - After the first week's product picks, a week's list lands in the Fry's cart in a couple of minutes, and in the Walmart cart through the extension.
@@ -209,12 +209,40 @@ Why it sounds bad today: cook mode never picks a voice, so it gets the browser's
 
 **Done when:** cooking hands-free in Chrome on Windows sounds like a person, not a 2005 GPS, and turning the server voice off goes back to the device's best voice.
 
+## Milestone 11: Fry's sales
+
+**Status:** built October 14, 2026, and checked against the user's real Fry's. The user shops at Fry's every week and picked this from milestone 6's "Later": plans that lean on what's on sale.
+
+Found while building: Kroger does give a sale's end date (`price.expirationDate`), so "through Tue" shows. The AI picker used to skip a lone search result ("garlic clove" turned up only garlic crackers, which were kept); it now checks those too, sees sale prices, and the daily check gives Mise's own picks a fresh look each week, for one on sale.
+
+What's there today: Kroger's product API gives a store's regular and sale price, and Mise keeps both (`StoreProduct.salePrice`). But prices are only refreshed when the cart review (`/list/shop`) opens, so the List shows whatever was seen last, and planning never looks at them.
+
+**1. Fresh prices, every day** (no new keys, a handful of Kroger calls)
+- Once a day, early morning in the household's time zone, Mise refreshes the price of every remembered Fry's product, 50 to a call. It also refreshes right before the weekly autopilot plans, so the plan sees this week's sales.
+- Recipe ingredients never bought at Fry's: Mise searches Fry's once for each **meat, seafood and produce** food in the household's recipes (the sales that change what's for dinner) and remembers its pick as a suggestion, exactly as the cart review does: the AI picks when it's set up (a fraction of a cent a batch), else the first in stock. From then on it's refreshed with the rest. At most 50 new searches a day, so a big library catches up over a few days.
+- Kroger allows an app 10,000 product calls a day; this uses well under 100.
+- Every price seen is saved by day in a new `store_prices` table (household, store, product, day, regular price, sale price, and when the sale ends if Kroger says), from the daily check, the cart review, product picks and the Walmart extension.
+
+**2. Sales on the List**
+- An item on sale gets a **Sale** badge and what it saves ("save $1.30"). Each store card adds up the week's savings: "Saving about $8.40 at Fry's".
+- A good price says so, from the history: "usually $4.29" (the most common regular price over the past 90 days, once there are a few weeks of it). The cart review shows the same, and it works for Walmart prices the extension has seen.
+- When Kroger gives the sale's end date, it shows: "Sale through Tue". The public API's field for it is read defensively; without it, no date.
+
+**3. Plans that lean on sales**
+- Fill the week and the weekly autopilot nudge a recipe up for each of its main ingredients on sale. Meat and seafood count most, produce less. It's added to the rules already there (ratings, quick weeknights, use-soon food first), so a favorite still beats a so-so recipe with cheap chicken.
+- A household setting under Tastes: **Lean on sales**: off, a little (the default), or a lot.
+- Suggestions say why: a "Thighs on sale" chip next to "Uses spinach", in Fill the week and Today's ideas card.
+- Recipes gets an **On sale** quick filter: recipes that use something on sale at Fry's this week, with the sale foods on each card.
+
+**Not in this milestone:** Kroger's digital coupons (the public API doesn't offer them), Costco (no prices to read), and planning around Walmart deals (Mise only sees Walmart prices when the extension does).
+
+**Done when:** the List shows this week's Fry's sales and savings without opening the cart review, a week the autopilot plans uses more of what's on sale and says so, and a sale item shows what it usually costs.
+
 ## Later, maybe
 
 - Meaning-based recipe search with `pgvector` ("something cozy with chicken")
 - Offline reading in the cook view (a service worker)
 - Barcode scanning for the pantry
-- Price tracking, from the prices Fry's and Walmart show when sending the list
 - A ChatGPT/Claude app connector (MCP). We dropped this in favor of in-app chat, but the service layer would make it easy to add (see [integrations.md](integrations.md#considered-and-dropped-chatgpt-and-claude-app-connectors-mcp)).
 
 ## Open questions

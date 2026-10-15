@@ -1,3 +1,4 @@
+import { addDays, localClock } from "@mise/shared"
 import { eq } from "drizzle-orm"
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
@@ -7,6 +8,7 @@ import {
   followedSites,
   invites,
   shopConnections,
+  storePrices,
   storeProducts,
 } from "../db/schema.ts"
 import { itemKey } from "../services/sites.ts"
@@ -264,6 +266,52 @@ describe("households", () => {
       expect(
         (await t.admin.get("/api/shop")).body.status.kroger.store.banner
       ).toBe("Fry's")
+    })
+
+    test("prices seen and sales", async () => {
+      const household = (await t.admin.get("/api/household")).body.household
+      const theirs = (await neighbor.get("/api/household")).body.household
+      const product = {
+        id: "77",
+        upc: "77",
+        name: "Butter",
+        brand: null,
+        size: "1 lb",
+        image: null,
+        price: 5,
+        salePrice: 4,
+        aisle: null,
+        aisleNumber: null,
+        inStock: true,
+        url: null,
+      }
+      // The same product at both, on sale; only this household has a history.
+      for (const id of [household.id, theirs.id]) {
+        await t.db
+          .insert(storeProducts)
+          .values({ householdId: id, shop: "kroger", food: "butter", product })
+      }
+      await t.db.insert(storePrices).values(
+        [60, 40, 20].map((ago) => ({
+          householdId: household.id,
+          shop: "kroger" as const,
+          productId: "77",
+          day: addDays(localClock(new Date(), "UTC").date, -ago),
+          price: 6,
+          salePrice: null,
+        }))
+      )
+      const mine = (await t.admin.post("/api/list/items", { text: "butter" }))
+        .body.item
+      const their = (await neighbor.post("/api/list/items", { text: "butter" }))
+        .body.item
+      const usual = async (client: typeof neighbor, id: string) =>
+        (await client.get("/api/shop/prices")).body.prices[id]?.usual
+      expect(await usual(t.admin, mine.id)).toBe(6)
+      expect(await usual(neighbor, their.id)).toBeNull()
+      expect((await neighbor.get("/api/shop/deals")).body.deals.deals).toEqual([
+        expect.objectContaining({ key: "butter" }),
+      ])
     })
 
     test("shopping lists and where foods go", async () => {

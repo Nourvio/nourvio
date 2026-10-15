@@ -53,6 +53,7 @@ test("describeTastes writes a short list for the assistant", () => {
       diets: ["vegetarian"],
       weeknightMinutes: 45,
       notes: ["No fish on Mondays"],
+      sales: "some",
     })
   ).toBe(
     [

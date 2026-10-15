@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto"
 
 import {
+  addDays,
   bakingDensity,
   formatAmount,
   lineCost,
@@ -10,11 +11,13 @@ import {
   parseProductSize,
   readPackAmount,
   UNITS,
+  usualWorthShowing,
   type Basket,
   type BasketLine,
   type KrogerAppSettings,
   type ListPrices,
   type Need,
+  type PriceCheck,
   type SendBasketInput,
   type ShopId,
   type ShopStatus,
@@ -47,6 +50,13 @@ import {
 } from "../shop/kroger.ts"
 import { getHousehold } from "./households.ts"
 import { foodOf, listRows, listRowsForStore, toItem } from "./list.ts"
+import {
+  currentDeals,
+  householdToday,
+  recipeFoods,
+  recordPrices,
+  usualPrices,
+} from "./sales.ts"
 
 type ItemRow = typeof shoppingItems.$inferSelect
 type ConnectionRow = typeof shopConnections.$inferSelect
@@ -67,6 +77,15 @@ const WHOLE_PORTION =
 const PART_PORTION =
   /\b(clove|slice|sprig|leaf|leaves|cup|tbsp|tsp|tablespoon|teaspoon|oz|piece|chopped|diced)\b/i
 
+/** Recipe foods looked up for the first time in one price check, at most. */
+const SEARCHES_PER_CHECK = 50
+/** A recipe food that turned up nothing isn't looked up again for this long. */
+const SEARCH_AGAIN_DAYS = 30
+/** Mise's own pick for a recipe food, not on sale, gets a fresh look this often. */
+const RECHECK_DAYS = 7
+/** The aisles whose sales change what's for dinner. */
+const SALE_SECTIONS = new Set(["meat-seafood", "produce"])
+
 const STORE_NAMES: Record<ShopId, string> = {
   kroger: "Kroger",
   costco: "Costco",
@@ -86,7 +105,7 @@ type PendingLink = {
 const PICK_SYSTEM = `You choose grocery products for a home cook's shopping list. For each list item you get the store's search results; pick the one a typical shopper would buy to cook with.
 - The plain, everyday version of the thing itself: fresh chicken thighs, not pet food, a frozen meal or a seasoning named after it.
 - A sensible size for the amount needed.
-- In stock over out of stock. The store's own brand when otherwise equal.
+- In stock over out of stock. When two are equally the item, the one on sale, then the store's own brand.
 - null when none of the results is the item.`
 
 const picksSchema = z.object({
@@ -320,6 +339,7 @@ export function createShopService(
             ? { by: row.account.linkedBy, at: row.account.linkedAt }
             : null,
         needsRelink: Boolean(row?.account?.broken),
+        pricesCheckedAt: row?.pricesCheckedAt?.toISOString() ?? null,
       },
     }
   }
@@ -445,14 +465,15 @@ export function createShopService(
   /** Mise's pick from each item's search results: the AI's when it's set up, else the first in stock. */
   async function choose(
     actor: AiActor,
-    items: ItemRow[],
+    items: { name: string; amount: string }[],
     results: StoreProduct[][]
   ): Promise<(StoreProduct | null)[]> {
     const fallback = results.map(
       (list) => list.find((p) => p.inStock !== false) ?? list[0] ?? null
     )
+    // A lone result too: it may not be the item at all.
     const asked = items.flatMap((_, index) =>
-      results[index]!.length > 1 ? [index] : []
+      results[index]!.length ? [index] : []
     )
     if (!asked.length || !(await ai.status()).available) return fallback
     try {
@@ -461,13 +482,11 @@ export function createShopService(
           const item = items[index]!
           const options = results[index]!.map(
             (p, i) =>
-              `  ${i}. ${p.name}${p.size ? ` (${p.size})` : ""}${p.price ? `, $${p.price}` : ""}${p.inStock === false ? ", out of stock" : ""}`
+              `  ${i}. ${p.name}${p.size ? ` (${p.size})` : ""}${p.salePrice && p.price ? `, on sale $${p.salePrice} (usually $${p.price})` : p.price ? `, $${p.price}` : ""}${p.inStock === false ? ", out of stock" : ""}`
           ).join("\n")
           return (
-            `Item ${n}: ${toItem(item).amount} ${item.name}`.replace(
-              /\s+/g,
-              " "
-            ) + `\n${options}`
+            `Item ${n}: ${item.amount} ${item.name}`.replace(/\s+/g, " ") +
+            `\n${options}`
           )
         })
         .join("\n\n")
@@ -497,7 +516,8 @@ export function createShopService(
     row: ItemRow,
     need: Need,
     saved: { product: StoreProduct; chosen: boolean } | undefined,
-    sent: Record<string, number>
+    sent: Record<string, number>,
+    usual: Map<string, number | null> = new Map()
   ): BasketLine {
     const product = saved?.product ?? null
     const { packages, sure } = packagesFor(
@@ -513,8 +533,15 @@ export function createShopService(
       packages,
       sure,
       sent: row.id in sent,
+      usual: product
+        ? usualWorthShowing(product, usual.get(product.id) ?? null)
+        : null,
     }
   }
+
+  /** The items' names and amounts, for choose. */
+  const asItems = (rows: ItemRow[]) =>
+    rows.map((row) => ({ name: row.name, amount: toItem(row).amount }))
 
   /**
    * The list ready for the store: each unchecked item with its product
@@ -537,6 +564,7 @@ export function createShopService(
       )
     const saved = new Map(savedRows.map((row) => [row.food, row]))
     const foods = [...new Set(rows.map((row) => foodOf(row.key)))]
+    const today = await householdToday(db, householdId)
 
     // Today's prices and stock for what's remembered.
     const known = foods.flatMap((food) => {
@@ -567,6 +595,7 @@ export function createShopService(
             )
           )
       }
+      await recordPrices(db, householdId, "kroger", [...fresh.values()], today)
     }
 
     // Suggestions for what isn't.
@@ -579,7 +608,8 @@ export function createShopService(
       const results = await mapLimit(missing, 4, (row) =>
         client.search(row.name, store, 8).catch(() => [] as StoreProduct[])
       )
-      const picks = await choose(actor, missing, results)
+      const picks = await choose(actor, asItems(missing), results)
+      await recordPrices(db, householdId, "kroger", results.flat(), today)
       const values = missing.flatMap((row, index) => {
         const product = picks[index]
         return product
@@ -605,13 +635,139 @@ export function createShopService(
 
     const needs = await needsFor(db, rows)
     const sent = conn.lastSent?.items ?? {}
+    const usual = await usualPrices(
+      db,
+      householdId,
+      "kroger",
+      [...saved.values()].map((row) => row.product.id),
+      today
+    )
     return {
       shop: "kroger",
       storeName: store.banner,
       lines: rows.map((row, index) =>
-        toLine(row, needs[index]!, saved.get(foodOf(row.key)), sent)
+        toLine(row, needs[index]!, saved.get(foodOf(row.key)), sent, usual)
       ),
       sentAt: conn.lastSent?.at ?? null,
+    }
+  }
+
+  /**
+   * Today's prices and sales for every remembered Fry's product, and a first
+   * look at the meat, seafood and produce in the household's recipes that
+   * has no product yet (kept as Mise's suggestions, as the cart review
+   * does). Runs each morning and before the weekly autopilot plans.
+   */
+  async function checkPrices(householdId: string): Promise<PriceCheck> {
+    const { row: conn, store } = await requireStore(householdId)
+    const client = await kroger()
+    const today = await householdToday(db, householdId)
+    const saved = await savedProducts(householdId, "kroger")
+
+    const fresh = new Map(
+      saved.size
+        ? (
+            await client.products(
+              [...new Set([...saved.values()].map((row) => row.product.id))],
+              store
+            )
+          ).map((product) => [product.id, product])
+        : []
+    )
+    let refreshed = 0
+    for (const row of saved.values()) {
+      const product = fresh.get(row.product.id)
+      if (!product) continue
+      refreshed++
+      row.product = product
+      await db
+        .update(storeProducts)
+        .set({ product })
+        .where(
+          and(
+            eq(storeProducts.householdId, householdId),
+            eq(storeProducts.shop, "kroger"),
+            eq(storeProducts.food, row.food)
+          )
+        )
+    }
+    await recordPrices(db, householdId, "kroger", [...fresh.values()], today)
+
+    // Recipe foods to look up, the most used first: those with no product
+    // yet, then Mise's own picks that aren't on sale, for one that is. A
+    // product someone chose is never swapped.
+    const searchedOn = { ...conn.priceSearches }
+    const since = (days: number) => addDays(today, -days)
+    const lookedLately = (key: string, days: number) =>
+      Boolean(searchedOn[key] && searchedOn[key]! > since(days))
+    const { foods } = await recipeFoods(db, householdId)
+    const mostUsed = [...foods.values()]
+      .filter((food) => SALE_SECTIONS.has(food.section))
+      .sort((a, b) => b.recipes - a.recipes)
+    const lookup = [
+      ...mostUsed.filter(
+        (food) =>
+          !saved.has(food.key) && !lookedLately(food.key, SEARCH_AGAIN_DAYS)
+      ),
+      ...mostUsed.filter((food) => {
+        const row = saved.get(food.key)
+        return (
+          row &&
+          !row.chosen &&
+          row.product.salePrice === null &&
+          !lookedLately(food.key, RECHECK_DAYS)
+        )
+      }),
+    ].slice(0, SEARCHES_PER_CHECK)
+    if (lookup.length) {
+      const results = await mapLimit(lookup, 4, (food) =>
+        client.search(food.name, store, 8).catch(() => [] as StoreProduct[])
+      )
+      const picks = await choose(
+        { userId: null, householdId },
+        lookup.map((food) => ({ name: food.name, amount: "" })),
+        results
+      )
+      await recordPrices(db, householdId, "kroger", results.flat(), today)
+      for (const [index, food] of lookup.entries()) {
+        searchedOn[food.key] = today
+        const product = picks[index]
+        if (!product) continue
+        if (!saved.has(food.key)) {
+          await db
+            .insert(storeProducts)
+            .values({ householdId, shop: "kroger", food: food.key, product })
+            .onConflictDoNothing()
+        } else if (saved.get(food.key)!.product.id !== product.id) {
+          await db
+            .update(storeProducts)
+            .set({ product })
+            .where(
+              and(
+                eq(storeProducts.householdId, householdId),
+                eq(storeProducts.shop, "kroger"),
+                eq(storeProducts.food, food.key),
+                eq(storeProducts.chosen, false)
+              )
+            )
+        }
+      }
+    }
+
+    await db
+      .update(shopConnections)
+      .set({ pricesCheckedAt: new Date(), priceSearches: searchedOn })
+      .where(
+        and(
+          eq(shopConnections.householdId, householdId),
+          eq(shopConnections.shop, "kroger")
+        )
+      )
+    const { deals } = await currentDeals(db, householdId, today)
+    return {
+      refreshed,
+      searched: lookup.length,
+      onSale: [...deals.keys()].filter((key) => foods.has(key)).length,
     }
   }
 
@@ -642,6 +798,8 @@ export function createShopService(
     const row = await findRow(householdId, itemId)
     const [product] = await (await kroger()).products([productId], store)
     if (!product) throw new HttpError(404, "Kroger doesn't have that product")
+    const today = await householdToday(db, householdId)
+    await recordPrices(db, householdId, "kroger", [product], today)
     const food = foodOf(row.key)
     await db
       .insert(storeProducts)
@@ -659,7 +817,8 @@ export function createShopService(
       row,
       need!,
       { product, chosen: true },
-      conn.lastSent?.items ?? {}
+      conn.lastSent?.items ?? {},
+      await usualPrices(db, householdId, "kroger", [product.id], today)
     )
   }
 
@@ -811,11 +970,18 @@ export function createShopService(
     const needs = await needsFor(db, rows)
     const conn = await connection(householdId, shop)
     const sent = conn?.lastSent?.items ?? {}
+    const usual = await usualPrices(
+      db,
+      householdId,
+      shop,
+      [...saved.values()].map((row) => row.product.id),
+      await householdToday(db, householdId)
+    )
     return {
       shop,
       storeName: STORE_NAMES[shop],
       lines: rows.map((row, index) =>
-        toLine(row, needs[index]!, saved.get(foodOf(row.key)), sent)
+        toLine(row, needs[index]!, saved.get(foodOf(row.key)), sent, usual)
       ),
       sentAt: conn?.lastSent?.at ?? null,
     }
@@ -838,8 +1004,15 @@ export function createShopService(
     const rows = asked.map((item) => byId.get(item.itemId)!)
     const picks = await choose(
       actor,
-      rows,
+      asItems(rows),
       asked.map((item) => item.products)
+    )
+    await recordPrices(
+      db,
+      householdId,
+      shop,
+      asked.flatMap((item) => item.products),
+      await householdToday(db, householdId)
     )
     const values = rows.flatMap((row, index) => {
       const product = picks[index]
@@ -863,6 +1036,8 @@ export function createShopService(
   ) {
     const row = await findRow(householdId, itemId)
     const food = foodOf(row.key)
+    const today = await householdToday(db, householdId)
+    await recordPrices(db, householdId, shop, [product], today)
     await db
       .insert(storeProducts)
       .values({ householdId, shop, food, product, chosen: true })
@@ -880,7 +1055,8 @@ export function createShopService(
       row,
       need!,
       { product, chosen: true },
-      conn?.lastSent?.items ?? {}
+      conn?.lastSent?.items ?? {},
+      await usualPrices(db, householdId, shop, [product.id], today)
     )
   }
 
@@ -944,6 +1120,22 @@ export function createShopService(
       lists: listsForStore(lists, shop),
     }))
     const needs = await needsFor(db, rows)
+    const today = await householdToday(db, householdId)
+    const usual = new Map<string, number | null>()
+    for (const shop of shops) {
+      const ids = saved
+        .filter((row) => row.shop === shop)
+        .map((row) => row.product.id)
+      for (const [id, price] of await usualPrices(
+        db,
+        householdId,
+        shop,
+        ids,
+        today
+      )) {
+        usual.set(`${shop}|${id}`, price)
+      }
+    }
     const priced: ListPrices = {}
     rows.forEach((row, index) => {
       const list = row.listId ?? MAIN_LIST
@@ -958,15 +1150,29 @@ export function createShopService(
         )
         const total = lineCost({ product, packages })
         if (total === null) continue
+        const sale =
+          product.salePrice !== null &&
+          product.price !== null &&
+          product.salePrice < product.price &&
+          !(product.saleEnds && product.saleEnds < today)
         priced[row.id] = {
           shop,
-          total,
+          // A sale that's ended since: the regular price.
+          total:
+            sale || product.price === null ? total : product.price * packages,
           packages,
           sure,
-          sale:
-            product.salePrice !== null &&
-            product.price !== null &&
-            product.salePrice < product.price,
+          sale,
+          saved: sale
+            ? Math.round(
+                (product.price! - product.salePrice!) * packages * 100
+              ) / 100
+            : null,
+          saleEnds: sale ? (product.saleEnds ?? null) : null,
+          usual: usualWorthShowing(
+            sale ? product : { ...product, salePrice: null },
+            usual.get(`${shop}|${product.id}`) ?? null
+          ),
           product: product.name,
           seenAt: match.updatedAt.toISOString(),
         }
@@ -986,6 +1192,7 @@ export function createShopService(
     finishLink,
     unlink,
     basket,
+    checkPrices,
     search,
     pick,
     send,
