@@ -5,11 +5,13 @@ import type {
   FollowedSite,
   FoundRecipe,
   ImportResult,
+  Meal,
 } from "@mise/shared"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "react-router"
 import { toast } from "sonner"
 
+import { PLAN_KEY } from "@/features/plan/use-plan"
 import { RECIPES_KEY } from "@/features/recipes/use-recipes"
 import { api, ApiError } from "@/lib/api"
 
@@ -203,4 +205,31 @@ export function useImportFound() {
   }
 
   return { importing, progress, add, addAll }
+}
+
+/** Imports a recipe from the web and plans it for a meal, in one go. */
+export function useImportAndPlan() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      url,
+      date,
+      meal,
+    }: {
+      url: string
+      date: string
+      meal: Meal
+    }) => {
+      const { recipe } = await api<ImportResult>("/import/url", {
+        body: { url },
+      })
+      await api("/plan/entries", { body: { date, meal, recipeId: recipe.id } })
+      return recipe
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: RECIPES_KEY })
+      queryClient.invalidateQueries({ queryKey: SITES_KEY })
+      queryClient.invalidateQueries({ queryKey: PLAN_KEY })
+    },
+  })
 }

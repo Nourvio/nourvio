@@ -2,47 +2,50 @@ import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   CookBookIcon,
-  CookingPotIcon,
-  Note01Icon,
   RefreshIcon,
   SparklesIcon,
-  Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import {
   addDays,
   DEFAULT_MEALS,
   MEAL_NAMES,
   MEALS,
+  startOfWeek,
   toIsoDate,
   whyUseSoon,
+  type Meal,
   type MealSuggestion,
   type PlanEntry,
   type RecipeSummary,
+  type SiteRecipe,
 } from "@mise/shared"
 import { Link } from "react-router"
 import { toast } from "sonner"
 
-import { Panel, SectionHeading } from "@/components/layout/page-layout"
+import { SectionHeading } from "@/components/layout/page-layout"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Spinner } from "@/components/ui/spinner"
 import { useCurrentUser } from "@/features/auth/current-user"
-import { useList } from "@/features/list/use-list"
-import { soonLabel, urgency } from "@/features/pantry/soon"
+import { SitesSpotlight } from "@/features/discover/sites-spotlight"
+import { useImportAndPlan, useSites } from "@/features/discover/use-discover"
+import { useList, useListPrices } from "@/features/list/use-list"
+import { soonWhen, urgency } from "@/features/pantry/soon"
 import { usePantry } from "@/features/pantry/use-pantry"
-import { cookLink } from "@/features/plan/cook-link"
+import { dayName, fromIsoDate, today, weekLabel } from "@/features/plan/dates"
 import {
-  friendlyDay,
-  fromIsoDate,
-  today,
-  weekLabel,
-} from "@/features/plan/dates"
-import {
+  Fact,
   findNextMeal,
+  HERO_PHOTO,
+  HeroFrame,
   NextMealCard,
+  TodayLine,
   useMinute,
+  WhenBadge,
 } from "@/features/plan/next-meal"
 import {
   useAddPlanEntry,
+  useMealSuggestions,
   usePlan,
   useSuggestMeal,
 } from "@/features/plan/use-plan"
@@ -59,10 +62,24 @@ const LONG_DATE = new Intl.DateTimeFormat(undefined, {
   day: "numeric",
 })
 
+const dollars = (value: number) =>
+  value.toLocaleString(undefined, {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  })
+
+/** "spinach", "spinach and milk", "spinach, milk and lemon". */
+const listed = (names: string[]) =>
+  names.length > 1
+    ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`
+    : (names[0] ?? "")
+
 /**
- * Today at a glance: what's cooking next (or an idea when nothing is), the
- * days ahead, food to use soon, the shopping list, and recipes worth making
- * again.
+ * Today at a glance: the next meal, big (or an idea for tonight when
+ * nothing's planned), the week, the list and the pantry in three tiles,
+ * the rest of the week, what's new on the sites you follow, and recipes
+ * worth making again.
  */
 export function HomePage() {
   const me = useCurrentUser()
@@ -88,14 +105,17 @@ export function HomePage() {
       a.position - b.position
   )
   const todays = entries.filter((entry) => entry.date === now)
-  const upNext = findNextMeal(todays, minute)
+  // Today's next meal first; with dinner unplanned, an idea for tonight;
+  // after that, the next day's.
+  const nextToday = findNextMeal(todays, minute)
   const wantIdea =
     plan.isSuccess &&
-    !upNext &&
+    !nextToday &&
     meals.includes("dinner") &&
     !todays.some((entry) => entry.meal === "dinner") &&
     hour < 21
-  const alsoToday = todays.filter((entry) => entry !== upNext)
+  const upNext = nextToday ?? (wantIdea ? null : findNextMeal(entries, minute))
+  const others = todays.filter((entry) => entry !== upNext)
   const libraryEmpty = recipes.data?.length === 0
 
   return (
@@ -116,46 +136,36 @@ export function HomePage() {
         <Welcome isServerAdmin={me.isServerAdmin} />
       ) : (
         <>
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_320px]">
-            <div className="grid content-start gap-8">
-              <section aria-labelledby="today-heading" className="grid gap-3">
-                <h2 id="today-heading" className="sr-only">
-                  Today
-                </h2>
-                {plan.isPending ? (
-                  <Skeleton className="h-56 rounded-3xl" />
-                ) : upNext ? (
-                  <NextMealCard entry={upNext} headingLevel={3} />
-                ) : wantIdea ? (
-                  <DinnerIdea date={now} />
-                ) : todays.length === 0 ? (
-                  <NothingToday />
-                ) : null}
-                {alsoToday.length > 0 && (
-                  <div className="grid gap-1">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {upNext || wantIdea ? "Also today" : "Today"}
-                    </p>
-                    <ul className="grid gap-1">
-                      {alsoToday.map((entry) => (
-                        <MealRow key={entry.id} entry={entry} />
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </section>
-
-              <ComingUp
-                entries={entries.filter((entry) => entry.date > now)}
-                loading={plan.isPending}
+          <section aria-labelledby="today-heading" className="grid gap-3">
+            <h2 id="today-heading" className="sr-only">
+              Today
+            </h2>
+            {plan.isPending ? (
+              <Skeleton className="h-96 rounded-3xl" />
+            ) : upNext ? (
+              <NextMealCard
+                entry={upNext}
+                headingLevel={3}
+                large
+                others={others}
+                othersLabel={upNext.date === now ? "Also today" : "Today"}
               />
-            </div>
+            ) : wantIdea ? (
+              <TonightIdeas date={now} others={others} />
+            ) : (
+              <NothingAhead others={others} />
+            )}
+          </section>
 
-            <aside className="grid content-start gap-4">
-              <UseSoon />
-              <ListCard />
-            </aside>
-          </div>
+          <Glance meals={meals} weekStart={household.data?.weekStart ?? 0} />
+
+          <RestOfWeek
+            entries={entries.filter((entry) => entry.date > now)}
+            loading={plan.isPending}
+            weekStart={household.data?.weekStart ?? 0}
+          />
+
+          <SitesSpotlight />
 
           <Shelves recipes={recipes.data} />
         </>
@@ -164,380 +174,486 @@ export function HomePage() {
   )
 }
 
-/** The big photo beside a featured meal, when it has one. */
-function HeroPhoto({ to, src }: { to: string; src: string | null }) {
-  if (!src) return null
-  return (
-    <Link to={to} tabIndex={-1} className="block shrink-0 sm:w-72">
-      <RecipeImage
-        src={src}
-        alt=""
-        eager
-        className="aspect-[16/10] h-full w-full sm:aspect-auto sm:min-h-56"
-      />
-    </Link>
-  )
-}
+type IdeaSource = "both" | "mine" | "sites"
 
-/** Nothing for dinner yet: one idea at a time, planned with a tap. */
-function DinnerIdea({ date }: { date: string }) {
+const SOURCES: { id: IdeaSource; label: string }[] = [
+  { id: "both", label: "Both" },
+  { id: "mine", label: "Your recipes" },
+  { id: "sites", label: "Your sites" },
+]
+
+/**
+ * Nothing planned for dinner: one idea at a time, from your recipes (using
+ * up what needs using first) or new on the sites you follow, planned with a
+ * tap. "Both" takes turns.
+ */
+function TonightIdeas({ date, others }: { date: string; others: PlanEntry[] }) {
+  const id = React.useId()
+  const sites = useSites()
+  const first = useMealSuggestions([{ date, meal: "dinner" }])
   const suggest = useSuggestMeal()
   const add = useAddPlanEntry()
-  const [idea, setIdea] = React.useState<MealSuggestion | null>(null)
-  const [seen, setSeen] = React.useState<string[]>([])
-  const [noMore, setNoMore] = React.useState(false)
+  const importAndPlan = useImportAndPlan()
+  const [source, setSource] = React.useState<IdeaSource>("both")
+  const [step, setStep] = React.useState(0)
+  const [picked, setPicked] = React.useState<MealSuggestion[]>([])
+  const [mineDone, setMineDone] = React.useState(false)
 
-  function next() {
+  const fromSites = (sites.data ?? [])
+    .flatMap((site) => site.recipes)
+    .filter((recipe) => !recipe.inLibrary)
+    .sort((a, b) => (b.publishedAt ?? "").localeCompare(a.publishedAt ?? ""))
+  const firstMine = first.data?.[0] ?? null
+  const mine = picked.at(-1) ?? firstMine
+  const noMine = mineDone || (first.isSuccess && !firstMine)
+  const hasSites = fromSites.length > 0
+  // Without sites (or library ideas), the switch has nothing to switch.
+  const mode: IdeaSource = !hasSites ? "mine" : noMine ? "sites" : source
+  const showSite = mode === "sites" || (mode === "both" && step % 2 === 1)
+  const site: SiteRecipe | null = hasSites
+    ? fromSites[
+        (mode === "both" ? Math.floor(step / 2) : step) % fromSites.length
+      ]!
+    : null
+
+  function nextMine() {
+    const seen = [firstMine, ...picked].filter(Boolean).map((s) => s!.recipe.id)
     suggest.mutate(
       { slots: [{ date, meal: "dinner" }], exclude: seen.slice(-100) },
       {
         onSuccess: ([suggestion]) => {
-          if (!suggestion) {
-            if (idea) toast("That's the only idea for now")
-            else setNoMore(true)
+          if (suggestion) {
+            setPicked((current) => [...current, suggestion])
             return
           }
-          setIdea(suggestion)
-          setSeen((current) => [...current, suggestion.recipe.id])
+          setMineDone(true)
+          if (!hasSites) {
+            toast("That's every idea for tonight. More recipes, more variety.")
+          }
         },
         onError: () => toast.error("Couldn't come up with an idea"),
       }
     )
   }
 
-  function plan() {
-    if (!idea) return
+  function another() {
+    const next = step + 1
+    setStep(next)
+    if (mode === "mine" || (mode === "both" && next % 2 === 0)) nextMine()
+  }
+
+  function failed(error: unknown) {
+    toast.error(
+      error instanceof ApiError ? error.message : "Couldn't plan that"
+    )
+  }
+
+  function planMine(suggestion: MealSuggestion) {
     add.mutate(
       {
         date,
         meal: "dinner",
-        recipeId: idea.recipe.id,
-        withRecipeId: idea.with?.id ?? null,
+        recipeId: suggestion.recipe.id,
+        withRecipeId: suggestion.with?.id ?? null,
       },
       {
-        onSuccess: () => toast.success(`${idea.recipe.name} is on for tonight`),
-        onError: (error) =>
-          toast.error(
-            error instanceof ApiError ? error.message : "Couldn't plan that"
-          ),
+        onSuccess: () =>
+          toast.success(`${suggestion.recipe.name} is on for tonight`),
+        onError: failed,
       }
     )
   }
 
-  if (!idea) {
+  function planSite(recipe: SiteRecipe) {
+    importAndPlan.mutate(
+      { url: recipe.url, date, meal: "dinner" },
+      {
+        onSuccess: (saved) =>
+          toast.success(`${saved.name} is in your library and on for tonight`),
+        onError: failed,
+      }
+    )
+  }
+
+  if (first.isPending && !hasSites) {
+    return <Skeleton className="h-96 rounded-3xl" />
+  }
+
+  if (!mine && !site) {
     return (
-      <article className="grid gap-4 rounded-3xl border border-dashed bg-card p-6 text-card-foreground">
+      <article className="grid gap-4 rounded-3xl border border-dashed bg-card p-6 text-card-foreground md:p-8">
         <div className="grid gap-1">
           <h3 className="font-heading text-2xl font-semibold">
             What's for dinner?
           </h3>
           <p className="text-muted-foreground">
-            {noMore
-              ? "No ideas right now. Add a few more recipes for more variety."
-              : "Nothing's planned for tonight. Get an idea from your recipes, using up what needs using first."}
+            No ideas right now. Add a few more recipes, or follow a recipe site
+            for new ones.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {!noMore && (
-            <Button size="lg" onClick={next} disabled={suggest.isPending}>
-              <HugeiconsIcon
-                icon={SparklesIcon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              Get an idea
-            </Button>
-          )}
-          <Button size="lg" variant="outline" asChild>
+          <Button variant="outline" asChild>
             <Link to="/plan">Open the plan</Link>
           </Button>
+          <Button variant="outline" asChild>
+            <Link to="/discover?tab=sites">Follow a site</Link>
+          </Button>
         </div>
+        <TodayLine label="Today" entries={others} />
       </article>
     )
   }
 
-  const { recipe } = idea
+  const busy = add.isPending || importAndPlan.isPending || suggest.isPending
+  // A site idea when it's its turn, or while the first idea from the library loads.
+  const onSite = site && (showSite || !mine) ? site : null
+  const time = onSite
+    ? formatMinutes(onSite.minutes)
+    : formatMinutes(mine?.recipe.totalMinutes)
+
   return (
-    <article className="overflow-hidden rounded-3xl border bg-card text-card-foreground sm:flex">
-      <HeroPhoto
-        to={`/recipes/${recipe.slug}${idea.with ? `?with=${idea.with.slug}` : ""}`}
-        src={recipe.thumbnailUrl}
-      />
-      <div className="grid min-w-0 flex-1 content-center gap-4 p-5 md:p-6">
-        <div className="grid gap-1.5">
-          <p className="text-xs font-semibold tracking-wide text-primary uppercase">
-            An idea for tonight
-          </p>
-          <h3 className="font-heading text-2xl leading-tight font-semibold md:text-3xl">
-            <Link
-              to={`/recipes/${recipe.slug}${idea.with ? `?with=${idea.with.slug}` : ""}`}
+    <HeroFrame
+      labelledBy={id}
+      large
+      photo={
+        onSite ? (
+          onSite.imageUrl ? (
+            <img
+              src={onSite.imageUrl}
+              alt=""
+              decoding="async"
+              className={cn(HERO_PHOTO, "object-cover")}
+            />
+          ) : null
+        ) : (
+          mine?.recipe.thumbnailUrl && (
+            <RecipeImage
+              src={mine.recipe.thumbnailUrl}
+              alt=""
+              eager
+              className={HERO_PHOTO}
+            />
+          )
+        )
+      }
+    >
+      <div className="grid gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <WhenBadge large>An idea for tonight</WhenBadge>
+          {hasSites && !noMine && (
+            <div
+              role="group"
+              aria-label="Ideas from"
+              className="flex gap-0.5 rounded-full bg-muted p-0.5"
+            >
+              {SOURCES.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={mode === option.id}
+                  onClick={() => {
+                    setSource(option.id)
+                    setStep(0)
+                  }}
+                  className={cn(
+                    "h-7 rounded-full px-3 text-xs font-medium transition-colors outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                    mode === option.id
+                      ? "bg-card font-semibold shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+        <p className="text-sm font-semibold text-primary">
+          {onSite
+            ? `New from ${onSite.site}`
+            : mine?.uses.length
+              ? `Uses up your ${listed(mine.uses.map((u) => u.toLowerCase()))}`
+              : "From your recipes"}
+        </p>
+        <h3
+          id={id}
+          className="font-heading text-3xl leading-tight font-semibold tracking-tight md:text-[2.4rem]"
+        >
+          {onSite ? (
+            <a
+              href={onSite.url}
+              target="_blank"
+              rel="noreferrer"
               className="hover:underline"
             >
-              {recipe.name}
+              {onSite.title}
+            </a>
+          ) : (
+            <Link
+              to={`/recipes/${mine!.recipe.slug}${mine!.with ? `?with=${mine!.with.slug}` : ""}`}
+              className="hover:underline"
+            >
+              {mine!.recipe.name}
+              {mine!.with && (
+                <span className="font-normal text-muted-foreground">
+                  {" "}
+                  with {mine!.with.name}
+                </span>
+              )}
             </Link>
-            {idea.with && (
-              <span className="font-normal text-muted-foreground">
-                {" "}
-                with {idea.with.name}
-              </span>
-            )}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {[
-              formatMinutes(recipe.totalMinutes),
-              idea.uses.length > 0 && `Uses up your ${idea.uses.join(", ")}`,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
+          )}
+        </h3>
+        {onSite && onSite.description && (
+          <p className="line-clamp-2 text-muted-foreground">
+            {onSite.description}
           </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="lg" onClick={plan} disabled={add.isPending}>
-            Plan it for tonight
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={next}
-            disabled={suggest.isPending}
-          >
-            <HugeiconsIcon
-              icon={RefreshIcon}
-              strokeWidth={2}
-              data-icon="inline-start"
-            />
-            Another idea
-          </Button>
-        </div>
+        )}
+        {(time || (!onSite && mine?.recipe.servings)) && (
+          <div className="flex flex-wrap gap-1.5">
+            {time && <Fact>{time}</Fact>}
+            {!onSite && mine?.recipe.servings && (
+              <Fact>{mine.recipe.servings} servings</Fact>
+            )}
+          </div>
+        )}
       </div>
-    </article>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          size="lg"
+          className="h-12 px-6"
+          disabled={busy}
+          onClick={() => (onSite ? planSite(onSite) : planMine(mine!))}
+        >
+          {(add.isPending || importAndPlan.isPending) && (
+            <Spinner data-icon="inline-start" />
+          )}
+          {onSite ? "Import and plan for tonight" : "Plan it for tonight"}
+        </Button>
+        <Button
+          size="lg"
+          variant="outline"
+          className="h-12 px-5"
+          disabled={busy}
+          onClick={another}
+        >
+          <HugeiconsIcon
+            icon={RefreshIcon}
+            strokeWidth={2}
+            data-icon="inline-start"
+          />
+          Another idea
+        </Button>
+      </div>
+      <TodayLine label="Today" entries={others} />
+    </HeroFrame>
   )
 }
 
-function NothingToday() {
+/** Nothing planned in the week ahead. */
+function NothingAhead({ others }: { others: PlanEntry[] }) {
   return (
-    <article className="grid gap-3 rounded-3xl border border-dashed bg-card p-6 text-card-foreground">
-      <h3 className="font-heading text-xl font-semibold">
-        Nothing planned today
+    <article className="grid gap-3 rounded-3xl border border-dashed bg-card p-6 text-card-foreground md:p-8">
+      <h3 className="font-heading text-2xl font-semibold">
+        {others.length ? "That's today done" : "Nothing planned"}
       </h3>
+      <p className="text-muted-foreground">
+        Nothing's planned for the week ahead yet.
+      </p>
       <div>
         <Button variant="outline" asChild>
           <Link to="/plan">Open the plan</Link>
         </Button>
       </div>
+      <TodayLine label="Today" entries={others} />
     </article>
   )
 }
 
-/** A planned meal in a list: photo, name, and what's happening with it. */
-function MealRow({
-  entry,
-  showMeal = true,
-}: {
-  entry: PlanEntry
-  showMeal?: boolean
-}) {
-  const { recipe } = entry
-  const skipped = entry.status === "skipped"
-  const cooked = entry.status === "cooked"
-  return (
-    <li className="flex items-center gap-3 rounded-2xl p-1.5 hover:bg-secondary/50">
-      {recipe ? (
-        <RecipeImage
-          src={recipe.thumbnailUrl}
-          alt=""
-          className={cn(
-            "size-12 shrink-0 rounded-xl [&_svg]:size-5",
-            skipped && "opacity-50"
-          )}
-        />
-      ) : (
-        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-          <HugeiconsIcon icon={Note01Icon} strokeWidth={2} className="size-5" />
-        </span>
-      )}
-      <div className="grid min-w-0 flex-1 gap-0.5">
-        {recipe ? (
-          <Link
-            to={`/recipes/${recipe.slug}${entry.with ? `?with=${entry.with.slug}` : ""}`}
-            className={cn(
-              "truncate font-medium hover:underline",
-              skipped && "text-muted-foreground line-through"
-            )}
-          >
-            {recipe.name}
-            {entry.with && (
-              <span className="font-normal text-muted-foreground">
-                {" "}
-                with {entry.with.name}
-              </span>
-            )}
-          </Link>
-        ) : (
-          <span
-            className={cn(
-              "truncate font-medium",
-              skipped && "text-muted-foreground line-through"
-            )}
-          >
-            {entry.note}
-          </span>
-        )}
-        <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {showMeal && MEAL_NAMES[entry.meal]}
-          {cooked && (
-            <span className="flex items-center gap-1 font-medium text-primary">
-              {showMeal && "·"}
-              <HugeiconsIcon
-                icon={Tick02Icon}
-                strokeWidth={2}
-                className="size-3.5"
-              />
-              Cooked
-            </span>
-          )}
-          {skipped && <span>{showMeal && "· "}Skipped</span>}
-        </span>
-      </div>
-      {recipe && entry.status === "planned" && (
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          asChild
-          aria-label={`Start cooking ${recipe.name}`}
-          title="Start cooking"
-        >
-          <Link to={cookLink(entry)}>
-            <HugeiconsIcon icon={CookingPotIcon} strokeWidth={2} />
-          </Link>
-        </Button>
-      )}
-    </li>
-  )
-}
+const MEAL_PRIORITY: Meal[] = ["dinner", "lunch", "breakfast", "snack"]
 
-/** The next few days with something planned. */
-function ComingUp({
-  entries,
-  loading,
-}: {
-  entries: PlanEntry[]
-  loading: boolean
-}) {
-  const days = [...new Set(entries.map((entry) => entry.date))].slice(0, 3)
-  return (
-    <section aria-labelledby="coming-up-heading" className="grid gap-3">
-      <SectionHeading id="coming-up-heading" to="/plan" link="See the week">
-        Coming up
-      </SectionHeading>
-      {loading ? (
-        <Skeleton className="h-32 rounded-2xl" />
-      ) : days.length === 0 ? (
-        <p className="rounded-2xl border border-dashed p-4 text-sm text-muted-foreground">
-          Nothing planned for the next few days.{" "}
-          <Link to="/plan" className="font-medium text-primary hover:underline">
-            Plan the week
-          </Link>
-        </p>
-      ) : (
-        <div className="grid gap-4">
-          {days.map((date) => (
-            <div key={date} className="grid gap-1">
-              <p className="text-sm font-medium text-muted-foreground">
-                {friendlyDay(date)}
-              </p>
-              <ul className="grid gap-1">
-                {entries
-                  .filter((entry) => entry.date === date)
-                  .map((entry) => (
-                    <MealRow key={entry.id} entry={entry} />
-                  ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  )
-}
-
-/** Pantry food that needs using, most urgent first. */
-function UseSoon() {
-  const pantry = usePantry()
+/** The week, the list and the pantry, each in a tile that opens its page. */
+function Glance({ meals, weekStart }: { meals: Meal[]; weekStart: 0 | 1 }) {
   const now = today()
+  const start = startOfWeek(now, weekStart)
+  const end = addDays(start, 6)
+  const week = usePlan(start, end)
+  const list = useList()
+  const prices = useListPrices().data ?? {}
+  const pantry = usePantry()
+
+  const filled = new Set(
+    (week.data ?? [])
+      .filter((entry) => meals.includes(entry.meal))
+      .map((entry) => `${entry.date}|${entry.meal}`)
+  )
+  // The first open meal from tomorrow on: dinners first, as the meal most
+  // households plan, then lunches, then the rest.
+  let open: string | null = null
+  for (const meal of MEAL_PRIORITY.filter((m) => meals.includes(m))) {
+    for (let date = addDays(now, 1); date <= end; date = addDays(date, 1)) {
+      if (filled.has(`${date}|${meal}`)) continue
+      open = `${dayName(date)}'s ${MEAL_NAMES[meal].toLowerCase()} is open`
+      break
+    }
+    if (open) break
+  }
+
+  const left = (list.data ?? []).filter((item) => !item.checked)
+  const cost = left.reduce(
+    (sum, item) => sum + (prices[item.id]?.total ?? 0),
+    0
+  )
   const soon = (pantry.data ?? [])
     .map((item) => ({ item, soon: whyUseSoon(item, now) }))
     .filter((row) => row.soon)
     .sort((a, b) => urgency(a.soon!) - urgency(b.soon!))
-  if (!soon.length) return null
+
+  const tiles = [
+    {
+      to: "/plan",
+      label: "This week",
+      value: `${filled.size} of ${meals.length * 7} planned`,
+      detail: open ?? "The rest of the week is planned",
+      warn: false,
+    },
+    {
+      to: "/list",
+      label: "Shopping",
+      value: left.length
+        ? `${left.length} to buy${cost ? ` · about ${dollars(cost)}` : ""}`
+        : "Nothing to buy",
+      detail: left.length
+        ? listed(left.slice(0, 3).map((item) => item.name))
+        : "Add the week's meals from the plan",
+      warn: false,
+    },
+    ...(soon.length
+      ? [
+          {
+            to: "/pantry",
+            label: "Use soon",
+            value: soon[0]!.item.name,
+            detail: `${soonWhen(soon[0]!.soon!)}${soon.length > 1 ? `, and ${soon.length - 1} more` : ""}`,
+            warn: true,
+          },
+        ]
+      : []),
+  ]
+
   return (
-    <Panel title="Use soon" to="/pantry" link="Pantry" tone="warn">
-      <ul className="grid gap-2.5">
-        {soon.slice(0, 5).map(({ item, soon }) => (
-          <li key={item.id} className="flex items-start gap-3">
-            <div className="grid min-w-0 flex-1 gap-0.5">
-              <span className="truncate font-medium first-letter:uppercase">
-                {item.name}
-              </span>
-              <span
-                className={cn(
-                  "text-xs",
-                  soon!.kind === "past"
-                    ? "text-destructive"
-                    : "text-muted-foreground"
-                )}
-              >
-                {soonLabel(soon!)}
-              </span>
-            </div>
-            <Link
-              to={`/recipes?q=${encodeURIComponent(item.name)}`}
-              className="shrink-0 pt-0.5 text-xs font-medium text-primary hover:underline"
-            >
-              Recipes
-            </Link>
-          </li>
-        ))}
-      </ul>
-      {soon.length > 5 && (
-        <p className="text-xs text-muted-foreground">
-          And {soon.length - 5} more in the pantry.
-        </p>
-      )}
-    </Panel>
+    <div className="grid gap-3 sm:auto-cols-fr sm:grid-flow-col">
+      {tiles.map((tile) => (
+        <Link
+          key={tile.to}
+          to={tile.to}
+          className={cn(
+            "grid content-start gap-1 rounded-3xl border bg-card p-5 text-card-foreground transition-colors outline-none hover:bg-accent/40 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+            tile.warn && "border-amber-500/30 bg-amber-500/[0.07]"
+          )}
+        >
+          <span
+            className={cn(
+              "text-xs font-semibold tracking-wide text-muted-foreground uppercase",
+              tile.warn && "text-amber-700 dark:text-amber-400"
+            )}
+          >
+            {tile.label}
+          </span>
+          <span className="font-heading text-2xl font-semibold first-letter:uppercase">
+            {tile.value}
+          </span>
+          <span className="truncate text-sm text-muted-foreground first-letter:uppercase">
+            {tile.detail}
+          </span>
+        </Link>
+      ))}
+    </div>
   )
 }
 
-/** How much shopping is left. */
-function ListCard() {
-  const list = useList()
-  const left = (list.data ?? []).filter((item) => !item.checked)
+/** The days left this week (or the next few), a card each. */
+function RestOfWeek({
+  entries,
+  loading,
+  weekStart,
+}: {
+  entries: PlanEntry[]
+  loading: boolean
+  weekStart: 0 | 1
+}) {
+  const now = today()
+  const end = addDays(startOfWeek(now, weekStart), 6)
+  let days: string[] = []
+  for (let date = addDays(now, 1); date <= end; date = addDays(date, 1)) {
+    days.push(date)
+  }
+  // Near the end of the week, the next few days instead.
+  const thisWeek = days.length >= 3
+  if (!thisWeek) days = [1, 2, 3].map((n) => addDays(now, n))
+
   return (
-    <Panel title="Shopping list" to="/list" link="Open">
-      {list.isPending ? (
-        <Skeleton className="h-12" />
-      ) : left.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          Nothing left to buy.{" "}
-          <Link to="/list" className="font-medium text-primary hover:underline">
-            Add the week's meals
-          </Link>
-        </p>
+    <section aria-labelledby="week-heading" className="grid gap-3">
+      <SectionHeading id="week-heading" to="/plan" link="Plan">
+        {thisWeek ? "The rest of the week" : "Coming up"}
+      </SectionHeading>
+      {loading ? (
+        <Skeleton className="h-28 rounded-3xl" />
       ) : (
-        <div className="grid gap-1">
-          <p className="font-heading text-2xl font-semibold">
-            {left.length} {left.length === 1 ? "thing" : "things"} to buy
-          </p>
-          <p className="line-clamp-2 text-sm text-muted-foreground first-letter:uppercase">
-            {left
-              .slice(0, 6)
-              .map((item) => item.name)
-              .join(", ")}
-            {left.length > 6 ? ", …" : ""}
-          </p>
-        </div>
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {days.map((date) => {
+            const dayEntries = entries.filter((entry) => entry.date === date)
+            const main =
+              dayEntries.find((entry) => entry.meal === "dinner") ??
+              dayEntries[0]
+            const rest = dayEntries.filter((entry) => entry !== main)
+            return (
+              <li key={date}>
+                <Link
+                  to={`/plan?week=${startOfWeek(date, weekStart)}`}
+                  className="grid h-full content-start gap-1 rounded-3xl border bg-card p-5 text-card-foreground transition-colors outline-none hover:bg-accent/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                >
+                  <span className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                    {date === addDays(now, 1) ? "Tomorrow" : dayName(date)}
+                  </span>
+                  {main ? (
+                    <>
+                      <span
+                        className={cn(
+                          "font-semibold",
+                          main.status === "skipped" &&
+                            "text-muted-foreground line-through"
+                        )}
+                      >
+                        {main.recipe?.name ?? main.note}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        {rest.length
+                          ? `and ${rest
+                              .map(
+                                (entry) =>
+                                  `${entry.recipe?.name ?? entry.note} for ${MEAL_NAMES[entry.meal].toLowerCase()}`
+                              )
+                              .join(", ")}`
+                          : MEAL_NAMES[main.meal]}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-muted-foreground">
+                        Nothing planned
+                      </span>
+                      <span className="text-sm font-medium text-primary">
+                        Plan it
+                      </span>
+                    </>
+                  )}
+                </Link>
+              </li>
+            )
+          })}
+        </ul>
       )}
-    </Panel>
+    </section>
   )
 }
 

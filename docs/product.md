@@ -205,8 +205,11 @@ Our stores are Fry's, Costco and Walmart (see [roadmap.md](roadmap.md#milestone-
 
 - A mobile-first layout that also works well on iPad and desktop. It can be added to the home screen and runs like an app.
 - **Today,** the home page:
-  - **What's next:** the next meal planned today, big, with Start cooking and Mark cooked (the same card as the Plan's, by the same time-of-day rule). With nothing planned for dinner, it offers one idea at a time from the library (using up what needs using first), planned for tonight with a tap.
-  - The next few days of the plan, food to use soon (each with a link to recipes that use it), what's left on the shopping list, favorites not made in three weeks, and what was added lately.
+  - **What's next,** big: the next meal planned, by the same time-of-day rule as the Plan (today's first, then the next day's once today's are done), with a solid "Tonight · Dinner" badge, its servings, time and "On the list" as chips, what's already home for it ("Already home: limes and garlic", from what was bought for it and put away), Start cooking, Mark cooked, and the rest of today's meals underneath.
+  - **An idea for tonight** when dinner isn't planned (before 9 pm): one at a time, from your recipes (using up what needs using first, and saying so) or new on the sites you follow, with Both / Your recipes / Your sites to choose. **Plan it for tonight**, or for a site recipe **Import and plan for tonight** in one tap; **Another idea** takes turns between the two.
+  - Three tiles: this week (meals planned, and the first open dinner), shopping (how many to buy, about what it costs, the first few), and what to use soon.
+  - **The rest of the week** (or the next three days near the end of it): a card a day with its dinner and anything else ("and Leftovers for lunch").
+  - The sites spotlight (see Recipes), favorites not made in three weeks, and what was added lately.
   - A new household gets three steps to start instead.
 - **The cook view:**
   - **Get ready** first: everything to gather, as a checklist, then one step at a time.

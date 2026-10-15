@@ -238,7 +238,7 @@ function Spotlight({
       </article>
 
       {count > 2 && (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="hidden gap-2 sm:grid sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4]
             .filter((step) => step < count)
             .map((step) => {
