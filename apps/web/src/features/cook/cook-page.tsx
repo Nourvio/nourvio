@@ -17,6 +17,8 @@ import {
   type CookCommand,
   type Recipe,
   type RecipeIngredient,
+  type RecipeStep,
+  type StepPiece,
 } from "@mise/shared"
 import {
   useLocation,
@@ -57,9 +59,10 @@ import {
 import { UnitToggle, useUnitMode } from "@/features/recipes/unit-toggle"
 import { CookNoteDialog, LastCookNote } from "@/features/recipes/cook-notes"
 import { SwapDialog } from "@/features/recipes/swap-dialog"
-import { SwappedWord } from "@/features/recipes/swapped-word"
+import { ChangedStepNote, SwappedWord } from "@/features/recipes/swapped-word"
 import {
   applySwaps,
+  applyStepChanges,
   clearSwaps,
   stepSwapsFor,
   useSwaps,
@@ -219,12 +222,17 @@ function CookView({
     combined?.ingredients ?? recipe.ingredients,
     swaps
   )
-  const steps = combined?.steps ?? recipe.steps
-  // Steps read with this time's swaps: "whisk in the tahini".
+  // Steps a swap rewrote ("simmer 15 minutes, until thick"), and the rest
+  // read with the swapped-in names: "whisk in the tahini".
+  const { steps, changed: changedSteps } = applyStepChanges(
+    combined?.steps ?? recipe.steps,
+    swaps
+  )
   const swapped = stepSwapsFor(allIngredients, swappedFrom)
-  const stepText = (text: string) =>
-    swapped
-      .step(text)
+  const stepPieces = (step: RecipeStep): StepPiece[] =>
+    changedSteps.has(step.id) ? [{ text: step.text }] : swapped.step(step.text)
+  const stepText = (step: RecipeStep) =>
+    stepPieces(step)
       .map((piece) => piece.text)
       .join("")
   const factorOf = combined
@@ -363,7 +371,7 @@ function CookView({
     const number = page - (hasPrep ? 1 : 0)
     const pageStep = steps[number]
     return pageStep
-      ? `Step ${number + 1}. ${stepText(pageStep.text)}`
+      ? `Step ${number + 1}. ${stepText(pageStep)}`
       : "This recipe has no steps yet."
   }
   const pageText = () => textForPage(index)
@@ -665,7 +673,7 @@ function CookView({
                   STEP_TEXT[textSize]
                 )}
               >
-                {swapped.step(step.text).flatMap((piece, p) =>
+                {stepPieces(step).flatMap((piece, p) =>
                   piece.insteadOf ? (
                     <SwappedWord key={p} piece={piece} />
                   ) : (
@@ -696,6 +704,11 @@ function CookView({
                   )
                 )}
               </p>
+              {changedSteps.get(step.id) && (
+                <ChangedStepNote
+                  original={changedSteps.get(step.id)!.original}
+                />
+              )}
 
               {stepIngredients.length > 0 && (
                 <div className="grid gap-2">
@@ -818,6 +831,7 @@ function CookView({
             : recipe.id
         }
         ingredient={swapping}
+        steps={steps}
         factor={swapping ? (factorOf?.(swapping.id) ?? factor) : factor}
         canSave
         onUse={swap}

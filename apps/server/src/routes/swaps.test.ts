@@ -24,16 +24,27 @@ function fakeAi() {
               lines: ["1 cup milk", "1 tbsp lemon juice"],
               note: "Stir together and let sit 5 minutes.",
               inPantry: true,
+              steps: [
+                {
+                  step: 2,
+                  text: "Cook on a hot griddle, a minute longer a side.",
+                },
+                // The same as before, and a step that isn't there: dropped.
+                { step: 1, text: "Whisk everything." },
+                { step: 9, text: "Serve." },
+              ],
             },
             {
               lines: ["3/4 cup plain yogurt", "1/4 cup water"],
               note: "Whisk smooth.",
               inPantry: false,
+              steps: [],
             },
             {
               lines: ["1 cup cream of mushroom soup"],
               note: "Thicker.",
               inPantry: false,
+              steps: [],
             },
           ],
         } as never,
@@ -98,20 +109,39 @@ describe("swapping an ingredient", () => {
       ["1 cup milk", "1 tbsp lemon juice"],
       ["3/4 cup plain yogurt", "1/4 cup water"],
     ])
+    // Steps that change with a swap, by the step's id.
+    expect(substitutes[0]!.steps).toEqual([
+      {
+        stepId: pancakes.steps[1]!.id,
+        text: "Cook on a hot griddle, a minute longer a side.",
+      },
+    ])
+    expect(substitutes[1]!.steps).toEqual([])
     const call = ai.calls.at(-1)!
     expect(call.model).toBe("claude-haiku-5-5")
     expect(call.text).toContain("Instead of: 2 cups buttermilk")
     expect(call.text).toContain("At home: milk")
     expect(call.text).toContain("Jamie doesn't eat mushrooms")
+    expect(call.text).toContain("2. Cook on a hot griddle.")
   })
 
   test("saves a swap to the recipe, in place, and it can be undone", async () => {
     const res = await t.admin.post(`/api/recipes/${pancakes.id}/swap`, {
       ingredientId: buttermilk().id,
       lines: ["2 cups milk", "2 tbsp lemon juice"],
+      steps: [
+        {
+          stepId: pancakes.steps[1]!.id,
+          text: "Cook on a hot griddle, a minute longer a side.",
+        },
+      ],
     })
     expect(res.status).toBe(200)
     const swapped = res.body.recipe as Recipe
+    expect(swapped.steps.map((s) => s.text)).toEqual([
+      "Whisk everything.",
+      "Cook on a hot griddle, a minute longer a side.",
+    ])
     expect(swapped.ingredients.map((i) => [i.section, i.text])).toEqual([
       ["Batter", "2 cups flour"],
       ["Batter", "2 cups milk"],

@@ -2,6 +2,7 @@ import {
   avoidedIn,
   describeTastes,
   joinSections,
+  type StepChange,
   type Substitute,
 } from "@mise/shared"
 import { desc, eq } from "drizzle-orm"
@@ -21,7 +22,9 @@ const SWAP_SYSTEM = `Someone is about to cook this recipe and is out of one ingr
 - Put what they have first: the pantry list is what's at home. Set inPantry for those.
 - Never suggest anything the household avoids.
 - The note is one short sentence on how to use it and how it changes the dish, like "Stir together and let sit 5 minutes; a little less tangy."
-- Common, practical swaps; leave out anything hard to find.`
+- Common, practical swaps; leave out anything hard to find.
+- When a substitute changes how the dish is made, say so in the steps: rewrite each step that changes, in full and in the recipe's own style, naming the substitute and the new time or method. For example, tomato sauce standing in for tomato paste needs to simmer longer to thicken, so "Stir in the tomato paste and cook 3 minutes" becomes "Stir in the tomato sauce and simmer 12 to 15 minutes, until thick and jammy". Give the step's number. Leave every other step out; most swaps change no steps.
+- Something extra a substitute needs, like a pinch of sugar to balance tomato sauce, is one more ingredient line, and the step where it goes in says so.`
 
 const swapResult = z.object({
   substitutes: z.array(
@@ -29,9 +32,27 @@ const swapResult = z.object({
       lines: z.array(z.string()),
       note: z.string(),
       inPantry: z.boolean(),
+      steps: z.array(z.object({ step: z.number(), text: z.string() })),
     })
   ),
 })
+
+/** The AI's rewritten steps, by step: real steps only, each once, and only when the words change. */
+function stepChanges(
+  steps: { id: string; text: string }[],
+  changes: { step: number; text: string }[]
+): StepChange[] {
+  const seen = new Set<string>()
+  const result: StepChange[] = []
+  for (const change of changes) {
+    const step = steps[Math.round(change.step) - 1]
+    const text = change.text.replace(/\s+/g, " ").trim().slice(0, 2000)
+    if (!step || !text || seen.has(step.id) || text === step.text) continue
+    seen.add(step.id)
+    result.push({ stepId: step.id, text })
+  }
+  return result.slice(0, 6)
+}
 
 /** Substitutes for one ingredient of a recipe, knowing the pantry and the household's rules. */
 export async function findSubstitutes(
@@ -57,7 +78,14 @@ export async function findSubstitutes(
       {
         type: "text",
         text: [
-          recipeText(toInput(recipe)),
+          // Numbered steps, so changes can say which.
+          recipeText({
+            ...toInput(recipe),
+            steps: recipe.steps.map(
+              (step, i) =>
+                `${i + 1}. ${step.section ? `(${step.section}) ` : ""}${step.text}`
+            ),
+          }),
           `Instead of: ${ingredient.text}`,
           `At home: ${pantry.map((item) => item.name).join(", ") || "(nothing listed)"}`,
           rules ? `The household's tastes and rules:\n${rules}` : null,
@@ -77,6 +105,7 @@ export async function findSubstitutes(
         .slice(0, 5),
       note: substitute.note.trim().slice(0, 300),
       inPantry: substitute.inPantry,
+      steps: stepChanges(recipe.steps, substitute.steps),
     }))
     .filter(
       (substitute) =>
@@ -95,7 +124,7 @@ export async function swapIngredient(
   db: Db,
   householdId: string,
   idOrSlug: string,
-  input: { ingredientId: string; lines: string[] },
+  input: { ingredientId: string; lines: string[]; steps?: StepChange[] },
   userId: string
 ) {
   const recipe = await getRecipe(db, householdId, idOrSlug)
@@ -116,11 +145,22 @@ export async function swapIngredient(
       ? input.lines.map((text) => ({ section: ingredient.section, text }))
       : [{ section: ingredient.section, text: ingredient.text }]
   )
+  const rewritten = new Map(
+    (input.steps ?? []).map((change) => [change.stepId, change.text])
+  )
+  const steps = recipe.steps.map((step) => ({
+    section: step.section,
+    text: rewritten.get(step.id) ?? step.text,
+  }))
   const updated = await updateRecipe(
     db,
     householdId,
     recipe.id,
-    { ...toInput(recipe), ingredients: joinSections(ingredients) },
+    {
+      ...toInput(recipe),
+      ingredients: joinSections(ingredients),
+      steps: joinSections(steps),
+    },
     { userId }
   )
   return {

@@ -1,4 +1,9 @@
-import { formatIngredient, type RecipeIngredient } from "@mise/shared"
+import {
+  formatIngredient,
+  type RecipeIngredient,
+  type RecipeStep,
+  type Substitute,
+} from "@mise/shared"
 import { toast } from "sonner"
 
 import { ResponsiveDialog } from "@/components/responsive-dialog"
@@ -8,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError } from "@/lib/api"
 
 import { IngredientText } from "./ingredient-list"
+import type { SwapChoice } from "./swaps"
 import { useUnitMode } from "./unit-toggle"
 import {
   useRestoreVersion,
@@ -22,6 +28,7 @@ import {
 export function SwapDialog({
   recipeId,
   ingredient,
+  steps,
   factor,
   canSave,
   onUse,
@@ -29,11 +36,13 @@ export function SwapDialog({
 }: {
   recipeId: string
   ingredient: RecipeIngredient | null
+  /** The steps on screen, to say which a swap changes. */
+  steps: RecipeStep[]
   /** Amounts are shown at the scale on screen. */
   factor: number
   /** The ingredient is this recipe's own (not from something it's paired with). */
   canSave: boolean
-  onUse: (ingredientId: string, lines: string[]) => void
+  onUse: (ingredientId: string, choice: SwapChoice) => void
   onClose: () => void
 }) {
   const [mode] = useUnitMode()
@@ -59,6 +68,7 @@ export function SwapDialog({
         <Options
           recipeId={recipeId}
           ingredient={ingredient}
+          steps={steps}
           factor={factor}
           canSave={canSave}
           onUse={onUse}
@@ -72,6 +82,7 @@ export function SwapDialog({
 function Options({
   recipeId,
   ingredient,
+  steps,
   factor,
   canSave,
   onUse,
@@ -79,18 +90,23 @@ function Options({
 }: {
   recipeId: string
   ingredient: RecipeIngredient
+  steps: RecipeStep[]
   factor: number
   canSave: boolean
-  onUse: (ingredientId: string, lines: string[]) => void
+  onUse: (ingredientId: string, choice: SwapChoice) => void
   onClose: () => void
 }) {
   const substitutes = useSubstitutes(recipeId, ingredient.id)
   const save = useSwapIngredient(recipeId)
   const restore = useRestoreVersion(recipeId)
 
-  function saveToRecipe(lines: string[]) {
+  function saveToRecipe(substitute: Substitute) {
     save.mutate(
-      { ingredientId: ingredient.id, lines },
+      {
+        ingredientId: ingredient.id,
+        lines: substitute.lines,
+        steps: substitute.steps,
+      },
       {
         onSuccess: ({ undoVersionId }) => {
           toast.success("Saved to the recipe", {
@@ -165,11 +181,39 @@ function Options({
           {substitute.note && (
             <p className="text-sm text-muted-foreground">{substitute.note}</p>
           )}
+          {substitute.steps.length > 0 && (
+            <div className="grid gap-1 rounded-xl bg-muted/60 px-3 py-2.5 text-sm">
+              <p className="font-medium">
+                {substitute.steps.length === 1
+                  ? "Changes a step"
+                  : `Changes ${substitute.steps.length} steps`}
+              </p>
+              <ul className="grid gap-1 text-muted-foreground">
+                {substitute.steps.map((change) => {
+                  const number =
+                    steps.findIndex((step) => step.id === change.stepId) + 1
+                  return (
+                    <li key={change.stepId}>
+                      {number > 0 && (
+                        <span className="font-medium text-foreground">
+                          Step {number}:{" "}
+                        </span>
+                      )}
+                      {change.text}
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               onClick={() => {
-                onUse(ingredient.id, substitute.lines)
+                onUse(ingredient.id, {
+                  lines: substitute.lines,
+                  steps: substitute.steps,
+                })
                 toast.success("Swapped for this time")
                 onClose()
               }}
@@ -181,7 +225,7 @@ function Options({
                 size="sm"
                 variant="ghost"
                 disabled={save.isPending}
-                onClick={() => saveToRecipe(substitute.lines)}
+                onClick={() => saveToRecipe(substitute)}
               >
                 Save to recipe
               </Button>

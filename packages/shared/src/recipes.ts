@@ -139,13 +139,21 @@ export type Recipe = RecipeSummary & {
 }
 
 /** Something to use instead of an ingredient, for this recipe. */
+/** A step written differently because of a swap: "Simmer 15 minutes, until thick." */
+export type StepChange = { stepId: string; text: string }
+
 export type Substitute = {
-  /** Ingredient lines with amounts for the recipe as written: "1 cup milk", "1 tbsp lemon juice". */
+  /**
+   * Ingredient lines with amounts for the recipe as written: "1 cup milk",
+   * "1 tbsp lemon juice", and anything extra it needs, like a pinch of sugar.
+   */
   lines: string[]
   /** How to use it and how it changes the dish. */
   note: string
   /** It's in the pantry. */
   inPantry: boolean
+  /** Steps that change with it (a longer simmer, when to add the sugar), in full. */
+  steps: StepChange[]
 }
 
 export const substitutesInput = z.object({ ingredientId: z.uuid() })
@@ -153,6 +161,16 @@ export const substitutesInput = z.object({ ingredientId: z.uuid() })
 export const swapIngredientInput = z.object({
   ingredientId: z.uuid(),
   lines: z.array(z.string().trim().min(1).max(500)).min(1).max(5),
+  /** Steps rewritten for the swap, saved along with it. */
+  steps: z
+    .array(
+      z.object({
+        stepId: z.uuid(),
+        text: z.string().trim().min(1).max(2000),
+      })
+    )
+    .max(10)
+    .optional(),
 })
 
 export type SwapResult = {

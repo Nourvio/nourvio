@@ -11,6 +11,7 @@ import type {
   RecipeSummary,
   RecipeVersion,
   Substitute,
+  StepChange,
   SwapResult,
   Tag,
 } from "@mise/shared"
@@ -271,8 +272,11 @@ export function useSubstitutes(recipeId: string, ingredientId: string | null) {
 export function useSwapIngredient(recipeId: string) {
   const saved = useRecipeSaved()
   return useMutation({
-    mutationFn: (input: { ingredientId: string; lines: string[] }) =>
-      api<SwapResult>(`/recipes/${recipeId}/swap`, { body: input }),
+    mutationFn: (input: {
+      ingredientId: string
+      lines: string[]
+      steps?: StepChange[]
+    }) => api<SwapResult>(`/recipes/${recipeId}/swap`, { body: input }),
     onSuccess: ({ recipe }) => saved(recipe),
   })
 }

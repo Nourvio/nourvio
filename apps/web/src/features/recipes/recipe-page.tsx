@@ -66,8 +66,14 @@ import { RecipePhoto, useMakePhoto } from "./recipe-photo"
 import { TasteWarnings } from "./taste-warnings"
 import { ServingsStepper } from "./servings-stepper"
 import { SwapDialog } from "./swap-dialog"
-import { applySwaps, stepSwapsFor, useSwaps, useSwapsWhileOpen } from "./swaps"
-import { SwappedWord } from "./swapped-word"
+import {
+  applyStepChanges,
+  applySwaps,
+  stepSwapsFor,
+  useSwaps,
+  useSwapsWhileOpen,
+} from "./swaps"
+import { ChangedStepNote, SwappedWord } from "./swapped-word"
 import { TidyUpDialog } from "./tidy-up-dialog"
 import { UnitToggle } from "./unit-toggle"
 import { useRecipeProposal } from "./use-cleanup"
@@ -120,8 +126,12 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
     ? (id: string) =>
         combined.factors.get(swappedFrom.get(id)?.originalId ?? id) ?? factor
     : undefined
-  const steps = combined?.steps ?? recipe.steps
-  // Steps read with this time's swaps: "whisk in the tahini".
+  // Steps a swap rewrote ("simmer 15 minutes, until thick"), and the rest
+  // read with the swapped-in names: "whisk in the tahini".
+  const { steps, changed: changedSteps } = applyStepChanges(
+    combined?.steps ?? recipe.steps,
+    swaps
+  )
   const swapped = stepSwapsFor(ingredients, swappedFrom)
 
   function showWith(slug: string | null) {
@@ -365,6 +375,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                   : recipe.id
               }
               ingredient={swapping}
+              steps={steps}
               factor={swapping ? (factorOf?.(swapping.id) ?? factor) : factor}
               canSave
               onUse={swap}
@@ -395,10 +406,12 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">
                             {number}
                           </span>
-                          <p className="pt-1 text-lg leading-relaxed">
-                            {swapped
-                              .step(step.text)
-                              .map((piece, i) =>
+                          <div className="grid gap-2 pt-1">
+                            <p className="text-lg leading-relaxed">
+                              {(changedSteps.has(step.id)
+                                ? [{ text: step.text, insteadOf: undefined }]
+                                : swapped.step(step.text)
+                              ).map((piece, i) =>
                                 piece.insteadOf ? (
                                   <SwappedWord key={i} piece={piece} />
                                 ) : (
@@ -407,7 +420,13 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                                   </React.Fragment>
                                 )
                               )}
-                          </p>
+                            </p>
+                            {changedSteps.get(step.id) && (
+                              <ChangedStepNote
+                                original={changedSteps.get(step.id)!.original}
+                              />
+                            )}
+                          </div>
                         </li>
                       )
                     })}

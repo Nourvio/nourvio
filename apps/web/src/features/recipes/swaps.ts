@@ -3,11 +3,16 @@ import {
   parseIngredient,
   swapIntoStep,
   type RecipeIngredient,
+  type RecipeStep,
+  type StepChange,
   type StepSwap,
 } from "@mise/shared"
 
-/** An ingredient's id, and the lines used instead of it this time. */
-export type Swaps = Record<string, string[]>
+/** What's used instead of an ingredient this time, and the steps that change with it. */
+export type SwapChoice = { lines: string[]; steps?: StepChange[] }
+
+/** An ingredient's id, and what's used instead of it this time. */
+export type Swaps = Record<string, SwapChoice>
 
 /** What a swapped-in line replaced: the original ingredient. */
 export type SwappedFrom = Map<
@@ -31,7 +36,17 @@ function read(recipeId: string): Swaps {
     const saved = JSON.parse(
       sessionStorage.getItem(storageKey(recipeId)) ?? "null"
     )
-    if (saved && typeof saved === "object") swaps = saved as Swaps
+    if (saved && typeof saved === "object") {
+      // Swaps saved before steps could change were just the lines.
+      swaps = Object.fromEntries(
+        Object.entries(saved as Record<string, unknown>).map(([id, value]) => [
+          id,
+          Array.isArray(value)
+            ? { lines: value as string[] }
+            : (value as SwapChoice),
+        ])
+      )
+    }
   } catch {
     // Nothing saved, or storage is blocked.
   }
@@ -95,8 +110,8 @@ export function useSwaps(recipeId: string) {
     () => NONE
   )
   const swap = React.useCallback(
-    (ingredientId: string, lines: string[]) =>
-      write(recipeId, { ...read(recipeId), [ingredientId]: lines }),
+    (ingredientId: string, choice: SwapChoice) =>
+      write(recipeId, { ...read(recipeId), [ingredientId]: choice }),
     [recipeId]
   )
   const undo = React.useCallback(
@@ -118,7 +133,7 @@ export function applySwaps(
   const swappedFrom: SwappedFrom = new Map()
   if (!Object.keys(swaps).length) return { ingredients, swappedFrom }
   const result = ingredients.flatMap((ingredient) => {
-    const lines = swaps[ingredient.id]
+    const lines = swaps[ingredient.id]?.lines
     if (!lines?.length) return [ingredient]
     return lines.map((text, index) => {
       const id = `${ingredient.id}~${index}`
@@ -169,5 +184,29 @@ export function stepSwapsFor(
     swaps,
     /** A step as it reads with this time's swaps. */
     step: (text: string) => swapIntoStep(text, swaps, others),
+  }
+}
+
+/** A step rewritten for a swap this time, and how it read before. */
+export type ChangedStep = { original: string }
+
+/** The steps with this time's swaps' changes in place ("simmer 15 minutes, until thick"). */
+export function applyStepChanges(steps: RecipeStep[], swaps: Swaps) {
+  const rewrites = new Map<string, string>()
+  for (const choice of Object.values(swaps)) {
+    for (const change of choice.steps ?? []) {
+      rewrites.set(change.stepId, change.text)
+    }
+  }
+  const changed = new Map<string, ChangedStep>()
+  if (!rewrites.size) return { steps, changed }
+  return {
+    steps: steps.map((step) => {
+      const text = rewrites.get(step.id)
+      if (text === undefined) return step
+      changed.set(step.id, { original: step.text })
+      return { ...step, text }
+    }),
+    changed,
   }
 }
