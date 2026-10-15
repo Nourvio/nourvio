@@ -128,7 +128,16 @@ export function IngredientList({
                     </Label>
                     {swapped && ingredient.id.endsWith("~0") && (
                       <span className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
-                        <span>Instead of {swapped.from}</span>
+                        <span>
+                          Instead of{" "}
+                          <IngredientText
+                            text={swapped.original.text}
+                            factor={factorOf?.(swapped.originalId) ?? factor}
+                            unitGrams={
+                              grams ? swapped.original.unitGrams : null
+                            }
+                          />
+                        </span>
                         {onUndoSwap && (
                           <button
                             type="button"

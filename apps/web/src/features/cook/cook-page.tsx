@@ -57,7 +57,14 @@ import {
 import { UnitToggle, useUnitMode } from "@/features/recipes/unit-toggle"
 import { CookNoteDialog, LastCookNote } from "@/features/recipes/cook-notes"
 import { SwapDialog } from "@/features/recipes/swap-dialog"
-import { applySwaps, useSwaps } from "@/features/recipes/swaps"
+import { SwappedWord } from "@/features/recipes/swapped-word"
+import {
+  applySwaps,
+  clearSwaps,
+  stepSwapsFor,
+  useSwaps,
+  useSwapsWhileOpen,
+} from "@/features/recipes/swaps"
 import { useAiStatus } from "@/features/settings/use-ai"
 import { useMarkMade, useRecipe } from "@/features/recipes/use-recipes"
 import { storedChoice } from "@/lib/stored-choice"
@@ -206,12 +213,20 @@ function CookView({
   // Swaps for this time carry over from the recipe page, and can be made here.
   const ai = useAiStatus()
   const { swaps, swap, undo } = useSwaps(recipe.id)
+  useSwapsWhileOpen(recipe.id)
   const [swapping, setSwapping] = React.useState<RecipeIngredient | null>(null)
   const { ingredients: allIngredients, swappedFrom } = applySwaps(
     combined?.ingredients ?? recipe.ingredients,
     swaps
   )
   const steps = combined?.steps ?? recipe.steps
+  // Steps read with this time's swaps: "whisk in the tahini".
+  const swapped = stepSwapsFor(allIngredients, swappedFrom)
+  const stepText = (text: string) =>
+    swapped
+      .step(text)
+      .map((piece) => piece.text)
+      .join("")
   const factorOf = combined
     ? (id: string) =>
         combined.factors.get(swappedFrom.get(id)?.originalId ?? id) ?? factor
@@ -299,6 +314,8 @@ function CookView({
 
   function done(message: string, description?: string) {
     saveProgress(recipe.id, null)
+    // Swaps were for this time; next time starts with the recipe as written.
+    clearSwaps(recipe.id)
     toast.success(message, { description })
     setAsking(true)
   }
@@ -346,7 +363,7 @@ function CookView({
     const number = page - (hasPrep ? 1 : 0)
     const pageStep = steps[number]
     return pageStep
-      ? `Step ${number + 1}. ${pageStep.text}`
+      ? `Step ${number + 1}. ${stepText(pageStep.text)}`
       : "This recipe has no steps yet."
   }
   const pageText = () => textForPage(index)
@@ -648,26 +665,34 @@ function CookView({
                   STEP_TEXT[textSize]
                 )}
               >
-                {splitDurations(step.text).map((part, i) =>
-                  part.type === "text" ? (
-                    <React.Fragment key={i}>{part.text}</React.Fragment>
+                {swapped.step(step.text).flatMap((piece, p) =>
+                  piece.insteadOf ? (
+                    <SwappedWord key={p} piece={piece} />
                   ) : (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => {
-                        startTimer(part.label, part.seconds, here)
-                        toast(`Timer started: ${part.label}`)
-                      }}
-                      className="mx-0.5 inline-flex items-center gap-1.5 rounded-full bg-highlight px-3 py-0.5 align-baseline font-semibold text-highlight-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-                    >
-                      <HugeiconsIcon
-                        icon={Timer02Icon}
-                        strokeWidth={2}
-                        className="size-[0.8em]"
-                      />
-                      {part.text}
-                    </button>
+                    splitDurations(piece.text).map((part, i) =>
+                      part.type === "text" ? (
+                        <React.Fragment key={`${p}-${i}`}>
+                          {part.text}
+                        </React.Fragment>
+                      ) : (
+                        <button
+                          key={`${p}-${i}`}
+                          type="button"
+                          onClick={() => {
+                            startTimer(part.label, part.seconds, here)
+                            toast(`Timer started: ${part.label}`)
+                          }}
+                          className="mx-0.5 inline-flex items-center gap-1.5 rounded-full bg-highlight px-3 py-0.5 align-baseline font-semibold text-highlight-foreground outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                        >
+                          <HugeiconsIcon
+                            icon={Timer02Icon}
+                            strokeWidth={2}
+                            className="size-[0.8em]"
+                          />
+                          {part.text}
+                        </button>
+                      )
+                    )
                   )
                 )}
               </p>

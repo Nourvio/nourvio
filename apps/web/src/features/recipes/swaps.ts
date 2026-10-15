@@ -1,14 +1,23 @@
 import * as React from "react"
-import type { RecipeIngredient } from "@mise/shared"
+import {
+  parseIngredient,
+  swapIntoStep,
+  type RecipeIngredient,
+  type StepSwap,
+} from "@mise/shared"
 
 /** An ingredient's id, and the lines used instead of it this time. */
 export type Swaps = Record<string, string[]>
 
-/** What a swapped-in line replaced. */
-export type SwappedFrom = Map<string, { originalId: string; from: string }>
+/** What a swapped-in line replaced: the original ingredient. */
+export type SwappedFrom = Map<
+  string,
+  { originalId: string; from: string; original: RecipeIngredient }
+>
 
-// Swaps for this time only, per recipe, kept for the browser session so
-// they carry from the recipe page into cooking.
+// Swaps for this time only, per recipe. They carry between the recipe page
+// and cooking it (and survive a reload there), and are let go when cooking
+// is finished or the recipe is left for another page.
 const listeners = new Set<() => void>()
 const cache = new Map<string, Swaps>()
 const NONE: Swaps = {}
@@ -51,6 +60,33 @@ function subscribe(listener: () => void) {
   }
 }
 
+/** Forgets a recipe's swaps for this time, as when it's been cooked. */
+export function clearSwaps(recipeId: string) {
+  if (read(recipeId) !== NONE) write(recipeId, NONE)
+}
+
+// How many pages showing a recipe are open: the recipe page and its cook
+// view hand over to each other, so its swaps last until both are gone.
+const holders = new Map<string, number>()
+
+/**
+ * Keeps a recipe's swaps while this page is open. Going from the recipe to
+ * cooking it (or back) keeps them; leaving for anywhere else lets them go,
+ * so the next time starts with the recipe as written.
+ */
+export function useSwapsWhileOpen(recipeId: string) {
+  React.useEffect(() => {
+    holders.set(recipeId, (holders.get(recipeId) ?? 0) + 1)
+    return () => {
+      holders.set(recipeId, (holders.get(recipeId) ?? 1) - 1)
+      // A moment for the next page to take them up (it may still be loading).
+      setTimeout(() => {
+        if (!holders.get(recipeId)) clearSwaps(recipeId)
+      }, 1500)
+    }
+  }, [recipeId])
+}
+
 /** This time's swaps for a recipe, and ways to change them. */
 export function useSwaps(recipeId: string) {
   const swaps = React.useSyncExternalStore(
@@ -86,7 +122,11 @@ export function applySwaps(
     if (!lines?.length) return [ingredient]
     return lines.map((text, index) => {
       const id = `${ingredient.id}~${index}`
-      swappedFrom.set(id, { originalId: ingredient.id, from: ingredient.text })
+      swappedFrom.set(id, {
+        originalId: ingredient.id,
+        from: ingredient.text,
+        original: ingredient,
+      })
       return {
         ...ingredient,
         id,
@@ -94,11 +134,40 @@ export function applySwaps(
         quantity: null,
         quantityMax: null,
         unitId: null,
-        food: null,
+        // Named, so steps that use it light it up.
+        food: parseIngredient(text).food,
         note: null,
         unitGrams: null,
       }
     })
   })
   return { ingredients: result, swappedFrom }
+}
+
+/** Each swapped ingredient's food, and the foods used instead, for writing into the steps. */
+export function stepSwapsFor(
+  ingredients: RecipeIngredient[],
+  swappedFrom: SwappedFrom
+) {
+  const byOriginal = new Map<string, StepSwap>()
+  for (const ingredient of ingredients) {
+    const swapped = swappedFrom.get(ingredient.id)
+    if (!swapped) continue
+    const entry = byOriginal.get(swapped.originalId) ?? {
+      from: swapped.original.food ?? swapped.original.text,
+      to: [],
+    }
+    entry.to.push(ingredient.food ?? ingredient.text)
+    byOriginal.set(swapped.originalId, entry)
+  }
+  const swaps = [...byOriginal.values()]
+  // The rest of the recipe's foods, so their names aren't swapped by mistake.
+  const others = ingredients
+    .filter((ingredient) => !swappedFrom.has(ingredient.id) && ingredient.food)
+    .map((ingredient) => ingredient.food!)
+  return {
+    swaps,
+    /** A step as it reads with this time's swaps. */
+    step: (text: string) => swapIntoStep(text, swaps, others),
+  }
 }

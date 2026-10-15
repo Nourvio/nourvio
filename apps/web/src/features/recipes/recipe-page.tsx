@@ -66,7 +66,8 @@ import { RecipePhoto, useMakePhoto } from "./recipe-photo"
 import { TasteWarnings } from "./taste-warnings"
 import { ServingsStepper } from "./servings-stepper"
 import { SwapDialog } from "./swap-dialog"
-import { applySwaps, useSwaps } from "./swaps"
+import { applySwaps, stepSwapsFor, useSwaps, useSwapsWhileOpen } from "./swaps"
+import { SwappedWord } from "./swapped-word"
 import { TidyUpDialog } from "./tidy-up-dialog"
 import { UnitToggle } from "./unit-toggle"
 import { useRecipeProposal } from "./use-cleanup"
@@ -109,6 +110,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   // Swaps for this time ("out of buttermilk"), in place of what they replace.
   const ai = useAiStatus()
   const { swaps, swap, undo } = useSwaps(recipe.id)
+  useSwapsWhileOpen(recipe.id)
   const [swapping, setSwapping] = React.useState<RecipeIngredient | null>(null)
   const { ingredients, swappedFrom } = applySwaps(
     combined?.ingredients ?? recipe.ingredients,
@@ -119,6 +121,8 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
         combined.factors.get(swappedFrom.get(id)?.originalId ?? id) ?? factor
     : undefined
   const steps = combined?.steps ?? recipe.steps
+  // Steps read with this time's swaps: "whisk in the tahini".
+  const swapped = stepSwapsFor(ingredients, swappedFrom)
 
   function showWith(slug: string | null) {
     setParams(
@@ -392,7 +396,17 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                             {number}
                           </span>
                           <p className="pt-1 text-lg leading-relaxed">
-                            {step.text}
+                            {swapped
+                              .step(step.text)
+                              .map((piece, i) =>
+                                piece.insteadOf ? (
+                                  <SwappedWord key={i} piece={piece} />
+                                ) : (
+                                  <React.Fragment key={i}>
+                                    {piece.text}
+                                  </React.Fragment>
+                                )
+                              )}
                           </p>
                         </li>
                       )

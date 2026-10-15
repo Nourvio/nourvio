@@ -1,4 +1,4 @@
-import type { RecipeIngredient } from "@mise/shared"
+import { foodWords, type RecipeIngredient } from "@mise/shared"
 
 export type StepPart =
   | { type: "text"; text: string }
@@ -37,27 +37,6 @@ export function splitDurations(text: string): StepPart[] {
   return parts
 }
 
-// Words that describe an ingredient rather than name it.
-const DESCRIPTIVE = new Set(
-  "all purpose fresh large small medium extra virgin chopped minced diced sliced ground whole dried finely roughly thinly freshly packed softened melted cold warm room temperature boneless skinless optional divided plus more for serving taste and the into pieces about".split(
-    " "
-  )
-)
-
-function keywords(food: string) {
-  const words = food
-    .toLowerCase()
-    .split(/[^a-z]+/)
-    .filter((word) => word.length >= 3 && !DESCRIPTIVE.has(word))
-  return words.flatMap((word) =>
-    word.endsWith("es") && word.length > 4
-      ? [word, word.slice(0, -2), word.slice(0, -1)]
-      : word.endsWith("s") && word.length > 3
-        ? [word, word.slice(0, -1)]
-        : [word, `${word}s`]
-  )
-}
-
 /** Ingredients that a step mentions by name, for highlighting while cooking. */
 export function ingredientsInStep(
   step: string,
@@ -67,7 +46,7 @@ export function ingredientsInStep(
   const used = new Set<string>()
   for (const ingredient of ingredients) {
     if (!ingredient.food) continue
-    if (keywords(ingredient.food).some((word) => words.has(word))) {
+    if (foodWords(ingredient.food).some((word) => words.has(word))) {
       used.add(ingredient.id)
     }
   }

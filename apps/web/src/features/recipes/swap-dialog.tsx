@@ -1,4 +1,4 @@
-import { type RecipeIngredient } from "@mise/shared"
+import { formatIngredient, type RecipeIngredient } from "@mise/shared"
 import { toast } from "sonner"
 
 import { ResponsiveDialog } from "@/components/responsive-dialog"
@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ApiError } from "@/lib/api"
 
 import { IngredientText } from "./ingredient-list"
+import { useUnitMode } from "./unit-toggle"
 import {
   useRestoreVersion,
   useSubstitutes,
@@ -35,11 +36,23 @@ export function SwapDialog({
   onUse: (ingredientId: string, lines: string[]) => void
   onClose: () => void
 }) {
+  const [mode] = useUnitMode()
+  // The amount being cooked, not the recipe's as written.
+  const shown = ingredient
+    ? (() => {
+        const { amount, rest } = formatIngredient(
+          ingredient.text,
+          factor,
+          mode === "grams" ? ingredient.unitGrams : null
+        )
+        return `${amount}${rest}`.trim()
+      })()
+    : null
   return (
     <ResponsiveDialog
       open={ingredient !== null}
       onOpenChange={(open) => !open && onClose()}
-      title={ingredient ? `Instead of ${ingredient.text}` : "Swap"}
+      title={shown ? `Instead of ${shown}` : "Swap"}
       description="Swaps that work in this recipe, with what you have first."
     >
       {ingredient && (
