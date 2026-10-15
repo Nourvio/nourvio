@@ -7,7 +7,8 @@ import { currentHousehold, currentUser, type AppEnv } from "../context.ts"
 import { readBody } from "../http.ts"
 import type { EventBus } from "../services/events.ts"
 import type { ReceiptService } from "../services/receipts.ts"
-import { publicOrigin, readUpload } from "./uploads.ts"
+import type { SignInLinks } from "../services/sign-in-links.ts"
+import { openLink, readUpload } from "./uploads.ts"
 
 /** Photos, screenshots and PDFs of a receipt, together. */
 const MAX_UPLOAD = 40 * 1024 * 1024
@@ -16,7 +17,11 @@ const MAX_UPLOAD = 40 * 1024 * 1024
  * Receipts into the pantry: read one (from Mise, or shared from an iPhone
  * Shortcut with a key), look it over, then add what was bought.
  */
-export function receiptRoutes(receipts: ReceiptService, events: EventBus) {
+export function receiptRoutes(
+  receipts: ReceiptService,
+  events: EventBus,
+  signInLinks: SignInLinks
+) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
 
@@ -33,7 +38,10 @@ export function receiptRoutes(receipts: ReceiptService, events: EventBus) {
         { files, text }
       )
       return c.json(
-        { draft, url: `${publicOrigin(c)}/pantry/receipt?id=${draft.id}` },
+        {
+          draft,
+          url: openLink(c, signInLinks, `/pantry/receipt?id=${draft.id}`),
+        },
         201
       )
     }

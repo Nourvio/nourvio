@@ -16,10 +16,12 @@ import { createEventBus } from "./services/events.ts"
 import { importFollowUp } from "./services/import-follow-up.ts"
 import { createReceiptService } from "./services/receipts.ts"
 import { createShareService } from "./services/share.ts"
+import { createSignInLinks } from "./services/sign-in-links.ts"
 import { createUpdateService } from "./services/updates.ts"
 import { createVoiceService } from "./services/voice.ts"
 import { createPhotoService } from "./services/photos.ts"
 import { loadSession, requireUser } from "./auth/middleware.ts"
+import { createSession, setSessionCookie } from "./auth/sessions.ts"
 import { config } from "./config.ts"
 import type { AppContext, AppEnv } from "./context.ts"
 import { pingDatabase } from "./db/client.ts"
@@ -87,6 +89,7 @@ export function createApp(ctx: AppContext) {
   const updates = createUpdateService(ctx.updates)
   const events = createEventBus()
   const receipts = createReceiptService(ctx.db, ai)
+  const signInLinks = createSignInLinks()
   const share = createShareService(
     ctx.db,
     ai,
@@ -152,8 +155,8 @@ export function createApp(ctx: AppContext) {
   app.route("/api/plan", planRoutes(ctx))
   app.route("/api/list", listRoutes(ctx, events))
   app.route("/api/events", eventRoutes(events))
-  app.route("/api/receipts", receiptRoutes(receipts, events))
-  app.route("/api/share", shareRoutes(share))
+  app.route("/api/receipts", receiptRoutes(receipts, events, signInLinks))
+  app.route("/api/share", shareRoutes(share, signInLinks))
   app.route("/api/pantry", pantryRoutes(ctx))
   app.route("/api/images", imagesRoutes(ctx))
   app.route("/api/import", importRoutes(ctx, ai, nutrition, photos))
@@ -165,6 +168,21 @@ export function createApp(ctx: AppContext) {
   // Android shares into Mise by posting here; the service worker takes it.
   // Without one (Mise opened over plain http), say what's needed.
   app.post("/share", (c) => c.redirect("/share?unsupported=1", 303))
+  // A one-time sign-in link from an iPhone Shortcut: sign this browser in,
+  // then on to what was shared.
+  app.get("/s/:code", async (c) => {
+    const link = signInLinks.redeem(c.req.param("code"))
+    if (!link) return c.redirect("/login", 302)
+    const session = await createSession(
+      ctx.db,
+      link.userId,
+      c.req.header("user-agent")
+    )
+    setSessionCookie(c, session.token, session.expiresAt)
+    c.header("cache-control", "no-store")
+    c.header("referrer-policy", "no-referrer")
+    return c.redirect(link.next, 302)
+  })
   // Vite gives built assets hashed names, so they can be cached forever.
   app.use(
     "/assets/*",

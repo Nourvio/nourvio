@@ -154,4 +154,48 @@ describe("sharing anything into Mise", () => {
     expect((await t.admin.post(`/api/share/${id}`, {})).status).toBe(404)
     expect((await t.admin.post("/api/share", {})).status).toBe(400)
   })
+
+  test("from a Shortcut, the link signs a fresh browser in, once", async () => {
+    next = "receipt"
+    const { token } = (
+      await t.admin.post("/api/extension/tokens", { name: "iPhone Shortcut" })
+    ).body as { token: string }
+    const form = new FormData()
+    form.append("file", picture)
+    const shared = await t.app.request("/api/share", {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}` },
+      body: form,
+    })
+    const { url } = (await shared.json()) as { url: string }
+    expect(url).toMatch(/\/s\/[\w-]{40,}$/)
+
+    // A browser that has never signed in opens it.
+    const path = new URL(url).pathname
+    const opened = await t.app.request(path)
+    expect(opened.status).toBe(302)
+    const goesTo = opened.headers.get("location")!
+    expect(goesTo).toMatch(/^\/share\?inbox=/)
+    const cookie = opened.headers.get("set-cookie")!.split(";")[0]!
+    expect(cookie).toMatch(/^mise_session=/)
+
+    // Signed in now: it can open what was shared.
+    const id = new URLSearchParams(goesTo.split("?")[1]).get("inbox")
+    const result = await t.app.request(`/api/share/${id}`, {
+      method: "POST",
+      headers: { cookie, origin: "http://localhost" },
+    })
+    expect(result.status).toBe(200)
+
+    // Used once: opening it again just asks to sign in.
+    const again = await t.app.request(path)
+    expect(again.headers.get("location")).toBe("/login")
+    expect(again.headers.get("set-cookie")).toBeNull()
+
+    // From Mise itself, signed in, no sign-in link is needed.
+    const own = await t.admin.post("/api/share", {
+      text: "https://example.com/r",
+    })
+    expect(own.body.url).not.toMatch(/\/s\//)
+  })
 })

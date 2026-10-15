@@ -1,8 +1,9 @@
 import type { Context } from "hono"
 
 import { config } from "../config.ts"
-import type { AppEnv } from "../context.ts"
+import { currentUser, type AppEnv } from "../context.ts"
 import type { ReceiptFiles } from "../services/receipts.ts"
+import type { SignInLinks } from "../services/sign-in-links.ts"
 
 /** Mise's own address, for links a Shortcut opens. */
 export function publicOrigin(c: Context<AppEnv>) {
@@ -15,6 +16,21 @@ export function publicOrigin(c: Context<AppEnv>) {
     c.req.header("host") ??
     new URL(c.req.url).host
   return `${proto}://${host}`
+}
+
+/**
+ * The link to open after a share. Sent with a Mise key (an iPhone
+ * Shortcut), it signs in first: iOS opens it in a browser that isn't signed
+ * in to Mise, and a fresh one each time.
+ */
+export function openLink(
+  c: Context<AppEnv>,
+  signInLinks: SignInLinks,
+  path: string
+) {
+  const origin = publicOrigin(c)
+  if (!c.get("viaToken")) return `${origin}${path}`
+  return `${origin}/s/${signInLinks.create(currentUser(c).id, path)}`
 }
 
 /**

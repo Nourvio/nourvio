@@ -148,7 +148,7 @@ export function ShareCard() {
             <p className="text-sm text-muted-foreground">
               Now, from TikTok, Instagram, YouTube, Safari, Mail, Photos or
               Files, tap <b>Share</b> and then <b>Send to Mise</b>. Mise opens
-              in Safari to finish it; sign in there the first time. The key is
+              to finish it, signed in for you by a one-time link. The key is
               yours: someone in another household needs their own. It's listed
               with your connected extensions, where it can be removed.
             </p>
