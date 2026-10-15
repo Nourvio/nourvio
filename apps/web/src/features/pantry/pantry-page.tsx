@@ -3,15 +3,19 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
   BubbleChatSparkIcon,
+  Calendar03Icon,
+  CheckmarkCircle02Icon,
   FridgeIcon,
   Invoice01Icon,
   MoreHorizontalIcon,
   ShoppingBasketAdd01Icon,
+  Store01Icon,
 } from "@hugeicons/core-free-icons"
 import {
   DEFAULT_ON_HAND,
   STORE_SECTIONS,
   whyUseSoon,
+  type PantryBulkInput,
   type PantryItem,
   type UseSoonReason,
 } from "@mise/shared"
@@ -24,6 +28,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -43,7 +48,16 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useChat } from "@/features/chat/chat-provider"
 import { OnHandDialog } from "@/features/list/list-dialogs"
 import { useAddListItem } from "@/features/list/use-list"
-import { shortDayName, today } from "@/features/plan/dates"
+import { monthDay, shortDayName, today } from "@/features/plan/dates"
+import { AisleDialog } from "@/features/select/aisle-dialog"
+import { SelectMark } from "@/features/select/select-mark"
+import {
+  SelectionBar,
+  SelectionHeader,
+  useSelectionKeepOnly,
+} from "@/features/select/selection-bar"
+import { undoable, useHidden } from "@/features/select/undo"
+import { useLongPress, useSelection } from "@/features/select/use-selection"
 import { useAiStatus } from "@/features/settings/use-ai"
 import { useHouseholdInfo } from "@/features/settings/use-household"
 import { ApiError } from "@/lib/api"
@@ -51,9 +65,26 @@ import { cn } from "@/lib/utils"
 
 import { EditPantryDialog } from "./edit-pantry-dialog"
 import { labelForUseBy, soonTag, soonWhen, urgency } from "./soon"
-import { useAddPantryItem, usePantry, useRemovePantryItem } from "./use-pantry"
+import { UseByDialog } from "./use-by-dialog"
+import {
+  useAddPantryItem,
+  usePantry,
+  usePantryBulk,
+  useRemovePantryItem,
+} from "./use-pantry"
 
 type Row = { item: PantryItem; soon: UseSoonReason | null }
+
+const things = (n: number) => `${n} ${n === 1 ? "thing" : "things"}`
+
+/** An item's part in select mode. */
+type ItemSelect = {
+  selecting: boolean
+  picked: boolean
+  onToggle: () => void
+  /** A long press on a phone, which starts selecting with this one. */
+  onLongPress: () => void
+}
 
 const SECTION_NAMES = new Map<string, string>(
   STORE_SECTIONS.map((section) => [section.id, section.name])
@@ -72,10 +103,10 @@ export function PantryPage() {
   const [onHand, setOnHand] = React.useState(false)
 
   const now = today()
-  const items: Row[] = (pantry.data ?? []).map((item) => ({
-    item,
-    soon: whyUseSoon(item, now),
-  }))
+  const isHidden = useHidden()
+  const items: Row[] = (pantry.data ?? [])
+    .filter((item) => !isHidden(item.id))
+    .map((item) => ({ item, soon: whyUseSoon(item, now) }))
   const soon = items
     .filter((row) => row.soon)
     .sort((a, b) => urgency(a.soon!) - urgency(b.soon!))
@@ -105,7 +136,41 @@ export function PantryPage() {
     })
   }
 
-  const count = pantry.data?.length ?? 0
+  // Select mode, over everything at home.
+  const selection = useSelection()
+  const bulk = usePantryBulk()
+  const [dialog, setDialog] = React.useState<"aisle" | "useBy" | null>(null)
+  const selectable = items.map((row) => row.item.id)
+  useSelectionKeepOnly(selection, selectable)
+  const pickedIds = selectable.filter((id) => selection.isPicked(id))
+  const selectOf = (id: string): ItemSelect => ({
+    selecting: selection.selecting,
+    picked: selection.isPicked(id),
+    onToggle: () => selection.toggle(id),
+    onLongPress: () => selection.start(id),
+  })
+
+  /** Out of the pantry, with Undo. */
+  function removeWithUndo(ids: string[], message: string) {
+    undoable({
+      message,
+      ids,
+      commit: () => bulk.mutateAsync({ action: "delete", ids }),
+    })
+  }
+
+  function run(input: PantryBulkInput, said: (changed: number) => string) {
+    setDialog(null)
+    bulk.mutate(input, {
+      onSuccess: ({ changed }) => {
+        toast.success(said(changed))
+        selection.done()
+      },
+      onError: failed,
+    })
+  }
+
+  const count = items.length
   return (
     <>
       <PageHeader
@@ -116,16 +181,54 @@ export function PantryPage() {
             : "What's on hand, and what to use soon."
         }
         actions={
-          <Button variant="outline" asChild>
-            <Link to="/pantry/receipt">
-              <HugeiconsIcon
-                icon={Invoice01Icon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              Scan a receipt
-            </Link>
-          </Button>
+          selection.selecting ? (
+            <SelectionHeader selection={selection} allIds={selectable} />
+          ) : (
+            <>
+              <Button variant="outline" asChild>
+                <Link to="/pantry/receipt">
+                  <HugeiconsIcon
+                    icon={Invoice01Icon}
+                    strokeWidth={2}
+                    data-icon="inline-start"
+                  />
+                  Scan a receipt
+                </Link>
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    aria-label="More pantry options"
+                  >
+                    <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    disabled={!count}
+                    onSelect={() => selection.start()}
+                  >
+                    Select
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setOnHand(true)}>
+                    Always on hand
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={!count}
+                    onSelect={() =>
+                      removeWithUndo(selectable, "Cleared the pantry")
+                    }
+                  >
+                    Clear the pantry
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )
         }
       />
 
@@ -155,7 +258,19 @@ export function PantryPage() {
         ) : (
           <>
             {soon.length > 0 && (
-              <UseSoon rows={soon} onOpen={(item) => setEditing(item)} />
+              <UseSoon
+                rows={soon}
+                onOpen={(item) => setEditing(item)}
+                selectOf={selectOf}
+                onToss={(ids) =>
+                  removeWithUndo(
+                    ids,
+                    ids.length === 1
+                      ? "Tossed the one past its date"
+                      : `Tossed ${ids.length} things past their date`
+                  )
+                }
+              />
             )}
             {sections.length > 2 && <JumpTo sections={sections} />}
             {sections.map((section) => (
@@ -183,6 +298,7 @@ export function PantryPage() {
                       onEdit={() => setEditing(item)}
                       onUsedUp={() => usedUp(item)}
                       onToList={() => toList(item.name)}
+                      select={selectOf(item.id)}
                     />
                   ))}
                 </ul>
@@ -194,6 +310,63 @@ export function PantryPage() {
         <AlwaysOnHand onEdit={() => setOnHand(true)} onLow={toList} />
       </div>
 
+      <SelectionBar
+        selection={selection}
+        actions={[
+          {
+            label: "Used up",
+            icon: CheckmarkCircle02Icon,
+            onSelect: () => {
+              removeWithUndo(pickedIds, `Used up ${things(pickedIds.length)}`)
+              selection.done()
+            },
+          },
+          {
+            label: "Add to list",
+            icon: ShoppingBasketAdd01Icon,
+            onSelect: () =>
+              run({ action: "toList", ids: pickedIds }, (changed) =>
+                changed
+                  ? `Added ${things(changed)} to the list`
+                  : "They're on the list already"
+              ),
+          },
+          {
+            label: "Aisle",
+            icon: Store01Icon,
+            onSelect: () => setDialog("aisle"),
+          },
+          {
+            label: "Use by",
+            icon: Calendar03Icon,
+            onSelect: () => setDialog("useBy"),
+          },
+        ]}
+      />
+      <AisleDialog
+        count={pickedIds.length}
+        open={dialog === "aisle"}
+        onOpenChange={(open) => setDialog(open ? "aisle" : null)}
+        onPick={(sectionId) =>
+          run(
+            { action: "aisle", ids: pickedIds, sectionId },
+            (changed) =>
+              `Moved ${things(changed)} to ${SECTION_NAMES.get(sectionId)}`
+          )
+        }
+      />
+      <UseByDialog
+        count={pickedIds.length}
+        open={dialog === "useBy"}
+        onOpenChange={(open) => setDialog(open ? "useBy" : null)}
+        onPick={(useBy) =>
+          run({ action: "useBy", ids: pickedIds, useBy }, (changed) =>
+            useBy
+              ? `${things(changed)} to use by ${monthDay(useBy)}`
+              : `Took the date off ${things(changed)}`
+          )
+        }
+      />
       <EditPantryDialog
         item={editing}
         onClose={() => setEditing(null)}
@@ -220,12 +393,20 @@ function upcomingMeals(item: PantryItem) {
 function UseSoon({
   rows,
   onOpen,
+  selectOf,
+  onToss,
 }: {
   rows: Row[]
   onOpen: (item: PantryItem) => void
+  /** While selecting, a card picks its item instead of opening it. */
+  selectOf: (id: string) => ItemSelect
+  /** Throws out what's past its date. */
+  onToss: (ids: string[]) => void
 }) {
   const chat = useChat()
   const ai = useAiStatus()
+  const past = rows.filter((row) => row.soon?.kind === "past")
+  const selecting = rows.length > 0 && selectOf(rows[0]!.item.id).selecting
   const names = rows.map(({ item }) => item.name.toLowerCase())
   const listed =
     names.length > 1
@@ -248,21 +429,36 @@ function UseSoon({
               : `${rows.length} things to cook before they turn.`}
           </p>
         </div>
-        {ai.data?.available && (
-          <Button
-            onClick={() =>
-              chat.ask(
-                `What can I cook in the next few days to use up the ${listed}?`
-              )
-            }
-          >
-            <HugeiconsIcon
-              icon={BubbleChatSparkIcon}
-              strokeWidth={2}
-              data-icon="inline-start"
-            />
-            Ideas for these
-          </Button>
+        {!selecting && (
+          <div className="flex flex-wrap gap-2">
+            {past.length > 0 && (
+              <Button
+                variant="outline"
+                className="bg-card"
+                onClick={() => onToss(past.map((row) => row.item.id))}
+              >
+                {past.length === 1
+                  ? "Toss the one past its date"
+                  : `Toss the ${past.length} past their date`}
+              </Button>
+            )}
+            {ai.data?.available && (
+              <Button
+                onClick={() =>
+                  chat.ask(
+                    `What can I cook in the next few days to use up the ${listed}?`
+                  )
+                }
+              >
+                <HugeiconsIcon
+                  icon={BubbleChatSparkIcon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                />
+                Ideas for these
+              </Button>
+            )}
+          </div>
         )}
       </div>
       {/* A row to swipe through on phones; a grid when there's room. */}
@@ -281,12 +477,19 @@ function UseSoon({
             soon!.kind === "past" ||
             (soon!.kind === "soon" &&
               (soonWhen(soon!) === "Today" || soonWhen(soon!) === "Tomorrow"))
+          const select = selectOf(item.id)
           return (
             <li key={item.id} className="w-40 shrink-0 snap-start md:w-auto">
               <button
                 type="button"
-                onClick={() => onOpen(item)}
-                className="grid h-full w-full content-start gap-0.5 rounded-2xl bg-card px-3.5 py-3 text-left text-card-foreground transition-colors outline-none hover:bg-accent/60 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                onClick={() =>
+                  select.selecting ? select.onToggle() : onOpen(item)
+                }
+                aria-pressed={select.selecting ? select.picked : undefined}
+                className={cn(
+                  "grid h-full w-full content-start gap-0.5 rounded-2xl bg-card px-3.5 py-3 text-left text-card-foreground transition-colors outline-none hover:bg-accent/60 focus-visible:ring-[3px] focus-visible:ring-ring/50",
+                  select.picked && "ring-2 ring-primary"
+                )}
               >
                 <span
                   className={cn(
@@ -384,23 +587,42 @@ function PantryRow({
   onEdit,
   onUsedUp,
   onToList,
+  select,
 }: {
   item: PantryItem
   soon: UseSoonReason | null
   onEdit: () => void
   onUsedUp: () => void
   onToList: () => void
+  select?: ItemSelect
 }) {
   const tags = tagsFor(item, soon)
+  const selecting = select?.selecting ?? false
+  const press = useLongPress(
+    () => select?.onLongPress(),
+    Boolean(select && !selecting)
+  )
   // A narrow card: tags under the name. A wide one: name, tags, then buttons in a line.
   return (
     <li className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1.5 py-3 @3xl:grid-cols-[minmax(0,1fr)_auto_auto] @3xl:gap-x-4">
       <button
         type="button"
-        onClick={onEdit}
-        className="col-start-1 row-start-1 flex min-w-0 items-baseline gap-1.5 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
-        aria-label={`Edit ${item.name}`}
+        onClick={selecting ? select?.onToggle : onEdit}
+        {...(selecting ? {} : press)}
+        className={cn(
+          "col-start-1 row-start-1 flex min-w-0 items-baseline gap-1.5 rounded-md text-left outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50",
+          selecting && "items-center gap-3"
+        )}
+        aria-pressed={selecting ? select?.picked : undefined}
+        aria-label={
+          selecting
+            ? `${select?.picked ? "Unselect" : "Select"} ${item.name}`
+            : `Edit ${item.name}`
+        }
       >
+        {selecting && (
+          <SelectMark picked={select?.picked ?? false} className="shrink-0" />
+        )}
         <span className="truncate font-medium first-letter:uppercase">
           {item.name}
         </span>
@@ -428,7 +650,8 @@ function PantryRow({
       <div
         className={cn(
           "col-start-2 row-start-1 flex items-center gap-1.5 @3xl:col-start-3",
-          tags.length > 0 && "row-span-2 @3xl:row-span-1"
+          tags.length > 0 && "row-span-2 @3xl:row-span-1",
+          selecting && "invisible"
         )}
       >
         <Button

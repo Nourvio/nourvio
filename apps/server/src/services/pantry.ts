@@ -1,6 +1,7 @@
 import {
   addAmounts,
   combineLines,
+  foodKey,
   formatAmount,
   guessUseBy,
   onHandTest,
@@ -9,6 +10,7 @@ import {
   STORE_SECTIONS,
   subtractAmounts,
   toIsoDate,
+  type PantryBulkInput,
   type PantryItem,
   type PantryMeal,
   type PutAwayResult,
@@ -20,6 +22,7 @@ import { z } from "zod"
 
 import type { Db } from "../db/client.ts"
 import {
+  foodSections,
   mealPlanEntries,
   pantryItems,
   recipes,
@@ -224,6 +227,67 @@ export async function deletePantryItem(
 ) {
   const current = await findItem(db, householdId, id)
   await db.delete(pantryItems).where(eq(pantryItems.id, current.id))
+}
+
+/** The pantry rows among these ids that are this household's. */
+export async function pantryRows(db: Db, householdId: string, ids: string[]) {
+  return db
+    .select()
+    .from(pantryItems)
+    .where(
+      and(
+        eq(pantryItems.householdId, householdId),
+        inArray(pantryItems.id, ids)
+      )
+    )
+}
+
+/**
+ * Selected pantry items all at once (`POST /api/pantry/bulk`): used up, to
+ * another aisle (remembered for next time), or a new use-by date. Onto the
+ * list is the route's, with the list. Returns how many changed.
+ */
+export async function bulkPantryItems(
+  db: Db,
+  householdId: string,
+  input: Exclude<PantryBulkInput, { action: "toList" }>
+) {
+  const rows = await pantryRows(db, householdId, input.ids)
+  if (!rows.length) return 0
+  const ids = rows.map((row) => row.id)
+  switch (input.action) {
+    case "delete":
+      await db.delete(pantryItems).where(inArray(pantryItems.id, ids))
+      break
+    case "aisle": {
+      await db
+        .update(pantryItems)
+        .set({ sectionId: input.sectionId })
+        .where(inArray(pantryItems.id, ids))
+      const foods = [...new Set(rows.map((row) => foodKey(row.name)))]
+      await db
+        .insert(foodSections)
+        .values(
+          foods.map((food) => ({
+            householdId,
+            food,
+            sectionId: input.sectionId,
+          }))
+        )
+        .onConflictDoUpdate({
+          target: [foodSections.householdId, foodSections.food],
+          set: { sectionId: input.sectionId },
+        })
+      break
+    }
+    case "useBy":
+      await db
+        .update(pantryItems)
+        .set({ useBy: input.useBy })
+        .where(inArray(pantryItems.id, ids))
+      break
+  }
+  return rows.length
 }
 
 /**

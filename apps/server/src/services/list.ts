@@ -392,6 +392,36 @@ export async function bulkListItems(
   }
 }
 
+/**
+ * Things to buy again, by name (from the pantry), each as if typed in.
+ * What's on the list already is left alone. Returns how many went on.
+ */
+export async function addNamesToList(
+  db: Db,
+  householdId: string,
+  names: string[]
+) {
+  const onList = await db
+    .select({ key: shoppingItems.key })
+    .from(shoppingItems)
+    .where(
+      and(
+        eq(shoppingItems.householdId, householdId),
+        eq(shoppingItems.checked, false)
+      )
+    )
+  const have = new Set(onList.map((row) => foodOf(row.key)))
+  let added = 0
+  for (const name of names) {
+    const food = foodKey(name)
+    if (have.has(food)) continue
+    have.add(food)
+    await addManualItem(db, householdId, name)
+    added++
+  }
+  return added
+}
+
 /** Adds the every-week items that aren't already on the list. */
 export async function addWeeklyItems(db: Db, householdId: string) {
   const weekly = await db

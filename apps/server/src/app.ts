@@ -169,7 +169,7 @@ export function createApp(ctx: AppContext) {
   app.route("/api/events", eventRoutes(events))
   app.route("/api/receipts", receiptRoutes(receipts, events, signInLinks))
   app.route("/api/share", shareRoutes(share, signInLinks, importBatches))
-  app.route("/api/pantry", pantryRoutes(ctx))
+  app.route("/api/pantry", pantryRoutes(ctx, events))
   app.route("/api/images", imagesRoutes(ctx))
   app.route(
     "/api/import",
