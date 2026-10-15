@@ -1,6 +1,7 @@
 import type { UpdateStatus } from "@mise/shared"
 import { describe, expect, test } from "vitest"
 
+import { createUpdateService } from "../services/updates.ts"
 import { apiClient, createTestAppWithAdmin } from "../test/helpers.ts"
 
 const BUILT = "2026-10-15T03:40:00Z"
@@ -158,17 +159,12 @@ describe("update check", () => {
         /Couldn't reach GitHub/,
       ],
     ] as const
-    for (const [updates, reason] of cases) {
-      const t = await createTestAppWithAdmin({ updates })
-      try {
-        const found = await status(t)
-        expect(found.state).toBe("unknown")
-        expect(found.reason).toMatch(reason)
-      } finally {
-        await t.close()
-      }
+    for (const [options, reason] of cases) {
+      const found = await createUpdateService(options).status()
+      expect(found.state).toBe("unknown")
+      expect(found.reason).toMatch(reason)
     }
-  }, 20_000)
+  })
 
   test("only the server admin can see it", async () => {
     const t = await createTestAppWithAdmin()

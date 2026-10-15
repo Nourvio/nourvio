@@ -238,6 +238,32 @@ What's there today: Kroger's product API gives a store's regular and sale price,
 
 **Done when:** the List shows this week's Fry's sales and savings without opening the cart review, a week the autopilot plans uses more of what's on sale and says so, and a sale item shows what it usually costs.
 
+## Milestone 13: Shopping together, theme nights, costs and receipts
+
+**Status:** started October 14, 2026. The user picked these four from the list of ideas.
+
+**1. Shopping together**
+- The List updates live on every phone in the household: check off bananas and they're checked on Jamie's phone a moment later. Items added, changed or removed show up the same way.
+- "Jamie is on the list too" shows while someone else has it open, so you know you're shopping together.
+- **How:** a server-sent events stream per household (`GET /api/events`); list changes publish an event and each open List refetches. No new service, and it works through the Cloudflare tunnel.
+
+**2. Theme nights**
+- Each weeknight can have a theme in Settings → Meal plan: tacos, pasta, pizza, meatless, fish, something new, quick, leftovers or eat out (left empty), or any tag.
+- Fill the week and the weekly autopilot only suggest dinners that fit the night's theme: tagged with it or named for it, vegetarian for meatless, fish or seafood for fish, never made for something new. When nothing fits, the night gets the usual suggestion and says so.
+- The Plan shows the theme on each night ("Taco night"), and Fill the week says why.
+
+**3. Cost per serving**
+- Each recipe's cost from the products Mise remembers at your stores: what the recipe uses of each package (2 tbsp of a $9 bottle of oil is about 30¢), at today's price. Always-on-hand items don't count.
+- Shown on the recipe ("About $9.60, $2.40 a serving"), on recipe cards, and as the week's total on the Plan. Until every ingredient has a product it says how many are priced ("8 of 10 ingredients").
+- An optional weekly grocery budget (Settings → Meal plan): the Plan shows the week against it, and Fill the week leans toward recipes that fit what's left.
+- The daily price check goes on to look up the rest of the recipe foods, most used first, so more recipes get a full price.
+
+**4. Receipts into the pantry**
+- **Scan a receipt** on the Pantry page: a photo, a screenshot, a PDF, or pasted text from an emailed receipt. The AI reads the items ("GV WHL MLK 1GAL" is whole milk) and a review lists them: food ticked to go in the pantry, household things left out, and anything on the shopping list checked off with it.
+- **Sharing a receipt to Mise:**
+  - **Android:** Mise, installed to the home screen, shows up in the share sheet. A small service worker hands the shared file to the review.
+  - **iPhone:** apps on the home screen can't be in Apple's share sheet (only App Store apps can), but a Shortcut can. Settings has a **Send to Mise** guide: a few steps in the Shortcuts app with a key Mise makes for it. After that, Share → Send to Mise from Mail, Photos or Files opens the review. Once it's made, it can be shared as an iCloud link (to parents, say).
+
 ## Milestone 12: On the home screen, with reminders
 
 **Status:** planned October 14, 2026, and on hold: the user wants it documented and built later. The user wants a morning nudge like "pull the chicken out", and a one-tap way to put Mise on the home screen that their parents could manage.

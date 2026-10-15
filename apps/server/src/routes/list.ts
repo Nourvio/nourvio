@@ -8,7 +8,12 @@ import {
 import { Hono } from "hono"
 
 import { requireUser } from "../auth/middleware.ts"
-import { currentHousehold, type AppContext, type AppEnv } from "../context.ts"
+import {
+  currentHousehold,
+  currentUser,
+  type AppContext,
+  type AppEnv,
+} from "../context.ts"
 import { readBody } from "../http.ts"
 import { updateHousehold } from "../services/households.ts"
 import {
@@ -24,12 +29,22 @@ import {
   updateItem,
   updateWeeklyItem,
 } from "../services/list.ts"
+import type { EventBus } from "../services/events.ts"
 import { putAway } from "../services/pantry.ts"
 
 /** The household's shopping list, and the items it gets every week. */
-export function listRoutes({ db }: AppContext) {
+export function listRoutes({ db }: AppContext, events: EventBus) {
   const app = new Hono<AppEnv>()
   app.use(requireUser)
+
+  // Any change to the list shows up on every phone that has it open.
+  app.use(async (c, next) => {
+    await next()
+    if (c.req.method !== "GET" && c.res.status < 400) {
+      const user = currentUser(c)
+      events.publish(user.householdId, { type: "list", by: user.id })
+    }
+  })
 
   app.get("/", async (c) =>
     c.json({ items: await listItems(db, currentHousehold(c)) })

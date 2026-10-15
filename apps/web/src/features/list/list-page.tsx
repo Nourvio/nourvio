@@ -15,6 +15,7 @@ import {
   STORE_SECTIONS,
   type ItemPrice,
   type ListPrices,
+  type Person,
   type ShoppingItem,
   type ShoppingList,
 } from "@mise/shared"
@@ -52,11 +53,13 @@ import { useHouseholdInfo } from "@/features/settings/use-household"
 import { saleThrough } from "@/features/shop/sale-text"
 import { useShopStatus } from "@/features/shop/use-shop"
 import { ApiError } from "@/lib/api"
+import { initials } from "@/lib/initials"
 import { cn } from "@/lib/utils"
 
 import { AddFromPlanDialog } from "./add-from-plan-dialog"
 import { EditItemDialog, OnHandDialog, WeeklyItemsDialog } from "./list-dialogs"
 import { ListsDialog } from "./lists-dialog"
+import { useLiveList } from "./use-live-list"
 import {
   useAddListItem,
   useClearChecked,
@@ -97,6 +100,7 @@ function keeps(filter: Filter, item: ShoppingItem) {
  */
 export function ListPage() {
   const list = useList()
+  const others = useLiveList()
   const prices = useListPrices().data ?? {}
   const clear = useClearChecked()
   const putAway = usePutAway()
@@ -222,6 +226,7 @@ export function ListPage() {
       />
 
       <div className="grid gap-6">
+        {others.length > 0 && <ShoppingWith people={others} />}
         <StoreCards
           lists={lists}
           items={all}
@@ -726,6 +731,41 @@ function priceNote(price: ItemPrice) {
   ]
     .filter(Boolean)
     .join(" ")
+}
+
+/** "Jamie is on the list too": shopping together, changes show up live. */
+function ShoppingWith({ people }: { people: Person[] }) {
+  const names = people.map((person) => person.name)
+  const who =
+    names.length <= 2
+      ? names.join(" and ")
+      : `${names.slice(0, 2).join(", ")} and ${names.length - 2} more`
+  return (
+    <p
+      role="status"
+      className="flex items-center gap-2.5 justify-self-start rounded-full bg-accent py-1 pr-3.5 pl-1 text-sm text-accent-foreground"
+    >
+      <span className="flex -space-x-1.5">
+        {people.slice(0, 3).map((person) => (
+          <span
+            key={person.id}
+            className="flex size-6 items-center justify-center rounded-full bg-card text-[0.65rem] font-semibold ring-2 ring-accent"
+          >
+            {initials(person.name)}
+          </span>
+        ))}
+      </span>
+      <span>
+        <span className="font-medium">{who}</span>{" "}
+        {people.length === 1 ? "is" : "are"} on the list too. Changes show up as
+        you go.
+      </span>
+      <span className="relative flex size-2 shrink-0">
+        <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-60 motion-reduce:hidden" />
+        <span className="relative inline-flex size-2 rounded-full bg-primary" />
+      </span>
+    </p>
+  )
 }
 
 function ItemRow({

@@ -12,6 +12,7 @@ import { secureHeaders } from "hono/secure-headers"
 import { createAiService } from "./ai/service.ts"
 import { createNutritionService } from "./services/nutrition.ts"
 import { createShopService } from "./services/shop.ts"
+import { createEventBus } from "./services/events.ts"
 import { createUpdateService } from "./services/updates.ts"
 import { createVoiceService } from "./services/voice.ts"
 import { createPhotoService } from "./services/photos.ts"
@@ -30,6 +31,7 @@ import { householdRoutes } from "./routes/household.ts"
 import { imagesRoutes } from "./routes/images.ts"
 import { importRoutes } from "./routes/import.ts"
 import { joinRoutes, signupRoutes } from "./routes/join.ts"
+import { eventRoutes } from "./routes/events.ts"
 import { listRoutes } from "./routes/list.ts"
 import { meRoutes } from "./routes/me.ts"
 import { nutritionRoutes } from "./routes/nutrition.ts"
@@ -77,12 +79,15 @@ export function createApp(ctx: AppContext) {
   const shop = createShopService(ctx.db, ai, { krogerFetch: ctx.krogerFetch })
   const voice = createVoiceService(ctx.db, ai, { kokoroFetch: ctx.kokoroFetch })
   const updates = createUpdateService(ctx.updates)
+  const events = createEventBus()
 
   app.use(secureHeaders())
-  // Compression would hold back a streaming chat reply, so skip it there.
+  // Compression would hold back a streaming reply (chat, live changes).
   const compression = compress()
   app.use((c, next) =>
-    c.req.path === "/api/chat" ? next() : compression(c, next)
+    c.req.path === "/api/chat" || c.req.path === "/api/events"
+      ? next()
+      : compression(c, next)
   )
 
   // ---- API ----
@@ -125,7 +130,8 @@ export function createApp(ctx: AppContext) {
   app.route("/api/shop", shopRoutes(ctx, shop))
   app.route("/api/extension", extensionRoutes(ctx))
   app.route("/api/plan", planRoutes(ctx))
-  app.route("/api/list", listRoutes(ctx))
+  app.route("/api/list", listRoutes(ctx, events))
+  app.route("/api/events", eventRoutes(events))
   app.route("/api/pantry", pantryRoutes(ctx))
   app.route("/api/images", imagesRoutes(ctx))
   app.route("/api/import", importRoutes(ctx, ai, nutrition, photos))
