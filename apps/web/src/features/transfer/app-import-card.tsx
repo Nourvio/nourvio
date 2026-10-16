@@ -182,9 +182,11 @@ function FileImport({ chooser, onStarted }: FormProps) {
             <>
               <p className="text-sm">
                 {t(
-                  checked.what === "backup"
-                    ? "settings.transfer.apps.backup"
-                    : "settings.transfer.apps.exported",
+                  checked.app === "paprika"
+                    ? "settings.transfer.apps.paprika"
+                    : checked.what === "backup"
+                      ? "settings.transfer.apps.backup"
+                      : "settings.transfer.apps.exported",
                   { count: checked.recipes }
                 )}{" "}
                 {nothingNew
@@ -229,7 +231,7 @@ function FileImport({ chooser, onStarted }: FormProps) {
               <Input
                 id="app-import-file"
                 type="file"
-                accept=".zip,application/zip"
+                accept=".zip,.paprikarecipes,.paprikarecipe,application/zip"
                 onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               />
               <FieldDescription>

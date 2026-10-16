@@ -9,7 +9,7 @@ export const ImportFileSchema = z
       description:
         "Start its import at /households/current/import/files/{fileId}/start.",
     }),
-    app: z.enum(["mealie"]),
+    app: z.enum(["mealie", "paprika"]),
     what: z.enum(["backup", "recipes"]).openapi({
       description: "A whole backup, or recipes exported from the app.",
     }),

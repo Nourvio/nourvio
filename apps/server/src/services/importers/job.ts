@@ -231,7 +231,10 @@ export const appImportJob: JobHandler = {
     try {
       let source: AppSource
       if (job.from === "file") {
-        source = await openUpload(job.file, { group: job.group })
+        source = await openUpload(job.file, {
+          group: job.group,
+          fetcher: deps.fetcher,
+        })
       } else {
         if (!job.token) throw tokenGone()
         source = await openMealieServer(

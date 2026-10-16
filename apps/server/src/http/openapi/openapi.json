@@ -905,7 +905,8 @@
           "app": {
             "type": "string",
             "enum": [
-              "mealie"
+              "mealie",
+              "paprika"
             ]
           },
           "what": {

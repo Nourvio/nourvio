@@ -5,7 +5,6 @@ import {
   ingredientLine,
   mealieDate,
   mealieId,
-  mealieMinutes,
 } from "./recipe.ts"
 
 describe("Mealie's values", () => {
@@ -30,17 +29,6 @@ describe("Mealie's values", () => {
     )
     expect(mealieDate("not a date")).toBeNull()
     expect(mealieDate(null)).toBeNull()
-  })
-
-  test("times are read as minutes, however they're written", () => {
-    expect(mealieMinutes("1 hour 30 minutes")).toBe(90)
-    expect(mealieMinutes("PT1H30M")).toBe(90)
-    expect(mealieMinutes("45 min")).toBe(45)
-    expect(mealieMinutes("1.5 hours")).toBe(90)
-    expect(mealieMinutes("1 day")).toBe(1440)
-    expect(mealieMinutes("90")).toBe(90)
-    expect(mealieMinutes("a while")).toBeNull()
-    expect(mealieMinutes("")).toBeNull()
   })
 })
 

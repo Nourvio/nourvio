@@ -5206,7 +5206,7 @@ export interface components {
             /** @description Start its import at /households/current/import/files/{fileId}/start. */
             id: string;
             /** @enum {string} */
-            app: "mealie";
+            app: "mealie" | "paprika";
             /**
              * @description A whole backup, or recipes exported from the app.
              * @enum {string}

@@ -7,7 +7,7 @@ import type { RecipeInputSchema } from "../../http/schemas/recipes.ts"
 // rest (see job.ts). Another app is another adapter.
 
 /** The apps recipes can come from. */
-export type ImportApp = "mealie"
+export type ImportApp = "mealie" | "paprika"
 
 /** A note on how cooking it went, from the app's own history. */
 export type AppCookNote = {

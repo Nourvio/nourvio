@@ -1,10 +1,16 @@
 import { formatQuantity } from "@merran/shared"
 import type { Nutrition } from "../../../database/entities/index.ts"
+import { cleanText, parseYield } from "../../recipes/import/recipe-data.ts"
 import {
-  cleanText,
-  parseDuration,
-  parseYield,
-} from "../../recipes/import/recipe-data.ts"
+  asLink,
+  heading,
+  notHeading,
+  plainText,
+  positive,
+  readMinutes,
+  stars,
+  tagList,
+} from "../text.ts"
 import type { AppRecipeBody } from "../types.ts"
 
 // One Mealie recipe in Merran's terms. Mealie's API gives recipes in
@@ -45,46 +51,6 @@ export function mealieDate(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-/** "1 hour 30 minutes", "PT1H30M", "45 min" or "90" is minutes. */
-export function mealieMinutes(value: unknown): number | null {
-  if (typeof value === "number") {
-    return value > 0 && value <= 100_000 ? Math.round(value) : null
-  }
-  if (typeof value !== "string" || !value.trim()) return null
-  const iso = parseDuration(value)
-  if (iso !== null) return iso <= 100_000 ? iso : null
-  const text = value.toLowerCase()
-  const days = text.match(/(\d+(?:[.,]\d+)?)\s*(?:d|days?)\b/)
-  const hours = text.match(/(\d+(?:[.,]\d+)?)\s*(?:h|hrs?|hours?)\b/)
-  const minutes = text.match(/(\d+)\s*(?:m|mins?|minutes?)\b/)
-  let total: number
-  if (days || hours || minutes) {
-    const number = (match: RegExpMatchArray | null) =>
-      match ? Number(match[1]!.replace(",", ".")) : 0
-    total = number(days) * 1440 + number(hours) * 60 + number(minutes)
-  } else {
-    const plain = text.match(/^\s*(\d+)\s*$/)
-    total = plain ? Number(plain[1]) : 0
-  }
-  return total > 0 && total <= 100_000 ? Math.round(total) : null
-}
-
-const positive = (value: unknown) => {
-  const number = Number(value)
-  return Number.isFinite(number) && number > 0 ? number : null
-}
-
-/** Multi-line text, kept as lines: Mealie's notes and steps are Markdown. */
-function plainText(value: unknown) {
-  if (typeof value !== "string") return ""
-  return value
-    .replace(/\r\n?/g, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim()
-}
-
 /** An ingredient as a line: "2 cups flour, sifted". */
 export function ingredientLine(item: any, disableAmount = false): string {
   if (typeof item === "string") return cleanText(item)
@@ -116,16 +82,6 @@ export function ingredientLine(item: any, disableAmount = false): string {
   return note ? `${main}, ${note}` : main
 }
 
-/** A heading line for the editor, and nothing for none. */
-const heading = (title: unknown) => {
-  const text = cleanText(title).replace(/^#+/, "").trim()
-  return text ? [`# ${text.slice(0, 200)}`] : []
-}
-
-/** A line that isn't a heading, even if it starts with "#". */
-const line = (text: string, max: number) =>
-  text.replace(/^#+\s*/, "").slice(0, max)
-
 function names(list: unknown): string[] {
   return Array.isArray(list)
     ? list
@@ -135,18 +91,8 @@ function names(list: unknown): string[] {
 }
 
 /** Tags and categories, both as tags. */
-function tagsOf(recipe: MealieRecipe) {
-  const seen = new Set<string>()
-  return [...names(recipe.tags), ...names(recipe.recipeCategory)]
-    .map((tag) => cleanText(tag))
-    .filter((tag) => {
-      const key = tag.toLowerCase()
-      if (!tag || tag.length > 40 || seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-    .slice(0, 30)
-}
+const tagsOf = (recipe: MealieRecipe) =>
+  tagList([...names(recipe.tags), ...names(recipe.recipeCategory)])
 
 /** Mealie's nutrition is text, like "250 kcal" or "12 g". */
 function nutritionOf(value: any): Nutrition | null {
@@ -191,19 +137,6 @@ function yieldOf(recipe: MealieRecipe) {
   return parseYield(words)
 }
 
-function linkOf(recipe: MealieRecipe) {
-  const raw = recipe.orgURL ?? recipe.orgUrl
-  if (typeof raw !== "string" || !raw.trim()) return null
-  try {
-    const url = new URL(raw.trim())
-    return /^https?:$/.test(url.protocol) && url.href.length <= 2000
-      ? url.href
-      : null
-  } catch {
-    return null
-  }
-}
-
 /** A Mealie recipe as Merran takes it, all but its photo and cooking notes. */
 export function fromMealie(
   recipe: MealieRecipe
@@ -216,7 +149,7 @@ export function fromMealie(
     : []) {
     ingredients.push(...heading(item?.title))
     const text = ingredientLine(item, disableAmount)
-    if (text) ingredients.push(line(text, 500))
+    if (text) ingredients.push(notHeading(text, 500))
   }
 
   const steps: string[] = []
@@ -225,7 +158,7 @@ export function fromMealie(
     : []) {
     steps.push(...heading(step?.title))
     const text = cleanText(typeof step === "string" ? step : step?.text)
-    if (text) steps.push(line(text, 5000))
+    if (text) steps.push(notHeading(text, 5000))
   }
 
   const notes = (Array.isArray(recipe.notes) ? recipe.notes : [])
@@ -237,7 +170,6 @@ export function fromMealie(
     .filter(Boolean)
     .join("\n\n")
 
-  const rating = positive(recipe.rating)
   const description = plainText(recipe.description)
   const createdAt =
     mealieDate(recipe.createdAt) ?? mealieDate(recipe.dateAdded) ?? null
@@ -247,15 +179,14 @@ export function fromMealie(
       name: (cleanText(recipe.name) || "Untitled recipe").slice(0, 200),
       description: description ? description.slice(0, 2000) : null,
       ...yieldOf(recipe),
-      prepMinutes: mealieMinutes(recipe.prepTime),
+      prepMinutes: readMinutes(recipe.prepTime),
       // Mealie's cooking time is "performTime"; cookTime is the old name.
       cookMinutes:
-        mealieMinutes(recipe.performTime) ?? mealieMinutes(recipe.cookTime),
-      totalMinutes: mealieMinutes(recipe.totalTime),
+        readMinutes(recipe.performTime) ?? readMinutes(recipe.cookTime),
+      totalMinutes: readMinutes(recipe.totalTime),
       notes: notes ? notes.slice(0, 5000) : null,
-      sourceUrl: linkOf(recipe),
-      rating:
-        rating === null ? null : Math.min(5, Math.max(1, Math.round(rating))),
+      sourceUrl: asLink(recipe.orgURL ?? recipe.orgUrl),
+      rating: stars(recipe.rating),
       tags: tagsOf(recipe),
       ingredients: ingredients.slice(0, 300),
       steps: steps.slice(0, 200),
