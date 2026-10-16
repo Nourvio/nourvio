@@ -368,6 +368,7 @@ export async function readPage(
   })
   return {
     input,
+    nutrition: null,
     photoUrls: shareImages(load(options.html), options.pageUrl),
   }
 }

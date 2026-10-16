@@ -127,6 +127,7 @@ export async function importLink(
       input: data.input,
       origin: "link",
       photoId,
+      nutrition: data.nutrition,
     })
     await tidyAfterImport(em, {
       householdId: options.householdId,

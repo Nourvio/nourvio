@@ -9,6 +9,8 @@ import { ChatMessage } from "./chat_messages.ts"
 import { Chat } from "./chats.ts"
 import { CookNote } from "./cook_notes.ts"
 import { Discovery } from "./discoveries.ts"
+import { FdcFood } from "./fdc_foods.ts"
+import { FoodMatch } from "./food_matches.ts"
 import { EmailInvitation } from "./email_invitations.ts"
 import { FoodPlacement } from "./food_placements.ts"
 import { HouseholdMember } from "./household_members.ts"
@@ -48,6 +50,8 @@ export * from "./chats.ts"
 export * from "./cook_notes.ts"
 export * from "./discoveries.ts"
 export * from "./email_invitations.ts"
+export * from "./fdc_foods.ts"
+export * from "./food_matches.ts"
 export * from "./food_placements.ts"
 export * from "./household_members.ts"
 export * from "./household_settings.ts"
@@ -87,6 +91,8 @@ export const entities = [
   ChatMessage,
   CookNote,
   Discovery,
+  FdcFood,
+  FoodMatch,
   EmailInvitation,
   FoodPlacement,
   Household,
@@ -129,6 +135,10 @@ export const SHARED_TABLES = [
   "rate_limits",
   // The server's own keys and each household's, found by whose they are.
   "ai_keys",
+  // About food, not anyone's recipes: USDA's foods and which one each
+  // ingredient is, shared so every household gains from the first few.
+  "fdc_foods",
+  "food_matches",
   // Reached only through the settings that point at them.
   "secrets",
   "server_settings",

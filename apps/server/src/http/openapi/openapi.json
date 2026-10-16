@@ -5453,12 +5453,14 @@
                 "name": "Lemon Chicken",
                 "photo": null,
                 "servings": 4,
-                "totalMinutes": 50
+                "totalMinutes": 50,
+                "calories": 412
               },
               "withRecipe": {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000007",
                 "slug": "garlic-rice",
-                "name": "Garlic Rice"
+                "name": "Garlic Rice",
+                "calories": 210
               },
               "note": null,
               "servings": null,
@@ -5531,6 +5533,13 @@
                   "integer",
                   "null"
                 ]
+              },
+              "calories": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "In a serving, when its nutrition is known."
               }
             },
             "required": [
@@ -5539,7 +5548,8 @@
               "name",
               "photo",
               "servings",
-              "totalMinutes"
+              "totalMinutes",
+              "calories"
             ],
             "description": "Null for a note."
           },
@@ -5557,12 +5567,19 @@
               },
               "name": {
                 "type": "string"
+              },
+              "calories": {
+                "type": [
+                  "number",
+                  "null"
+                ]
               }
             },
             "required": [
               "id",
               "slug",
-              "name"
+              "name",
+              "calories"
             ],
             "description": "What it's made with: \"with peanut sauce\"."
           },
@@ -5620,12 +5637,14 @@
             "name": "Lemon Chicken",
             "photo": null,
             "servings": 4,
-            "totalMinutes": 50
+            "totalMinutes": 50,
+            "calories": 412
           },
           "withRecipe": {
             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
             "slug": "garlic-rice",
-            "name": "Garlic Rice"
+            "name": "Garlic Rice",
+            "calories": 210
           },
           "note": null,
           "servings": null,
@@ -6058,12 +6077,14 @@
               "name": "Lemon Chicken",
               "photo": null,
               "servings": 4,
-              "totalMinutes": 50
+              "totalMinutes": 50,
+              "calories": 412
             },
             "withRecipe": {
               "id": "0199e8b0-5a10-7a01-8b00-000000000007",
               "slug": "garlic-rice",
-              "name": "Garlic Rice"
+              "name": "Garlic Rice",
+              "calories": 210
             },
             "note": null,
             "servings": null,
@@ -6173,12 +6194,14 @@
                 "name": "Lemon Chicken",
                 "photo": null,
                 "servings": 4,
-                "totalMinutes": 50
+                "totalMinutes": 50,
+                "calories": 412
               },
               "withRecipe": {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000007",
                 "slug": "garlic-rice",
-                "name": "Garlic Rice"
+                "name": "Garlic Rice",
+                "calories": 210
               },
               "note": null,
               "servings": null,
@@ -6262,12 +6285,14 @@
                 "name": "Lemon Chicken",
                 "photo": null,
                 "servings": 4,
-                "totalMinutes": 50
+                "totalMinutes": 50,
+                "calories": 412
               },
               "withRecipe": {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000007",
                 "slug": "garlic-rice",
-                "name": "Garlic Rice"
+                "name": "Garlic Rice",
+                "calories": 210
               },
               "note": null,
               "servings": null,
@@ -7257,6 +7282,18 @@
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
             "needs": [],
+            "nutrition": {
+              "source": "calculated",
+              "calories": 412,
+              "protein": 31.5,
+              "carbs": 6.2,
+              "fat": 28.1,
+              "fiber": 1.4,
+              "sugar": 1.2,
+              "sodium": 640,
+              "missing": [],
+              "servings": 4
+            },
             "ingredients": [
               {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -7385,6 +7422,9 @@
                 },
                 "description": "Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead."
               },
+              "nutrition": {
+                "$ref": "#/components/schemas/Nutrition"
+              },
               "ingredients": {
                 "type": "array",
                 "items": {
@@ -7407,6 +7447,7 @@
               "notes",
               "dietOverrides",
               "needs",
+              "nutrition",
               "ingredients",
               "steps"
             ]
@@ -7445,6 +7486,18 @@
           "notes": "Bone-in thighs work too: give them 10 minutes more.",
           "dietOverrides": {},
           "needs": [],
+          "nutrition": {
+            "source": "calculated",
+            "calories": 412,
+            "protein": 31.5,
+            "carbs": 6.2,
+            "fat": 28.1,
+            "fiber": 1.4,
+            "sugar": 1.2,
+            "sodium": 640,
+            "missing": [],
+            "servings": 4
+          },
           "ingredients": [
             {
               "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -7544,6 +7597,80 @@
           }
         },
         "description": "Where the household corrected the labels the ingredients suggest."
+      },
+      "Nutrition": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "source": {
+            "type": "string",
+            "enum": [
+              "site",
+              "calculated",
+              "estimate"
+            ],
+            "description": "From the recipe's site, worked out from USDA's data, or estimated by AI."
+          },
+          "calories": {
+            "type": "number",
+            "description": "kcal."
+          },
+          "protein": {
+            "type": "number",
+            "description": "Grams."
+          },
+          "carbs": {
+            "type": "number",
+            "description": "Grams."
+          },
+          "fat": {
+            "type": "number",
+            "description": "Grams."
+          },
+          "fiber": {
+            "type": "number",
+            "description": "Grams."
+          },
+          "sugar": {
+            "type": "number",
+            "description": "Grams."
+          },
+          "sodium": {
+            "type": "number",
+            "description": "Milligrams."
+          },
+          "missing": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Ingredient lines that couldn't be counted."
+          },
+          "servings": {
+            "type": "number",
+            "description": "The servings it's for; it rescales when they change."
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "description": "Per serving, when it's known.",
+        "example": {
+          "source": "calculated",
+          "calories": 412,
+          "protein": 31.5,
+          "carbs": 12.2,
+          "fat": 26.1,
+          "fiber": 2.4,
+          "sugar": 3.1,
+          "sodium": 640,
+          "missing": [
+            "1 bay leaf"
+          ],
+          "servings": 4
+        }
       },
       "Ingredient": {
         "type": "object",
@@ -8288,6 +8415,18 @@
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
             "needs": [],
+            "nutrition": {
+              "source": "calculated",
+              "calories": 412,
+              "protein": 31.5,
+              "carbs": 6.2,
+              "fat": 28.1,
+              "fiber": 1.4,
+              "sugar": 1.2,
+              "sodium": 640,
+              "missing": [],
+              "servings": 4
+            },
             "ingredients": [
               {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -8722,6 +8861,119 @@
           "text": "Lemon Chicken\n\n4 chicken thighs\n2 lemons, juiced\n1 tsp salt\n\nRub the chicken with lemon and salt. Roast at 200°C for 40 minutes.",
           "sourceUrl": null
         }
+      },
+      "NutritionLibrary": {
+        "type": "object",
+        "properties": {
+          "missing": {
+            "type": "integer",
+            "description": "Recipes with servings and ingredients but no nutrition."
+          },
+          "noServings": {
+            "type": "integer",
+            "description": "Recipes without nutrition that need servings first."
+          },
+          "run": {
+            "$ref": "#/components/schemas/NutritionRun"
+          }
+        },
+        "required": [
+          "missing",
+          "noServings",
+          "run"
+        ],
+        "example": {
+          "missing": 42,
+          "noServings": 3,
+          "run": {
+            "id": "0199e8b0-5a10-7a01-8b00-00000000002f",
+            "status": "running",
+            "total": 42,
+            "done": 12,
+            "workedOut": 11,
+            "failed": 1,
+            "stopped": null,
+            "startedAt": "2026-10-15T18:30:00.000Z",
+            "finishedAt": null
+          }
+        }
+      },
+      "NutritionRun": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "total": {
+            "type": "integer"
+          },
+          "done": {
+            "type": "integer"
+          },
+          "workedOut": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "stopped": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why it stopped before the end, when it did."
+          },
+          "startedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "total",
+          "done",
+          "workedOut",
+          "failed",
+          "stopped",
+          "startedAt",
+          "finishedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000002f",
+          "status": "running",
+          "total": 42,
+          "done": 12,
+          "workedOut": 11,
+          "failed": 1,
+          "stopped": null,
+          "startedAt": "2026-10-15T18:30:00.000Z",
+          "finishedAt": null
+        },
+        "description": "The latest run, going or finished in the last day."
       },
       "Tag": {
         "type": "object",
@@ -9431,6 +9683,18 @@
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
             "needs": [],
+            "nutrition": {
+              "source": "calculated",
+              "calories": 412,
+              "protein": 31.5,
+              "carbs": 6.2,
+              "fat": 28.1,
+              "fiber": 1.4,
+              "sugar": 1.2,
+              "sodium": 640,
+              "missing": [],
+              "servings": 4
+            },
             "ingredients": [
               {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -10365,6 +10629,33 @@
           "createdAt": "2026-10-15T18:30:00.000Z",
           "householdName": "The Riveras"
         }
+      },
+      "UsdaKeyTested": {
+        "type": "object",
+        "properties": {
+          "found": {
+            "type": "string",
+            "description": "What a search for apples found."
+          }
+        },
+        "required": [
+          "found"
+        ],
+        "example": {
+          "found": "Apples, raw, with skin"
+        }
+      },
+      "UsdaKeyTest": {
+        "type": "object",
+        "properties": {
+          "usdaKey": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 200,
+            "description": "A key to try before saving it; the saved one when left out."
+          }
+        },
+        "example": {}
       },
       "ShareOutcome": {
         "type": "object",
@@ -18687,6 +18978,208 @@
         }
       }
     },
+    "/api/recipes/nutrition": {
+      "get": {
+        "operationId": "getNutritionLibrary",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Nutrition across the library",
+        "description": "How many recipes have no nutrition yet, how many need servings first, and the latest run working it out. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "The library.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionLibrary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startNutritionRun",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Work out nutrition for the library",
+        "description": "Every recipe with servings and ingredients but no nutrition, in the background, two at a time: from USDA's data when the server has a key, else estimated by AI. USDA's hourly limit pauses it rather than ending it. One at a time: starting another gives back the one going. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "responses": {
+          "202": {
+            "description": "Started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Every recipe with servings has its nutrition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No USDA key on the server, and no AI for the household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/nutrition/{runId}/stop": {
+      "post": {
+        "operationId": "stopNutritionRun",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Stop working out nutrition",
+        "description": "What it worked out stays. The recipe it's on finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002f"
+            },
+            "required": true,
+            "name": "runId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped, or stopping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NutritionRun"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such run in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has already finished.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes/tags": {
       "get": {
         "operationId": "listTags",
@@ -19309,6 +19802,110 @@
           },
           "404": {
             "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/nutrition": {
+      "post": {
+        "operationId": "workOutNutrition",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Work out a recipe's nutrition",
+        "description": "Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The recipe, with its nutrition.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No servings, or no ingredients.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No USDA key on the server, and no AI for the household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "USDA's limit for the hour, or this month's AI limit.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21815,6 +22412,103 @@
           },
           "409": {
             "description": "It hasn't finished, or another like it is already waiting.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server/nutrition/test": {
+      "post": {
+        "operationId": "testUsdaKey",
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Test a USDA key",
+        "description": "Server admins only. Searches USDA FoodData Central for apples with a key, before saving it, or with the saved one.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsdaKeyTest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "It works.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsdaKeyTested"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No key to test.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "USDA refused the key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "USDA's limit for the hour.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "USDA didn't answer.",
             "content": {
               "application/json": {
                 "schema": {

@@ -41,6 +41,7 @@ import {
 
 import { AddMealDialog, type Slot } from "./add-meal-dialog"
 import { MoveMealsDialog } from "./change-meal-dialog"
+import { averageCalories } from "./calories"
 import { DayCard, PastDays, PoolCard } from "./day-card"
 import { FillWeekDialog } from "./fill-week-dialog"
 import { formatDay, formatWeek } from "./format"
@@ -98,6 +99,7 @@ export function PlanPage({ week: asked }: { week?: string }) {
   const pool = entries.filter((entry) => entry.anyDay)
   const onDay = (day: string) =>
     entries.filter((entry) => !entry.anyDay && entry.date === day)
+  const average = averageCalories(days.map(onDay))
   const picked = [...selection.picked]
   // A week with days still to come can be filled.
   const fillable = days.at(-1)! >= clock.today
@@ -110,7 +112,16 @@ export function PlanPage({ week: asked }: { week?: string }) {
     <>
       <PageHeader
         title={t("plan.title")}
-        description={label ? t("plan.weekLabel", { label, range }) : range}
+        description={[
+          label ? t("plan.weekLabel", { label, range }) : range,
+          average &&
+            t("plan.caloriesADay", {
+              count: average,
+              value: average.toLocaleString(i18n.language),
+            }),
+        ]
+          .filter(Boolean)
+          .join(" · ")}
         actions={
           selection.selecting ? (
             <SelectionHeader

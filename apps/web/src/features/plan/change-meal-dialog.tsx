@@ -87,7 +87,12 @@ export function ChangeMealDialog({
               label={t("plan.pickSide")}
               exclude={entry.recipe ? [entry.recipe.id] : []}
               onPick={(recipe) => {
-                setSide({ id: recipe.id, slug: recipe.slug, name: recipe.name })
+                setSide({
+                  id: recipe.id,
+                  slug: recipe.slug,
+                  name: recipe.name,
+                  calories: null,
+                })
                 setPickingSide(false)
               }}
             />

@@ -1,4 +1,5 @@
 import { load, type CheerioAPI } from "cheerio"
+import type { Nutrition } from "../../../database/entities/index.ts"
 import type { RecipeInput } from "../../../http/schemas/recipes.ts"
 
 // Most recipe sites describe their recipe in the page as schema.org Recipe
@@ -8,8 +9,53 @@ import type { RecipeInput } from "../../../http/schemas/recipes.ts"
 
 export type RecipeData = {
   input: RecipeInput
+  /** What the site says is in a serving, when it says. */
+  nutrition: Nutrition | null
   /** Photos to try, best first: the recipe's own, then the page's share image. */
   photoUrls: string[]
+}
+
+/** schema.org's names for what Merran shows. */
+const SITE_NUTRIENTS = {
+  calories: "calories",
+  protein: "proteinContent",
+  carbs: "carbohydrateContent",
+  fat: "fatContent",
+  fiber: "fiberContent",
+  sugar: "sugarContent",
+  sodium: "sodiumContent",
+} as const
+
+/**
+ * A serving's nutrition from a recipe's NutritionInformation: "250
+ * calories", "12 g", "300 mg". Null when it has none of it.
+ */
+export function siteNutrition(raw: unknown): Nutrition | null {
+  const node = Array.isArray(raw) ? raw[0] : raw
+  if (!node || typeof node !== "object") return null
+  const values = node as Record<string, unknown>
+  const nutrition: Nutrition = { source: "site" }
+  let any = false
+  for (const [key, name] of Object.entries(SITE_NUTRIENTS)) {
+    const text = cleanText(values[name])
+    const match =
+      /(\d+(?:[.,]\d+)?)\s*(kcal|cal|calories|mg|g|grams?)?\b/i.exec(text)
+    if (!match) continue
+    let amount = Number(match[1]!.replace(",", "."))
+    const unit = match[2]?.toLowerCase()
+    // Sodium in grams, now and then; Merran keeps milligrams.
+    if (key === "sodium" && (unit === "g" || unit?.startsWith("gram"))) {
+      amount *= 1000
+    }
+    if (key !== "sodium" && unit === "mg") amount /= 1000
+    if (!Number.isFinite(amount) || amount < 0 || amount > 100_000) continue
+    nutrition[key as keyof typeof SITE_NUTRIENTS] =
+      key === "calories" || key === "sodium"
+        ? Math.round(amount)
+        : Math.round(amount * 10) / 10
+    any = true
+  }
+  return any ? nutrition : null
 }
 
 /** Decodes HTML entities, drops tags and collapses whitespace. */
@@ -327,6 +373,7 @@ export function readRecipeData(
   if (!name || (ingredients.length === 0 && steps.length === 0)) return null
 
   const { servings, yieldText } = parseYield(node.recipeYield)
+  const nutrition = siteNutrition(node.nutrition)
   const description = cleanText(node.description)
   const prepMinutes = parseDuration(node.prepTime)
   const cookMinutes = parseDuration(node.cookTime)
@@ -346,6 +393,7 @@ export function readRecipeData(
       ingredients: ingredients.slice(0, 300).map((line) => line.slice(0, 500)),
       steps: steps.slice(0, 200).map((line) => line.slice(0, 5000)),
     },
+    nutrition: nutrition && servings ? { ...nutrition, servings } : nutrition,
     photoUrls: rankPhotos([
       ...photoCandidates(
         node.image ?? node.thumbnailUrl,

@@ -62,8 +62,14 @@ const PLAN_ENTRY = {
     photo: null,
     servings: 4,
     totalMinutes: 50,
+    calories: 412,
   },
-  withRecipe: { id: IDS.garlicRice, slug: "garlic-rice", name: "Garlic Rice" },
+  withRecipe: {
+    id: IDS.garlicRice,
+    slug: "garlic-rice",
+    name: "Garlic Rice",
+    calories: 210,
+  },
   note: null,
   servings: null,
   why: [{ kind: "theme" as const, label: "Taco night" }],
@@ -108,11 +114,19 @@ export const PlanEntrySchema = z
         photo: z.string().nullable(),
         servings: z.number().nullable(),
         totalMinutes: z.number().int().nullable(),
+        calories: z.number().nullable().openapi({
+          description: "In a serving, when its nutrition is known.",
+        }),
       })
       .nullable()
       .openapi({ description: "Null for a note." }),
     withRecipe: z
-      .object({ id: z.string(), slug: z.string(), name: z.string() })
+      .object({
+        id: z.string(),
+        slug: z.string(),
+        name: z.string(),
+        calories: z.number().nullable(),
+      })
       .nullable()
       .openapi({ description: 'What it\'s made with: "with peanut sauce".' }),
     note: z

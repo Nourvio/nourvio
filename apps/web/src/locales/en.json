@@ -336,6 +336,22 @@
         "planNow": "Plan {{week}} now",
         "seePlan": "See the plan",
         "saved": "Saved."
+      },
+      "nutrition": {
+        "title": "Nutrition for the library",
+        "descriptionUsda": "New recipes get their nutrition by themselves. For ones that came in without it, work it out from USDA's data.",
+        "descriptionAi": "New recipes get their nutrition by themselves. For ones that came in without it, AI can estimate it.",
+        "missing_one": "{{count}} recipe has no nutrition yet.",
+        "missing_other": "{{count}} recipes have no nutrition yet.",
+        "allDone": "Every recipe with servings has its nutrition.",
+        "noServings_one": "{{count}} recipe needs its servings first.",
+        "noServings_other": "{{count}} recipes need their servings first.",
+        "going": "Working it out: {{done}} of {{total}}.",
+        "lastRun_one": "Worked out {{count}} recipe.",
+        "lastRun_other": "Worked out {{count}} recipes.",
+        "start_one": "Work out {{count}}",
+        "start_other": "Work out all {{count}}",
+        "stop": "Stop"
       }
     },
     "lockedBy": "Set on the server, by {{env}}",
@@ -422,6 +438,20 @@
         "autoUpdate": "Keep yt-dlp up to date",
         "autoUpdateHint": "Weekly. It stops working when sites change, and is fixed within days.",
         "saved": "Saved."
+      },
+      "nutrition": {
+        "title": "Nutrition",
+        "description": "A key for USDA FoodData Central works recipes' nutrition out from their ingredients. It's free: <link>get one at api.data.gov</link>. Without one, households with AI get an estimate.",
+        "key": "USDA key",
+        "keyHint": "Paste the key api.data.gov sends you. It's tested before it's saved.",
+        "keySet": "A key is saved. Paste another to replace it.",
+        "test": "Test",
+        "works": "It works: USDA found “{{found}}”.",
+        "save": "Save key",
+        "replace": "Replace key",
+        "remove": "Remove",
+        "saved": "USDA key saved.",
+        "removed": "USDA key removed."
       }
     },
     "transfer": {
@@ -676,7 +706,13 @@
     "somethingElse": "Something else",
     "swapped": "Swapped in {{name}}.",
     "noOther": "No other ideas for this meal.",
-    "addToList": "Add the week to the list"
+    "addToList": "Add the week to the list",
+    "calories_one": "{{value}} cal",
+    "calories_other": "{{value}} cal",
+    "caloriesMore_one": "{{value}}+ cal",
+    "caloriesMore_other": "{{value}}+ cal",
+    "caloriesADay_one": "about {{value}} cal a day",
+    "caloriesADay_other": "about {{value}} cal a day"
   },
   "share": {
     "title": "Shared to Merran",
@@ -1205,6 +1241,29 @@
       "hideOriginal": "Hide the original",
       "using": "Using {{lines}} this time.",
       "unswap": "Back to {{line}}"
+    },
+    "nutrition": {
+      "title": "Nutrition",
+      "workOut": "Work out nutrition",
+      "again": "Work it out again",
+      "workedOut": "Nutrition worked out.",
+      "notYet": "Not worked out yet.",
+      "needsServings": "Say how many servings it makes, and Merran can work it out.",
+      "nutrients": {
+        "calories": "Calories",
+        "protein": "Protein",
+        "carbs": "Carbs",
+        "fat": "Fat",
+        "fiber": "Fiber",
+        "sugar": "Sugar",
+        "sodium": "Sodium"
+      },
+      "source": {
+        "site": "Per serving, from the recipe's site.",
+        "calculated": "Per serving, worked out from USDA FoodData Central.",
+        "estimate": "Per serving, estimated by AI."
+      },
+      "missing": "Not counted: {{lines}}."
     }
   },
   "cook": {

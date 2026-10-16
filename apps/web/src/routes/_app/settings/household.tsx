@@ -18,6 +18,7 @@ import { AutoplanCard } from "@/features/household/autoplan-card"
 import { DetailsCard } from "@/features/household/details-card"
 import { InvitesCard } from "@/features/household/invites-card"
 import { MembersCard } from "@/features/household/members-card"
+import { NutritionLibraryCard } from "@/features/household/nutrition-library-card"
 import { NewHouseholdCard } from "@/features/household/new-household-card"
 import { PlanningCard } from "@/features/household/planning-card"
 import {
@@ -65,6 +66,7 @@ function HouseholdSettings() {
           {isAdminRole(household.role) && <ThemeNightsCard />}
           {isAdminRole(household.role) && <AutoplanCard />}
           {isAdminRole(household.role) && <HouseholdAiCard />}
+          {isAdminRole(household.role) && <NutritionLibraryCard />}
           <MembersCard />
           {isAdminRole(household.role) && <InvitesCard />}
         </>

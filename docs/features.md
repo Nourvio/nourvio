@@ -69,7 +69,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | How did it go? Stars and notes after cooking | Key | Built | |
 | Select and act on many recipes; Recently deleted for 30 days | Detail | Built | |
 | Nutrition from the recipe's site | Detail | Built | |
-| Nutrition worked out from USDA data or by AI, with plan totals | Key | Planned | Module |
+| Nutrition worked out from USDA data or by AI, with plan totals | Key | Built | Module: a free USDA key; AI estimates without one. Worked out by itself when a recipe's saved, and for the whole library |
 | What recipes cost, and a weekly budget, in any currency | Key | Planned | Module (stores) |
 | AI photos in a consistent style for recipes without one | Key | Planned | Module; a few styles per household |
 | Recipe translations, step photos, meaning-based search | Detail | Later | |

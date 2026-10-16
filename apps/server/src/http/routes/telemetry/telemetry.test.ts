@@ -42,6 +42,7 @@ test("the next summary can be seen before saying yes to it", async () => {
     modules: {
       ai: false,
       video: false,
+      nutrition: false,
       errorTracking: false,
       telemetry: false,
     },

@@ -3,6 +3,7 @@ import type { Router } from "../../../router.ts"
 import aiRoutes from "./ai/index.ts"
 import get from "./get.ts"
 import jobsRoutes from "./jobs/index.ts"
+import nutritionRoutes from "./nutrition/index.ts"
 import patch from "./patch.ts"
 
 export default (router: Router, deps: AppDeps) => {
@@ -10,4 +11,5 @@ export default (router: Router, deps: AppDeps) => {
   patch(router, deps)
   aiRoutes(router, deps)
   jobsRoutes(router, deps)
+  nutritionRoutes(router, deps)
 }

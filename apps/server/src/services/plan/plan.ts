@@ -73,6 +73,7 @@ function recipeSummary(recipe: Recipe | undefined | null) {
     photo: photoUrls(recipe)?.card ?? null,
     servings: toNumber(recipe.servings),
     totalMinutes: totalMinutes(recipe),
+    calories: recipe.nutrition?.calories ?? null,
   }
 }
 
@@ -89,7 +90,12 @@ export function describeEntry(entry: PlanEntry) {
     recipe: recipeSummary(entry.recipe?.getEntity()),
     withRecipe:
       withRecipe && !withRecipe.deletedAt
-        ? { id: withRecipe.id, slug: withRecipe.slug, name: withRecipe.name }
+        ? {
+            id: withRecipe.id,
+            slug: withRecipe.slug,
+            name: withRecipe.name,
+            calories: withRecipe.nutrition?.calories ?? null,
+          }
         : null,
     note: entry.note ?? null,
     servings: toNumber(entry.servings),

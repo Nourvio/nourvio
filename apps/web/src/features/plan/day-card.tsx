@@ -10,6 +10,7 @@ import type { Selection } from "@/features/select/use-selection"
 import { cn } from "@/lib/utils"
 
 import { formatMonthDay, formatShortWeekday, formatWeekday } from "./format"
+import { dayCalories } from "./calories"
 import { MealTile } from "./meal-tile"
 import { NotFilledIcon, useNotFilled } from "./not-filled"
 import type { Meal, PlanEntry } from "./queries"
@@ -74,6 +75,7 @@ export function DayCard({
   }
   const isToday = day === today
   const notFilled = useNotFilled()
+  const calories = dayCalories(entries)
 
   return (
     <section
@@ -96,6 +98,14 @@ export function DayCard({
           <Badge variant="secondary" className="self-center">
             {themeLabel(theme)}
           </Badge>
+        )}
+        {calories && (
+          <span className="ml-auto text-sm text-muted-foreground tabular-nums">
+            {t(calories.partial ? "plan.caloriesMore" : "plan.calories", {
+              count: calories.total,
+              value: calories.total.toLocaleString(i18n.language),
+            })}
+          </span>
         )}
       </header>
 

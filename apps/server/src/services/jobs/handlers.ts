@@ -5,6 +5,7 @@ import { discoverJob } from "../discover/discover.ts"
 import { linkImportJob } from "../recipes/import/import-links.ts"
 import { noteEditJob } from "../recipes/review/note-edits.ts"
 import { tidyRunJob } from "../recipes/review/tidy-run.ts"
+import { nutritionRunJob } from "../nutrition/runs.ts"
 import { autoplanJob } from "../plan/autoplan.ts"
 import { importJob } from "../transfer/import.ts"
 import { cleanUpJobsJob } from "./clean-up.ts"
@@ -22,6 +23,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   linkImportJob,
   autoplanJob,
   tidyRunJob,
+  nutritionRunJob,
   noteEditJob,
   discoverJob,
 ]

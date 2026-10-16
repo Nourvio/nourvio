@@ -81,7 +81,21 @@ const swaps: () => unknown = () => SWAPS
 let edit: () => unknown = () => EDIT
 let asked: Prompt = []
 const reply = (call: MockCall) => {
-  asked = call.prompt as Prompt
+  const prompt = call.prompt as Prompt
+  const first = prompt.find((m) => m.role === "system")?.content
+  // A recipe's nutrition, worked out in the background after it's saved.
+  if (typeof first === "string" && first.startsWith("You estimate nutrition")) {
+    return JSON.stringify({
+      calories: 500,
+      protein: null,
+      carbs: null,
+      fat: null,
+      fiber: null,
+      sugar: null,
+      sodium: null,
+    })
+  }
+  asked = prompt
   const system = asked.find((m) => m.role === "system")?.content
   if (typeof system !== "string") return "ok"
   if (system.startsWith("Someone's about to cook")) {

@@ -1,6 +1,7 @@
 import type { AnySetting } from "../core/settings.ts"
 import { AI } from "./ai/settings.ts"
 import { ERROR_TRACKING } from "./error-tracking/settings.ts"
+import { NUTRITION } from "./nutrition/settings.ts"
 import { TELEMETRY } from "./telemetry/settings.ts"
 import { VIDEO } from "./video/settings.ts"
 
@@ -12,6 +13,7 @@ import { VIDEO } from "./video/settings.ts"
 export const MODULE_SETTINGS: readonly AnySetting[] = [
   ...Object.values(AI),
   ...Object.values(VIDEO),
+  ...Object.values(NUTRITION),
   ...Object.values(ERROR_TRACKING),
   ...Object.values(TELEMETRY),
 ]

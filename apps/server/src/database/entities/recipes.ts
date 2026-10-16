@@ -32,6 +32,8 @@ export type Nutrition = {
   sodium?: number
   /** Ingredient lines that couldn't be counted. */
   missing?: string[]
+  /** The servings it was worked out for, so a change of servings rescales it. */
+  servings?: number
 }
 
 export const Recipe = defineEntity({

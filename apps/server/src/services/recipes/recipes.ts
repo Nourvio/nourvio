@@ -14,6 +14,8 @@ import {
 } from "@merran/shared"
 import { raw, type FilterQuery } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
+import { rescaled } from "../nutrition/nutrition.ts"
+import { nutritionAfterSave } from "../nutrition/runs.ts"
 import {
   CookNote,
   Recipe,
@@ -119,6 +121,7 @@ export function describeRecipe(recipe: Recipe, tags: string[]) {
     cookMinutes: recipe.cookMinutes ?? null,
     notes: recipe.notes ?? null,
     dietOverrides: overridesOf(recipe),
+    nutrition: recipe.nutrition ?? null,
     needs: recipe.needs ?? [],
     ingredients: recipe.ingredients.getItems().map((line) => ({
       id: line.id,
@@ -212,6 +215,10 @@ async function fill(
   const markOf = marksFrom(
     marks ?? (recipe.ingredients.isInitialized() ? markedLines(recipe) : [])
   )
+  const linesBefore = recipe.ingredients.isInitialized()
+    ? recipe.ingredients.getItems().map((line) => line.rawText)
+    : []
+  const servingsBefore = toNumber(recipe.servings)
   recipe.name = input.name
   recipe.description = input.description
   recipe.servings = input.servings
@@ -241,10 +248,23 @@ async function fill(
       })
     })
   )
-  workOutDiets(
-    recipe,
-    recipe.ingredients.getItems().map((line) => line.rawText)
-  )
+  const lines = recipe.ingredients.getItems().map((line) => line.rawText)
+  workOutDiets(recipe, lines)
+  const ingredientsChanged =
+    JSON.stringify(lines) !== JSON.stringify(linesBefore)
+  // The same food shared among more or fewer: each serving has more or less.
+  const nutrition = recipe.nutrition
+  const servings = toNumber(recipe.servings)
+  const workedOutFor = nutrition?.servings ?? servingsBefore
+  if (
+    nutrition &&
+    !ingredientsChanged &&
+    workedOutFor &&
+    servings &&
+    workedOutFor !== servings
+  ) {
+    recipe.nutrition = rescaled(nutrition, workedOutFor, servings)
+  }
   recipe.steps.set(
     splitSections(input.steps).map((item, position) =>
       tx.create(RecipeStep, {
@@ -258,6 +278,7 @@ async function fill(
   )
   await setTags(tx, householdId, recipe, input.tags)
   await tx.flush()
+  return { ingredientsChanged }
 }
 
 export async function createRecipe(
@@ -269,6 +290,8 @@ export async function createRecipe(
     origin?: RecipeOrigin
     /** A photo already stored for it (see photos.ts). */
     photoId?: string | null
+    /** Its nutrition from the recipe's site. */
+    nutrition?: Nutrition | null
   }
 ) {
   const id = await inHouseholdTransaction(
@@ -282,11 +305,19 @@ export async function createRecipe(
         origin: options.origin ?? "manual",
         image: options.photoId ?? null,
         createdBy: options.userId,
+        nutrition: options.nutrition ?? null,
       })
       await fill(tx, options.householdId, recipe, options.input)
       return recipe.id
     }
   )
+  if (!options.nutrition && options.input.servings) {
+    await nutritionAfterSave(em, {
+      householdId: options.householdId,
+      userId: options.userId,
+      recipeId: id,
+    })
+  }
   return loadRecipe(em.fork(), id)
 }
 
@@ -409,13 +440,27 @@ export async function updateRecipe(
         source: options.source ?? "edit",
         userId: options.userId,
       })
-      await fill(tx, options.householdId, recipe, options.input, options.marks)
+      const { ingredientsChanged } = await fill(
+        tx,
+        options.householdId,
+        recipe,
+        options.input,
+        options.marks
+      )
       if (options.tidied) recipe.tidiedAt = new Date()
       await pruneTags(tx)
-      return recipe.id
+      const missing = !recipe.nutrition && Boolean(options.input.servings)
+      return { id: recipe.id, workOut: ingredientsChanged || missing }
     }
   )
-  return loadRecipe(em.fork(), id)
+  if (id.workOut) {
+    await nutritionAfterSave(em, {
+      householdId: options.householdId,
+      userId: options.userId,
+      recipeId: id.id,
+    })
+  }
+  return loadRecipe(em.fork(), id.id)
 }
 
 export type RecipeListOptions = {

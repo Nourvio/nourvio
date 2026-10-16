@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { tastesQuery } from "@/features/household/queries"
 import { CookNotes } from "@/features/recipes/cook-notes"
+import { NutritionSection } from "@/features/recipes/nutrition-section"
 import { DietBadges, DietDialog } from "@/features/recipes/diet-labels"
 import { formatMinutes, sourceName } from "@/features/recipes/format"
 import { GoesWith } from "@/features/recipes/goes-with"
@@ -518,6 +519,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               </p>
             </section>
           )}
+          <NutritionSection recipe={recipe} />
           <CookNotes recipe={recipe} />
           {recipe.sourceUrl && (
             <a

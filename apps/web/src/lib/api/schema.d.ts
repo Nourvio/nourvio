@@ -1992,6 +1992,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recipes/nutrition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Nutrition across the library
+         * @description How many recipes have no nutrition yet, how many need servings first, and the latest run working it out. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["getNutritionLibrary"];
+        put?: never;
+        /**
+         * Work out nutrition for the library
+         * @description Every recipe with servings and ingredients but no nutrition, in the background, two at a time: from USDA's data when the server has a key, else estimated by AI. USDA's hourly limit pauses it rather than ending it. One at a time: starting another gives back the one going. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["startNutritionRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/nutrition/{runId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop working out nutrition
+         * @description What it worked out stays. The recipe it's on finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["stopNutritionRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/tags": {
         parameters: {
             query?: never;
@@ -2103,6 +2147,26 @@ export interface paths {
          * @description Moves it to Recently deleted, where it can be put back for 30 days. With an API key, it needs the `recipes: write` permission.
          */
         delete: operations["deleteRecipe"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/nutrition": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Work out a recipe's nutrition
+         * @description Per serving, from the ingredients: added up from USDA FoodData Central when the server has a key (AI picking each ingredient's food and weighing what USDA's portions can't), else, or when too much couldn't be counted, estimated by AI. Replaces what it had, from the site too. A recipe's nutrition is worked out by itself after it's saved; this is for doing it again now. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["workOutNutrition"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2630,6 +2694,26 @@ export interface paths {
          * @description Server admins only. A failed or cancelled job runs again from the start.
          */
         post: operations["retryServerJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/server/nutrition/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test a USDA key
+         * @description Server admins only. Searches USDA FoodData Central for apples with a key, before saving it, or with the saved one.
+         */
+        post: operations["testUsdaKey"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5400,12 +5484,14 @@ export interface components {
          *             "name": "Lemon Chicken",
          *             "photo": null,
          *             "servings": 4,
-         *             "totalMinutes": 50
+         *             "totalMinutes": 50,
+         *             "calories": 412
          *           },
          *           "withRecipe": {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
          *             "slug": "garlic-rice",
-         *             "name": "Garlic Rice"
+         *             "name": "Garlic Rice",
+         *             "calories": 210
          *           },
          *           "note": null,
          *           "servings": null,
@@ -5437,12 +5523,14 @@ export interface components {
          *         "name": "Lemon Chicken",
          *         "photo": null,
          *         "servings": 4,
-         *         "totalMinutes": 50
+         *         "totalMinutes": 50,
+         *         "calories": 412
          *       },
          *       "withRecipe": {
          *         "id": "0199e8b0-5a10-7a01-8b00-000000000007",
          *         "slug": "garlic-rice",
-         *         "name": "Garlic Rice"
+         *         "name": "Garlic Rice",
+         *         "calories": 210
          *       },
          *       "note": null,
          *       "servings": null,
@@ -5476,12 +5564,15 @@ export interface components {
                 photo: string | null;
                 servings: number | null;
                 totalMinutes: number | null;
+                /** @description In a serving, when its nutrition is known. */
+                calories: number | null;
             } | null;
             /** @description What it's made with: "with peanut sauce". */
             withRecipe: {
                 id: string;
                 slug: string;
                 name: string;
+                calories: number | null;
             } | null;
             /** @description A meal that isn't a recipe: "leftovers". */
             note: string | null;
@@ -5638,12 +5729,14 @@ export interface components {
          *           "name": "Lemon Chicken",
          *           "photo": null,
          *           "servings": 4,
-         *           "totalMinutes": 50
+         *           "totalMinutes": 50,
+         *           "calories": 412
          *         },
          *         "withRecipe": {
          *           "id": "0199e8b0-5a10-7a01-8b00-000000000007",
          *           "slug": "garlic-rice",
-         *           "name": "Garlic Rice"
+         *           "name": "Garlic Rice",
+         *           "calories": 210
          *         },
          *         "note": null,
          *         "servings": null,
@@ -5705,12 +5798,14 @@ export interface components {
          *             "name": "Lemon Chicken",
          *             "photo": null,
          *             "servings": 4,
-         *             "totalMinutes": 50
+         *             "totalMinutes": 50,
+         *             "calories": 412
          *           },
          *           "withRecipe": {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
          *             "slug": "garlic-rice",
-         *             "name": "Garlic Rice"
+         *             "name": "Garlic Rice",
+         *             "calories": 210
          *           },
          *           "note": null,
          *           "servings": null,
@@ -5765,12 +5860,14 @@ export interface components {
          *             "name": "Lemon Chicken",
          *             "photo": null,
          *             "servings": 4,
-         *             "totalMinutes": 50
+         *             "totalMinutes": 50,
+         *             "calories": 412
          *           },
          *           "withRecipe": {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
          *             "slug": "garlic-rice",
-         *             "name": "Garlic Rice"
+         *             "name": "Garlic Rice",
+         *             "calories": 210
          *           },
          *           "note": null,
          *           "servings": null,
@@ -6286,6 +6383,18 @@ export interface components {
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
          *         "needs": [],
+         *         "nutrition": {
+         *           "source": "calculated",
+         *           "calories": 412,
+         *           "protein": 31.5,
+         *           "carbs": 6.2,
+         *           "fat": 28.1,
+         *           "fiber": 1.4,
+         *           "sugar": 1.2,
+         *           "sodium": 640,
+         *           "missing": [],
+         *           "servings": 4
+         *         },
          *         "ingredients": [
          *           {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -6391,6 +6500,18 @@ export interface components {
          *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *       "dietOverrides": {},
          *       "needs": [],
+         *       "nutrition": {
+         *         "source": "calculated",
+         *         "calories": 412,
+         *         "protein": 31.5,
+         *         "carbs": 6.2,
+         *         "fat": 28.1,
+         *         "fiber": 1.4,
+         *         "sugar": 1.2,
+         *         "sodium": 640,
+         *         "missing": [],
+         *         "servings": 4
+         *       },
          *       "ingredients": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -6467,6 +6588,7 @@ export interface components {
             dietOverrides: components["schemas"]["DietOverrides"];
             /** @description Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead. */
             needs: string[];
+            nutrition: components["schemas"]["Nutrition"];
             ingredients: components["schemas"]["Ingredient"][];
             steps: components["schemas"]["Step"][];
         };
@@ -6481,6 +6603,48 @@ export interface components {
             "egg-free"?: boolean;
             "nut-free"?: boolean;
         };
+        /**
+         * @description Per serving, when it's known.
+         * @example {
+         *       "source": "calculated",
+         *       "calories": 412,
+         *       "protein": 31.5,
+         *       "carbs": 12.2,
+         *       "fat": 26.1,
+         *       "fiber": 2.4,
+         *       "sugar": 3.1,
+         *       "sodium": 640,
+         *       "missing": [
+         *         "1 bay leaf"
+         *       ],
+         *       "servings": 4
+         *     }
+         */
+        Nutrition: {
+            /**
+             * @description From the recipe's site, worked out from USDA's data, or estimated by AI.
+             * @enum {string}
+             */
+            source: "site" | "calculated" | "estimate";
+            /** @description kcal. */
+            calories?: number;
+            /** @description Grams. */
+            protein?: number;
+            /** @description Grams. */
+            carbs?: number;
+            /** @description Grams. */
+            fat?: number;
+            /** @description Grams. */
+            fiber?: number;
+            /** @description Grams. */
+            sugar?: number;
+            /** @description Milligrams. */
+            sodium?: number;
+            /** @description Ingredient lines that couldn't be counted. */
+            missing?: string[];
+            /** @description The servings it's for; it rescales when they change. */
+            servings?: number;
+        } | null;
         /**
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000012",
@@ -6806,6 +6970,18 @@ export interface components {
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
          *         "needs": [],
+         *         "nutrition": {
+         *           "source": "calculated",
+         *           "calories": 412,
+         *           "protein": 31.5,
+         *           "carbs": 6.2,
+         *           "fat": 28.1,
+         *           "fiber": 1.4,
+         *           "sugar": 1.2,
+         *           "sodium": 640,
+         *           "missing": [],
+         *           "servings": 4
+         *         },
          *         "ingredients": [
          *           {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -7054,6 +7230,59 @@ export interface components {
             /** @description Where it's from, when that's a page. */
             sourceUrl?: string | "" | null;
         };
+        /**
+         * @example {
+         *       "missing": 42,
+         *       "noServings": 3,
+         *       "run": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-00000000002f",
+         *         "status": "running",
+         *         "total": 42,
+         *         "done": 12,
+         *         "workedOut": 11,
+         *         "failed": 1,
+         *         "stopped": null,
+         *         "startedAt": "2026-10-15T18:30:00.000Z",
+         *         "finishedAt": null
+         *       }
+         *     }
+         */
+        NutritionLibrary: {
+            /** @description Recipes with servings and ingredients but no nutrition. */
+            missing: number;
+            /** @description Recipes without nutrition that need servings first. */
+            noServings: number;
+            run: components["schemas"]["NutritionRun"];
+        };
+        /**
+         * @description The latest run, going or finished in the last day.
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000002f",
+         *       "status": "running",
+         *       "total": 42,
+         *       "done": 12,
+         *       "workedOut": 11,
+         *       "failed": 1,
+         *       "stopped": null,
+         *       "startedAt": "2026-10-15T18:30:00.000Z",
+         *       "finishedAt": null
+         *     }
+         */
+        NutritionRun: {
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "running" | "done" | "failed" | "cancelled";
+            total: number;
+            done: number;
+            workedOut: number;
+            failed: number;
+            /** @description Why it stopped before the end, when it did. */
+            stopped: string | null;
+            /** Format: date-time */
+            startedAt: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+        } | null;
         /**
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000008",
@@ -7413,6 +7642,18 @@ export interface components {
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
          *         "needs": [],
+         *         "nutrition": {
+         *           "source": "calculated",
+         *           "calories": 412,
+         *           "protein": 31.5,
+         *           "carbs": 6.2,
+         *           "fat": 28.1,
+         *           "fiber": 1.4,
+         *           "sugar": 1.2,
+         *           "sodium": 640,
+         *           "missing": [],
+         *           "servings": 4
+         *         },
          *         "ingredients": [
          *           {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -7932,6 +8173,20 @@ export interface components {
          */
         JobListItem: components["schemas"]["Job"] & {
             householdName: string | null;
+        };
+        /**
+         * @example {
+         *       "found": "Apples, raw, with skin"
+         *     }
+         */
+        UsdaKeyTested: {
+            /** @description What a search for apples found. */
+            found: string;
+        };
+        /** @example {} */
+        UsdaKeyTest: {
+            /** @description A key to try before saving it; the saved one when left out. */
+            usdaKey?: string;
         };
         /**
          * @example {
@@ -13752,6 +14007,158 @@ export interface operations {
             };
         };
     };
+    getNutritionLibrary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The library. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NutritionLibrary"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startNutritionRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Started. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NutritionRun"];
+                };
+            };
+            /** @description Every recipe with servings has its nutrition. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No USDA key on the server, and no AI for the household. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    stopNutritionRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stopped, or stopping. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NutritionRun"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such run in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has already finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listTags: {
         parameters: {
             query?: never;
@@ -14189,6 +14596,83 @@ export interface operations {
             };
             /** @description No such recipe. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    workOutNutrition: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recipe, with its nutrition. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description No servings, or no ingredients. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No USDA key on the server, and no AI for the household. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description USDA's limit for the hour, or this month's AI limit. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -15930,6 +16414,84 @@ export interface operations {
             };
             /** @description It hasn't finished, or another like it is already waiting. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    testUsdaKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsdaKeyTest"];
+            };
+        };
+        responses: {
+            /** @description It works. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsdaKeyTested"];
+                };
+            };
+            /** @description No key to test. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description USDA refused the key. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description USDA's limit for the hour. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description USDA didn't answer. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

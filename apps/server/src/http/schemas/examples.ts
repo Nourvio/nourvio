@@ -43,6 +43,7 @@ export const IDS = {
   chatMessage: id(44),
   discovery: id(45),
   receipt: id(46),
+  nutritionRun: id(47),
 }
 
 export const TIMES = {
@@ -184,6 +185,18 @@ export const RECIPE = {
   notes: "Bone-in thighs work too: give them 10 minutes more.",
   dietOverrides: {},
   needs: [],
+  nutrition: {
+    source: "calculated" as const,
+    calories: 412,
+    protein: 31.5,
+    carbs: 6.2,
+    fat: 28.1,
+    fiber: 1.4,
+    sugar: 1.2,
+    sodium: 640,
+    missing: [],
+    servings: 4,
+  },
   ingredients: [
     {
       id: IDS.ingredients[0],

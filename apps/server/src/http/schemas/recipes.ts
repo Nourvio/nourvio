@@ -144,6 +144,42 @@ export const StepSchema = z
   })
   .openapi("Step", { example: RECIPE.steps[0] })
 
+export const NutritionSchema = z
+  .object({
+    source: z.enum(["site", "calculated", "estimate"]).openapi({
+      description:
+        "From the recipe's site, worked out from USDA's data, or estimated by AI.",
+    }),
+    calories: z.number().optional().openapi({ description: "kcal." }),
+    protein: z.number().optional().openapi({ description: "Grams." }),
+    carbs: z.number().optional().openapi({ description: "Grams." }),
+    fat: z.number().optional().openapi({ description: "Grams." }),
+    fiber: z.number().optional().openapi({ description: "Grams." }),
+    sugar: z.number().optional().openapi({ description: "Grams." }),
+    sodium: z.number().optional().openapi({ description: "Milligrams." }),
+    missing: z.array(z.string()).optional().openapi({
+      description: "Ingredient lines that couldn't be counted.",
+    }),
+    servings: z.number().optional().openapi({
+      description: "The servings it's for; it rescales when they change.",
+    }),
+  })
+  .openapi("Nutrition", {
+    description: "Per serving; what isn't known is left out.",
+    example: {
+      source: "calculated",
+      calories: 412,
+      protein: 31.5,
+      carbs: 12.2,
+      fat: 26.1,
+      fiber: 2.4,
+      sugar: 3.1,
+      sodium: 640,
+      missing: ["1 bay leaf"],
+      servings: 4,
+    },
+  })
+
 export const RecipeSchema = RecipeSummarySchema.extend({
   origin: z.enum(RECIPE_ORIGINS),
   sourceUrl: z.string().nullable(),
@@ -158,6 +194,9 @@ export const RecipeSchema = RecipeSummarySchema.extend({
   needs: z.array(z.string()).openapi({
     description:
       "Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead.",
+  }),
+  nutrition: NutritionSchema.nullable().openapi({
+    description: "Per serving, when it's known.",
   }),
   ingredients: z.array(IngredientSchema),
   steps: z.array(StepSchema),

@@ -10,6 +10,7 @@ import { serverAiQuery } from "@/features/ai/queries"
 import { AboutCard } from "@/features/server/about-card"
 import { ErrorTrackingCard } from "@/features/server/error-tracking-card"
 import { JobsCard, serverJobsQuery } from "@/features/server/jobs-card"
+import { NutritionCard } from "@/features/server/nutrition-card"
 import {
   serverSettingsQuery,
   telemetryReportQuery,
@@ -40,6 +41,7 @@ function ServerSettings() {
       <ServerAiPolicyCard />
       <ServerAiSpendCard />
       <VideoCard />
+      <NutritionCard />
       <ErrorTrackingCard />
       <TelemetryCard />
       <JobsCard />
