@@ -62,7 +62,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Units as written, US or metric, both ways | Key | Built | Per device |
 | Versions, with restore | Detail | Built | |
 | Tags: rename, merge, delete | Detail | Built | |
-| Fast search, filters and sorting, even in big libraries | Key | Built | On the server |
+| Fast search, filters and sorting, even in big libraries | Key | Built | On the server; tags picked from a searchable list (a bottom sheet on a phone), filters on one row |
 | Diet labels worked out from the ingredients, with corrections | Key | Built | |
 | Goes with: pair recipes, like chicken with any of your sauces | Key | Built | |
 | "I made this", and a New badge for ones you haven't cooked | Detail | Built | |

@@ -2,6 +2,7 @@ import {
   ArrowDown01Icon,
   Cancel01Icon,
   Search01Icon,
+  Sorting05Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { DIETS, type Diet } from "@merran/shared"
@@ -9,8 +10,15 @@ import { useQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
-import { SelectField } from "@/components/form/select-field"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer"
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -27,7 +35,14 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "@/components/ui/input-group"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { Toggle } from "@/components/ui/toggle"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 
 import {
@@ -39,6 +54,7 @@ import {
   type RecipeSearch,
   type RecipeSort,
   type RecipeTime,
+  type Tag,
 } from "./queries"
 
 /**
@@ -76,23 +92,14 @@ export function RecipeFilters({
     return () => clearTimeout(timer)
   }, [words, search, onChange])
 
-  const toggleTag = (name: string) => {
-    const key = name.toLowerCase()
-    const next = chosen.some((tag) => tag.toLowerCase() === key)
-      ? chosen.filter((tag) => tag.toLowerCase() !== key)
-      : [...chosen, name]
+  const setTags = (next: string[]) =>
     onChange({ ...search, tags: next.length > 0 ? next.join(",") : undefined })
-  }
-
-  const sortOptions = RECIPE_SORTS.map((value) => ({
-    value,
-    label: t(`recipes.sort.${value}`),
-  }))
+  const toggleTag = (name: string) => setTags(toggled(chosen, name))
 
   return (
-    <div className="space-y-4">
-      {/* Search, the filters and the sort in one row, wrapping when narrow. */}
-      <div className="flex flex-wrap items-end gap-3">
+    <div className="space-y-3">
+      {/* Search, then the filters and the sort: one row on a wide screen. */}
+      <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-0 flex-[1_1_18rem]">
           <InputGroup className="h-9">
             <InputGroupAddon>
@@ -118,10 +125,11 @@ export function RecipeFilters({
             )}
           </InputGroup>
         </div>
+        {/* On a phone, one row that scrolls sideways rather than wrapping. */}
         <div
           role="group"
           aria-label={t("recipes.filters")}
-          className="flex flex-wrap items-center gap-2"
+          className="-my-1 flex w-full min-w-0 [scrollbar-width:none] items-center gap-2 overflow-x-auto py-1 sm:w-auto sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden [&>*]:shrink-0"
         >
           <Toggle
             variant="outline"
@@ -147,10 +155,10 @@ export function RecipeFilters({
             value={search.time}
             onChange={(time) => onChange({ ...search, time })}
           />
-        </div>
-        <div className="w-full sm:w-48">
-          <SelectField<RecipeSort>
-            label={t("recipes.sortBy")}
+          {tags.length > 0 && (
+            <TagPicker tags={tags} chosen={chosen} onChange={setTags} />
+          )}
+          <SortMenu
             value={search.sort ?? "newest"}
             onChange={(sort) =>
               onChange({
@@ -158,34 +166,43 @@ export function RecipeFilters({
                 sort: sort === "newest" ? undefined : sort,
               })
             }
-            options={sortOptions}
           />
         </div>
       </div>
-      {tags.length > 0 && (
+      {/* The tags picked, each one tap from gone. */}
+      {chosen.length > 0 && (
         <div
           role="group"
-          aria-label={t("recipes.tags")}
-          className="flex flex-wrap gap-2"
+          aria-label={t("recipes.tagFilter.picked")}
+          className="flex flex-wrap items-center gap-2"
         >
-          {tags.map((tag) => {
-            const on = chosen.some(
-              (name) => name.toLowerCase() === tag.name.toLowerCase()
-            )
-            return (
-              <Toggle
-                key={tag.id}
-                size="sm"
-                variant="outline"
-                pressed={on}
-                onPressedChange={() => toggleTag(tag.name)}
-                className={CHIP}
-              >
-                {tag.name}
-                <span className="text-xs opacity-70">{tag.recipes}</span>
-              </Toggle>
-            )
-          })}
+          {chosen.map((name) => (
+            <Button
+              key={name}
+              size="sm"
+              variant="secondary"
+              className="rounded-full"
+              aria-label={t("recipes.tagFilter.remove", { name })}
+              onClick={() => toggleTag(name)}
+            >
+              {name}
+              <HugeiconsIcon
+                icon={Cancel01Icon}
+                strokeWidth={2}
+                data-icon="inline-end"
+              />
+            </Button>
+          ))}
+          {chosen.length > 1 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-muted-foreground"
+              onClick={() => setTags([])}
+            >
+              {t("recipes.tagFilter.clear")}
+            </Button>
+          )}
         </div>
       )}
     </div>
@@ -308,6 +325,187 @@ function TimeMenu({
             {RECIPE_TIMES.map((minutes) => (
               <DropdownMenuRadioItem key={minutes} value={String(minutes)}>
                 {timeLabel(minutes)}
+              </DropdownMenuRadioItem>
+            ))}
+          </DropdownMenuRadioGroup>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+/** The names with this one added, or taken out if it's there (any case). */
+function toggled(names: string[], name: string) {
+  const key = name.toLowerCase()
+  return names.some((each) => each.toLowerCase() === key)
+    ? names.filter((each) => each.toLowerCase() !== key)
+    : [...names, name]
+}
+
+/**
+ * Recipes with every tag picked. Opens a list to search, the most used
+ * first: a sheet from the bottom on a phone, a popover elsewhere.
+ */
+function TagPicker({
+  tags,
+  chosen,
+  onChange,
+}: {
+  tags: Tag[]
+  chosen: string[]
+  onChange: (tags: string[]) => void
+}) {
+  const { t } = useTranslation()
+  const phone = useIsMobile()
+  const [open, setOpen] = React.useState(false)
+  const [find, setFind] = React.useState("")
+  React.useEffect(() => {
+    if (!open) setFind("")
+  }, [open])
+
+  const label =
+    chosen.length === 1
+      ? chosen[0]!
+      : chosen.length > 1
+        ? `${t("recipes.tags")} · ${chosen.length}`
+        : t("recipes.tags")
+  const trigger = <MenuChip label={label} on={chosen.length > 0} />
+
+  const words = find.trim().toLowerCase()
+  const shown = tags
+    .filter((tag) => tag.name.toLowerCase().includes(words))
+    .sort((a, b) => b.recipes - a.recipes || a.name.localeCompare(b.name))
+  const isOn = (name: string) =>
+    chosen.some((each) => each.toLowerCase() === name.toLowerCase())
+
+  const body = (
+    <>
+      <InputGroup className="h-9 shrink-0">
+        <InputGroupAddon>
+          <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
+        </InputGroupAddon>
+        <InputGroupInput
+          type="search"
+          value={find}
+          onChange={(event) => setFind(event.target.value)}
+          placeholder={t("recipes.tagFilter.find")}
+          aria-label={t("recipes.tagFilter.find")}
+          // A phone's keyboard would cover the list, so it waits for a tap.
+          autoFocus={!phone}
+        />
+      </InputGroup>
+      <div
+        className={cn(
+          "-mx-2 min-h-0 overflow-y-auto",
+          phone ? "flex-1" : "max-h-72"
+        )}
+      >
+        {shown.length === 0 ? (
+          <p className="px-2 py-6 text-center text-muted-foreground">
+            {t("recipes.tagFilter.none")}
+          </p>
+        ) : (
+          shown.map((tag) => (
+            <label
+              key={tag.id}
+              className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-2 hover:bg-muted"
+            >
+              <Checkbox
+                checked={isOn(tag.name)}
+                onCheckedChange={() => onChange(toggled(chosen, tag.name))}
+              />
+              <span className="min-w-0 flex-1 truncate">{tag.name}</span>
+              <span className="text-xs text-muted-foreground tabular-nums">
+                {tag.recipes}
+              </span>
+            </label>
+          ))
+        )}
+      </div>
+    </>
+  )
+
+  const clear = (
+    <Button
+      variant="ghost"
+      size="sm"
+      disabled={chosen.length === 0}
+      onClick={() => onChange([])}
+    >
+      {t("recipes.tagFilter.clear")}
+    </Button>
+  )
+
+  if (phone)
+    return (
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerTrigger render={trigger} />
+        <DrawerContent className="max-h-[80dvh]">
+          <div className="flex min-h-0 flex-1 flex-col gap-3 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+1rem)]">
+            <div className="flex items-center gap-2">
+              <DrawerTitle className="flex-1">{t("recipes.tags")}</DrawerTitle>
+              {clear}
+            </div>
+            {body}
+            <DrawerClose render={<Button className="w-full" />}>
+              {t("recipes.tagFilter.done")}
+            </DrawerClose>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    )
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger render={trigger} />
+      <PopoverContent align="start" className="w-72 gap-3">
+        <div className="flex items-center gap-2">
+          <PopoverTitle className="flex-1">{t("recipes.tags")}</PopoverTitle>
+          {clear}
+        </div>
+        {body}
+      </PopoverContent>
+    </Popover>
+  )
+}
+
+/** The order recipes come in. Not filled in: it never narrows them. */
+function SortMenu({
+  value,
+  onChange,
+}: {
+  value: RecipeSort
+  onChange: (sort: RecipeSort) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            className="rounded-full px-3 text-muted-foreground"
+            aria-label={`${t("recipes.sortBy")}: ${t(`recipes.sort.${value}`)}`}
+          />
+        }
+      >
+        <HugeiconsIcon
+          icon={Sorting05Icon}
+          strokeWidth={2}
+          data-icon="inline-start"
+        />
+        {/* Just the icon on a phone, so the filters fit beside it. */}
+        <span className="hidden sm:inline">{t(`recipes.sort.${value}`)}</span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>{t("recipes.sortBy")}</DropdownMenuLabel>
+          <DropdownMenuRadioGroup
+            value={value}
+            onValueChange={(next) => onChange(next as RecipeSort)}
+          >
+            {RECIPE_SORTS.map((sort) => (
+              <DropdownMenuRadioItem key={sort} value={sort}>
+                {t(`recipes.sort.${sort}`)}
               </DropdownMenuRadioItem>
             ))}
           </DropdownMenuRadioGroup>

@@ -687,6 +687,14 @@
       "made": "Recently made"
     },
     "tags": "Tags",
+    "tagFilter": {
+      "find": "Find a tag",
+      "none": "No tags match",
+      "picked": "Tags picked",
+      "remove": "Remove {{name}}",
+      "clear": "Clear",
+      "done": "Done"
+    },
     "count_one": "{{count}} recipe",
     "count_other": "{{count}} recipes",
     "showMore": "Show more",
