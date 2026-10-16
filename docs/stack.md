@@ -29,7 +29,7 @@ Versions are what's current in October 2026. Pin exact versions in the lockfile 
 | Icons and fonts | Hugeicons; Fraunces and Figtree from Fontsource | Same | Keep |
 | Forms | A small `useForm` of our own | **react-hook-form** + Zod, with shadcn's Field components | Change |
 | Guided tours | None | **driver.js** | New |
-| Translations | None (English in the code) | **i18next** + `react-i18next`, ICU messages, Weblate | New |
+| Translations | None (English in the code) | **i18next** + `react-i18next`, i18next JSON messages, Weblate | New |
 | Dates and time zones | Hand-rolled helpers | `date-fns` 4 + `@date-fns/tz` | Change |
 | Home-screen app | A hand-written service worker | **`vite-plugin-pwa`** (Workbox, `injectManifest`) | Change |
 | Working offline | None | TanStack Query's persister (IndexedDB) and a queue of changes made offline | New |
@@ -147,7 +147,7 @@ New people get short guided tours of each page, and every Merran term has an exp
 
 ### Translations from the start
 
-Retrofitting translations means touching every string in the app. Starting with i18next costs very little: every user-facing string goes through `t()`, messages use ICU format (plurals, "1 recipe" and "3 recipes"), and a CI check fails on a string that isn't in the English file. English is the only language at launch; Weblate (free for open-source projects) opens it to translators once the wording settles. See [platform.md](platform.md#languages-units-and-regions).
+Retrofitting translations means touching every string in the app. Starting with i18next costs very little: every user-facing string goes through `t()`, messages use i18next's own JSON format (plurals as `_one` and `_other` keys, for "1 recipe" and "3 recipes"), and `t()` is typed from the English file, so the typecheck in CI fails on a string that isn't in it. English is the only language at launch; Weblate (free for open-source projects) opens it to translators once the wording settles. See [platform.md](platform.md#languages-units-and-regions).
 
 ### WXT for the extension
 

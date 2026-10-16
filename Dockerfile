@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# Merran: one image. Today it serves the API; the web app joins it later.
+# Merran: one image, serving the API and the web app.
 #
 #   docker build -t merran .
 #   docker run -p 3000:3000 -v ./data:/data merran
@@ -17,6 +17,17 @@ COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
 COPY apps/server/package.json apps/server/
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store \
     pnpm install --frozen-lockfile --prod --filter @merran/server
+
+# ---- The web app: static files, so it's built once, on the build machine ----
+FROM --platform=$BUILDPLATFORM node:24-slim AS web
+ENV PNPM_HOME=/pnpm     COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
+WORKDIR /app
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY apps/web/package.json apps/web/
+RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store     pnpm install --frozen-lockfile --filter @merran/web
+COPY apps/web apps/web
+RUN pnpm --filter @merran/web build
 
 # ---- Runtime ----
 FROM node:24-slim
@@ -36,6 +47,7 @@ COPY --from=deps /app/node_modules node_modules
 COPY --from=deps /app/apps/server/node_modules apps/server/node_modules
 COPY apps/server/package.json apps/server/
 COPY apps/server/src apps/server/src
+COPY --from=web /app/apps/web/dist apps/web/dist
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/merran-entrypoint
 RUN mkdir -p /data
 

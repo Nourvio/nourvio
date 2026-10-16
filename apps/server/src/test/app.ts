@@ -17,6 +17,7 @@ export async function createTestApp() {
     database: databaseConfig,
     secret,
     publicUrl: TEST_ORIGIN,
+    webDir: null,
   }
   const auth = createAuth({ config, database, secret })
   const setupCode = new SetupCode()

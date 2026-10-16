@@ -40,6 +40,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm format:check
       - run: pnpm typecheck
+      - run: pnpm --filter @merran/web check:contrast
+      - run: pnpm --filter @merran/web build
+      # The web app's API types come from openapi.json, and its route tree
+      # from its route files: both are committed, so both must be current.
+      - run: pnpm --filter @merran/web api
+      - name: Check generated files are committed
+        run: git diff --exit-code -- apps/web/src/lib/api/schema.d.ts apps/web/src/routeTree.gen.ts
       # On SQLite and on Postgres. The tests also check that the migrations
       # match the entities, that openapi.json is current, and that each
       # route file sits where its path says.

@@ -1,0 +1,253 @@
+{
+  "app": {
+    "home": "Merran home"
+  },
+  "nav": {
+    "main": "Main",
+    "today": "Today",
+    "recipes": "Recipes",
+    "plan": "Plan",
+    "list": "List",
+    "pantry": "Pantry",
+    "settings": "Settings"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "copy": "Copy",
+    "copied": "Copied",
+    "done": "Done",
+    "save": "Save"
+  },
+  "theme": {
+    "change": "Change appearance",
+    "appearance": "Appearance",
+    "mode": "Mode",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System",
+    "palette": "Colors",
+    "palettes": {
+      "sage": {
+        "name": "Sage & Cream",
+        "description": "Herb green on warm cream, terracotta highlights"
+      },
+      "paprika": {
+        "name": "Paprika & Linen",
+        "description": "Burnt orange on linen, olive highlights"
+      },
+      "castiron": {
+        "name": "Cast Iron & Saffron",
+        "description": "Warm charcoal with saffron accents"
+      }
+    }
+  },
+  "account": {
+    "menu": "Account",
+    "households": "Households",
+    "switchFailed": "Couldn't switch households. Try again.",
+    "signOut": "Sign out",
+    "signOutFailed": "Couldn't sign out. Try again."
+  },
+  "status": {
+    "notFound": {
+      "title": "Page not found",
+      "description": "There's nothing here. The link may be old or mistyped."
+    },
+    "error": {
+      "title": "Something went wrong",
+      "description": "Something went wrong on our side. Try again in a moment."
+    },
+    "home": "Go home",
+    "tryAgain": "Try again"
+  },
+  "comingSoon": {
+    "title": "Coming soon",
+    "today": "What's cooking today, and what needs using up.",
+    "recipes": "Your household's recipes, and imports from the web.",
+    "plan": "Plan the week's meals together.",
+    "list": "The shopping list, made from the plan.",
+    "pantry": "What's in the cupboards, and what's running low."
+  },
+  "auth": {
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "username": "Username",
+      "usernameHint": "3 to 30 letters, numbers, dots or underscores.",
+      "usernameOrEmail": "Username or email",
+      "password": "Password",
+      "passwordHint": "At least 10 characters."
+    },
+    "login": {
+      "title": "Sign in",
+      "description": "Welcome back to Merran.",
+      "submit": "Sign in",
+      "wrong": "That username or password isn't right.",
+      "tooMany": "Too many tries. Wait a minute, then try again."
+    },
+    "setup": {
+      "title": "Set up Merran",
+      "description": "Make the first account. It runs this server and starts your household.",
+      "code": "Setup code",
+      "codeHint": "It's in the server's log, printed when Merran started.",
+      "household": "Household name",
+      "householdHint": "Like “The Carters”. You can change it later.",
+      "submit": "Set up Merran"
+    },
+    "join": {
+      "title": "Join {{household}}",
+      "signedIn": "You can switch between your households from the account menu.",
+      "submit": "Join",
+      "newAccount": "Make an account to join.",
+      "submitNew": "Make account and join",
+      "haveAccount": "Already have an account? <link>Sign in</link> first.",
+      "unusableTitle": "This invite can't be used",
+      "used": "It's been used already. Ask for a new link.",
+      "expired": "It has expired. Ask for a new link.",
+      "notFound": "The link isn't right, or the invite was cancelled. Ask for a new link."
+    }
+  },
+  "settings": {
+    "sections": "Settings sections",
+    "you": {
+      "tab": "You",
+      "profile": {
+        "title": "Profile",
+        "description": "How you appear to your household.",
+        "nameNeeded": "Enter a name.",
+        "emailFixed": "Your email can't be changed yet.",
+        "saved": "Saved."
+      },
+      "password": {
+        "title": "Password",
+        "description": "Changing it signs you out on your other devices.",
+        "current": "Current password",
+        "currentNeeded": "Enter your current password.",
+        "wrong": "That isn't your current password.",
+        "new": "New password",
+        "submit": "Change password",
+        "changed": "Password changed."
+      },
+      "appearance": {
+        "description": "Kept on this device only."
+      },
+      "apiKeys": {
+        "title": "API keys",
+        "description": "For connecting other apps, like Home Assistant. A key acts as you in one household, with only the access you give it.",
+        "none": "No keys yet",
+        "noneHint": "Make one to connect another app.",
+        "make": "Make a key",
+        "makeDescription": "For {{household}}. It stops working if you leave the household.",
+        "makeSubmit": "Make key",
+        "name": "Name",
+        "namePlaceholder": "Home Assistant",
+        "nameNeeded": "Give it a name.",
+        "expiryLabel": "Expires",
+        "expiry": {
+          "30": "In 30 days",
+          "90": "In 90 days",
+          "365": "In a year",
+          "never": "Never"
+        },
+        "permissions": "Access",
+        "permissionsHint": "Give only what the app needs. Managing the household always needs a sign-in.",
+        "areas": {
+          "household": "Household",
+          "recipes": "Recipes",
+          "plan": "Plan",
+          "list": "Shopping list",
+          "pantry": "Pantry",
+          "imports": "Imports",
+          "assistant": "Assistant"
+        },
+        "level": {
+          "none": "No access",
+          "read": "Read",
+          "write": "Read and write"
+        },
+        "access": {
+          "read": "read",
+          "write": "read and write"
+        },
+        "grant": "{{area}}: {{access}}",
+        "noAccess": "No access to anything.",
+        "made": "Made {{date}}",
+        "expires": "Expires {{date}}",
+        "neverExpires": "Never expires",
+        "lastUsed": "Last used {{date}}",
+        "neverUsed": "Never used",
+        "madeTitle": "Here's your key",
+        "madeDescription": "Copy it now and keep it somewhere safe. It won't be shown again.",
+        "key": "Key",
+        "revoke": "Revoke",
+        "revokeTitle": "Revoke {{name}}?",
+        "revokeDescription": "It stops working straight away. Anything using it will need a new key.",
+        "revoked": "Revoked {{name}}."
+      }
+    },
+    "household": {
+      "tab": "Household",
+      "none": "You're not in a household",
+      "noneHint": "Ask someone in a household for an invite link.",
+      "roles": {
+        "owner": "Owner",
+        "admin": "Admin",
+        "member": "Member"
+      },
+      "details": {
+        "title": "Household",
+        "description": "Its name, and how days and weeks work in the plan.",
+        "adminsOnly": "Only the household's admins can change these.",
+        "name": "Name",
+        "nameNeeded": "Give it a name.",
+        "timeZone": "Time zone",
+        "timeZoneHint": "Sets when each day starts.",
+        "weekStartsOn": "Week starts on",
+        "weekStartsOnHint": "The first day of the plan's week.",
+        "saved": "Saved."
+      },
+      "members": {
+        "title": "Members",
+        "description_one": "{{count}} person.",
+        "description_other": "{{count}} people.",
+        "you": "You",
+        "joined": "Joined {{date}}",
+        "role": "{{name}}'s role",
+        "roleChanged": "Changed {{name}}'s role.",
+        "remove": "Remove {{name}}",
+        "removeTitle": "Remove {{name}}?",
+        "removeDescription": "They lose access to this household straight away. They can come back with a new invite link.",
+        "removeConfirm": "Remove",
+        "removed": "Removed {{name}}.",
+        "leave": "Leave",
+        "leaveTitle": "Leave this household?",
+        "leaveDescription": "You lose access to it straight away. To come back, you'll need a new invite link.",
+        "left": "You left the household."
+      },
+      "invites": {
+        "title": "Invite links",
+        "description": "Each link works once, for 7 days.",
+        "none": "No open invites",
+        "noneHint": "Make a link to invite someone.",
+        "make": "Make a link",
+        "makeDescription": "Anyone with the link can join, so send it only to the person you're inviting.",
+        "makeSubmit": "Make link",
+        "role": "Role",
+        "roleHint": "Admins can change the household's settings and invite people.",
+        "madeTitle": "Here's the link",
+        "madeDescription": "Copy it now and send it. It won't be shown again.",
+        "link": "Invite link",
+        "made": "Made {{date}}",
+        "expires": "Expires {{date}}",
+        "cancel": "Cancel",
+        "cancelled": "Invite cancelled."
+      },
+      "new": {
+        "title": "Start another household",
+        "description": "As a server admin, you can start more households. You'll own it and switch to it.",
+        "submit": "Start household",
+        "started": "Started {{name}}."
+      }
+    }
+  }
+}

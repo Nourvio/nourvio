@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 import { z } from "zod"
 
 const LOG_LEVELS = [
@@ -70,7 +71,12 @@ export type Config = {
   secret: string | undefined
   publicUrl: string | undefined
   trustedProxies: string[]
+  /** The built web app to serve, or null to serve only the API. */
+  webDir: string | null
 }
+
+/** Where `pnpm --filter @merran/web build` puts the web app. */
+const WEB_DIR = fileURLToPath(new URL("../../../web/dist", import.meta.url))
 
 const packageJson = JSON.parse(
   readFileSync(new URL("../../package.json", import.meta.url), "utf8")
@@ -117,5 +123,6 @@ export function loadConfig(
     secret: settings.MERRAN_SECRET,
     publicUrl: settings.MERRAN_PUBLIC_URL?.replace(/\/$/, ""),
     trustedProxies: settings.MERRAN_TRUSTED_PROXIES,
+    webDir: WEB_DIR,
   }
 }

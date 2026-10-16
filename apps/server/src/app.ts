@@ -16,6 +16,7 @@ import {
 } from "./http/openapi/document.ts"
 import { createRouter } from "./http/router.ts"
 import routes from "./http/routes/index.ts"
+import { serveWebApp } from "./http/web-app.ts"
 
 export const API_BASE = "/api"
 const SPEC_PATH = `${API_BASE}/openapi.json`
@@ -68,6 +69,8 @@ export function createApp(deps: AppDeps) {
       withDefaultFonts: false,
     })
   )
+
+  if (deps.config.webDir) serveWebApp(app, deps.config.webDir, deps.logger)
 
   app.notFound(handleNotFound)
   app.onError(handleError)
