@@ -51,7 +51,28 @@ const NOTHING = {
 let asked: Prompt = []
 let answer: () => string = () => JSON.stringify(LEMON)
 const reply = (call: MockCall) => {
-  asked = call.prompt as Prompt
+  const prompt = call.prompt as Prompt
+  // What's shared is read as a receipt first, which says it's a recipe.
+  const first = prompt.find((m) => m.role === "system")?.content
+  if (
+    typeof first === "string" &&
+    first.startsWith("You read grocery receipts")
+  ) {
+    let found = true
+    try {
+      found = (JSON.parse(answer()) as { found?: boolean }).found !== false
+    } catch {
+      // Not JSON: the recipe read says what's wrong with it.
+    }
+    return JSON.stringify({
+      what: found ? "recipe" : "other",
+      store: null,
+      date: null,
+      total: null,
+      items: [],
+    })
+  }
+  asked = prompt
   return answer()
 }
 
@@ -283,7 +304,7 @@ describe("with AI", () => {
     expect(parts.map((part) => part.mediaType ?? part.text)).toEqual([
       "image/jpeg",
       "image/jpeg",
-      "The 2 photos show one recipe, in order.",
+      "These 2 show one recipe, in order.",
     ])
   })
 
@@ -376,12 +397,17 @@ describe("shared to Merran", () => {
     expect(body).toMatchObject({ outcome: "failed", code: "no_recipe_found" })
     answer = () => JSON.stringify(LEMON)
 
+    // A PDF of a recipe is read too.
     const pdf = await share([
       [
         "file",
         new File(["%PDF-1.7"], "recipe.pdf", { type: "application/pdf" }),
       ],
     ])
-    expect(pdf.body).toMatchObject({ outcome: "failed", code: "pdf" })
+    expect(pdf.body).toMatchObject({ outcome: "added" })
+    expect(given()[0]).toMatchObject({
+      type: "file",
+      mediaType: "application/pdf",
+    })
   })
 })

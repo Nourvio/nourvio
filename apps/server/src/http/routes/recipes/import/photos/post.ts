@@ -33,8 +33,8 @@ const route = createRoute({
   path: "/recipes/import/photos",
   operationId: "importRecipePhotos",
   tags: ["Recipes"],
-  summary: "Add a recipe from photos",
-  description: `Photos of one recipe, up to ${MAX_PHOTOS}, in order: a cookbook page or two, a card, a screenshot. Read by AI and added as a recipe. JPEG, PNG or WebP, up to 15 MB each. Uses the household's model for importing, which must be able to read photos, and counts towards its AI spend.`,
+  summary: "Add a recipe from photos or a PDF",
+  description: `Photos of one recipe, up to ${MAX_PHOTOS}, in order: a cookbook page or two, a card, a screenshot; or a PDF of it. Read by AI and added as a recipe. JPEG, PNG or WebP up to 15 MB each, or a PDF up to 10 MB. Uses the household's model for importing, which must be able to read photos or PDFs, and counts towards its AI spend.`,
   ...keys,
   middleware: [
     ...keys.middleware,
@@ -60,7 +60,7 @@ const route = createRoute({
     400: errorResponse("No photos, too many, or not photos Merran can read."),
     413: errorResponse("The photos are too big."),
     422: errorResponse(
-      "No recipe found in them, or the model can't read photos."
+      "No recipe found in them, or the model can't read photos or PDFs."
     ),
     429: errorResponse("This month's AI limit is reached, or the AI is busy."),
     502: errorResponse("The AI provider failed."),

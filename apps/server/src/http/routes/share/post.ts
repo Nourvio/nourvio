@@ -44,10 +44,12 @@ const SharedFormSchema = z.object({
 
 const ShareOutcomeSchema = z
   .object({
-    outcome: z.enum(["added", "already", "importing", "failed"]).openapi({
-      description:
-        "Added; already in the library (this is that recipe); several links, now importing in the background; or not added.",
-    }),
+    outcome: z
+      .enum(["added", "already", "importing", "receipt", "failed"])
+      .openapi({
+        description:
+          "Added; already in the library (this is that recipe); several links, now importing in the background; a receipt, read and waiting for a look before it goes in the pantry; or not added.",
+      }),
     code: z.string().nullable().openapi({
       description:
         'Why it wasn\'t added, for programs: "no_recipe", "no_recipe_data", "ai_noKey" and the like.',
@@ -59,6 +61,10 @@ const ShareOutcomeSchema = z
     recipe: z
       .object({ id: z.string(), slug: z.string(), name: z.string() })
       .nullable(),
+    receiptId: z.string().nullable().openapi({
+      description:
+        "A receipt: the one to look over, at /pantry/receipts/{receiptId}.",
+    }),
     importId: z.string().nullable().openapi({
       description:
         "Several links: the import, to follow at /recipes/import/links/{importId}.",
@@ -79,6 +85,7 @@ const ShareOutcomeSchema = z
         name: "Lemon Chicken",
       },
       importId: null,
+      receiptId: null,
       url: "https://merran.example.com/recipes/lemon-chicken",
     },
   })
@@ -92,7 +99,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Share something to Merran",
   description:
-    "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Without a link, photos (up to 4, as one recipe) or text of a recipe are read by AI, when the household has AI for importing. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added.",
+    "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Without a link, photos, a PDF or text are read by AI: a receipt waits to be looked over for the pantry (`GET /pantry/receipts/{receiptId}`), and a recipe (up to 4 photos, as one) is added, when the household has AI for receipts and importing. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added.",
   ...keys,
   middleware: [
     ...keys.middleware,

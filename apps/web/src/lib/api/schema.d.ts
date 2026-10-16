@@ -1284,6 +1284,94 @@ export interface paths {
         patch: operations["updatePantryItem"];
         trace?: never;
     };
+    "/api/pantry/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Receipts waiting for a look
+         * @description Scanned, shared or sent to the assistant, and not added or discarded yet, newest first. Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.
+         */
+        get: operations["listReceipts"];
+        put?: never;
+        /**
+         * Scan a receipt
+         * @description Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to 6 files, one `file` field each), or its `text`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with `POST /pantry/receipts/{receiptId}/add`; it's forgotten after a day. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend. With an API key, it needs the `pantry: write` permission.
+         */
+        post: operations["scanReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pantry/receipts/{receiptId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A receipt waiting for a look
+         * @description One scanned, shared or sent to the assistant, and not added or discarded yet. With an API key, it needs the `pantry: read` permission.
+         */
+        get: operations["getReceipt"];
+        put?: never;
+        post?: never;
+        /**
+         * Discard a receipt
+         * @description Forgets it, with its photos, without adding anything. With an API key, it needs the `pantry: write` permission.
+         */
+        delete: operations["discardReceipt"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pantry/receipts/{receiptId}/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put a receipt's lines in the pantry
+         * @description The lines picked, named and measured as looked over, go in the pantry like shopping put away: in the fridge, freezer or cupboard with a use-by guess, kept for the meals the list item was for, and noted for usual buys. The list items they were bought for come off the list. The receipt's done with after. With an API key, it needs the `pantry: write` permission.
+         */
+        post: operations["addReceipt"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pantry/receipts/{receiptId}/files/{index}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A receipt's photo or PDF
+         * @description To compare with its lines while looking it over. With an API key, it needs the `pantry: read` permission.
+         */
+        get: operations["getReceiptFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pantry/restore": {
         parameters: {
             query?: never;
@@ -1894,8 +1982,8 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Add a recipe from photos
-         * @description Photos of one recipe, up to 4, in order: a cookbook page or two, a card, a screenshot. Read by AI and added as a recipe. JPEG, PNG or WebP, up to 15 MB each. Uses the household's model for importing, which must be able to read photos, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.
+         * Add a recipe from photos or a PDF
+         * @description Photos of one recipe, up to 4, in order: a cookbook page or two, a card, a screenshot; or a PDF of it. Read by AI and added as a recipe. JPEG, PNG or WebP up to 15 MB each, or a PDF up to 10 MB. Uses the household's model for importing, which must be able to read photos or PDFs, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["importRecipePhotos"];
         delete?: never;
@@ -2559,7 +2647,7 @@ export interface paths {
         put?: never;
         /**
          * Share something to Merran
-         * @description What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Without a link, photos (up to 4, as one recipe) or text of a recipe are read by AI, when the household has AI for importing. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.
+         * @description What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Without a link, photos, a PDF or text are read by AI: a receipt waits to be looked over for the pantry (`GET /pantry/receipts/{receiptId}`), and a recipe (up to 4 photos, as one) is added, when the household has AI for receipts and importing. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.
          */
         post: operations["shareToMerran"];
         delete?: never;
@@ -5091,6 +5179,149 @@ export interface components {
             /** @example 2026-10-20 */
             useBy?: string | null;
             aisle?: string | null;
+        };
+        /**
+         * @example {
+         *       "receipts": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000002e",
+         *           "store": "Walmart",
+         *           "date": "2026-10-14",
+         *           "total": 48.12,
+         *           "lines": [
+         *             {
+         *               "id": "0d1b5c2a9e44",
+         *               "text": "GV WHL MLK 1GAL",
+         *               "name": "whole milk",
+         *               "amount": "1 gal",
+         *               "price": 3.48,
+         *               "kind": "food",
+         *               "listItem": {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *                 "name": "milk"
+         *               }
+         *             }
+         *           ],
+         *           "files": [
+         *             {
+         *               "url": "/api/pantry/receipts/0199e8b0-5a10-7a01-8b00-00000000002e/files/0",
+         *               "mediaType": "image/jpeg"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        ReceiptList: {
+            receipts: components["schemas"]["Receipt"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000002e",
+         *       "store": "Walmart",
+         *       "date": "2026-10-14",
+         *       "total": 48.12,
+         *       "lines": [
+         *         {
+         *           "id": "0d1b5c2a9e44",
+         *           "text": "GV WHL MLK 1GAL",
+         *           "name": "whole milk",
+         *           "amount": "1 gal",
+         *           "price": 3.48,
+         *           "kind": "food",
+         *           "listItem": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *             "name": "milk"
+         *           }
+         *         }
+         *       ],
+         *       "files": [
+         *         {
+         *           "url": "/api/pantry/receipts/0199e8b0-5a10-7a01-8b00-00000000002e/files/0",
+         *           "mediaType": "image/jpeg"
+         *         }
+         *       ],
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
+        Receipt: {
+            id: string;
+            store: string | null;
+            /** @description The day on it. */
+            date: string | null;
+            total: number | null;
+            lines: components["schemas"]["ReceiptLine"][];
+            /** @description The receipt's photos or PDF, to compare with. */
+            files: {
+                url: string;
+                /** @enum {string} */
+                mediaType: "image/jpeg" | "application/pdf";
+            }[];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "id": "0d1b5c2a9e44",
+         *       "text": "GV WHL MLK 1GAL",
+         *       "name": "whole milk",
+         *       "amount": "1 gal",
+         *       "price": 3.48,
+         *       "kind": "food",
+         *       "listItem": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *         "name": "milk"
+         *       }
+         *     }
+         */
+        ReceiptLine: {
+            id: string;
+            /** @description As printed. */
+            text: string;
+            /** @description What it is, plainly. */
+            name: string;
+            amount: string | null;
+            price: number | null;
+            /**
+             * @description Food goes in the pantry; household things and the rest don't, unless they're picked.
+             * @enum {string}
+             */
+            kind: "food" | "household" | "other";
+            /** @description The shopping list item it was bought for, taken off the list when it's added. */
+            listItem: {
+                id: string;
+                name: string;
+            } | null;
+        };
+        /**
+         * @example {
+         *       "added": 12,
+         *       "offTheList": 4
+         *     }
+         */
+        ReceiptAdded: {
+            added: number;
+            /** @description Shopping list items taken off with them. */
+            offTheList: number;
+        };
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "0d1b5c2a9e44",
+         *           "name": "whole milk",
+         *           "amount": "1 gal"
+         *         }
+         *       ]
+         *     }
+         */
+        AddReceiptInput: {
+            items: {
+                id: string;
+                name: string;
+                amount: string | null;
+            }[];
         };
         /**
          * @example {
@@ -7702,15 +7933,16 @@ export interface components {
          *         "name": "Lemon Chicken"
          *       },
          *       "importId": null,
+         *       "receiptId": null,
          *       "url": "https://merran.example.com/recipes/lemon-chicken"
          *     }
          */
         ShareOutcome: {
             /**
-             * @description Added; already in the library (this is that recipe); several links, now importing in the background; or not added.
+             * @description Added; already in the library (this is that recipe); several links, now importing in the background; a receipt, read and waiting for a look before it goes in the pantry; or not added.
              * @enum {string}
              */
-            outcome: "added" | "already" | "importing" | "failed";
+            outcome: "added" | "already" | "importing" | "receipt" | "failed";
             /** @description Why it wasn't added, for programs: "no_recipe", "no_recipe_data", "ai_noKey" and the like. */
             code: string | null;
             /**
@@ -7723,6 +7955,8 @@ export interface components {
                 slug: string;
                 name: string;
             } | null;
+            /** @description A receipt: the one to look over, at /pantry/receipts/{receiptId}. */
+            receiptId: string | null;
             /** @description Several links: the import, to follow at /recipes/import/links/{importId}. */
             importId: string | null;
             /** @description The recipe's page, or the import's. */
@@ -11425,6 +11659,330 @@ export interface operations {
             };
         };
     };
+    listReceipts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The receipts. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    scanReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /**
+                     * Format: binary
+                     * @description A photo, screenshot or PDF of the receipt.
+                     */
+                    file?: string;
+                    /** @description The receipt's text, as from an email. */
+                    text?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Read, waiting for a look. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
+            /** @description Nothing to read, or a file Merran can't read. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The files are too big. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It isn't a receipt (`receipt_is_recipe` when it's a recipe), or the model can't read photos or PDFs. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description This month's AI limit is reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The receipt. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Receipt"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such receipt waiting: added, discarded, or a day old. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    discardReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Discarded. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such receipt waiting. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addReceipt: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddReceiptInput"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceiptAdded"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such receipt waiting. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getReceiptFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                receiptId: string;
+                index: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The photo, as JPEG, or the PDF. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                    "application/pdf": string;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such receipt waiting, or no such file. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     restorePantryItems: {
         parameters: {
             query?: never;
@@ -13154,7 +13712,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description No recipe found in them, or the model can't read photos. */
+            /** @description No recipe found in them, or the model can't read photos or PDFs. */
             422: {
                 headers: {
                     [name: string]: unknown;

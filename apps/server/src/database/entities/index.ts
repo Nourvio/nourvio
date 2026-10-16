@@ -20,6 +20,7 @@ import { PantryItem } from "./pantry_items.ts"
 import { PlanEntry } from "./plan_entries.ts"
 import { Proposal } from "./proposals.ts"
 import { Purchase } from "./purchases.ts"
+import { Receipt } from "./receipts.ts"
 import { RateLimit } from "./rate_limits.ts"
 import { RecipeIngredient } from "./recipe_ingredients.ts"
 import { RecipePairing } from "./recipe_pairings.ts"
@@ -57,6 +58,7 @@ export * from "./pantry_items.ts"
 export * from "./plan_entries.ts"
 export * from "./proposals.ts"
 export * from "./purchases.ts"
+export * from "./receipts.ts"
 export * from "./rate_limits.ts"
 export * from "./recipe_ingredients.ts"
 export * from "./recipe_pairings.ts"
@@ -96,6 +98,7 @@ export const entities = [
   PlanEntry,
   Proposal,
   Purchase,
+  Receipt,
   RateLimit,
   Recipe,
   RecipeIngredient,

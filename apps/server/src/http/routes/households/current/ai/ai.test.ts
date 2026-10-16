@@ -447,3 +447,57 @@ describe("a key's credit", () => {
     ).toBe(400)
   })
 })
+
+// Phase 4 is done when a household the server's keys don't cover brings
+// its own key and uses the assistant, and the server admin sees only what
+// went on the server's keys.
+describe("a household on its own key", () => {
+  test("uses the assistant, and the server's spend is only the server's keys", async () => {
+    const cabin = await householdAi(jamie)
+    expect(cabin.status.server.covers).toBe(false)
+    if (
+      !cabin.keys.some((key: { provider: string }) => key.provider === "openai")
+    ) {
+      const added = await jamie.post("/api/households/current/ai/keys", {
+        provider: "openai",
+        key: GOOD_KEYS.openai,
+      })
+      expect(added.status, await added.clone().text()).toBe(201)
+    }
+    expect((await householdAi(jamie)).status.tasks.assistant).toMatchObject({
+      ok: true,
+      source: "household",
+    })
+
+    const chat = await (await jamie.post("/api/assistant/chats")).json()
+    const res = await jamie.post(`/api/assistant/chats/${chat.id}/messages`, {
+      text: "What's for dinner?",
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect(await res.text()).toContain("ok")
+    expect(targets.at(-1)).toMatchObject({
+      provider: "openai",
+      apiKey: GOOD_KEYS.openai,
+    })
+
+    // What it spent is on its own key, once the answer's done.
+    let usage = (await householdAi(jamie)).usage.months[0]
+    for (let tries = 0; !usage?.household && tries < 40; tries++) {
+      await new Promise((resolve) => setTimeout(resolve, 25))
+      usage = (await householdAi(jamie)).usage.months[0]
+    }
+    expect(usage.household).toBeGreaterThan(0)
+    expect(usage.server).toBe(0)
+
+    // The server admin sees nothing of it on the server's keys.
+    const server = await (await kyle.get("/api/settings/server/ai")).json()
+    expect(
+      server.households.find((h: { id: string }) => h.id === cabinId)
+    ).toMatchObject({ covered: false, spent: 0 })
+    expect(
+      server.usage.models.some((m: { model: string }) =>
+        m.model.startsWith("gpt-")
+      )
+    ).toBe(false)
+  })
+})

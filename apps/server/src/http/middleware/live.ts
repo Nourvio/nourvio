@@ -14,6 +14,9 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   // Shopping put away goes in the pantry; listing meals sets food aside.
   [/^\/api\/list\/(put-away|from-plan)$/, ["list", "pantry"]],
   [/^\/api\/list(\/|$)/, ["list"]],
+  // Reading a receipt changes nothing; adding one fills the pantry from the list.
+  [/^\/api\/pantry\/receipts\/[^/]+\/add$/, ["pantry", "list"]],
+  [/^\/api\/pantry\/receipts(\/|$)/, []],
   [/^\/api\/pantry(\/|$)/, ["pantry"]],
   // Made it cooks the meal; Recently deleted takes meals off the plan.
   [/^\/api\/recipes(\/|$)/, ["recipes", "plan", "list", "pantry"]],

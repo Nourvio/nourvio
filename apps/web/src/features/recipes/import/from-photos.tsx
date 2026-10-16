@@ -2,6 +2,7 @@ import {
   Add01Icon,
   Camera01Icon,
   Cancel01Icon,
+  File02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import * as React from "react"
@@ -29,7 +30,7 @@ const MAX_PHOTOS = 4
 /** AI reads photos at 1600 pixels, so they're sent no bigger than this. */
 const MAX_SIDE = 2000
 
-type Photo = { id: string; blob: Blob; url: string }
+type Photo = { id: string; blob: Blob; url: string; pdf: boolean }
 
 /**
  * Photos of a recipe, for the Add a recipe dialog: a cookbook page or two,
@@ -63,14 +64,24 @@ export function FromPhotos({
   )
 
   async function add(files: File[]) {
-    const images = files.filter((file) => file.type.startsWith("image/"))
+    const images = files.filter(
+      (file) =>
+        file.type.startsWith("image/") || file.type === "application/pdf"
+    )
     if (images.length === 0) return
     const room = MAX_PHOTOS - photos.length
     setError(images.length > room ? t("recipes.import.photos.tooMany") : null)
     const added = await Promise.all(
       images.slice(0, Math.max(room, 0)).map(async (file) => {
-        const blob = await shrinkPhoto(file, MAX_SIDE)
-        return { id: crypto.randomUUID(), blob, url: URL.createObjectURL(blob) }
+        // A PDF goes as it is: AI reads its pages.
+        const pdf = file.type === "application/pdf"
+        const blob = pdf ? file : await shrinkPhoto(file, MAX_SIDE)
+        return {
+          id: crypto.randomUUID(),
+          blob,
+          url: URL.createObjectURL(blob),
+          pdf,
+        }
       })
     )
     setPhotos((now) => [...now, ...added].slice(0, MAX_PHOTOS))
@@ -92,7 +103,11 @@ export function FromPhotos({
     setError(null)
     const form = new FormData()
     photos.forEach((photo, i) =>
-      form.append("photos", photo.blob, `photo-${i + 1}.jpg`)
+      form.append(
+        "photos",
+        photo.blob,
+        photo.pdf ? `page-${i + 1}.pdf` : `photo-${i + 1}.jpg`
+      )
     )
     try {
       onAdded(
@@ -144,7 +159,7 @@ export function FromPhotos({
         <input
           ref={input}
           type="file"
-          accept="image/*"
+          accept="image/*,application/pdf"
           multiple
           hidden
           onChange={(event) => {
@@ -185,11 +200,20 @@ export function FromPhotos({
                   key={photo.id}
                   className="relative aspect-[3/4] overflow-hidden rounded-lg border bg-muted"
                 >
-                  <img
-                    src={photo.url}
-                    alt={t("recipes.import.photos.photo", { n: i + 1 })}
-                    className="size-full object-cover"
-                  />
+                  {photo.pdf ? (
+                    <span className="grid size-full place-items-center text-destructive">
+                      <HugeiconsIcon icon={File02Icon} strokeWidth={2} />
+                      <span className="sr-only">
+                        {t("recipes.import.photos.photo", { n: i + 1 })}
+                      </span>
+                    </span>
+                  ) : (
+                    <img
+                      src={photo.url}
+                      alt={t("recipes.import.photos.photo", { n: i + 1 })}
+                      className="size-full object-cover"
+                    />
+                  )}
                   <span className="absolute top-1 left-1 rounded-full bg-background/90 px-1.5 text-xs font-medium tabular-nums">
                     {i + 1}
                   </span>

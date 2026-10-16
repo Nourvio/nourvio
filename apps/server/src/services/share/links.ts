@@ -128,12 +128,11 @@ const isImage = (file: SharedFile) => {
 /** Shared text this short isn't a recipe. */
 const MIN_RECIPE_TEXT = 60
 
-/** Whether a share is a PDF, which Merran can't read yet. */
-export const sharesPdf = (shared: Shared) => shared.files.some(isPdf)
-
-/** The photos in a share, when there are no links: a recipe to read. */
+/** The photos and PDFs in a share, when there are no links: a recipe or a receipt to read. */
 export const sharedPhotos = (shared: Shared) =>
-  shared.files.filter(isImage).map((file) => file.body)
+  shared.files
+    .filter((file) => isImage(file) || isPdf(file))
+    .map((file) => file.body)
 
 /**
  * The text of a share, when there are no links and it's long enough to be

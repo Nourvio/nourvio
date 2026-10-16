@@ -55,6 +55,7 @@ const LOOKUPS = new Set([
   "get_shopping_list",
   "get_pantry",
   "web_search",
+  "scan_receipt",
   "google_search",
 ])
 
@@ -452,6 +453,50 @@ function Message({
   )
 }
 
+type ScannedReceipt = {
+  id: string
+  store: string | null
+  lines: number
+  onList: number
+}
+
+/** A receipt the assistant read: on to look it over for the pantry. */
+function ReceiptCard({ receipt }: { receipt: ScannedReceipt }) {
+  const { t } = useTranslation()
+  const { setOpen } = useAssistant()
+  return (
+    <div className="grid gap-2.5 rounded-2xl border bg-card p-3 text-sm">
+      <p className="font-medium">
+        {receipt.store
+          ? t("pantry.receipts.waitingFrom", { store: receipt.store })
+          : t("pantry.receipts.waiting")}
+      </p>
+      <p className="text-muted-foreground">
+        {[
+          t("pantry.receipts.lines", { count: receipt.lines }),
+          receipt.onList > 0 &&
+            t("pantry.receipts.offTheList", { count: receipt.onList }),
+        ]
+          .filter(Boolean)
+          .join(" · ")}
+      </p>
+      <Button
+        size="sm"
+        className="justify-self-end"
+        render={
+          <Link
+            to="/pantry/receipts/$receiptId"
+            params={{ receiptId: receipt.id }}
+            onClick={() => setOpen(false)}
+          />
+        }
+      >
+        {t("pantry.receipts.lookOver")}
+      </Button>
+    </div>
+  )
+}
+
 function PartView({ part }: { part: Part }) {
   const { t } = useTranslation()
   if (part.type === "text") {
@@ -467,6 +512,9 @@ function PartView({ part }: { part: Part }) {
   const done = tool.state === "output-available"
   if (done && tool.output?.proposal) {
     return <ProposalCard proposal={tool.output.proposal as Proposal} />
+  }
+  if (done && tool.output?.receipt) {
+    return <ReceiptCard receipt={tool.output.receipt as ScannedReceipt} />
   }
   if (done && tool.output?.alreadyInLibrary) {
     const known = tool.output.alreadyInLibrary as { id: string; name: string }

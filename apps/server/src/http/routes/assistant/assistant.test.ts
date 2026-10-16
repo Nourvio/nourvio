@@ -41,6 +41,30 @@ const reply = (call: MockCall): MockReply => {
     asked = prompt
     return script.shift() ?? "Done."
   }
+  if (system.startsWith("You read grocery receipts")) {
+    return JSON.stringify({
+      what: "receipt",
+      store: "Kroger",
+      date: null,
+      total: 6.98,
+      items: [
+        {
+          text: "KRO EGGS LG 12",
+          name: "eggs",
+          amount: "12 ct",
+          price: 3.49,
+          kind: "food",
+        },
+        {
+          text: "DAWN DISH",
+          name: "dish soap",
+          amount: null,
+          price: 3.49,
+          kind: "household",
+        },
+      ],
+    })
+  }
   if (system.startsWith("You find recipes online")) {
     return {
       toolCalls: [{ toolName: "offer_recipes", input: { recipes: picks } }],
@@ -615,6 +639,51 @@ describe("the assistant", () => {
       { type: "text", text: "Add this one" },
     ])
     expect(system()).toContain("A recipe in a photo or a PDF")
+    await kyle.delete(`/api/assistant/chats/${chatId}`)
+  })
+
+  test("reads a receipt sent with a message, for the pantry", async () => {
+    const png = await sharp({
+      create: { width: 300, height: 400, channels: 3, background: "#fff" },
+    })
+      .png()
+      .toBuffer()
+    const photo = (await (await uploadFile(png, "receipt.png")).json()) as {
+      id: string
+    }
+    const chatId = await startChat()
+    script = [
+      { toolCalls: [{ toolName: "scan_receipt", input: {} }] },
+      "Read 2 things from Kroger: look it over to add them.",
+    ]
+    const res = await kyle.post(`/api/assistant/chats/${chatId}/messages`, {
+      text: "Put this away",
+      files: [{ id: photo.id, name: "receipt.png" }],
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    const parts = await chunks(res)
+    const output = parts.find((part) => part.type === "tool-output-available")
+      ?.output as { receipt: { id: string } }
+    expect(output.receipt).toMatchObject({
+      store: "Kroger",
+      lines: 2,
+      food: 1,
+      onList: 0,
+    })
+    const receipt = await kyle.get(`/api/pantry/receipts/${output.receipt.id}`)
+    expect(receipt.status).toBe(200)
+    expect(system()).toContain("scan_receipt")
+
+    // Without a file, it says to add one.
+    script = [{ toolCalls: [{ toolName: "scan_receipt", input: {} }] }, "Ok."]
+    const none = await chunks(await send(chatId, "And this one"))
+    expect(none).toContainEqual(
+      expect.objectContaining({
+        type: "tool-output-error",
+        errorText: expect.stringContaining("Ask them to add the receipt"),
+      })
+    )
+    await kyle.delete(`/api/pantry/receipts/${output.receipt.id}`)
     await kyle.delete(`/api/assistant/chats/${chatId}`)
   })
 

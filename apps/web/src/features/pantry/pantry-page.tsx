@@ -4,12 +4,14 @@ import {
   CheckmarkCircle02Icon,
   FridgeIcon,
   MoreHorizontalIcon,
+  ReceiptDollarIcon,
   ShoppingBasketAdd01Icon,
   SnowIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { addDays } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -36,6 +38,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useCapability } from "@/features/capabilities/queries"
 import { OnHandDialog } from "@/features/list/list-dialogs"
 import { onHandQuery } from "@/features/list/queries"
 import { useHouseholdClock } from "@/features/plan/queries"
@@ -56,6 +59,7 @@ import {
   type PantryItem,
   type StoragePlace,
 } from "./queries"
+import { WaitingReceipts } from "./receipts/waiting-receipts"
 import { usePantryActions } from "./use-pantry-actions"
 import { missedMeal, urgency, useDayLabel } from "./use-soon"
 
@@ -71,6 +75,7 @@ export function PantryPage() {
   const [onHand, setOnHand] = React.useState(false)
   const [dialog, setDialog] = React.useState<"place" | "useBy" | null>(null)
   const dayLabel = useDayLabel()
+  const aiOn = useCapability("ai")
 
   const items = pantry.data?.items ?? []
   const soon = items
@@ -112,43 +117,62 @@ export function PantryPage() {
           selection.selecting ? (
             <SelectionHeader selection={selection} allIds={selectable} />
           ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label={t("pantry.more")}
+            <div className="flex gap-2">
+              {aiOn && (
+                <Button
+                  variant="outline"
+                  aria-label={t("pantry.receipts.scan")}
+                  render={<Link to="/pantry/receipts" />}
+                >
+                  <HugeiconsIcon
+                    icon={ReceiptDollarIcon}
+                    strokeWidth={2}
+                    data-icon="inline-start"
                   />
-                }
-              >
-                <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem
-                  disabled={items.length === 0}
-                  onClick={() => selection.start()}
+                  <span className="hidden sm:inline">
+                    {t("pantry.receipts.scan")}
+                  </span>
+                </Button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label={t("pantry.more")}
+                    />
+                  }
                 >
-                  {t("pantry.select")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setOnHand(true)}>
-                  {t("pantry.onHand")}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  disabled={items.length === 0}
-                  onClick={() => void actions.clear()}
-                >
-                  {t("pantry.clear")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuItem
+                    disabled={items.length === 0}
+                    onClick={() => selection.start()}
+                  >
+                    {t("pantry.select")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setOnHand(true)}>
+                    {t("pantry.onHand")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={items.length === 0}
+                    onClick={() => void actions.clear()}
+                  >
+                    {t("pantry.clear")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )
         }
       />
 
       <div className="grid gap-6">
+        <WaitingReceipts />
         <QuickAdd />
 
         {pantry.isPending ? (

@@ -109,7 +109,12 @@ export async function respond(
   await addMessages(em, chat, [message])
   const messages = [...history, message]
   const tools = {
-    ...assistantTools(deps, em, { householdId, userId, chatId: chat.id }),
+    ...assistantTools(deps, em, {
+      householdId,
+      userId,
+      chatId: chat.id,
+      files: sent,
+    }),
     ...(ai.webSearch ?? {}),
   }
   const system = [

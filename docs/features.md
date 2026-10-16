@@ -93,7 +93,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Import from a link | Headline | Built | Honest user agent |
 | Type one in | Detail | Built | |
 | Paste many links at once | Key | Built | Runs in the background |
-| Import from text, photos, or pages with no recipe data | Headline | Built | AI; any model that reads images |
+| Import from text, photos, PDFs, or pages with no recipe data | Headline | Built | AI; any model that reads images and PDFs |
 | Move from Mealie: a backup file, an export, or connecting to it | Headline | Built | |
 | Import from Paprika | Key | Built | |
 | Merran export and import of a whole household | Key | Built | |
@@ -138,7 +138,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Put away what you bought in one tap | Detail | Built | |
 | Select and act on many list or pantry items | Detail | Built | |
 | Fridge, freezer or cupboard | Detail | Planned | |
-| Receipts into the pantry | Key | Planned | AI |
+| Receipts into the pantry: looked over, then off the list | Key | Built | AI; a photo, screenshots, a PDF or pasted text, shared from an iPhone, or sent to the assistant |
 | Kroger stores (Fry's, Ralphs...): products, send the cart, prices, sales | Key | Planned | Module (stores) |
 | Costco and any store with a search page | Detail | Planned | Module (stores) |
 | Buying by the package: the rest of a 2 lb pack goes in the pantry | Key | Planned | Module (stores) |

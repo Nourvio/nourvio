@@ -42,6 +42,7 @@ export const IDS = {
   chat: id(43),
   chatMessage: id(44),
   discovery: id(45),
+  receipt: id(46),
 }
 
 export const TIMES = {

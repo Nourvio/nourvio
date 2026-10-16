@@ -4,19 +4,15 @@ import { MAX_PHOTOS, type AiDeps } from "../recipes/import/ai-reader.ts"
 import { importLink } from "../recipes/import/import-link.ts"
 import { MAX_LINKS, startLinkImport } from "../recipes/import/import-links.ts"
 import { importPhotos, importText } from "../recipes/import/import-with-ai.ts"
+import { MAX_RECEIPT_FILES, readReceipt } from "../receipts/receipts.ts"
 import type { FileStore } from "../storage/files.ts"
-import {
-  sharedLinks,
-  sharedPhotos,
-  sharedText,
-  sharesPdf,
-  type Shared,
-} from "./links.ts"
+import { sharedLinks, sharedPhotos, sharedText, type Shared } from "./links.ts"
 
 // Something shared to Merran, from Android's share sheet or an iPhone
 // Shortcut, dealt with at once. A link to a recipe is imported there and
 // then, and several start an import that goes on in the background.
-// Without a link, photos or text of a recipe are read by AI.
+// Without a link, photos, PDFs or text are read by AI: a receipt waits to
+// be looked over for the pantry, and a recipe is added.
 
 type Base = {
   /** Said in words, so a Shortcut can show it as it is. */
@@ -30,6 +26,7 @@ export type ShareOutcome = Base &
         code: null
         recipe: { id: string; slug: string; name: string }
         importId: null
+        receiptId: null
         /** The recipe's page. */
         url: string
       }
@@ -39,6 +36,17 @@ export type ShareOutcome = Base &
         recipe: null
         /** The import, to follow at /recipes/import/links/{importId}. */
         importId: string
+        receiptId: null
+        /** Its page. */
+        url: string
+      }
+    | {
+        outcome: "receipt"
+        code: null
+        recipe: null
+        importId: null
+        /** The receipt, read and waiting for a look. */
+        receiptId: string
         /** Its page. */
         url: string
       }
@@ -48,6 +56,7 @@ export type ShareOutcome = Base &
         code: string
         recipe: null
         importId: null
+        receiptId: null
         url: null
       }
   )
@@ -61,6 +70,7 @@ const failed = (code: string, message: string): ShareOutcome => ({
   message,
   recipe: null,
   importId: null,
+  receiptId: null,
   url: null,
 })
 
@@ -78,17 +88,18 @@ function added(
       : `Added ${recipe.name} to Merran.`,
     recipe: { id: recipe.id, slug: recipe.slug, name: recipe.name },
     importId: null,
+    receiptId: null,
     url: `${baseUrl}/recipes/${recipe.slug}`,
   }
 }
 
 /**
- * Photos or text of a recipe, read by AI. Without AI, it says reading them
- * needs it.
+ * Photos, PDFs or text, read by AI: a receipt waits for a look, a recipe
+ * is added. Without AI, it says reading them needs it.
  */
 async function readShared(
   em: EntityManager,
-  deps: AiDeps,
+  deps: AiDeps & { files: FileStore },
   options: {
     householdId: string
     userId: string
@@ -99,15 +110,41 @@ async function readShared(
   const photos = sharedPhotos(options.shared)
   const text = photos.length > 0 ? null : sharedText(options.shared)
   if (photos.length === 0 && !text) {
-    return sharesPdf(options.shared)
-      ? failed(
-          "pdf",
-          "Merran can't read PDFs yet. Share a photo or a screenshot of the recipe instead."
-        )
-      : failed(
-          "no_recipe",
-          "Merran adds recipes from links, photos and text. Share the recipe's web page, a photo of it, or its text."
-        )
+    return failed(
+      "no_recipe",
+      "Merran adds recipes from links, photos, PDFs and text, and receipts from photos, PDFs and text. Share one of those."
+    )
+  }
+  // A receipt first, which says what it was: the small model's quick.
+  try {
+    const { what, receipt } = await readReceipt(em, deps, {
+      householdId: options.householdId,
+      userId: options.userId,
+      input: {
+        files: photos
+          .slice(0, MAX_RECEIPT_FILES)
+          .map((body) => ({ body, type: "" })),
+        text,
+      },
+    })
+    if (receipt) {
+      const count = receipt.lines.length
+      return {
+        outcome: "receipt",
+        code: null,
+        message: `Read a receipt${receipt.store ? ` from ${receipt.store}` : ""}: ${count} ${count === 1 ? "thing" : "things"} to look over for the pantry.`,
+        recipe: null,
+        importId: null,
+        receiptId: receipt.id,
+        url: `${options.baseUrl}/pantry/receipts/${receipt.id}`,
+      }
+    }
+    // Not a receipt: the import model reads it again as a recipe, or says
+    // there's none in it.
+    void what
+  } catch (err) {
+    // Reading receipts can be off while importing isn't: try a recipe.
+    if (!(err instanceof AppError) || !err.code.startsWith("ai_")) throw err
   }
   try {
     const recipe = photos.length
@@ -169,6 +206,7 @@ export async function shareToMerran(
         message: `Adding ${count} recipes to Merran.`,
         recipe: null,
         importId: job.id,
+        receiptId: null,
         url: `${options.baseUrl}/recipes/import/${job.id}`,
       }
     }

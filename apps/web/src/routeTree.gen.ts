@@ -15,11 +15,11 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AppListRouteImport } from './routes/_app/list'
-import { Route as AppPantryRouteImport } from './routes/_app/pantry'
 import { Route as AppPlanRouteImport } from './routes/_app/plan'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShareRouteImport } from './routes/_app/share'
 import { Route as JoinTokenRouteImport } from './routes/join/$token'
+import { Route as AppPantryIndexRouteImport } from './routes/_app/pantry/index'
 import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 import { Route as AppRecipesDeletedRouteImport } from './routes/_app/recipes/deleted'
 import { Route as AppRecipesDiscoverRouteImport } from './routes/_app/recipes/discover'
@@ -30,6 +30,8 @@ import { Route as AppSettingsHouseholdRouteImport } from './routes/_app/settings
 import { Route as AppSettingsImportExportRouteImport } from './routes/_app/settings/import-export'
 import { Route as AppSettingsServerRouteImport } from './routes/_app/settings/server'
 import { Route as AppSettingsYouRouteImport } from './routes/_app/settings/you'
+import { Route as AppPantryReceiptsIndexRouteImport } from './routes/_app/pantry/receipts/index'
+import { Route as AppPantryReceiptsReceiptIdRouteImport } from './routes/_app/pantry/receipts/$receiptId'
 import { Route as AppRecipesSlugIndexRouteImport } from './routes/_app/recipes/$slug/index'
 import { Route as AppRecipesSlugEditRouteImport } from './routes/_app/recipes/$slug/edit'
 import { Route as AppRecipesImportImportIdRouteImport } from './routes/_app/recipes/import/$importId'
@@ -63,11 +65,6 @@ const AppListRoute = AppListRouteImport.update({
   path: '/list',
   getParentRoute: () => AppRoute,
 } as any)
-const AppPantryRoute = AppPantryRouteImport.update({
-  id: '/pantry',
-  path: '/pantry',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppPlanRoute = AppPlanRouteImport.update({
   id: '/plan',
   path: '/plan',
@@ -87,6 +84,11 @@ const JoinTokenRoute = JoinTokenRouteImport.update({
   id: '/join/$token',
   path: '/join/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppPantryIndexRoute = AppPantryIndexRouteImport.update({
+  id: '/pantry/',
+  path: '/pantry/',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppRecipesIndexRoute = AppRecipesIndexRouteImport.update({
   id: '/recipes/',
@@ -138,6 +140,17 @@ const AppSettingsYouRoute = AppSettingsYouRouteImport.update({
   path: '/you',
   getParentRoute: () => AppSettingsRoute,
 } as any)
+const AppPantryReceiptsIndexRoute = AppPantryReceiptsIndexRouteImport.update({
+  id: '/pantry/receipts/',
+  path: '/pantry/receipts/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPantryReceiptsReceiptIdRoute =
+  AppPantryReceiptsReceiptIdRouteImport.update({
+    id: '/pantry/receipts/$receiptId',
+    path: '/pantry/receipts/$receiptId',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppRecipesSlugIndexRoute = AppRecipesSlugIndexRouteImport.update({
   id: '/recipes/$slug/',
   path: '/recipes/$slug/',
@@ -165,7 +178,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/list': typeof AppListRoute
-  '/pantry': typeof AppPantryRoute
   '/plan': typeof AppPlanRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/share': typeof AppShareRoute
@@ -178,11 +190,14 @@ export interface FileRoutesByFullPath {
   '/settings/import-export': typeof AppSettingsImportExportRoute
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
+  '/pantry/': typeof AppPantryIndexRoute
   '/recipes/': typeof AppRecipesIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
+  '/pantry/receipts/$receiptId': typeof AppPantryReceiptsReceiptIdRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
+  '/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug/': typeof AppRecipesSlugIndexRoute
 }
 export interface FileRoutesByTo {
@@ -190,7 +205,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/list': typeof AppListRoute
-  '/pantry': typeof AppPantryRoute
   '/plan': typeof AppPlanRoute
   '/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
@@ -202,11 +216,14 @@ export interface FileRoutesByTo {
   '/settings/import-export': typeof AppSettingsImportExportRoute
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
+  '/pantry': typeof AppPantryIndexRoute
   '/recipes': typeof AppRecipesIndexRoute
   '/settings': typeof AppSettingsIndexRoute
+  '/pantry/receipts/$receiptId': typeof AppPantryReceiptsReceiptIdRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
+  '/pantry/receipts': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug': typeof AppRecipesSlugIndexRoute
 }
 export interface FileRoutesById {
@@ -216,7 +233,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/_app/list': typeof AppListRoute
-  '/_app/pantry': typeof AppPantryRoute
   '/_app/plan': typeof AppPlanRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/share': typeof AppShareRoute
@@ -230,11 +246,14 @@ export interface FileRoutesById {
   '/_app/settings/import-export': typeof AppSettingsImportExportRoute
   '/_app/settings/server': typeof AppSettingsServerRoute
   '/_app/settings/you': typeof AppSettingsYouRoute
+  '/_app/pantry/': typeof AppPantryIndexRoute
   '/_app/recipes/': typeof AppRecipesIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
+  '/_app/pantry/receipts/$receiptId': typeof AppPantryReceiptsReceiptIdRoute
   '/_app/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
   '/_app/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
   '/_focus/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
+  '/_app/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/_app/recipes/$slug/': typeof AppRecipesSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -244,7 +263,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup'
     | '/list'
-    | '/pantry'
     | '/plan'
     | '/settings'
     | '/share'
@@ -257,11 +275,14 @@ export interface FileRouteTypes {
     | '/settings/import-export'
     | '/settings/server'
     | '/settings/you'
+    | '/pantry/'
     | '/recipes/'
     | '/settings/'
+    | '/pantry/receipts/$receiptId'
     | '/recipes/$slug/edit'
     | '/recipes/import/$importId'
     | '/recipes/$slug/cook'
+    | '/pantry/receipts/'
     | '/recipes/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -269,7 +290,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup'
     | '/list'
-    | '/pantry'
     | '/plan'
     | '/share'
     | '/join/$token'
@@ -281,11 +301,14 @@ export interface FileRouteTypes {
     | '/settings/import-export'
     | '/settings/server'
     | '/settings/you'
+    | '/pantry'
     | '/recipes'
     | '/settings'
+    | '/pantry/receipts/$receiptId'
     | '/recipes/$slug/edit'
     | '/recipes/import/$importId'
     | '/recipes/$slug/cook'
+    | '/pantry/receipts'
     | '/recipes/$slug'
   id:
     | '__root__'
@@ -294,7 +317,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/setup'
     | '/_app/list'
-    | '/_app/pantry'
     | '/_app/plan'
     | '/_app/settings'
     | '/_app/share'
@@ -308,11 +330,14 @@ export interface FileRouteTypes {
     | '/_app/settings/import-export'
     | '/_app/settings/server'
     | '/_app/settings/you'
+    | '/_app/pantry/'
     | '/_app/recipes/'
     | '/_app/settings/'
+    | '/_app/pantry/receipts/$receiptId'
     | '/_app/recipes/$slug/edit'
     | '/_app/recipes/import/$importId'
     | '/_focus/recipes/$slug/cook'
+    | '/_app/pantry/receipts/'
     | '/_app/recipes/$slug/'
   fileRoutesById: FileRoutesById
 }
@@ -368,13 +393,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppListRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/pantry': {
-      id: '/_app/pantry'
-      path: '/pantry'
-      fullPath: '/pantry'
-      preLoaderRoute: typeof AppPantryRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/plan': {
       id: '/_app/plan'
       path: '/plan'
@@ -402,6 +420,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/join/$token'
       preLoaderRoute: typeof JoinTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/pantry/': {
+      id: '/_app/pantry/'
+      path: '/pantry'
+      fullPath: '/pantry/'
+      preLoaderRoute: typeof AppPantryIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/recipes/': {
       id: '/_app/recipes/'
@@ -473,6 +498,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsYouRouteImport
       parentRoute: typeof AppSettingsRoute
     }
+    '/_app/pantry/receipts/': {
+      id: '/_app/pantry/receipts/'
+      path: '/pantry/receipts'
+      fullPath: '/pantry/receipts/'
+      preLoaderRoute: typeof AppPantryReceiptsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/pantry/receipts/$receiptId': {
+      id: '/_app/pantry/receipts/$receiptId'
+      path: '/pantry/receipts/$receiptId'
+      fullPath: '/pantry/receipts/$receiptId'
+      preLoaderRoute: typeof AppPantryReceiptsReceiptIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/recipes/$slug/': {
       id: '/_app/recipes/$slug/'
       path: '/recipes/$slug'
@@ -526,7 +565,6 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppListRoute: typeof AppListRoute
-  AppPantryRoute: typeof AppPantryRoute
   AppPlanRoute: typeof AppPlanRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppShareRoute: typeof AppShareRoute
@@ -535,15 +573,17 @@ interface AppRouteChildren {
   AppRecipesDiscoverRoute: typeof AppRecipesDiscoverRoute
   AppRecipesNewRoute: typeof AppRecipesNewRoute
   AppRecipesReviewRoute: typeof AppRecipesReviewRoute
+  AppPantryIndexRoute: typeof AppPantryIndexRoute
   AppRecipesIndexRoute: typeof AppRecipesIndexRoute
+  AppPantryReceiptsReceiptIdRoute: typeof AppPantryReceiptsReceiptIdRoute
   AppRecipesSlugEditRoute: typeof AppRecipesSlugEditRoute
   AppRecipesImportImportIdRoute: typeof AppRecipesImportImportIdRoute
+  AppPantryReceiptsIndexRoute: typeof AppPantryReceiptsIndexRoute
   AppRecipesSlugIndexRoute: typeof AppRecipesSlugIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppListRoute: AppListRoute,
-  AppPantryRoute: AppPantryRoute,
   AppPlanRoute: AppPlanRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppShareRoute: AppShareRoute,
@@ -552,9 +592,12 @@ const AppRouteChildren: AppRouteChildren = {
   AppRecipesDiscoverRoute: AppRecipesDiscoverRoute,
   AppRecipesNewRoute: AppRecipesNewRoute,
   AppRecipesReviewRoute: AppRecipesReviewRoute,
+  AppPantryIndexRoute: AppPantryIndexRoute,
   AppRecipesIndexRoute: AppRecipesIndexRoute,
+  AppPantryReceiptsReceiptIdRoute: AppPantryReceiptsReceiptIdRoute,
   AppRecipesSlugEditRoute: AppRecipesSlugEditRoute,
   AppRecipesImportImportIdRoute: AppRecipesImportImportIdRoute,
+  AppPantryReceiptsIndexRoute: AppPantryReceiptsIndexRoute,
   AppRecipesSlugIndexRoute: AppRecipesSlugIndexRoute,
 }
 

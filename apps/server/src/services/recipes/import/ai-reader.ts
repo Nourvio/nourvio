@@ -21,6 +21,9 @@ export type { AiDeps }
 /** The most photos one recipe is read from: a recipe over a few pages. */
 export const MAX_PHOTOS = 4
 
+/** The largest PDF of a recipe. */
+const MAX_PDF_BYTES = 10_000_000
+
 /** Page text past this is left out; the recipe is nearly always before it. */
 const MAX_PAGE_TEXT = 40_000
 
@@ -175,9 +178,11 @@ export async function readRecipe(
     sourceUrl?: string | null
   }
 ): Promise<RecipeInput> {
-  const photos = options.content.some(
-    (part) => part.type === "file" && part.mediaType.startsWith("image/")
+  const files = options.content.flatMap((part) =>
+    part.type === "file" ? [part.mediaType] : []
   )
+  const photos = files.some((type) => type.startsWith("image/"))
+  const pdfs = files.includes("application/pdf")
   const system = await systemFor(em)
   const { output } = await useAi(
     deps,
@@ -186,7 +191,11 @@ export async function readRecipe(
       householdId: options.householdId,
       userId: options.userId,
       task: "import",
-      needs: photos ? ["structured", "images"] : ["structured"],
+      needs: [
+        "structured",
+        ...(photos ? (["images"] as const) : []),
+        ...(pdfs ? (["pdfs"] as const) : []),
+      ],
     },
     (model) =>
       generateText({
@@ -227,6 +236,19 @@ export async function photoContent(
   }
   const content: Exclude<UserContent, string> = []
   for (const photo of photos) {
+    // A PDF goes as it is: models read its pages.
+    if (photo.subarray(0, 5).toString("latin1") === "%PDF-") {
+      if (photo.length > MAX_PDF_BYTES) {
+        throw new AppError(
+          "too_large",
+          "pdf_too_large",
+          "That PDF is too big. Use one under 10 MB.",
+          { photos: "Use a PDF under 10 MB." }
+        )
+      }
+      content.push({ type: "file", data: photo, mediaType: "application/pdf" })
+      continue
+    }
     let jpeg: Buffer
     try {
       jpeg = await sharp(photo, { failOn: "error" })
@@ -243,8 +265,8 @@ export async function photoContent(
       throw new AppError(
         "invalid",
         "not_a_photo",
-        "One of those isn't a photo Merran can read. Use JPEG, PNG or WebP.",
-        { photos: "Use JPEG, PNG or WebP." }
+        "One of those isn't a photo or PDF Merran can read. Use JPEG, PNG, WebP or PDF.",
+        { photos: "Use JPEG, PNG, WebP or PDF." }
       )
     }
     content.push({ type: "file", data: jpeg, mediaType: "image/jpeg" })
@@ -253,8 +275,8 @@ export async function photoContent(
     type: "text",
     text:
       photos.length === 1
-        ? "The photo shows a recipe."
-        : `The ${photos.length} photos show one recipe, in order.`,
+        ? "This shows a recipe."
+        : `These ${photos.length} show one recipe, in order.`,
   })
   return content
 }

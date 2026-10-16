@@ -56,6 +56,15 @@ export function SharePage({ search }: { search: ShareSearch }) {
           })
           return
         }
+        if (result.outcome === "receipt" && result.receiptId) {
+          // A receipt: on to look it over for the pantry.
+          await navigate({
+            to: "/pantry/receipts/$receiptId",
+            params: { receiptId: result.receiptId },
+            replace: true,
+          })
+          return
+        }
         if (result.outcome === "failed" || !result.recipe) {
           setFailed(result.message)
           return

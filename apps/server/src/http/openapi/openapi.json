@@ -5057,6 +5057,293 @@
           "storedIn": "freezer"
         }
       },
+      "ReceiptList": {
+        "type": "object",
+        "properties": {
+          "receipts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Receipt"
+            }
+          }
+        },
+        "required": [
+          "receipts"
+        ],
+        "example": {
+          "receipts": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000002e",
+              "store": "Walmart",
+              "date": "2026-10-14",
+              "total": 48.12,
+              "lines": [
+                {
+                  "id": "0d1b5c2a9e44",
+                  "text": "GV WHL MLK 1GAL",
+                  "name": "whole milk",
+                  "amount": "1 gal",
+                  "price": 3.48,
+                  "kind": "food",
+                  "listItem": {
+                    "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+                    "name": "milk"
+                  }
+                }
+              ],
+              "files": [
+                {
+                  "url": "/api/pantry/receipts/0199e8b0-5a10-7a01-8b00-00000000002e/files/0",
+                  "mediaType": "image/jpeg"
+                }
+              ],
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "Receipt": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "store": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "date": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The day on it."
+          },
+          "total": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReceiptLine"
+            }
+          },
+          "files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "mediaType": {
+                  "type": "string",
+                  "enum": [
+                    "image/jpeg",
+                    "application/pdf"
+                  ]
+                }
+              },
+              "required": [
+                "url",
+                "mediaType"
+              ]
+            },
+            "description": "The receipt's photos or PDF, to compare with."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "store",
+          "date",
+          "total",
+          "lines",
+          "files",
+          "createdAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000002e",
+          "store": "Walmart",
+          "date": "2026-10-14",
+          "total": 48.12,
+          "lines": [
+            {
+              "id": "0d1b5c2a9e44",
+              "text": "GV WHL MLK 1GAL",
+              "name": "whole milk",
+              "amount": "1 gal",
+              "price": 3.48,
+              "kind": "food",
+              "listItem": {
+                "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+                "name": "milk"
+              }
+            }
+          ],
+          "files": [
+            {
+              "url": "/api/pantry/receipts/0199e8b0-5a10-7a01-8b00-00000000002e/files/0",
+              "mediaType": "image/jpeg"
+            }
+          ],
+          "createdAt": "2026-10-15T18:30:00.000Z"
+        }
+      },
+      "ReceiptLine": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string",
+            "description": "As printed."
+          },
+          "name": {
+            "type": "string",
+            "description": "What it is, plainly."
+          },
+          "amount": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "price": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "food",
+              "household",
+              "other"
+            ],
+            "description": "Food goes in the pantry; household things and the rest don't, unless they're picked."
+          },
+          "listItem": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ],
+            "description": "The shopping list item it was bought for, taken off the list when it's added."
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "name",
+          "amount",
+          "price",
+          "kind",
+          "listItem"
+        ],
+        "example": {
+          "id": "0d1b5c2a9e44",
+          "text": "GV WHL MLK 1GAL",
+          "name": "whole milk",
+          "amount": "1 gal",
+          "price": 3.48,
+          "kind": "food",
+          "listItem": {
+            "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+            "name": "milk"
+          }
+        }
+      },
+      "ReceiptAdded": {
+        "type": "object",
+        "properties": {
+          "added": {
+            "type": "integer"
+          },
+          "offTheList": {
+            "type": "integer",
+            "description": "Shopping list items taken off with them."
+          }
+        },
+        "required": [
+          "added",
+          "offTheList"
+        ],
+        "example": {
+          "added": 12,
+          "offTheList": 4
+        }
+      },
+      "AddReceiptInput": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "amount": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 60
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "amount"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 300
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "example": {
+          "items": [
+            {
+              "id": "0d1b5c2a9e44",
+              "name": "whole milk",
+              "amount": "1 gal"
+            }
+          ]
+        }
+      },
       "PantryItems": {
         "type": "object",
         "properties": {
@@ -10056,9 +10343,10 @@
               "added",
               "already",
               "importing",
+              "receipt",
               "failed"
             ],
-            "description": "Added; already in the library (this is that recipe); several links, now importing in the background; or not added."
+            "description": "Added; already in the library (this is that recipe); several links, now importing in the background; a receipt, read and waiting for a look before it goes in the pantry; or not added."
           },
           "code": {
             "type": [
@@ -10094,6 +10382,13 @@
               "name"
             ]
           },
+          "receiptId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A receipt: the one to look over, at /pantry/receipts/{receiptId}."
+          },
           "importId": {
             "type": [
               "string",
@@ -10114,6 +10409,7 @@
           "code",
           "message",
           "recipe",
+          "receiptId",
           "importId",
           "url"
         ],
@@ -10127,6 +10423,7 @@
             "name": "Lemon Chicken"
           },
           "importId": null,
+          "receiptId": null,
           "url": "https://merran.example.com/recipes/lemon-chicken"
         }
       },
@@ -15299,6 +15596,472 @@
         }
       }
     },
+    "/api/pantry/receipts": {
+      "get": {
+        "operationId": "listReceipts",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Receipts waiting for a look",
+        "description": "Scanned, shared or sent to the assistant, and not added or discarded yet, newest first. Each is forgotten after a day. With an API key, it needs the `pantry: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:read",
+        "responses": {
+          "200": {
+            "description": "The receipts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "scanReceipt",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Scan a receipt",
+        "description": "Reads a receipt into a draft to look over before anything goes in the pantry: photos of a paper one, screenshots or a PDF of an emailed one (up to 6 files, one `file` field each), or its `text`. Each line says what it is, how much, and the shopping list item it was bought for. Add it with `POST /pantry/receipts/{receiptId}/add`; it's forgotten after a day. Uses the household's model for receipts, which must be able to read photos or PDFs if those are sent, and counts towards its AI spend. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "A photo, screenshot or PDF of the receipt."
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "The receipt's text, as from an email."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Read, waiting for a look.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nothing to read, or a file Merran can't read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The files are too big.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "It isn't a receipt (`receipt_is_recipe` when it's a recipe), or the model can't read photos or PDFs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This month's AI limit is reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/receipts/{receiptId}": {
+      "get": {
+        "operationId": "getReceipt",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "A receipt waiting for a look",
+        "description": "One scanned, shared or sent to the assistant, and not added or discarded yet. With an API key, it needs the `pantry: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002e"
+            },
+            "required": true,
+            "name": "receiptId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The receipt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Receipt"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such receipt waiting: added, discarded, or a day old.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "discardReceipt",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Discard a receipt",
+        "description": "Forgets it, with its photos, without adding anything. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002e"
+            },
+            "required": true,
+            "name": "receiptId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Discarded."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such receipt waiting.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/receipts/{receiptId}/add": {
+      "post": {
+        "operationId": "addReceipt",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Put a receipt's lines in the pantry",
+        "description": "The lines picked, named and measured as looked over, go in the pantry like shopping put away: in the fridge, freezer or cupboard with a use-by guess, kept for the meals the list item was for, and noted for usual buys. The list items they were bought for come off the list. The receipt's done with after. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002e"
+            },
+            "required": true,
+            "name": "receiptId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddReceiptInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptAdded"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such receipt waiting.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/receipts/{receiptId}/files/{index}": {
+      "get": {
+        "operationId": "getReceiptFile",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "A receipt's photo or PDF",
+        "description": "To compare with its lines while looking it over. With an API key, it needs the `pantry: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002e"
+            },
+            "required": true,
+            "name": "receiptId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "example": "0"
+            },
+            "required": true,
+            "name": "index",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photo, as JPEG, or the PDF.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such receipt waiting, or no such file.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pantry/restore": {
       "post": {
         "operationId": "restorePantryItems",
@@ -17777,8 +18540,8 @@
         "tags": [
           "Recipes"
         ],
-        "summary": "Add a recipe from photos",
-        "description": "Photos of one recipe, up to 4, in order: a cookbook page or two, a card, a screenshot. Read by AI and added as a recipe. JPEG, PNG or WebP, up to 15 MB each. Uses the household's model for importing, which must be able to read photos, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.",
+        "summary": "Add a recipe from photos or a PDF",
+        "description": "Photos of one recipe, up to 4, in order: a cookbook page or two, a card, a screenshot; or a PDF of it. Read by AI and added as a recipe. JPEG, PNG or WebP up to 15 MB each, or a PDF up to 10 MB. Uses the household's model for importing, which must be able to read photos or PDFs, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -17860,7 +18623,7 @@
             }
           },
           "422": {
-            "description": "No recipe found in them, or the model can't read photos.",
+            "description": "No recipe found in them, or the model can't read photos or PDFs.",
             "content": {
               "application/json": {
                 "schema": {
@@ -21038,7 +21801,7 @@
           "Recipes"
         ],
         "summary": "Share something to Merran",
-        "description": "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Without a link, photos (up to 4, as one recipe) or text of a recipe are read by AI, when the household has AI for importing. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.",
+        "description": "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Without a link, photos, a PDF or text are read by AI: a receipt waits to be looked over for the pantry (`GET /pantry/receipts/{receiptId}`), and a recipe (up to 4 photos, as one) is added, when the household has AI for receipts and importing. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.",
         "security": [
           {
             "session": []

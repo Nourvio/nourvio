@@ -42,6 +42,9 @@ import {
   tidyView,
 } from "../recipes/review/tidy.ts"
 import { listTags, tagKey, tagsOf } from "../recipes/tags.ts"
+import { readReceipt } from "../receipts/receipts.ts"
+import type { FileStore } from "../storage/files.ts"
+import { readChatFile } from "./files.ts"
 
 // What the assistant can do: look things up in the household's library,
 // plan, list and pantry, and propose changes, which become cards in the
@@ -51,6 +54,8 @@ type Context = {
   householdId: string
   userId: string
   chatId: string
+  /** The photos and PDFs sent with the message being answered. */
+  files: readonly { id: string }[]
 }
 
 /** A recipe by its id, address or name: the closest one, by name. */
@@ -101,7 +106,7 @@ const RecipeFields = {
 }
 
 export function assistantTools(
-  deps: AiDeps,
+  deps: AiDeps & { files: FileStore },
   root: EntityManager,
   context: Context
 ): ToolSet {
@@ -455,6 +460,62 @@ export function assistantTools(
           })
         }
         return propose({ kind: "meals", summary, payload: { meals: planned } })
+      },
+    }),
+
+    scan_receipt: tool({
+      description:
+        "Read a receipt sent with this message (a photo, screenshots or a PDF) into a draft for the pantry: they look it over, fix anything, and add it, which takes what they bought off the shopping list too. Don't list its lines in the chat.",
+      inputSchema: z.object({}),
+      execute: async () => {
+        if (context.files.length === 0) {
+          throw new AppError(
+            "invalid",
+            "no_receipt",
+            "No photo or PDF came with this message. Ask them to add the receipt with +."
+          )
+        }
+        const owner = {
+          householdId: context.householdId,
+          userId: context.userId,
+        }
+        const input = await Promise.all(
+          context.files.map(async (file) => {
+            const kept = await readChatFile(deps.files, owner, file.id)
+            if (!kept) {
+              throw new AppError(
+                "not_found",
+                "file_not_found",
+                "That file is gone. Ask them to add it again."
+              )
+            }
+            return { body: kept.body, type: kept.mediaType }
+          })
+        )
+        const { what, receipt } = await readReceipt(fork(), deps, {
+          householdId: context.householdId,
+          userId: context.userId,
+          input: { files: input, text: null },
+        })
+        if (!receipt) {
+          throw new AppError(
+            "unprocessable",
+            "not_a_receipt",
+            what === "recipe"
+              ? "That's a recipe, not a receipt: offer it with propose_new_recipe."
+              : "There's no receipt in that."
+          )
+        }
+        return {
+          receipt: {
+            id: receipt.id,
+            store: receipt.store,
+            date: receipt.date,
+            lines: receipt.lines.length,
+            food: receipt.lines.filter((line) => line.kind === "food").length,
+            onList: receipt.lines.filter((line) => line.listItem).length,
+          },
+        }
       },
     }),
 

@@ -185,7 +185,7 @@
       },
       "share": {
         "title": "Share to Merran",
-        "description": "Add a recipe from any app on your phone: share its web page, or a link to it, to Merran.",
+        "description": "Add a recipe from any app on your phone: share its web page, or a link to it, to Merran. From an iPhone, photos and PDFs work too, of a recipe or of a receipt for the pantry.",
         "android": "Android",
         "androidSteps": "In Chrome, open the menu (⋮) and tap <b>Install app</b> or <b>Add to home screen</b>. Then, in any app, tap <b>Share</b> and pick <b>Merran</b>.",
         "needsHttps": "This needs Merran opened at its https address, not a local one like this.",
@@ -830,9 +830,9 @@
       "open": "Open it",
       "again": "Add it again",
       "several": "Got several? Paste them all",
-      "noLink": "No link? AI can read a recipe from its text or a photo.",
+      "noLink": "No link? AI can read a recipe from its text, a photo or a PDF.",
       "fromText": "Paste text",
-      "fromPhotos": "Photos",
+      "fromPhotos": "Photos or PDF",
       "text": {
         "title": "Paste a recipe",
         "description": "From an email, a note or a message. AI reads it into a recipe for you to check.",
@@ -845,14 +845,14 @@
         "submit": "Read it"
       },
       "photos": {
-        "title": "Add from photos",
-        "description": "A cookbook page or two, a card or a screenshot: up to 4 photos of one recipe, in order. AI reads them into a recipe for you to check.",
-        "choose": "Take or choose photos",
+        "title": "Add from photos or a PDF",
+        "description": "A cookbook page or two, a card, a screenshot or a PDF: up to 4 of one recipe, in order. AI reads them into a recipe for you to check.",
+        "choose": "Take or choose photos, or a PDF",
         "more": "Add another",
-        "photo": "Photo {{n}}",
-        "remove": "Take out photo {{n}}",
-        "tooMany": "Up to 4 photos for one recipe. The first 4 are in.",
-        "needed": "Add a photo of the recipe.",
+        "photo": "Page {{n}}",
+        "remove": "Take out page {{n}}",
+        "tooMany": "Up to 4 for one recipe. The first 4 are in.",
+        "needed": "Add a photo or PDF of the recipe.",
         "submit_one": "Read it",
         "submit_other": "Read them"
       },
@@ -1569,6 +1569,51 @@
       "date": "A date",
       "none": "No date",
       "set": "Set"
+    },
+    "receipts": {
+      "scan": "Scan a receipt",
+      "title": "Receipt",
+      "description": "What you bought goes in the pantry, and comes off the shopping list.",
+      "photo": "Take a photo",
+      "photoDetail": "Of a paper receipt",
+      "files": "Choose files",
+      "filesDetail": "Photos, screenshots or a PDF",
+      "paste": "Paste text",
+      "pasteDetail": "From an emailed receipt",
+      "pastePlaceholder": "Paste the receipt here: the items and prices from the email.",
+      "readIt": "Read it",
+      "reading": "Reading the receipt. This takes a few seconds.",
+      "addRecipe": "Add it as a recipe",
+      "shareHint": "Got one by email? Share it to Merran from your phone, and it waits on the Pantry page.",
+      "scanAnother": "Scan a receipt",
+      "lines_one": "{{count}} thing",
+      "lines_other": "{{count}} things",
+      "page": "Page {{n}}",
+      "show": "Show {{name}}",
+      "compare": "Tap to compare",
+      "hint": "Food is picked to go in the pantry. Fix any name or amount first.",
+      "all": "Pick all",
+      "none": "Pick none",
+      "pick": "Put {{name}} in the pantry",
+      "name": "What it is",
+      "amount": "Amount",
+      "onList": "On your list",
+      "kinds": {
+        "household": "Not food",
+        "other": "Not food"
+      },
+      "offTheList_one": "{{count}} comes off the list",
+      "offTheList_other": "{{count}} come off the list",
+      "discard": "Discard",
+      "add_one": "Add {{count}} to the pantry",
+      "add_other": "Add {{count}} to the pantry",
+      "added_one": "Added {{count}} thing to the pantry.",
+      "added_other": "Added {{count}} things to the pantry.",
+      "addedOff_one": "Added {{count}} thing to the pantry, and took {{off}} off the list.",
+      "addedOff_other": "Added {{count}} things to the pantry, and took {{off}} off the list.",
+      "waiting": "A receipt to look over",
+      "waitingFrom": "A receipt from {{store}} to look over",
+      "lookOver": "Look it over"
     }
   },
   "install": {
@@ -1911,6 +1956,12 @@
         "notCovered": "Discover needs AI, and this household has no AI key yet.",
         "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
         "ownLimit": "This month's limit on the household's own AI keys is reached."
+      },
+      "receipts": {
+        "noKey": "Reading receipts needs AI, and this household has no AI key yet.",
+        "notCovered": "Reading receipts needs AI, and this household has no AI key yet.",
+        "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
+        "ownLimit": "This month's limit on the household's own AI keys is reached."
       }
     }
   },
@@ -1951,7 +2002,8 @@
       "web_search": "Searched the web",
       "web_search_query": "Searched the web for “{{query}}”",
       "google_search": "Searched the web",
-      "google_search_query": "Searched the web for “{{query}}”"
+      "google_search_query": "Searched the web for “{{query}}”",
+      "scan_receipt": "Read the receipt"
     },
     "cards": {
       "apply": {
