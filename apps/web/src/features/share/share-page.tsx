@@ -47,6 +47,15 @@ export function SharePage({ search }: { search: ShareSearch }) {
             body: { title: search.title, text: search.text, url: search.url },
           })
         )
+        if (result.outcome === "importing" && result.importId) {
+          // Several links: on to their import, going in the background.
+          await navigate({
+            to: "/recipes/import/$importId",
+            params: { importId: result.importId },
+            replace: true,
+          })
+          return
+        }
         if (result.outcome === "failed" || !result.recipe) {
           setFailed(result.message)
           return

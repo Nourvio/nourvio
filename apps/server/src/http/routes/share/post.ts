@@ -44,9 +44,9 @@ const SharedFormSchema = z.object({
 
 const ShareOutcomeSchema = z
   .object({
-    outcome: z.enum(["added", "already", "failed"]).openapi({
+    outcome: z.enum(["added", "already", "importing", "failed"]).openapi({
       description:
-        "Added, already in the library (this is that recipe), or not added.",
+        "Added; already in the library (this is that recipe); several links, now importing in the background; or not added.",
     }),
     code: z.string().nullable().openapi({
       description:
@@ -59,7 +59,14 @@ const ShareOutcomeSchema = z
     recipe: z
       .object({ id: z.string(), slug: z.string(), name: z.string() })
       .nullable(),
-    url: z.string().nullable().openapi({ description: "The recipe's page." }),
+    importId: z.string().nullable().openapi({
+      description:
+        "Several links: the import, to follow at /recipes/import/links/{importId}.",
+    }),
+    url: z
+      .string()
+      .nullable()
+      .openapi({ description: "The recipe's page, or the import's." }),
   })
   .openapi("ShareOutcome", {
     example: {
@@ -71,6 +78,7 @@ const ShareOutcomeSchema = z
         slug: "lemon-chicken",
         name: "Lemon Chicken",
       },
+      importId: null,
       url: "https://merran.example.com/recipes/lemon-chicken",
     },
   })
@@ -84,7 +92,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Share something to Merran",
   description:
-    "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added.",
+    "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added.",
   ...keys,
   middleware: [
     ...keys.middleware,
@@ -111,6 +119,7 @@ const route = createRoute({
   },
   responses: {
     201: jsonResponse(ShareOutcomeSchema, "Added."),
+    202: jsonResponse(ShareOutcomeSchema, "Several links, importing."),
     200: jsonResponse(ShareOutcomeSchema, "Already there, or not added."),
     413: errorResponse("Too big to share."),
     ...SIGNED_IN_ERRORS,
@@ -173,6 +182,12 @@ export default (router: Router, { config, fetcher, files }: AppDeps) => {
         baseUrl: config.publicUrl ?? new URL(c.req.url).origin,
       }
     )
-    return c.json(result, result.outcome === "added" ? 201 : 200)
+    const status =
+      result.outcome === "added"
+        ? 201
+        : result.outcome === "importing"
+          ? 202
+          : 200
+    return c.json(result, status)
   })
 }

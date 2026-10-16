@@ -2,37 +2,55 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import type { Fetcher } from "../fetch/public-fetch.ts"
 import { importLink } from "../recipes/import/import-link.ts"
+import { MAX_LINKS, startLinkImport } from "../recipes/import/import-links.ts"
 import type { FileStore } from "../storage/files.ts"
 import { sharedLinks, type Shared } from "./links.ts"
 
 // Something shared to Merran, from Android's share sheet or an iPhone
-// Shortcut, dealt with at once. For now that's a link to a recipe, which is
-// imported; photos and text need the assistant, which comes later.
+// Shortcut, dealt with at once. For now that's links to recipes: one is
+// imported there and then, several start an import that goes on in the
+// background. Photos and text need the assistant, which comes later.
 
-export type ShareOutcome =
-  | {
-      outcome: "added" | "already"
-      code: null
-      /** Said in words, so a Shortcut can show it as it is. */
-      message: string
-      recipe: { id: string; slug: string; name: string }
-      /** The recipe's page. */
-      url: string
-    }
-  | {
-      outcome: "failed"
-      /** Stable, for programs: "no_link", "no_recipe_data" and the like. */
-      code: string
-      message: string
-      recipe: null
-      url: null
-    }
+type Base = {
+  /** Said in words, so a Shortcut can show it as it is. */
+  message: string
+}
+
+export type ShareOutcome = Base &
+  (
+    | {
+        outcome: "added" | "already"
+        code: null
+        recipe: { id: string; slug: string; name: string }
+        importId: null
+        /** The recipe's page. */
+        url: string
+      }
+    | {
+        outcome: "importing"
+        code: null
+        recipe: null
+        /** The import, to follow at /recipes/import/links/{importId}. */
+        importId: string
+        /** Its page. */
+        url: string
+      }
+    | {
+        outcome: "failed"
+        /** Stable, for programs: "no_link", "no_recipe_data" and the like. */
+        code: string
+        recipe: null
+        importId: null
+        url: null
+      }
+  )
 
 const failed = (code: string, message: string): ShareOutcome => ({
   outcome: "failed",
   code,
   message,
   recipe: null,
+  importId: null,
   url: null,
 })
 
@@ -44,7 +62,7 @@ export async function shareToMerran(
     householdId: string
     userId: string
     shared: Shared
-    /** Merran's own address, for the recipe's page. */
+    /** Merran's own address, for the pages it links to. */
     baseUrl: string
   }
 ): Promise<ShareOutcome> {
@@ -59,11 +77,25 @@ export async function shareToMerran(
       "Merran can only add recipes from links for now. Share the recipe's web page."
     )
   }
-  if (links.length > 1) {
-    return failed("several_links", "Share one link at a time for now.")
-  }
 
   try {
+    if (links.length > 1) {
+      const job = await startLinkImport(em, {
+        householdId: options.householdId,
+        userId: options.userId,
+        urls: links,
+      })
+      const count = Math.min(links.length, MAX_LINKS)
+      return {
+        outcome: "importing",
+        code: null,
+        message: `Adding ${count} recipes to Merran.`,
+        recipe: null,
+        importId: job.id,
+        url: `${options.baseUrl}/recipes/import/${job.id}`,
+      }
+    }
+
     const { recipe, duplicate } = await importLink(em, deps, {
       householdId: options.householdId,
       userId: options.userId,
@@ -76,6 +108,7 @@ export async function shareToMerran(
         ? `${recipe.name} is in Merran already.`
         : `Added ${recipe.name} to Merran.`,
       recipe: { id: recipe.id, slug: recipe.slug, name: recipe.name },
+      importId: null,
       url: `${options.baseUrl}/recipes/${recipe.slug}`,
     }
   } catch (err) {

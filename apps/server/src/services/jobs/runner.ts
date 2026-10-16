@@ -35,8 +35,15 @@ export type JobContext = {
   householdId: string | null
   /** Its own entity manager: scoped to the job's household when it has one. */
   em: EntityManager
-  /** Says how far it's got, for "Importing 12 of 52". */
-  progress(done: number, total: number): Promise<void>
+  /**
+   * Says how far it's got, for "Importing 12 of 52", and what it's done so
+   * far when someone follows it item by item (kept as its result).
+   */
+  progress(
+    done: number,
+    total: number,
+    soFar?: Record<string, unknown>
+  ): Promise<void>
   /** Aborted when someone stops the job, or Merran is shutting down. */
   signal: AbortSignal
   logger: Logger
@@ -281,14 +288,14 @@ export class JobRunner {
       em: householdId
         ? forHousehold(this.#deps.database.em, householdId)
         : this.#em(),
-      progress: async (done, total) => {
+      progress: async (done, total, soFar) => {
         const now = Date.now()
         if (done < total && now - lastProgress < PROGRESS_EVERY_MS) return
         lastProgress = now
         await this.#em().nativeUpdate(
           Job,
           { id: job.id },
-          { progress: { done, total } }
+          { progress: { done, total }, ...(soFar ? { result: soFar } : {}) }
         )
       },
       signal: controller.signal,

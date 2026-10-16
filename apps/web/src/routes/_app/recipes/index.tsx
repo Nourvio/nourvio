@@ -33,6 +33,7 @@ import {
   DeleteRecipesDialog,
   TagRecipesDialog,
 } from "@/features/recipes/bulk-dialogs"
+import { LinkImportsBanner } from "@/features/recipes/link-imports-banner"
 import { ManageTagsDialog } from "@/features/recipes/manage-tags-dialog"
 import {
   RECIPE_SORTS,
@@ -158,6 +159,7 @@ function RecipesPage() {
       <ManageTagsDialog open={managingTags} onOpenChange={setManagingTags} />
 
       <div className="space-y-6">
+        <LinkImportsBanner />
         <RecipeFilters search={search} onChange={setSearch} />
 
         {recipes.isPending ? (

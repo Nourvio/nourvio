@@ -30,6 +30,8 @@ export type NewJob = {
   runAt?: Date
   maxAttempts?: number
   createdBy?: string | null
+  /** What it shows before it starts, for a job followed item by item. */
+  result?: Record<string, unknown>
 }
 
 /**
@@ -52,6 +54,7 @@ export async function enqueue(em: EntityManager, job: NewJob) {
     runAt: job.runAt ?? new Date(),
     maxAttempts: job.maxAttempts ?? 3,
     createdBy: job.createdBy ?? null,
+    result: job.result ?? null,
   })
   await em.flush()
   wake()

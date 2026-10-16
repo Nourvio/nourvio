@@ -19,10 +19,10 @@ export const JobSchema = z
       .object({ done: z.number(), total: z.number() })
       .nullable()
       .openapi({ description: "How far it's got, once it says." }),
-    result: z
-      .record(z.string(), z.unknown())
-      .nullable()
-      .openapi({ description: "What it did, once it's done." }),
+    result: z.record(z.string(), z.unknown()).nullable().openapi({
+      description:
+        "What it did, once it's done. A job followed item by item, like importing several links, says what it's done so far as it goes.",
+    }),
     error: z
       .string()
       .nullable()

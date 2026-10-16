@@ -30,6 +30,7 @@ import { Route as AppSettingsServerRouteImport } from './routes/_app/settings/se
 import { Route as AppSettingsYouRouteImport } from './routes/_app/settings/you'
 import { Route as AppRecipesSlugIndexRouteImport } from './routes/_app/recipes/$slug/index'
 import { Route as AppRecipesSlugEditRouteImport } from './routes/_app/recipes/$slug/edit'
+import { Route as AppRecipesImportImportIdRouteImport } from './routes/_app/recipes/import/$importId'
 import { Route as FocusRecipesSlugCookRouteImport } from './routes/_focus/recipes/$slug/cook'
 
 const AppRoute = AppRouteImport.update({
@@ -135,6 +136,12 @@ const AppRecipesSlugEditRoute = AppRecipesSlugEditRouteImport.update({
   path: '/recipes/$slug/edit',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRecipesImportImportIdRoute =
+  AppRecipesImportImportIdRouteImport.update({
+    id: '/recipes/import/$importId',
+    path: '/recipes/import/$importId',
+    getParentRoute: () => AppRoute,
+  } as any)
 const FocusRecipesSlugCookRoute = FocusRecipesSlugCookRouteImport.update({
   id: '/recipes/$slug/cook',
   path: '/recipes/$slug/cook',
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/recipes/': typeof AppRecipesIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
+  '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/recipes/$slug/': typeof AppRecipesSlugIndexRoute
 }
@@ -181,6 +189,7 @@ export interface FileRoutesByTo {
   '/recipes': typeof AppRecipesIndexRoute
   '/settings': typeof AppSettingsIndexRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
+  '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/recipes/$slug': typeof AppRecipesSlugIndexRoute
 }
@@ -206,6 +215,7 @@ export interface FileRoutesById {
   '/_app/recipes/': typeof AppRecipesIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
+  '/_app/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
   '/_focus/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/_app/recipes/$slug/': typeof AppRecipesSlugIndexRoute
 }
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/recipes/'
     | '/settings/'
     | '/recipes/$slug/edit'
+    | '/recipes/import/$importId'
     | '/recipes/$slug/cook'
     | '/recipes/$slug/'
   fileRoutesByTo: FileRoutesByTo
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/recipes'
     | '/settings'
     | '/recipes/$slug/edit'
+    | '/recipes/import/$importId'
     | '/recipes/$slug/cook'
     | '/recipes/$slug'
   id:
@@ -275,6 +287,7 @@ export interface FileRouteTypes {
     | '/_app/recipes/'
     | '/_app/settings/'
     | '/_app/recipes/$slug/edit'
+    | '/_app/recipes/import/$importId'
     | '/_focus/recipes/$slug/cook'
     | '/_app/recipes/$slug/'
   fileRoutesById: FileRoutesById
@@ -436,6 +449,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesSlugEditRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/recipes/import/$importId': {
+      id: '/_app/recipes/import/$importId'
+      path: '/recipes/import/$importId'
+      fullPath: '/recipes/import/$importId'
+      preLoaderRoute: typeof AppRecipesImportImportIdRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_focus/recipes/$slug/cook': {
       id: '/_focus/recipes/$slug/cook'
       path: '/recipes/$slug/cook'
@@ -477,6 +497,7 @@ interface AppRouteChildren {
   AppRecipesNewRoute: typeof AppRecipesNewRoute
   AppRecipesIndexRoute: typeof AppRecipesIndexRoute
   AppRecipesSlugEditRoute: typeof AppRecipesSlugEditRoute
+  AppRecipesImportImportIdRoute: typeof AppRecipesImportImportIdRoute
   AppRecipesSlugIndexRoute: typeof AppRecipesSlugIndexRoute
 }
 
@@ -491,6 +512,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRecipesNewRoute: AppRecipesNewRoute,
   AppRecipesIndexRoute: AppRecipesIndexRoute,
   AppRecipesSlugEditRoute: AppRecipesSlugEditRoute,
+  AppRecipesImportImportIdRoute: AppRecipesImportImportIdRoute,
   AppRecipesSlugIndexRoute: AppRecipesSlugIndexRoute,
 }
 

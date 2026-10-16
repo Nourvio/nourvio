@@ -1015,7 +1015,7 @@
               "null"
             ],
             "additionalProperties": {},
-            "description": "What it did, once it's done."
+            "description": "What it did, once it's done. A job followed item by item, like importing several links, says what it's done so far as it goes."
           },
           "error": {
             "type": [
@@ -2370,6 +2370,339 @@
           "duplicate": false
         }
       },
+      "LinkImportList": {
+        "type": "object",
+        "properties": {
+          "imports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LinkImport"
+            }
+          }
+        },
+        "required": [
+          "imports"
+        ],
+        "example": {
+          "imports": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+              "status": "running",
+              "tag": "to try",
+              "total": 2,
+              "done": 1,
+              "added": 1,
+              "already": 0,
+              "failed": 0,
+              "stopped": 0,
+              "items": [
+                {
+                  "url": "https://example.com/garlic-rice",
+                  "state": "added",
+                  "recipe": {
+                    "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                    "slug": "garlic-rice",
+                    "name": "Garlic Rice",
+                    "photo": null
+                  },
+                  "error": null
+                },
+                {
+                  "url": "https://example.com/lemon-chicken",
+                  "state": "adding",
+                  "recipe": null,
+                  "error": null
+                }
+              ],
+              "createdAt": "2026-10-15T18:30:00.000Z",
+              "finishedAt": null
+            }
+          ]
+        }
+      },
+      "LinkImport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The import's job."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "tag": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total": {
+            "type": "integer"
+          },
+          "done": {
+            "type": "integer"
+          },
+          "added": {
+            "type": "integer"
+          },
+          "already": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "stopped": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "waiting",
+                    "adding",
+                    "added",
+                    "already",
+                    "failed",
+                    "stopped"
+                  ],
+                  "description": "Where the link has got to: added, already in the library, failed (see error), or stopped before it was reached."
+                },
+                "recipe": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "photo": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slug",
+                    "name",
+                    "photo"
+                  ],
+                  "description": "The recipe it made, or was already."
+                },
+                "error": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "url",
+                "state",
+                "recipe",
+                "error"
+              ]
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "tag",
+          "total",
+          "done",
+          "added",
+          "already",
+          "failed",
+          "stopped",
+          "items",
+          "createdAt",
+          "finishedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+          "status": "running",
+          "tag": "to try",
+          "total": 2,
+          "done": 1,
+          "added": 1,
+          "already": 0,
+          "failed": 0,
+          "stopped": 0,
+          "items": [
+            {
+              "url": "https://example.com/garlic-rice",
+              "state": "added",
+              "recipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                "slug": "garlic-rice",
+                "name": "Garlic Rice",
+                "photo": null
+              },
+              "error": null
+            },
+            {
+              "url": "https://example.com/lemon-chicken",
+              "state": "adding",
+              "recipe": null,
+              "error": null
+            }
+          ],
+          "createdAt": "2026-10-15T18:30:00.000Z",
+          "finishedAt": null
+        }
+      },
+      "LinkImportRequest": {
+        "type": "object",
+        "properties": {
+          "urls": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "minItems": 1,
+            "maxItems": 100
+          },
+          "tag": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 40,
+            "description": "Added to every recipe it makes, like \"to try\"."
+          }
+        },
+        "required": [
+          "urls"
+        ],
+        "example": {
+          "urls": [
+            "https://example.com/garlic-rice",
+            "https://example.com/lemon-chicken"
+          ],
+          "tag": "to try"
+        }
+      },
+      "LinkCheck": {
+        "type": "object",
+        "properties": {
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "video": {
+                  "type": "boolean",
+                  "description": "A video link, which can't be imported yet."
+                },
+                "existing": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "slug": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "slug",
+                    "name"
+                  ],
+                  "description": "In the library already: it's skipped."
+                }
+              },
+              "required": [
+                "url",
+                "video",
+                "existing"
+              ]
+            }
+          },
+          "more": {
+            "type": "integer",
+            "description": "Links past the first 100, which are left out."
+          }
+        },
+        "required": [
+          "links",
+          "more"
+        ],
+        "example": {
+          "links": [
+            {
+              "url": "https://example.com/lemon-chicken",
+              "video": false,
+              "existing": {
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken"
+              }
+            },
+            {
+              "url": "https://example.com/garlic-rice",
+              "video": false,
+              "existing": null
+            }
+          ],
+          "more": 0
+        }
+      },
+      "LinkCheckRequest": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "description": "Pasted text with links in it: one per line, or mixed in."
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "example": {
+          "text": "Dinners to try:\nhttps://example.com/lemon-chicken\nhttps://example.com/garlic-rice"
+        }
+      },
       "Tag": {
         "type": "object",
         "properties": {
@@ -3051,9 +3384,10 @@
             "enum": [
               "added",
               "already",
+              "importing",
               "failed"
             ],
-            "description": "Added, already in the library (this is that recipe), or not added."
+            "description": "Added; already in the library (this is that recipe); several links, now importing in the background; or not added."
           },
           "code": {
             "type": [
@@ -3089,12 +3423,19 @@
               "name"
             ]
           },
+          "importId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Several links: the import, to follow at /recipes/import/links/{importId}."
+          },
           "url": {
             "type": [
               "string",
               "null"
             ],
-            "description": "The recipe's page."
+            "description": "The recipe's page, or the import's."
           }
         },
         "required": [
@@ -3102,6 +3443,7 @@
           "code",
           "message",
           "recipe",
+          "importId",
           "url"
         ],
         "example": {
@@ -3113,6 +3455,7 @@
             "slug": "lemon-chicken",
             "name": "Lemon Chicken"
           },
+          "importId": null,
           "url": "https://merran.example.com/recipes/lemon-chicken"
         }
       },
@@ -5910,6 +6253,341 @@
         }
       }
     },
+    "/api/recipes/import/links": {
+      "get": {
+        "operationId": "listLinkImports",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "The household's link imports still going",
+        "description": "Newest first. Finished ones aren't listed. With an API key, it needs the `imports: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "imports:read",
+        "responses": {
+          "200": {
+            "description": "The imports.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkImportList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "importLinks",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Add recipes from several links",
+        "description": "Up to 100 links, imported one at a time in the background: follow along at /recipes/import/links/{importId}, which says how each link went. A link the library has already gives back that recipe rather than a new one. With an API key, it needs the `imports: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "imports:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkImportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Importing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkImport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "None of them is a link Merran can fetch.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/import/links/check": {
+      "post": {
+        "operationId": "checkLinks",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Find the links in some text",
+        "description": "The links in pasted text, up to 100, tidied, with which are in the library already and which are videos (which can't be imported yet). Nothing is imported. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkCheckRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The links.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkCheck"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/import/links/{importId}": {
+      "get": {
+        "operationId": "getLinkImport",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "How a link import is going",
+        "description": "Each link, and where it's got to. With an API key, it needs the `imports: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "imports:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "importId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The import.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkImport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/import/links/{importId}/stop": {
+      "post": {
+        "operationId": "stopLinkImport",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Stop a link import",
+        "description": "The recipes it added stay. The link it's on finishes first, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "imports:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "importId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped, or stopping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkImport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such import in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has already finished.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes/tags": {
       "get": {
         "operationId": "listTags",
@@ -7978,7 +8656,7 @@
           "Recipes"
         ],
         "summary": "Share something to Merran",
-        "description": "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.",
+        "description": "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.",
         "security": [
           {
             "session": []
@@ -8037,6 +8715,16 @@
           },
           "201": {
             "description": "Added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareOutcome"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Several links, importing.",
             "content": {
               "application/json": {
                 "schema": {

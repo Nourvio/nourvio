@@ -181,7 +181,10 @@ function NewKeyForm({ onMade }: { onMade: (key: string) => void }) {
                     label={t(`settings.you.apiKeys.areas.${area}`)}
                     value={field.value}
                     onChange={field.onChange}
-                    options={accessOptions(area, t)}
+                    options={levelsFor(area).map((value) => ({
+                      value,
+                      label: t(`settings.you.apiKeys.level.${value}`),
+                    }))}
                   />
                 )}
               />
@@ -202,14 +205,11 @@ function NewKeyForm({ onMade }: { onMade: (key: string) => void }) {
   )
 }
 
-function accessOptions(area: Area, t: ReturnType<typeof useTranslation>["t"]) {
-  const levels: Access[] = READ_ONLY_AREAS.includes(area)
+/** What an area can be given. Labelled where `t` is, as passing it on is too deep for TypeScript. */
+function levelsFor(area: Area): Access[] {
+  return READ_ONLY_AREAS.includes(area)
     ? ["none", "read"]
     : ["none", "read", "write"]
-  return levels.map((value) => ({
-    value,
-    label: t(`settings.you.apiKeys.level.${value}`),
-  }))
 }
 
 function ShowKey({ value }: { value: string }) {

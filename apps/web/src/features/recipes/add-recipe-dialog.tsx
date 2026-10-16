@@ -21,6 +21,7 @@ import { Spinner } from "@/components/ui/spinner"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { useRefreshRecipes, type Recipe } from "./queries"
+import { SeveralLinks } from "./several-links"
 
 type Form = { url: string }
 
@@ -33,6 +34,8 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
   const navigate = useNavigate()
   const refresh = useRefreshRecipes()
   const [open, setOpen] = React.useState(false)
+  // Several links at once, rather than one.
+  const [several, setSeveral] = React.useState(false)
   const [already, setAlready] = React.useState<{
     recipe: Recipe
     url: string
@@ -87,6 +90,7 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
         setOpen(next)
         if (!next) {
           setAlready(null)
+          setSeveral(false)
           form.reset()
         }
       }}
@@ -102,7 +106,19 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
         }
       />
       <DialogContent className="sm:max-w-lg">
-        {already ? (
+        {several ? (
+          <SeveralLinks
+            onBack={() => setSeveral(false)}
+            onStarted={(importId) => {
+              setOpen(false)
+              setSeveral(false)
+              void navigate({
+                to: "/recipes/import/$importId",
+                params: { importId },
+              })
+            }}
+          />
+        ) : already ? (
           <>
             <DialogHeader>
               <DialogTitle>{t("recipes.import.alreadyTitle")}</DialogTitle>
@@ -150,6 +166,14 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
                   value.trim() !== "" || t("recipes.import.linkNeeded"),
               })}
             />
+            <Button
+              type="button"
+              variant="link"
+              className="-mt-3 justify-self-start px-0"
+              onClick={() => setSeveral(true)}
+            >
+              {t("recipes.import.several")}
+            </Button>
             <DialogFooter className="items-center sm:justify-between">
               <Button
                 variant="link"

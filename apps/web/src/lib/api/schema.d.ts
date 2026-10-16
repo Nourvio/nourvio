@@ -673,6 +673,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recipes/import/links": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's link imports still going
+         * @description Newest first. Finished ones aren't listed. With an API key, it needs the `imports: read` permission.
+         */
+        get: operations["listLinkImports"];
+        put?: never;
+        /**
+         * Add recipes from several links
+         * @description Up to 100 links, imported one at a time in the background: follow along at /recipes/import/links/{importId}, which says how each link went. A link the library has already gives back that recipe rather than a new one. With an API key, it needs the `imports: write` permission.
+         */
+        post: operations["importLinks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/import/links/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find the links in some text
+         * @description The links in pasted text, up to 100, tidied, with which are in the library already and which are videos (which can't be imported yet). Nothing is imported. With an API key, it needs the `recipes: read` permission.
+         */
+        post: operations["checkLinks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/import/links/{importId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How a link import is going
+         * @description Each link, and where it's got to. With an API key, it needs the `imports: read` permission.
+         */
+        get: operations["getLinkImport"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/import/links/{importId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop a link import
+         * @description The recipes it added stay. The link it's on finishes first, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
+         */
+        post: operations["stopLinkImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/tags": {
         parameters: {
             query?: never;
@@ -1080,7 +1164,7 @@ export interface paths {
         put?: never;
         /**
          * Share something to Merran
-         * @description What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.
+         * @description What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.
          */
         post: operations["shareToMerran"];
         delete?: never;
@@ -1792,7 +1876,7 @@ export interface components {
                 done: number;
                 total: number;
             } | null;
-            /** @description What it did, once it's done. */
+            /** @description What it did, once it's done. A job followed item by item, like importing several links, says what it's done so far as it goes. */
             result: {
                 [key: string]: unknown;
             } | null;
@@ -2463,6 +2547,171 @@ export interface components {
         };
         /**
          * @example {
+         *       "imports": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+         *           "status": "running",
+         *           "tag": "to try",
+         *           "total": 2,
+         *           "done": 1,
+         *           "added": 1,
+         *           "already": 0,
+         *           "failed": 0,
+         *           "stopped": 0,
+         *           "items": [
+         *             {
+         *               "url": "https://example.com/garlic-rice",
+         *               "state": "added",
+         *               "recipe": {
+         *                 "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *                 "slug": "garlic-rice",
+         *                 "name": "Garlic Rice",
+         *                 "photo": null
+         *               },
+         *               "error": null
+         *             },
+         *             {
+         *               "url": "https://example.com/lemon-chicken",
+         *               "state": "adding",
+         *               "recipe": null,
+         *               "error": null
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z",
+         *           "finishedAt": null
+         *         }
+         *       ]
+         *     }
+         */
+        LinkImportList: {
+            imports: components["schemas"]["LinkImport"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+         *       "status": "running",
+         *       "tag": "to try",
+         *       "total": 2,
+         *       "done": 1,
+         *       "added": 1,
+         *       "already": 0,
+         *       "failed": 0,
+         *       "stopped": 0,
+         *       "items": [
+         *         {
+         *           "url": "https://example.com/garlic-rice",
+         *           "state": "added",
+         *           "recipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *             "slug": "garlic-rice",
+         *             "name": "Garlic Rice",
+         *             "photo": null
+         *           },
+         *           "error": null
+         *         },
+         *         {
+         *           "url": "https://example.com/lemon-chicken",
+         *           "state": "adding",
+         *           "recipe": null,
+         *           "error": null
+         *         }
+         *       ],
+         *       "createdAt": "2026-10-15T18:30:00.000Z",
+         *       "finishedAt": null
+         *     }
+         */
+        LinkImport: {
+            /** @description The import's job. */
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "running" | "done" | "failed" | "cancelled";
+            tag: string | null;
+            total: number;
+            done: number;
+            added: number;
+            already: number;
+            failed: number;
+            stopped: number;
+            items: {
+                url: string;
+                /**
+                 * @description Where the link has got to: added, already in the library, failed (see error), or stopped before it was reached.
+                 * @enum {string}
+                 */
+                state: "waiting" | "adding" | "added" | "already" | "failed" | "stopped";
+                /** @description The recipe it made, or was already. */
+                recipe: {
+                    id: string;
+                    slug: string;
+                    name: string;
+                    photo: string | null;
+                } | null;
+                error: string | null;
+            }[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            finishedAt: string | null;
+        };
+        /**
+         * @example {
+         *       "urls": [
+         *         "https://example.com/garlic-rice",
+         *         "https://example.com/lemon-chicken"
+         *       ],
+         *       "tag": "to try"
+         *     }
+         */
+        LinkImportRequest: {
+            urls: string[];
+            /** @description Added to every recipe it makes, like "to try". */
+            tag?: string | null;
+        };
+        /**
+         * @example {
+         *       "links": [
+         *         {
+         *           "url": "https://example.com/lemon-chicken",
+         *           "video": false,
+         *           "existing": {
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken"
+         *           }
+         *         },
+         *         {
+         *           "url": "https://example.com/garlic-rice",
+         *           "video": false,
+         *           "existing": null
+         *         }
+         *       ],
+         *       "more": 0
+         *     }
+         */
+        LinkCheck: {
+            links: {
+                url: string;
+                /** @description A video link, which can't be imported yet. */
+                video: boolean;
+                /** @description In the library already: it's skipped. */
+                existing: {
+                    slug: string;
+                    name: string;
+                } | null;
+            }[];
+            /** @description Links past the first 100, which are left out. */
+            more: number;
+        };
+        /**
+         * @example {
+         *       "text": "Dinners to try:\nhttps://example.com/lemon-chicken\nhttps://example.com/garlic-rice"
+         *     }
+         */
+        LinkCheckRequest: {
+            /** @description Pasted text with links in it: one per line, or mixed in. */
+            text: string;
+        };
+        /**
+         * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000008",
          *       "name": "weeknight",
          *       "recipes": 12
@@ -2815,15 +3064,16 @@ export interface components {
          *         "slug": "lemon-chicken",
          *         "name": "Lemon Chicken"
          *       },
+         *       "importId": null,
          *       "url": "https://merran.example.com/recipes/lemon-chicken"
          *     }
          */
         ShareOutcome: {
             /**
-             * @description Added, already in the library (this is that recipe), or not added.
+             * @description Added; already in the library (this is that recipe); several links, now importing in the background; or not added.
              * @enum {string}
              */
-            outcome: "added" | "already" | "failed";
+            outcome: "added" | "already" | "importing" | "failed";
             /** @description Why it wasn't added, for programs: "no_link", "no_recipe_data" and the like. */
             code: string | null;
             /**
@@ -2836,7 +3086,9 @@ export interface components {
                 slug: string;
                 name: string;
             } | null;
-            /** @description The recipe's page. */
+            /** @description Several links: the import, to follow at /recipes/import/links/{importId}. */
+            importId: string | null;
+            /** @description The recipe's page, or the import's. */
             url: string | null;
         };
         /**
@@ -4790,6 +5042,244 @@ export interface operations {
             };
         };
     };
+    listLinkImports: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The imports. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkImportList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    importLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkImportRequest"];
+            };
+        };
+        responses: {
+            /** @description Importing. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkImport"];
+                };
+            };
+            /** @description None of them is a link Merran can fetch. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    checkLinks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LinkCheckRequest"];
+            };
+        };
+        responses: {
+            /** @description The links. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkCheck"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getLinkImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The import. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkImport"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    stopLinkImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                importId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stopped, or stopping. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkImport"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such import in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has already finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listTags: {
         parameters: {
             query?: never;
@@ -6238,6 +6728,15 @@ export interface operations {
             };
             /** @description Added. */
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareOutcome"];
+                };
+            };
+            /** @description Several links, importing. */
+            202: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -128,10 +128,6 @@ describe("sharing a link", () => {
       [{ text: "https://example.com/blog" }, "no_recipe_data"],
       [{ text: "https://example.com/gone" }, "site_unreachable"],
       [{ text: "4 chicken thighs, 2 lemons" }, "no_link"],
-      [
-        { text: "https://example.com/soup https://example.com/bread" },
-        "several_links",
-      ],
       [{}, "nothing_shared"],
     ]
     for (const [body, code] of cases) {
