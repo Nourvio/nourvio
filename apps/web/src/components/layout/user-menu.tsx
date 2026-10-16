@@ -79,7 +79,11 @@ function UserMenuItems() {
               }
             >
               {me.households.map((household) => (
-                <DropdownMenuRadioItem key={household.id} value={household.id}>
+                <DropdownMenuRadioItem
+                  key={household.id}
+                  value={household.id}
+                  closeOnClick
+                >
                   <HugeiconsIcon icon={Home09Icon} strokeWidth={2} />
                   {household.name}
                 </DropdownMenuRadioItem>

@@ -47,6 +47,7 @@
     "menu": "Account",
     "households": "Households",
     "switchFailed": "Couldn't switch households. Try again.",
+    "switching": "Switching to {{name}}…",
     "signOut": "Sign out",
     "signOutFailed": "Couldn't sign out. Try again."
   },

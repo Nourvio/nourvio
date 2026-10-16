@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { TimerAlarm } from "@/features/cook/timers"
 import { startErrorTracking } from "@/features/error-tracking/start"
+import { HouseholdSwitchOverlay } from "@/features/household/switching"
 import { listenForInstall } from "@/features/install/install"
 import { queryClient } from "@/lib/query-client"
 
@@ -40,6 +41,7 @@ createRoot(document.getElementById("root")!).render(
           <RouterProvider router={router} />
           <Toaster />
           <TimerAlarm />
+          <HouseholdSwitchOverlay />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>

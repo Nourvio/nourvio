@@ -1,6 +1,7 @@
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
 import { useNavigate, useRouter } from "@tanstack/react-router"
 
+import { setSwitchingTo } from "@/features/household/switching"
 import { api, unwrap } from "@/lib/api/client"
 
 import { meQuery, type Me } from "./queries"
@@ -46,14 +47,30 @@ export function useSignOut() {
   }
 }
 
+/**
+ * Switches household behind a covering spinner, landing on Today: the page
+ * open now may be something only the old household has.
+ */
 export function useSwitchHousehold() {
+  const me = useMe()
   const refreshAll = useRefreshAll()
+  const navigate = useNavigate()
   return async (householdId: string) => {
-    await unwrap(
-      api.POST("/api/auth/organization/set-active", {
-        body: { organizationId: householdId },
-      })
-    )
-    await refreshAll()
+    const household = me.households.find((each) => each.id === householdId)
+    setSwitchingTo(household?.name ?? "")
+    // Long enough that a quick switch doesn't blink the cover on and off.
+    const shown = new Promise((resolve) => setTimeout(resolve, 500))
+    try {
+      await unwrap(
+        api.POST("/api/auth/organization/set-active", {
+          body: { organizationId: householdId },
+        })
+      )
+      await navigate({ to: "/" })
+      await refreshAll()
+      await shown
+    } finally {
+      setSwitchingTo(null)
+    }
   }
 }
