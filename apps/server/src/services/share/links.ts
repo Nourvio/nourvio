@@ -1,7 +1,8 @@
-// Finding the link in what's shared to Merran. Android's share sheet sends a
-// link as text, often with a line around it ("Check this out! https://…").
-// An iPhone Shortcut may send it as text, as a file with the address in it,
-// as a .webloc, or as the web page itself, whose own address it carries.
+// Finding what's shared to Merran: a link, or else photos or text of a
+// recipe. Android's share sheet sends a link as text, often with a line
+// around it ("Check this out! https://…"). An iPhone Shortcut may send it
+// as text, as a file with the address in it, as a .webloc, or as the web
+// page itself, whose own address it carries.
 
 /** A file that came with a share. */
 export type SharedFile = { body: Buffer; type: string; name: string }
@@ -111,4 +112,44 @@ export function sharedLinks(shared: Shared) {
   return [
     ...new Set(fromFiles.length > 0 ? fromFiles : linksInText(shared.text)),
   ]
+}
+
+const isImage = (file: SharedFile) => {
+  if (file.type.startsWith("image/")) return true
+  const head = file.body.subarray(0, 12)
+  return (
+    head.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff])) ||
+    head.subarray(0, 4).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47])) ||
+    (head.subarray(0, 4).toString() === "RIFF" &&
+      head.subarray(8, 12).toString() === "WEBP")
+  )
+}
+
+/** Shared text this short isn't a recipe. */
+const MIN_RECIPE_TEXT = 60
+
+/** Whether a share is a PDF, which Merran can't read yet. */
+export const sharesPdf = (shared: Shared) => shared.files.some(isPdf)
+
+/** The photos in a share, when there are no links: a recipe to read. */
+export const sharedPhotos = (shared: Shared) =>
+  shared.files.filter(isImage).map((file) => file.body)
+
+/**
+ * The text of a share, when there are no links and it's long enough to be
+ * a recipe: what was shared as text, and any text files but web pages.
+ */
+export function sharedText(shared: Shared) {
+  const texts = [
+    shared.text,
+    ...shared.files
+      .filter(isTextLike)
+      .map((file) => file.body.toString("utf8"))
+      .filter((content) => !isHtml(content)),
+  ]
+  const text = texts
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join("\n\n")
+    .trim()
+  return text.length >= MIN_RECIPE_TEXT ? text : null
 }

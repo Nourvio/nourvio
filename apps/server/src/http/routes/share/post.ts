@@ -38,7 +38,7 @@ const SharedFormSchema = z.object({
     type: "string",
     format: "binary",
     description:
-      "What was shared, as a file: a text file with the link, a .webloc, or the web page.",
+      "What was shared, as a file: a text file with the link, a .webloc, the web page, or a photo of a recipe. Several photos come as several `file` fields.",
   }),
 })
 
@@ -50,7 +50,7 @@ const ShareOutcomeSchema = z
     }),
     code: z.string().nullable().openapi({
       description:
-        'Why it wasn\'t added, for programs: "no_link", "no_recipe_data" and the like.',
+        'Why it wasn\'t added, for programs: "no_recipe", "no_recipe_data", "ai_noKey" and the like.',
     }),
     message: z.string().openapi({
       description: "What happened, in words to show, as a Shortcut does.",
@@ -92,7 +92,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Share something to Merran",
   description:
-    "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added.",
+    "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Without a link, photos (up to 4, as one recipe) or text of a recipe are read by AI, when the household has AI for importing. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added.",
   ...keys,
   middleware: [
     ...keys.middleware,
@@ -169,19 +169,15 @@ async function readShared(c: Context<AppEnv>): Promise<Shared> {
   return { files, text: texts.join("\n") || null }
 }
 
-export default (router: Router, { config, fetcher, files }: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
-    const result = await shareToMerran(
-      em,
-      { fetcher, files },
-      {
-        householdId,
-        userId,
-        shared: await readShared(c),
-        baseUrl: config.publicUrl ?? new URL(c.req.url).origin,
-      }
-    )
+    const result = await shareToMerran(em, deps, {
+      householdId,
+      userId,
+      shared: await readShared(c),
+      baseUrl: deps.config.publicUrl ?? new URL(c.req.url).origin,
+    })
     const status =
       result.outcome === "added"
         ? 201

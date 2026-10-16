@@ -821,7 +821,47 @@
       "alreadyDescription": "{{name}} came from this link. Open it, or add it again as a separate recipe.",
       "open": "Open it",
       "again": "Add it again",
-      "several": "Got several? Paste them all"
+      "several": "Got several? Paste them all",
+      "noLink": "No link? AI can read a recipe from its text or a photo.",
+      "fromText": "Paste text",
+      "fromPhotos": "Photos",
+      "text": {
+        "title": "Paste a recipe",
+        "description": "From an email, a note or a message. AI reads it into a recipe for you to check.",
+        "label": "The recipe",
+        "placeholder": "Lemon Chicken\n\n4 chicken thighs\n2 lemons, juiced\n\nRub the chicken with lemon…",
+        "paste": "Paste",
+        "needed": "Paste the recipe's text.",
+        "source": "Where it's from",
+        "sourceHint": "A link to the page, if it's from one. You can leave it out.",
+        "submit": "Read it"
+      },
+      "photos": {
+        "title": "Add from photos",
+        "description": "A cookbook page or two, a card or a screenshot: up to 4 photos of one recipe, in order. AI reads them into a recipe for you to check.",
+        "choose": "Take or choose photos",
+        "more": "Add another",
+        "photo": "Photo {{n}}",
+        "remove": "Take out photo {{n}}",
+        "tooMany": "Up to 4 photos for one recipe. The first 4 are in.",
+        "needed": "Add a photo of the recipe.",
+        "submit_one": "Read it",
+        "submit_other": "Read them"
+      },
+      "ai": {
+        "reading": "Reading…",
+        "slow": "This can take up to a minute.",
+        "added": "Added {{name}}. AI read it, so check it over.",
+        "back": "Back",
+        "why": {
+          "noKey": "Reading text and photos needs AI, and this household has no AI key yet.",
+          "notCovered": "Reading text and photos needs AI, and this household has no AI key yet.",
+          "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
+          "ownLimit": "This month's limit on the household's own AI keys is reached."
+        },
+        "fixAdmin": "Set it up in <link>Settings, Household</link>.",
+        "fixMember": "A household admin can set it up in Settings, Household."
+      }
     },
     "links": {
       "title": "Add several recipes",

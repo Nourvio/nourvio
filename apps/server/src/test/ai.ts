@@ -82,21 +82,26 @@ const NO_CREDIT = JSON.stringify({
   },
 })
 
+/** What a mock model is asked: the prompt, and the form of answer wanted. */
+export type MockCall = { prompt: unknown; responseFormat?: unknown }
+
 /**
- * Models that answer "ok", taking `tokens`, and remember where calls went.
- * Calls to a provider in `outOfCredit` are refused as a key with no credit.
+ * Models that answer "ok", or what `reply` says, taking `tokens`, and
+ * remember where calls went. Calls to a provider in `outOfCredit` are
+ * refused as a key with no credit.
  */
 export function mockAiModels(
   tokens = { input: 10_000, output: 1_000 },
   targets: AiTarget[] = [],
-  outOfCredit: Set<string> = new Set()
+  outOfCredit: Set<string> = new Set(),
+  reply: (call: MockCall) => string = () => "ok"
 ): AiModels {
   return (target) => {
     targets.push(target)
     return new MockLanguageModelV4({
       provider: target.provider,
       modelId: target.model,
-      doGenerate: async () => {
+      doGenerate: async (call) => {
         if (outOfCredit.has(target.provider)) {
           throw new APICallError({
             message:
@@ -109,7 +114,7 @@ export function mockAiModels(
           })
         }
         return {
-          content: [{ type: "text", text: "ok" }],
+          content: [{ type: "text", text: reply(call) }],
           finishReason: { unified: "stop", raw: "stop" },
           usage: {
             inputTokens: {

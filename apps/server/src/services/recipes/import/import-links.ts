@@ -241,11 +241,11 @@ export const linkImportJob: JobHandler = {
         item.state = "adding"
         await progress(done, items.length, soFar())
         try {
-          const { recipe, duplicate } = await importLink(
-            em,
-            { fetcher: deps.fetcher, files: deps.files },
-            { householdId, userId, url: item.url }
-          )
+          const { recipe, duplicate } = await importLink(em, deps, {
+            householdId,
+            userId,
+            url: item.url,
+          })
           if (!duplicate && tag) {
             await tagRecipe(em, householdId, recipe.id, tag)
           }

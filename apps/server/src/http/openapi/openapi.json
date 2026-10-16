@@ -7470,6 +7470,41 @@
           "text": "Dinners to try:\nhttps://example.com/lemon-chicken\nhttps://example.com/garlic-rice"
         }
       },
+      "TextImport": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 50000
+          },
+          "sourceUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Where it's from, when that's a page."
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "example": {
+          "text": "Lemon Chicken\n\n4 chicken thighs\n2 lemons, juiced\n1 tsp salt\n\nRub the chicken with lemon and salt. Roast at 200°C for 40 minutes.",
+          "sourceUrl": null
+        }
+      },
       "Tag": {
         "type": "object",
         "properties": {
@@ -8551,7 +8586,7 @@
               "string",
               "null"
             ],
-            "description": "Why it wasn't added, for programs: \"no_link\", \"no_recipe_data\" and the like."
+            "description": "Why it wasn't added, for programs: \"no_recipe\", \"no_recipe_data\", \"ai_noKey\" and the like."
           },
           "message": {
             "type": "string",
@@ -14608,7 +14643,7 @@
           "Recipes"
         ],
         "summary": "Add a recipe from a link",
-        "description": "Reads the recipe data most recipe sites put in their pages, and its photo. A link the household imported before gives back that recipe, unless `force` is set. Pages without recipe data, and video links, can't be imported yet. With an API key, it needs the `recipes: write` permission.",
+        "description": "Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. Video links can't be imported yet. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -14697,7 +14732,17 @@
             }
           },
           "422": {
-            "description": "The page has no recipe data, or it's a video.",
+            "description": "The page has no recipe data and no AI to read it, AI found no recipe on it, or it's a video.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This month's AI limit is reached.",
             "content": {
               "application/json": {
                 "schema": {
@@ -15043,6 +15088,228 @@
           },
           "409": {
             "description": "It has already finished.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/import/text": {
+      "post": {
+        "operationId": "importRecipeText",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Add a recipe from text",
+        "description": "Text with a recipe in it, from an email, a note or a message, read by AI and added as a recipe. Uses the household's model for importing, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TextImport"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No text, or too much.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No recipe found in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This month's AI limit is reached, or the AI is busy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The AI provider failed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/import/photos": {
+      "post": {
+        "operationId": "importRecipePhotos",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Add a recipe from photos",
+        "description": "Photos of one recipe, up to 4, in order: a cookbook page or two, a card, a screenshot. Read by AI and added as a recipe. JPEG, PNG or WebP, up to 15 MB each. Uses the household's model for importing, which must be able to read photos, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photos": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "The photos, in order: one `photos` field for each."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No photos, too many, or not photos Merran can read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The photos are too big.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No recipe found in them, or the model can't read photos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This month's AI limit is reached, or the AI is busy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The AI provider failed.",
             "content": {
               "application/json": {
                 "schema": {
@@ -17604,7 +17871,7 @@
           "Recipes"
         ],
         "summary": "Share something to Merran",
-        "description": "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.",
+        "description": "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Without a link, photos (up to 4, as one recipe) or text of a recipe are read by AI, when the household has AI for importing. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.",
         "security": [
           {
             "session": []
@@ -17633,7 +17900,7 @@
                   "file": {
                     "type": "string",
                     "format": "binary",
-                    "description": "What was shared, as a file: a text file with the link, a .webloc, or the web page."
+                    "description": "What was shared, as a file: a text file with the link, a .webloc, the web page, or a photo of a recipe. Several photos come as several `file` fields."
                   }
                 }
               }

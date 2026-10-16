@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { useMe } from "@/features/auth/use-me"
+import { capabilitiesQuery } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { AiKeys } from "./ai-keys"
@@ -140,8 +141,12 @@ export function HouseholdAiCard() {
   const [saving, setSaving] = React.useState(false)
   const id = React.useId()
   const money = (dollars: number) => formatMoney(dollars, i18n.language)
+  // A household's first key can turn AI on for the server.
   const refresh = () =>
-    queryClient.invalidateQueries({ queryKey: householdAiQuery.queryKey })
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: householdAiQuery.queryKey }),
+      queryClient.invalidateQueries({ queryKey: capabilitiesQuery.queryKey }),
+    ])
 
   if (!data) {
     return (

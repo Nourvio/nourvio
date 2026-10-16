@@ -1535,7 +1535,7 @@ export interface paths {
         put?: never;
         /**
          * Add a recipe from a link
-         * @description Reads the recipe data most recipe sites put in their pages, and its photo. A link the household imported before gives back that recipe, unless `force` is set. Pages without recipe data, and video links, can't be imported yet. With an API key, it needs the `recipes: write` permission.
+         * @description Reads the recipe data most recipe sites put in their pages, and its photo. A page without it is read by AI, when the household has AI for importing; otherwise it can't be imported. A link the household imported before gives back that recipe, unless `force` is set. Video links can't be imported yet. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["importRecipe"];
         delete?: never;
@@ -1622,6 +1622,46 @@ export interface paths {
          * @description The recipes it added stay. The link it's on finishes first, so the answer may still say it's running. With an API key, it needs the `imports: write` permission.
          */
         post: operations["stopLinkImport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/import/text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a recipe from text
+         * @description Text with a recipe in it, from an email, a note or a message, read by AI and added as a recipe. Uses the household's model for importing, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["importRecipeText"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/import/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a recipe from photos
+         * @description Photos of one recipe, up to 4, in order: a cookbook page or two, a card, a screenshot. Read by AI and added as a recipe. JPEG, PNG or WebP, up to 15 MB each. Uses the household's model for importing, which must be able to read photos, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["importRecipePhotos"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2175,7 +2215,7 @@ export interface paths {
         put?: never;
         /**
          * Share something to Merran
-         * @description What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.
+         * @description What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe; several links start an import in the background. Without a link, photos (up to 4, as one recipe) or text of a recipe are read by AI, when the household has AI for importing. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.
          */
         post: operations["shareToMerran"];
         delete?: never;
@@ -5881,6 +5921,17 @@ export interface components {
         };
         /**
          * @example {
+         *       "text": "Lemon Chicken\n\n4 chicken thighs\n2 lemons, juiced\n1 tsp salt\n\nRub the chicken with lemon and salt. Roast at 200°C for 40 minutes.",
+         *       "sourceUrl": null
+         *     }
+         */
+        TextImport: {
+            text: string;
+            /** @description Where it's from, when that's a page. */
+            sourceUrl?: string | "" | null;
+        };
+        /**
+         * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000008",
          *       "name": "weeknight",
          *       "recipes": 12
@@ -6428,7 +6479,7 @@ export interface components {
              * @enum {string}
              */
             outcome: "added" | "already" | "importing" | "failed";
-            /** @description Why it wasn't added, for programs: "no_link", "no_recipe_data" and the like. */
+            /** @description Why it wasn't added, for programs: "no_recipe", "no_recipe_data", "ai_noKey" and the like. */
             code: string | null;
             /**
              * @description What happened, in words to show, as a Shortcut does.
@@ -10712,8 +10763,17 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description The page has no recipe data, or it's a video. */
+            /** @description The page has no recipe data and no AI to read it, AI found no recipe on it, or it's a video. */
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description This month's AI limit is reached. */
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -10961,6 +11021,174 @@ export interface operations {
             };
             /** @description It has already finished. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    importRecipeText: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TextImport"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description No text, or too much. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No recipe found in it. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description This month's AI limit is reached, or the AI is busy. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The AI provider failed. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    importRecipePhotos: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** @description The photos, in order: one `photos` field for each. */
+                    photos?: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description No photos, too many, or not photos Merran can read. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The photos are too big. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No recipe found in them, or the model can't read photos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description This month's AI limit is reached, or the AI is busy. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The AI provider failed. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -12750,7 +12978,7 @@ export interface operations {
                     url?: string;
                     /**
                      * Format: binary
-                     * @description What was shared, as a file: a text file with the link, a .webloc, or the web page.
+                     * @description What was shared, as a file: a text file with the link, a .webloc, the web page, or a photo of a recipe. Several photos come as several `file` fields.
                      */
                     file?: string;
                 };

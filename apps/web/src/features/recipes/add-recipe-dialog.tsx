@@ -1,4 +1,9 @@
-import { Add01Icon, Link01Icon } from "@hugeicons/core-free-icons"
+import {
+  Add01Icon,
+  Camera01Icon,
+  Link01Icon,
+  TextIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link, useNavigate } from "@tanstack/react-router"
 import * as React from "react"
@@ -18,24 +23,34 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Spinner } from "@/components/ui/spinner"
+import { useCapability } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
+import { FromPhotos } from "./import/from-photos"
+import { PasteText } from "./import/paste-text"
 import { useRefreshRecipes, type Recipe } from "./queries"
 import { SeveralLinks } from "./several-links"
 
 type Form = { url: string }
 
+/** What the dialog shows: one link, several, pasted text, or photos. */
+type View = "link" | "several" | "text" | "photos"
+
 /**
- * Adding a recipe: from a link, which reads the recipe off the page, or by
- * typing it in.
+ * Adding a recipe: from a link, which reads the recipe off the page; from
+ * text or photos, which AI reads; or by typing it in.
  */
 export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const refresh = useRefreshRecipes()
   const [open, setOpen] = React.useState(false)
-  // Several links at once, rather than one.
-  const [several, setSeveral] = React.useState(false)
+  const [view, setView] = React.useState<View>("link")
+  // Text and photos are read by AI, offered once there's AI on the server.
+  const aiOn = useCapability("ai")
+  // Still open when AI has finished reading, which can take a while.
+  const stillOpen = React.useRef(open)
+  stillOpen.current = open
   const [already, setAlready] = React.useState<{
     recipe: Recipe
     url: string
@@ -58,6 +73,16 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
       to: "/recipes/$slug",
       params: { slug: result.recipe.slug },
     })
+  }
+
+  /** Read by AI: opened, unless the dialog was closed while it read. */
+  async function addedByAi(recipe: Recipe) {
+    await refresh()
+    toast.success(t("recipes.import.ai.added", { name: recipe.name }))
+    if (!stillOpen.current) return
+    setOpen(false)
+    setView("link")
+    await navigate({ to: "/recipes/$slug", params: { slug: recipe.slug } })
   }
 
   const onSubmit = form.handleSubmit(async ({ url }) => {
@@ -90,7 +115,7 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
         setOpen(next)
         if (!next) {
           setAlready(null)
-          setSeveral(false)
+          setView("link")
           form.reset()
         }
       }}
@@ -106,12 +131,24 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
         }
       />
       <DialogContent className="sm:max-w-lg">
-        {several ? (
+        {view === "text" ? (
+          <PasteText
+            onBack={() => setView("link")}
+            onAdded={(recipe) => void addedByAi(recipe)}
+            onNavigate={() => setOpen(false)}
+          />
+        ) : view === "photos" ? (
+          <FromPhotos
+            onBack={() => setView("link")}
+            onAdded={(recipe) => void addedByAi(recipe)}
+            onNavigate={() => setOpen(false)}
+          />
+        ) : view === "several" ? (
           <SeveralLinks
-            onBack={() => setSeveral(false)}
+            onBack={() => setView("link")}
             onStarted={(importId) => {
               setOpen(false)
-              setSeveral(false)
+              setView("link")
               void navigate({
                 to: "/recipes/import/$importId",
                 params: { importId },
@@ -170,10 +207,43 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
               type="button"
               variant="link"
               className="-mt-3 justify-self-start px-0"
-              onClick={() => setSeveral(true)}
+              onClick={() => setView("several")}
             >
               {t("recipes.import.several")}
             </Button>
+            {aiOn && (
+              <div className="grid gap-2 border-t pt-4">
+                <p className="text-sm text-muted-foreground">
+                  {t("recipes.import.noLink")}
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setView("text")}
+                  >
+                    <HugeiconsIcon
+                      icon={TextIcon}
+                      strokeWidth={2}
+                      data-icon="inline-start"
+                    />
+                    {t("recipes.import.fromText")}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setView("photos")}
+                  >
+                    <HugeiconsIcon
+                      icon={Camera01Icon}
+                      strokeWidth={2}
+                      data-icon="inline-start"
+                    />
+                    {t("recipes.import.fromPhotos")}
+                  </Button>
+                </div>
+              </div>
+            )}
             <DialogFooter className="items-center sm:justify-between">
               <Button
                 variant="link"

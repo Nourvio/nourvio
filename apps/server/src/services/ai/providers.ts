@@ -41,6 +41,9 @@ export function createAiModels(): AiModels {
           baseURL: target.baseUrl!,
           apiKey,
           fetch: addressFetch({ homeNetwork: target.homeNetwork }),
+          // Ollama, LM Studio and OpenRouter take a JSON schema to answer
+          // in; without this AI SDK leaves it out and asks for any JSON.
+          supportsStructuredOutputs: true,
         })(target.model)
     }
   }

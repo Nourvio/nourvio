@@ -127,7 +127,7 @@ describe("sharing a link", () => {
     const cases: [unknown, string][] = [
       [{ text: "https://example.com/blog" }, "no_recipe_data"],
       [{ text: "https://example.com/gone" }, "site_unreachable"],
-      [{ text: "4 chicken thighs, 2 lemons" }, "no_link"],
+      [{ text: "4 chicken thighs, 2 lemons" }, "no_recipe"],
       [{}, "nothing_shared"],
     ]
     for (const [body, code] of cases) {

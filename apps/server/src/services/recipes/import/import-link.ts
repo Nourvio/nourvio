@@ -5,6 +5,7 @@ import type { Fetcher } from "../../fetch/public-fetch.ts"
 import type { FileStore } from "../../storage/files.ts"
 import { MAX_PHOTO_BYTES, removePhoto, storePhoto } from "../photos.ts"
 import { createRecipe, loadRecipe } from "../recipes.ts"
+import { readPage, type AiDeps } from "./ai-reader.ts"
 import { findBySourceUrl, isVideoLink, normalizeLink } from "./links.ts"
 import { readRecipeData } from "./recipe-data.ts"
 
@@ -61,12 +62,13 @@ export type ImportResult = {
 
 /**
  * Adds a recipe from a link, using the recipe data most recipe sites put in
- * their pages for search engines, and its photo. A link imported before
- * gives back that recipe instead, unless `force`.
+ * their pages for search engines, and its photo. A page without it is read
+ * by AI, when the household has it. A link imported before gives back that
+ * recipe instead, unless `force`.
  */
 export async function importLink(
   em: EntityManager,
-  { fetcher, files }: { fetcher: Fetcher; files: FileStore },
+  deps: AiDeps & { files: FileStore },
   options: {
     householdId: string
     userId: string | null
@@ -82,6 +84,7 @@ export async function importLink(
       : null
   }
 
+  const { fetcher, files } = deps
   const url = normalizeLink(options.url)
   const known = await already([url])
   if (known) return known
@@ -105,14 +108,15 @@ export async function importLink(
   const redirected = pageUrl === url ? null : await already([pageUrl])
   if (redirected) return redirected
 
-  const data = readRecipeData(decodeHtml(page.body, page.contentType), pageUrl)
-  if (!data) {
-    throw new AppError(
-      "unprocessable",
-      "no_recipe_data",
-      "That page has no recipe on it that Merran can read. Type the recipe in instead."
-    )
-  }
+  const html = decodeHtml(page.body, page.contentType)
+  const data =
+    readRecipeData(html, pageUrl) ??
+    (await readPage(deps, em, {
+      householdId: options.householdId,
+      userId: options.userId,
+      html,
+      pageUrl,
+    }))
 
   const photo = await downloadPhoto(fetcher, data.photoUrls, pageUrl)
   const photoId = photo
