@@ -6,13 +6,14 @@ import type { AppDeps } from "../core/context.ts"
 import { createRouter, type RegisterRoutes } from "./router.ts"
 import registerAllRoutes from "./routes/index.ts"
 
-// The routes folder mirrors the API: every `/` in a route's path is a
-// folder, the last part is the file, named with the method, and a `{param}`
-// is `[param]`. So PATCH /api/households/current/members/{memberId} lives in
-// routes/households/current/members/[memberId].patch.ts. Each folder's
-// index.ts only registers its routes and its subfolders' index.ts.
-// auth/better-auth.ts is a registration file too: it hands the Better Auth
-// endpoints Merran uses to Better Auth, rather than defining routes itself.
+// The routes folder mirrors the API: each part of a route's path is a
+// folder, a `{param}` is `[param]`, and each method is a file in the folder,
+// named after it. So PATCH /api/households/current/members/{memberId} lives
+// in routes/households/current/members/[memberId]/patch.ts. Each folder's
+// index.ts only registers its routes and its subfolders' index.ts, fixed
+// paths before `[param]` ones. auth/better-auth.ts is a registration file
+// too: it hands the Better Auth endpoints Merran uses to Better Auth,
+// rather than defining routes itself.
 
 const ROUTES = fileURLToPath(new URL("./routes/", import.meta.url))
 
@@ -52,7 +53,7 @@ function routesIn(register: RegisterRoutes) {
 /** Where a route's file belongs, from its method and path. */
 function fileFor({ method, path }: { method: string; path: string }) {
   const route = path.replace(/^\//, "").replace(/\{(\w+)\}/g, "[$1]")
-  return `${route}.${method}.ts`
+  return `${route}/${method}.ts`
 }
 
 describe("the routes folder", () => {

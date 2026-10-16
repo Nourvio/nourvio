@@ -26,6 +26,11 @@ const TAGS = [
       "The household in use: its settings, its people and their roles, and invite links.",
   },
   {
+    name: "Recipes",
+    description:
+      "The household's recipes, their tags and versions, and Recently deleted. Ingredients and steps are written as lines, as in the editor, and each ingredient line is read into its amount, unit, food and note.",
+  },
+  {
     name: "Settings",
     description:
       "Settings for the server (its admin only) and the household in use. A setting from an environment variable is locked, and a secret is never sent back: only whether it's set, and its last four characters.",

@@ -1,7 +1,11 @@
 import type { AppDeps } from "../../../../../core/context.ts"
 import type { Router } from "../../../../router.ts"
-import cancel from "./[inviteId].delete.ts"
+import get from "./get.ts"
+import post from "./post.ts"
+import inviteIdRoutes from "./[inviteId]/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
-  cancel(router, deps)
+  get(router, deps)
+  post(router, deps)
+  inviteIdRoutes(router, deps)
 }

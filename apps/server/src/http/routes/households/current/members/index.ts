@@ -1,9 +1,9 @@
 import type { AppDeps } from "../../../../../core/context.ts"
 import type { Router } from "../../../../router.ts"
-import remove from "./[memberId].delete.ts"
-import changeRole from "./[memberId].patch.ts"
+import get from "./get.ts"
+import memberIdRoutes from "./[memberId]/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
-  changeRole(router, deps)
-  remove(router, deps)
+  get(router, deps)
+  memberIdRoutes(router, deps)
 }

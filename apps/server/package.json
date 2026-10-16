@@ -18,6 +18,7 @@
   "dependencies": {
     "@hono/node-server": "^2.1.5",
     "@hono/zod-openapi": "^1.6.3",
+    "@merran/shared": "workspace:*",
     "@mikro-orm/core": "^7.2.5",
     "@mikro-orm/migrations": "^7.2.5",
     "@mikro-orm/postgresql": "^7.2.5",

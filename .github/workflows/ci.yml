@@ -51,6 +51,8 @@ jobs:
       # match the entities, that openapi.json is current, and that each
       # route file sits where its path says.
       - run: pnpm --filter @merran/server test:all
+      # The ingredient parser, units and scaling the server and web app share.
+      - run: pnpm --filter @merran/shared test
 
   image:
     name: Docker image

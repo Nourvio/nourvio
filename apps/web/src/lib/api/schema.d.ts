@@ -4,942 +4,6 @@
  */
 
 export interface paths {
-    "/api/health": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Check the server is up
-         * @description Answers as long as the server is running. Needs no sign-in, and says nothing personal.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The server is up. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Health"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/health/ready": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Check the server can do its work
-         * @description Checks the database answers and is up to date. For uptime monitors. Needs no sign-in.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Ready. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Ready"];
-                    };
-                };
-                /** @description Not ready: the database is unreachable or out of date. */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/capabilities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * What's on
-         * @description Which of Merran's optional parts are on, what they make possible, and what the web app needs from them. Needs no sign-in: the web app reads it before anyone signs in.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description What's on. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Capabilities"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/households": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Start another household
-         * @description Server admins only, for now. You become its owner, and it becomes the one in use on this device.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Started. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Household"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/households/current": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * The household in use
-         * @description With an API key, it needs the `household: read` permission.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The household. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Household"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Change the household
-         * @description Household admins only.
-         */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["HouseholdChanges"];
-                };
-            };
-            responses: {
-                /** @description Changed. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Household"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/households/current/members": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Who's in the household
-         * @description With an API key, it needs the `household: read` permission.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Its people, longest-standing first. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Member"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/households/current/members/{memberId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Remove someone, or leave
-         * @description Household admins can remove people; anyone can remove themselves. The last owner can't leave.
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    memberId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Removed. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such person in the household. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description That would leave no owner. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        /**
-         * Change someone's role
-         * @description Household admins only. Only owners can make or unmake owners, and there's always at least one owner.
-         */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    memberId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        role: "owner" | "admin" | "member";
-                    };
-                };
-            };
-            responses: {
-                /** @description Changed. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Member"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such person in the household. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description That would leave no owner. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        trace?: never;
-    };
-    "/api/households/current/invites": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Invite links that can still be used
-         * @description Household admins only. The links themselves can't be shown again.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Unused links, newest first. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InviteLink"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /**
-         * Make an invite link
-         * @description Household admins only. The link works once, for 7 days. Send it to the person; it's shown only now.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /**
-                         * @default member
-                         * @enum {string}
-                         */
-                        role?: "admin" | "member";
-                    };
-                };
-            };
-            responses: {
-                /** @description Made. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["NewInviteLink"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/households/current/invites/{inviteId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /**
-         * Cancel an invite link
-         * @description Household admins only.
-         */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    inviteId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Cancelled. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such invite. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/setup": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Whether the server still needs setting up */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description True until the first account exists. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SetupStatus"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /**
-         * Set up the server
-         * @description Makes the first account, which is the server admin, and its household, then signs in. Needs the setup code printed in the server's log.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SetupRequest"];
-                };
-            };
-            responses: {
-                /** @description Set up, and signed in. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Me"];
-                    };
-                };
-                /** @description Something's wrong with what was sent, or the code. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The server's already set up. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Too many wrong codes. Try again in a few minutes. */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Who's signed in
-         * @description The signed-in person, their households and the one in use on this device. Switch households with `POST /api/auth/organization/set-active`.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Signed in. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Me"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/auth/join/{token}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * See an invite
-         * @description Which household an invite link is for, before joining.
-         */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    token: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The invite can be used. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Invite"];
-                    };
-                };
-                /** @description No invite has that link. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The link has been used, or has expired. */
-                410: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        put?: never;
-        /**
-         * Join a household
-         * @description Signed in, this adds you to the invite's household. Signed out, send `account` to make one, which then signs in.
-         */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    token: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["JoinRequest"];
-                };
-            };
-            responses: {
-                /** @description Joined, with an account you already had. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Me"];
-                    };
-                };
-                /** @description Joined, with a new account, and signed in. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Me"];
-                    };
-                };
-                /** @description Signed out, and no account was sent. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No invite has that link. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Already in the household, or the account exists. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The link has been used, or has expired. */
-                410: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/auth/api-keys": {
         parameters: {
             query?: never;
@@ -1165,7 +229,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/settings/server": {
+    "/api/auth/join/{token}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1173,8 +237,141 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The server's settings
-         * @description Server admins only. Every server setting that can be seen here, with where its value comes from, and a little about the server.
+         * See an invite
+         * @description Which household an invite link is for, before joining.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The invite can be used. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Invite"];
+                    };
+                };
+                /** @description No invite has that link. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The link has been used, or has expired. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Join a household
+         * @description Signed in, this adds you to the invite's household. Signed out, send `account` to make one, which then signs in.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    token: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["JoinRequest"];
+                };
+            };
+            responses: {
+                /** @description Joined, with an account you already had. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                /** @description Joined, with a new account, and signed in. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                /** @description Signed out, and no account was sent. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No invite has that link. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Already in the household, or the account exists. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The link has been used, or has expired. */
+                410: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who's signed in
+         * @description The signed-in person, their households and the one in use on this device. Switch households with `POST /api/auth/organization/set-active`.
          */
         get: {
             parameters: {
@@ -1185,13 +382,340 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description The settings. */
+                /** @description Signed in. */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ServerSettings"];
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/setup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Whether the server still needs setting up */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description True until the first account exists. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SetupStatus"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Set up the server
+         * @description Makes the first account, which is the server admin, and its household, then signs in. Needs the setup code printed in the server's log.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SetupRequest"];
+                };
+            };
+            responses: {
+                /** @description Set up, and signed in. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+                /** @description Something's wrong with what was sent, or the code. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The server's already set up. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Too many wrong codes. Try again in a few minutes. */
+                429: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What's on
+         * @description Which of Merran's optional parts are on, what they make possible, and what the web app needs from them. Needs no sign-in: the web app reads it before anyone signs in.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description What's on. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Capabilities"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check the server is up
+         * @description Answers as long as the server is running. Needs no sign-in, and says nothing personal.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The server is up. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Health"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/health/ready": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Check the server can do its work
+         * @description Checks the database answers and is up to date. For uptime monitors. Needs no sign-in.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Ready. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Ready"];
+                    };
+                };
+                /** @description Not ready: the database is unreachable or out of date. */
+                503: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start another household
+         * @description Server admins only, for now. You become its owner, and it becomes the one in use on this device.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Started. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Household"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household in use
+         * @description With an API key, it needs the `household: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The household. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Household"];
                     };
                 };
                 /** @description Not signed in. */
@@ -1220,8 +744,8 @@ export interface paths {
         options?: never;
         head?: never;
         /**
-         * Change the server's settings
-         * @description Server admins only. Send only what changes. Nothing is saved if anything is wrong, and settings from environment variables can't be changed.
+         * Change the household
+         * @description Household admins only.
          */
         patch: {
             parameters: {
@@ -1232,17 +756,497 @@ export interface paths {
             };
             requestBody: {
                 content: {
-                    "application/json": components["schemas"]["SettingChanges"];
+                    "application/json": components["schemas"]["HouseholdChanges"];
                 };
             };
             responses: {
-                /** @description Saved. */
+                /** @description Changed. */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["ServerSettings"];
+                        "application/json": components["schemas"]["Household"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/households/current/invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Invite links that can still be used
+         * @description Household admins only. The links themselves can't be shown again.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Unused links, newest first. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["InviteLink"][];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Make an invite link
+         * @description Household admins only. The link works once, for 7 days. Send it to the person; it's shown only now.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * @default member
+                         * @enum {string}
+                         */
+                        role?: "admin" | "member";
+                    };
+                };
+            };
+            responses: {
+                /** @description Made. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NewInviteLink"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/invites/{inviteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Cancel an invite link
+         * @description Household admins only.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    inviteId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Cancelled. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such invite. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Who's in the household
+         * @description With an API key, it needs the `household: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Its people, longest-standing first. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Member"][];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/members/{memberId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Remove someone, or leave
+         * @description Household admins can remove people; anyone can remove themselves. The last owner can't leave.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Removed. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such person in the household. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description That would leave no owner. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Change someone's role
+         * @description Household admins only. Only owners can make or unmake owners, and there's always at least one owner.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    memberId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        role: "owner" | "admin" | "member";
+                    };
+                };
+            };
+            responses: {
+                /** @description Changed. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Member"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such person in the household. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description That would leave no owner. */
+                409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/recipes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Find recipes
+         * @description The household's recipes, a page at a time: searched, filtered by tags, and sorted. With an API key, it needs the `recipes: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    /** @description Words in the name, description or ingredients. */
+                    q?: string;
+                    /** @description Only recipes with this tag. Repeat it for all of several. */
+                    tag?: string | string[];
+                    sort?: "newest" | "name" | "updated" | "rating";
+                    limit?: number;
+                    offset?: number | null;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The recipes that match. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecipeList"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Add a recipe
+         * @description Ingredients and steps are lines, one each, as typed in the editor; a line starting with "#" starts a section. Each ingredient line is read into its amount, unit, food and note. With an API key, it needs the `recipes: write` permission.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RecipeInput"];
+                };
+            };
+            responses: {
+                /** @description Added. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Recipe"];
                     };
                 };
                 /** @description Something isn't right, field by field. */
@@ -1274,6 +1278,744 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/deleted": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recently deleted
+         * @description Deleted recipes, which can be put back for 30 days, latest first. With an API key, it needs the `recipes: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description What's there. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["DeletedRecipe"][];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        /**
+         * Empty Recently deleted
+         * @description Deletes everything in it for good. This can't be undone. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Emptied. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/deleted/{recipeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a recipe for good
+         * @description Only for a recipe in Recently deleted. This can't be undone. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recipeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted for good. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe in Recently deleted. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/deleted/{recipeId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put a recipe back
+         * @description Takes a recipe out of Recently deleted, back where it was. With an API key, it needs the `recipes: write` permission.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    recipeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Put back. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Recipe"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe in Recently deleted. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recipe tags
+         * @description The household's tags, with how many recipes have each, alphabetically. With an API key, it needs the `recipes: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The tags. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Tag"][];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/tags/{tagId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a tag
+         * @description Takes it off every recipe. The recipes stay. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    tagId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such tag. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Rename or merge a tag
+         * @description Renaming a tag to another tag's name merges them: every recipe with either has the one tag. With an API key, it needs the `recipes: write` permission.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    tagId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["TagChanges"];
+                };
+            };
+            responses: {
+                /** @description All the tags, after the change. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Tag"][];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such tag. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/recipes/{recipe}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A recipe
+         * @description With its ingredients, read into amounts, units and foods, and its steps. With an API key, it needs the `recipes: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The recipe. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Recipe"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        /**
+         * Change a recipe
+         * @description Replaces the whole recipe, as the editor saves it. The recipe as it was is kept as a version, so the change can be undone; its slug stays the same. With an API key, it needs the `recipes: write` permission.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RecipeInput"];
+                };
+            };
+            responses: {
+                /** @description Saved. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Recipe"];
+                    };
+                };
+                /** @description Something isn't right, field by field. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Delete a recipe
+         * @description Moves it to Recently deleted, where it can be put back for 30 days. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Moved to Recently deleted. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/versions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A recipe's earlier versions
+         * @description How it was before each change, newest first, so any change can be undone. The last 50 are kept. With an API key, it needs the `recipes: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The versions. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecipeVersion"][];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/versions/{versionId}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Go back to a version
+         * @description Makes the recipe what it was in that version. How it is now is kept as a version too, so this can be undone as well. With an API key, it needs the `recipes: write` permission.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                    versionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The recipe, as it was. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Recipe"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe or version. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/settings/household": {
@@ -1387,7 +2129,7 @@ export interface paths {
         };
         trace?: never;
     };
-    "/api/telemetry/report": {
+    "/api/settings/server": {
         parameters: {
             query?: never;
             header?: never;
@@ -1395,8 +2137,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The next telemetry summary
-         * @description Server admins only. Exactly what the daily summary would send, whether or not it's on.
+         * The server's settings
+         * @description Server admins only. Every server setting that can be seen here, with where its value comes from, and a little about the server.
          */
         get: {
             parameters: {
@@ -1407,13 +2149,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description The summary. */
+                /** @description The settings. */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["TelemetryReport"];
+                        "application/json": components["schemas"]["ServerSettings"];
                     };
                 };
                 /** @description Not signed in. */
@@ -1441,7 +2183,61 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * Change the server's settings
+         * @description Server admins only. Send only what changes. Nothing is saved if anything is wrong, and settings from environment variables can't be changed.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SettingChanges"];
+                };
+            };
+            responses: {
+                /** @description Saved. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ServerSettings"];
+                    };
+                };
+                /** @description Something isn't right, field by field. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/telemetry/install-id": {
@@ -1495,6 +2291,63 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/telemetry/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The next telemetry summary
+         * @description Server admins only. Exactly what the daily summary would send, whether or not it's on.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The summary. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TelemetryReport"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2104,119 +2957,6 @@ export interface components {
                 };
             };
         };
-        Health: {
-            /** @enum {string} */
-            status: "ok";
-            /** @example 0.1.0 */
-            version: string;
-        };
-        Ready: {
-            /** @enum {string} */
-            status: "ready";
-            /** @enum {string} */
-            database: "sqlite" | "postgres";
-        };
-        Capabilities: {
-            version: string;
-            modules: {
-                /** @example errorTracking */
-                id: string;
-                on: boolean;
-                /**
-                 * @description When it's off, what it needs, as a stable code.
-                 * @example dsn
-                 */
-                needs?: string;
-            }[];
-            /** @description What the modules that are on make possible. */
-            capabilities: string[];
-            /** @description What the web app needs from each module that's on, by module id. */
-            client: {
-                [key: string]: {
-                    [key: string]: unknown;
-                };
-            };
-        };
-        Household: {
-            id: string;
-            name: string;
-            country: string | null;
-            currency: string | null;
-            timeZone: string;
-            weekStartsOn: number;
-            /** @enum {string} */
-            role: "owner" | "admin" | "member";
-        };
-        HouseholdChanges: {
-            name?: string;
-            country?: string | null;
-            currency?: string | null;
-            timeZone?: string;
-            weekStartsOn?: number;
-        };
-        Member: {
-            id: string;
-            userId: string;
-            name: string;
-            username: string | null;
-            /** @enum {string} */
-            role: "owner" | "admin" | "member";
-            /** Format: date-time */
-            joinedAt: string;
-        };
-        InviteLink: {
-            id: string;
-            /** @enum {string} */
-            role: "admin" | "member";
-            /** Format: date-time */
-            expiresAt: string;
-            /** Format: date-time */
-            createdAt: string;
-        };
-        NewInviteLink: components["schemas"]["InviteLink"] & {
-            /** Format: uri */
-            link: string;
-        };
-        SetupStatus: {
-            needed: boolean;
-        };
-        Me: {
-            id: string;
-            name: string;
-            email: string;
-            username: string | null;
-            serverAdmin: boolean;
-            households: {
-                id: string;
-                name: string;
-                /** @enum {string} */
-                role: "owner" | "admin" | "member";
-            }[];
-            activeHouseholdId: string | null;
-        };
-        SetupRequest: components["schemas"]["NewAccount"] & {
-            code: string;
-            household: string;
-        };
-        NewAccount: {
-            name: string;
-            /** Format: email */
-            email: string;
-            username: string;
-            password: string;
-        };
-        Invite: {
-            household: {
-                name: string;
-            };
-            /** @enum {string} */
-            role: "admin" | "member";
-            /** Format: date-time */
-            expiresAt: string;
-        };
-        JoinRequest: {
-            account?: components["schemas"]["NewAccount"];
-        };
         ApiKey: {
             id: string;
             name: string;
@@ -2260,15 +3000,226 @@ export interface components {
             /** @default 90 */
             expiresInDays: 30 | 90 | 365 | null;
         };
-        ServerSettings: {
-            about: {
-                version: string;
-                /** @enum {string} */
-                installMethod: "source" | "docker";
-                /** @enum {string} */
-                database: "sqlite" | "postgres";
-                publicUrl: string | null;
+        Invite: {
+            household: {
+                name: string;
             };
+            /** @enum {string} */
+            role: "admin" | "member";
+            /** Format: date-time */
+            expiresAt: string;
+        };
+        Me: {
+            id: string;
+            name: string;
+            email: string;
+            username: string | null;
+            serverAdmin: boolean;
+            households: {
+                id: string;
+                name: string;
+                /** @enum {string} */
+                role: "owner" | "admin" | "member";
+            }[];
+            activeHouseholdId: string | null;
+        };
+        JoinRequest: {
+            account?: components["schemas"]["NewAccount"];
+        };
+        NewAccount: {
+            name: string;
+            /** Format: email */
+            email: string;
+            username: string;
+            password: string;
+        };
+        SetupStatus: {
+            needed: boolean;
+        };
+        SetupRequest: components["schemas"]["NewAccount"] & {
+            code: string;
+            household: string;
+        };
+        Capabilities: {
+            version: string;
+            modules: {
+                /** @example errorTracking */
+                id: string;
+                on: boolean;
+                /**
+                 * @description When it's off, what it needs, as a stable code.
+                 * @example dsn
+                 */
+                needs?: string;
+            }[];
+            /** @description What the modules that are on make possible. */
+            capabilities: string[];
+            /** @description What the web app needs from each module that's on, by module id. */
+            client: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        Health: {
+            /** @enum {string} */
+            status: "ok";
+            /** @example 0.1.0 */
+            version: string;
+        };
+        Ready: {
+            /** @enum {string} */
+            status: "ready";
+            /** @enum {string} */
+            database: "sqlite" | "postgres";
+        };
+        Household: {
+            id: string;
+            name: string;
+            country: string | null;
+            currency: string | null;
+            timeZone: string;
+            weekStartsOn: number;
+            /** @enum {string} */
+            role: "owner" | "admin" | "member";
+        };
+        HouseholdChanges: {
+            name?: string;
+            country?: string | null;
+            currency?: string | null;
+            timeZone?: string;
+            weekStartsOn?: number;
+        };
+        InviteLink: {
+            id: string;
+            /** @enum {string} */
+            role: "admin" | "member";
+            /** Format: date-time */
+            expiresAt: string;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        NewInviteLink: components["schemas"]["InviteLink"] & {
+            /** Format: uri */
+            link: string;
+        };
+        Member: {
+            id: string;
+            userId: string;
+            name: string;
+            username: string | null;
+            /** @enum {string} */
+            role: "owner" | "admin" | "member";
+            /** Format: date-time */
+            joinedAt: string;
+        };
+        RecipeList: {
+            recipes: components["schemas"]["RecipeSummary"][];
+            /** @description How many match, in all. */
+            total: number;
+        };
+        RecipeSummary: {
+            id: string;
+            /** @example lemon-chicken */
+            slug: string;
+            name: string;
+            description: string | null;
+            servings: number | null;
+            /** @description As given, or prep and cook added up. */
+            totalMinutes: number | null;
+            rating: number | null;
+            tags: string[];
+            /** Format: date-time */
+            lastMadeAt: string | null;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        Recipe: components["schemas"]["RecipeSummary"] & {
+            /** @enum {string} */
+            origin: "link" | "video" | "text" | "photo" | "manual" | "assistant" | "mealie" | "paprika" | "merran";
+            sourceUrl: string | null;
+            yieldText: string | null;
+            prepMinutes: number | null;
+            cookMinutes: number | null;
+            notes: string | null;
+            ingredients: components["schemas"]["Ingredient"][];
+            steps: components["schemas"]["Step"][];
+        };
+        Ingredient: {
+            id: string;
+            section: string | null;
+            /** @description The line as written. */
+            text: string;
+            quantity: number | null;
+            quantityMax: number | null;
+            /** @example tablespoon */
+            unit: string | null;
+            food: string | null;
+            note: string | null;
+        };
+        Step: {
+            id: string;
+            section: string | null;
+            text: string;
+        };
+        RecipeInput: {
+            name: string;
+            description?: string | null;
+            servings?: number | null;
+            /** @description What it makes, when that isn't servings: "2 loaves". */
+            yieldText?: string | null;
+            prepMinutes?: number | null;
+            cookMinutes?: number | null;
+            totalMinutes?: number | null;
+            notes?: string | null;
+            sourceUrl?: string | "" | null;
+            rating?: number | null;
+            /** @default [] */
+            tags: string[];
+            /**
+             * @default []
+             * @example [
+             *       "# Dough",
+             *       "2 cups flour",
+             *       "1 tsp salt"
+             *     ]
+             */
+            ingredients: string[];
+            /** @default [] */
+            steps: string[];
+        };
+        DeletedRecipe: components["schemas"]["RecipeSummary"] & {
+            /** Format: date-time */
+            deletedAt: string;
+            /**
+             * Format: date-time
+             * @description When it's deleted for good.
+             */
+            goneAt: string;
+        };
+        Tag: {
+            id: string;
+            name: string;
+            /** @description How many recipes have it. */
+            recipes: number;
+        };
+        TagChanges: {
+            /** @description A name another tag already has merges the two. */
+            name: string;
+        };
+        RecipeVersion: {
+            id: string;
+            /** @enum {string} */
+            source: "import" | "edit" | "tidy" | "assistant" | "swap" | "restore";
+            /** @description The recipe's name then. */
+            name: string;
+            createdBy: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        HouseholdSettings: {
             settings: components["schemas"]["SettingState"][];
         };
         SettingState: {
@@ -2305,7 +3256,15 @@ export interface components {
         SettingChanges: {
             [key: string]: unknown;
         };
-        HouseholdSettings: {
+        ServerSettings: {
+            about: {
+                version: string;
+                /** @enum {string} */
+                installMethod: "source" | "docker";
+                /** @enum {string} */
+                database: "sqlite" | "postgres";
+                publicUrl: string | null;
+            };
             settings: components["schemas"]["SettingState"][];
         };
         TelemetryReport: {

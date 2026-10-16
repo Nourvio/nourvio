@@ -35,6 +35,10 @@
       "description": "The household in use: its settings, its people and their roles, and invite links."
     },
     {
+      "name": "Recipes",
+      "description": "The household's recipes, their tags and versions, and Recently deleted. Ingredients and steps are written as lines, as in the editor, and each ingredient line is read into its amount, unit, food and note."
+    },
+    {
       "name": "Settings",
       "description": "Settings for the server (its admin only) and the household in use. A setting from an environment variable is locked, and a secret is never sent back: only whether it's set, and its last four characters."
     },
@@ -92,438 +96,6 @@
         "required": [
           "error"
         ]
-      },
-      "Health": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "ok"
-            ]
-          },
-          "version": {
-            "type": "string",
-            "example": "0.1.0"
-          }
-        },
-        "required": [
-          "status",
-          "version"
-        ]
-      },
-      "Ready": {
-        "type": "object",
-        "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "ready"
-            ]
-          },
-          "database": {
-            "type": "string",
-            "enum": [
-              "sqlite",
-              "postgres"
-            ]
-          }
-        },
-        "required": [
-          "status",
-          "database"
-        ]
-      },
-      "Capabilities": {
-        "type": "object",
-        "properties": {
-          "version": {
-            "type": "string"
-          },
-          "modules": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string",
-                  "example": "errorTracking"
-                },
-                "on": {
-                  "type": "boolean"
-                },
-                "needs": {
-                  "type": "string",
-                  "description": "When it's off, what it needs, as a stable code.",
-                  "example": "dsn"
-                }
-              },
-              "required": [
-                "id",
-                "on"
-              ]
-            }
-          },
-          "capabilities": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "description": "What the modules that are on make possible."
-          },
-          "client": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "object",
-              "additionalProperties": {}
-            },
-            "description": "What the web app needs from each module that's on, by module id."
-          }
-        },
-        "required": [
-          "version",
-          "modules",
-          "capabilities",
-          "client"
-        ]
-      },
-      "Household": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "country": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "currency": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "timeZone": {
-            "type": "string"
-          },
-          "weekStartsOn": {
-            "type": "integer"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "owner",
-              "admin",
-              "member"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "country",
-          "currency",
-          "timeZone",
-          "weekStartsOn",
-          "role"
-        ]
-      },
-      "HouseholdChanges": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 100
-          },
-          "country": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "pattern": "^[A-Z]{2}$"
-          },
-          "currency": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "pattern": "^[A-Z]{3}$"
-          },
-          "timeZone": {
-            "type": "string"
-          },
-          "weekStartsOn": {
-            "type": "integer",
-            "minimum": 0,
-            "maximum": 6
-          }
-        }
-      },
-      "Member": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "userId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "username": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "owner",
-              "admin",
-              "member"
-            ]
-          },
-          "joinedAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "userId",
-          "name",
-          "username",
-          "role",
-          "joinedAt"
-        ]
-      },
-      "InviteLink": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "admin",
-              "member"
-            ]
-          },
-          "expiresAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "role",
-          "expiresAt",
-          "createdAt"
-        ]
-      },
-      "NewInviteLink": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/InviteLink"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "link": {
-                "type": "string",
-                "format": "uri"
-              }
-            },
-            "required": [
-              "link"
-            ]
-          }
-        ]
-      },
-      "SetupStatus": {
-        "type": "object",
-        "properties": {
-          "needed": {
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "needed"
-        ]
-      },
-      "Me": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "username": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "serverAdmin": {
-            "type": "boolean"
-          },
-          "households": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "string"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "role": {
-                  "type": "string",
-                  "enum": [
-                    "owner",
-                    "admin",
-                    "member"
-                  ]
-                }
-              },
-              "required": [
-                "id",
-                "name",
-                "role"
-              ]
-            }
-          },
-          "activeHouseholdId": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "email",
-          "username",
-          "serverAdmin",
-          "households",
-          "activeHouseholdId"
-        ]
-      },
-      "SetupRequest": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/NewAccount"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "code": {
-                "type": "string",
-                "minLength": 1
-              },
-              "household": {
-                "type": "string",
-                "minLength": 1,
-                "maxLength": 100
-              }
-            },
-            "required": [
-              "code",
-              "household"
-            ]
-          }
-        ]
-      },
-      "NewAccount": {
-        "type": "object",
-        "properties": {
-          "name": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 100
-          },
-          "email": {
-            "type": "string",
-            "format": "email"
-          },
-          "username": {
-            "type": "string",
-            "minLength": 3,
-            "maxLength": 30,
-            "pattern": "^[a-zA-Z0-9_.]+$"
-          },
-          "password": {
-            "type": "string",
-            "minLength": 10,
-            "maxLength": 128
-          }
-        },
-        "required": [
-          "name",
-          "email",
-          "username",
-          "password"
-        ]
-      },
-      "Invite": {
-        "type": "object",
-        "properties": {
-          "household": {
-            "type": "object",
-            "properties": {
-              "name": {
-                "type": "string"
-              }
-            },
-            "required": [
-              "name"
-            ]
-          },
-          "role": {
-            "type": "string",
-            "enum": [
-              "admin",
-              "member"
-            ]
-          },
-          "expiresAt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "household",
-          "role",
-          "expiresAt"
-        ]
-      },
-      "JoinRequest": {
-        "type": "object",
-        "properties": {
-          "account": {
-            "$ref": "#/components/schemas/NewAccount"
-          }
-        }
       },
       "ApiKey": {
         "type": "object",
@@ -702,43 +274,917 @@
           "permissions"
         ]
       },
-      "ServerSettings": {
+      "Invite": {
         "type": "object",
         "properties": {
-          "about": {
+          "household": {
             "type": "object",
             "properties": {
-              "version": {
+              "name": {
                 "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "member"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "household",
+          "role",
+          "expiresAt"
+        ]
+      },
+      "Me": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "username": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "serverAdmin": {
+            "type": "boolean"
+          },
+          "households": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "role": {
+                  "type": "string",
+                  "enum": [
+                    "owner",
+                    "admin",
+                    "member"
+                  ]
+                }
               },
-              "installMethod": {
+              "required": [
+                "id",
+                "name",
+                "role"
+              ]
+            }
+          },
+          "activeHouseholdId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "email",
+          "username",
+          "serverAdmin",
+          "households",
+          "activeHouseholdId"
+        ]
+      },
+      "JoinRequest": {
+        "type": "object",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/NewAccount"
+          }
+        }
+      },
+      "NewAccount": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "username": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 30,
+            "pattern": "^[a-zA-Z0-9_.]+$"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 128
+          }
+        },
+        "required": [
+          "name",
+          "email",
+          "username",
+          "password"
+        ]
+      },
+      "SetupStatus": {
+        "type": "object",
+        "properties": {
+          "needed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "needed"
+        ]
+      },
+      "SetupRequest": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NewAccount"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "minLength": 1
+              },
+              "household": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              }
+            },
+            "required": [
+              "code",
+              "household"
+            ]
+          }
+        ]
+      },
+      "Capabilities": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "errorTracking"
+                },
+                "on": {
+                  "type": "boolean"
+                },
+                "needs": {
+                  "type": "string",
+                  "description": "When it's off, what it needs, as a stable code.",
+                  "example": "dsn"
+                }
+              },
+              "required": [
+                "id",
+                "on"
+              ]
+            }
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What the modules that are on make possible."
+          },
+          "client": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            "description": "What the web app needs from each module that's on, by module id."
+          }
+        },
+        "required": [
+          "version",
+          "modules",
+          "capabilities",
+          "client"
+        ]
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok"
+            ]
+          },
+          "version": {
+            "type": "string",
+            "example": "0.1.0"
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ]
+      },
+      "Ready": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready"
+            ]
+          },
+          "database": {
+            "type": "string",
+            "enum": [
+              "sqlite",
+              "postgres"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "database"
+        ]
+      },
+      "Household": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "weekStartsOn": {
+            "type": "integer"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "country",
+          "currency",
+          "timeZone",
+          "weekStartsOn",
+          "role"
+        ]
+      },
+      "HouseholdChanges": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "country": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[A-Z]{2}$"
+          },
+          "currency": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[A-Z]{3}$"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "weekStartsOn": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6
+          }
+        }
+      },
+      "InviteLink": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "admin",
+              "member"
+            ]
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "expiresAt",
+          "createdAt"
+        ]
+      },
+      "NewInviteLink": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/InviteLink"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "link": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "required": [
+              "link"
+            ]
+          }
+        ]
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "username": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "owner",
+              "admin",
+              "member"
+            ]
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "userId",
+          "name",
+          "username",
+          "role",
+          "joinedAt"
+        ]
+      },
+      "RecipeList": {
+        "type": "object",
+        "properties": {
+          "recipes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeSummary"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "How many match, in all."
+          }
+        },
+        "required": [
+          "recipes",
+          "total"
+        ]
+      },
+      "RecipeSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "example": "lemon-chicken"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "totalMinutes": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "As given, or prep and cook added up."
+          },
+          "rating": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "lastMadeAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "servings",
+          "totalMinutes",
+          "rating",
+          "tags",
+          "lastMadeAt",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "Recipe": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RecipeSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "origin": {
                 "type": "string",
                 "enum": [
-                  "source",
-                  "docker"
+                  "link",
+                  "video",
+                  "text",
+                  "photo",
+                  "manual",
+                  "assistant",
+                  "mealie",
+                  "paprika",
+                  "merran"
                 ]
               },
-              "database": {
-                "type": "string",
-                "enum": [
-                  "sqlite",
-                  "postgres"
-                ]
-              },
-              "publicUrl": {
+              "sourceUrl": {
                 "type": [
                   "string",
                   "null"
                 ]
+              },
+              "yieldText": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "prepMinutes": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "cookMinutes": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "notes": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ingredients": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Ingredient"
+                }
+              },
+              "steps": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/Step"
+                }
               }
             },
             "required": [
-              "version",
-              "installMethod",
-              "database",
-              "publicUrl"
+              "origin",
+              "sourceUrl",
+              "yieldText",
+              "prepMinutes",
+              "cookMinutes",
+              "notes",
+              "ingredients",
+              "steps"
+            ]
+          }
+        ]
+      },
+      "Ingredient": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "section": {
+            "type": [
+              "string",
+              "null"
             ]
           },
+          "text": {
+            "type": "string",
+            "description": "The line as written."
+          },
+          "quantity": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "quantityMax": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "tablespoon"
+          },
+          "food": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "section",
+          "text",
+          "quantity",
+          "quantityMax",
+          "unit",
+          "food",
+          "note"
+        ]
+      },
+      "Step": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "section": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "section",
+          "text"
+        ]
+      },
+      "RecipeInput": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 2000
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 1000
+          },
+          "yieldText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 100,
+            "description": "What it makes, when that isn't servings: \"2 loaves\"."
+          },
+          "prepMinutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "cookMinutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "totalMinutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "notes": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 5000
+          },
+          "sourceUrl": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri"
+              },
+              {
+                "type": "string",
+                "enum": [
+                  ""
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rating": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 5
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 40
+            },
+            "maxItems": 30,
+            "default": []
+          },
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "maxItems": 300,
+            "default": [],
+            "example": [
+              "# Dough",
+              "2 cups flour",
+              "1 tsp salt"
+            ]
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 5000
+            },
+            "maxItems": 200,
+            "default": []
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "DeletedRecipe": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/RecipeSummary"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "deletedAt": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "goneAt": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When it's deleted for good."
+              }
+            },
+            "required": [
+              "deletedAt",
+              "goneAt"
+            ]
+          }
+        ]
+      },
+      "Tag": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "recipes": {
+            "type": "number",
+            "description": "How many recipes have it."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "recipes"
+        ]
+      },
+      "TagChanges": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "description": "A name another tag already has merges the two."
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "RecipeVersion": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "import",
+              "edit",
+              "tidy",
+              "assistant",
+              "swap",
+              "restore"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "description": "The recipe's name then."
+          },
+          "createdBy": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "source",
+          "name",
+          "createdBy",
+          "createdAt"
+        ]
+      },
+      "HouseholdSettings": {
+        "type": "object",
+        "properties": {
           "settings": {
             "type": "array",
             "items": {
@@ -747,7 +1193,6 @@
           }
         },
         "required": [
-          "about",
           "settings"
         ]
       },
@@ -836,9 +1281,43 @@
           "errorTracking.dsn": null
         }
       },
-      "HouseholdSettings": {
+      "ServerSettings": {
         "type": "object",
         "properties": {
+          "about": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              },
+              "installMethod": {
+                "type": "string",
+                "enum": [
+                  "source",
+                  "docker"
+                ]
+              },
+              "database": {
+                "type": "string",
+                "enum": [
+                  "sqlite",
+                  "postgres"
+                ]
+              },
+              "publicUrl": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "version",
+              "installMethod",
+              "database",
+              "publicUrl"
+            ]
+          },
           "settings": {
             "type": "array",
             "items": {
@@ -847,6 +1326,7 @@
           }
         },
         "required": [
+          "about",
           "settings"
         ]
       },
@@ -1045,6 +1525,490 @@
     "parameters": {}
   },
   "paths": {
+    "/api/auth/api-keys": {
+      "get": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Your API keys",
+        "description": "Your keys in every household you're in, newest first. The keys themselves can't be shown again.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Your keys.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApiKey"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Make an API key",
+        "description": "For the household in use. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewApiKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Made. Copy the key now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewApiKey"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/api-keys/current": {
+      "get": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Check an API key",
+        "description": "The key this request was sent with: its household and what it may do. A quick way for a tool like Home Assistant to check its key works.",
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The key works.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKey"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No API key was sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The key doesn't work.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/api-keys/{keyId}": {
+      "delete": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Revoke an API key",
+        "description": "It stops working straight away.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revoked."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "You have no such key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/join/{token}": {
+      "get": {
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "See an invite",
+        "description": "Which household an invite link is for, before joining.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The invite can be used.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Invite"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No invite has that link.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The link has been used, or has expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "Join a household",
+        "description": "Signed in, this adds you to the invite's household. Signed out, send `account` to make one, which then signs in.",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "token",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Joined, with an account you already had.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Joined, with a new account, and signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Signed out, and no account was sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No invite has that link.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Already in the household, or the account exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "The link has been used, or has expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "Who's signed in",
+        "description": "The signed-in person, their households and the one in use on this device. Switch households with `POST /api/auth/organization/set-active`.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/setup": {
+      "get": {
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "Whether the server still needs setting up",
+        "responses": {
+          "200": {
+            "description": "True until the first account exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetupStatus"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Sign-in"
+        ],
+        "summary": "Set up the server",
+        "description": "Makes the first account, which is the server admin, and its household, then signs in. Needs the setup code printed in the server's log.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetupRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Set up, and signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Me"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Something's wrong with what was sent, or the code.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The server's already set up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many wrong codes. Try again in a few minutes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/capabilities": {
+      "get": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "What's on",
+        "description": "Which of Merran's optional parts are on, what they make possible, and what the web app needs from them. Needs no sign-in: the web app reads it before anyone signs in.",
+        "responses": {
+          "200": {
+            "description": "What's on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "tags": [
@@ -1090,27 +2054,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/capabilities": {
-      "get": {
-        "tags": [
-          "Server"
-        ],
-        "summary": "What's on",
-        "description": "Which of Merran's optional parts are on, what they make possible, and what the web app needs from them. Needs no sign-in: the web app reads it before anyone signs in.",
-        "responses": {
-          "200": {
-            "description": "What's on.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Capabilities"
                 }
               }
             }
@@ -1276,6 +2219,178 @@
           },
           "403": {
             "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/invites": {
+      "get": {
+        "tags": [
+          "Households"
+        ],
+        "summary": "Invite links that can still be used",
+        "description": "Household admins only. The links themselves can't be shown again.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Unused links, newest first.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InviteLink"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Households"
+        ],
+        "summary": "Make an invite link",
+        "description": "Household admins only. The link works once, for 7 days. Send it to the person; it's shown only now.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": [
+                      "admin",
+                      "member"
+                    ],
+                    "default": "member"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Made.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewInviteLink"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/invites/{inviteId}": {
+      "delete": {
+        "tags": [
+          "Households"
+        ],
+        "summary": "Cancel an invite link",
+        "description": "Household admins only.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "inviteId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Cancelled."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such invite.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1505,660 +2620,100 @@
         }
       }
     },
-    "/api/households/current/invites": {
+    "/api/recipes": {
       "get": {
         "tags": [
-          "Households"
+          "Recipes"
         ],
-        "summary": "Invite links that can still be used",
-        "description": "Household admins only. The links themselves can't be shown again.",
+        "summary": "Find recipes",
+        "description": "The household's recipes, a page at a time: searched, filtered by tags, and sorted. With an API key, it needs the `recipes: read` permission.",
         "security": [
           {
             "session": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Unused links, newest first.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/InviteLink"
-                  }
-                }
-              }
-            }
           },
-          "401": {
-            "description": "Not signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Not allowed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Households"
-        ],
-        "summary": "Make an invite link",
-        "description": "Household admins only. The link works once, for 7 days. Send it to the person; it's shown only now.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "role": {
-                    "type": "string",
-                    "enum": [
-                      "admin",
-                      "member"
-                    ],
-                    "default": "member"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Made.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NewInviteLink"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Not allowed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/households/current/invites/{inviteId}": {
-      "delete": {
-        "tags": [
-          "Households"
-        ],
-        "summary": "Cancel an invite link",
-        "description": "Household admins only.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "inviteId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Cancelled."
-          },
-          "401": {
-            "description": "Not signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Not allowed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No such invite.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/auth/setup": {
-      "get": {
-        "tags": [
-          "Sign-in"
-        ],
-        "summary": "Whether the server still needs setting up",
-        "responses": {
-          "200": {
-            "description": "True until the first account exists.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SetupStatus"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Sign-in"
-        ],
-        "summary": "Set up the server",
-        "description": "Makes the first account, which is the server admin, and its household, then signs in. Needs the setup code printed in the server's log.",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SetupRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Set up, and signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Me"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Something's wrong with what was sent, or the code.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "The server's already set up.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Too many wrong codes. Try again in a few minutes.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/auth/me": {
-      "get": {
-        "tags": [
-          "Sign-in"
-        ],
-        "summary": "Who's signed in",
-        "description": "The signed-in person, their households and the one in use on this device. Switch households with `POST /api/auth/organization/set-active`.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Me"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/auth/join/{token}": {
-      "get": {
-        "tags": [
-          "Sign-in"
-        ],
-        "summary": "See an invite",
-        "description": "Which household an invite link is for, before joining.",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "token",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "The invite can be used.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Invite"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No invite has that link.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "410": {
-            "description": "The link has been used, or has expired.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Sign-in"
-        ],
-        "summary": "Join a household",
-        "description": "Signed in, this adds you to the invite's household. Signed out, send `account` to make one, which then signs in.",
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "token",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/JoinRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Joined, with an account you already had.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Me"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Joined, with a new account, and signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Me"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Signed out, and no account was sent.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "No invite has that link.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Already in the household, or the account exists.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "410": {
-            "description": "The link has been used, or has expired.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/auth/api-keys": {
-      "get": {
-        "tags": [
-          "API keys"
-        ],
-        "summary": "Your API keys",
-        "description": "Your keys in every household you're in, newest first. The keys themselves can't be shown again.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Your keys.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/ApiKey"
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Not allowed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "API keys"
-        ],
-        "summary": "Make an API key",
-        "description": "For the household in use. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NewApiKeyRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "Made. Copy the key now.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NewApiKey"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Not signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Not allowed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/auth/api-keys/current": {
-      "get": {
-        "tags": [
-          "API keys"
-        ],
-        "summary": "Check an API key",
-        "description": "The key this request was sent with: its household and what it may do. A quick way for a tool like Home Assistant to check its key works.",
-        "security": [
           {
             "apiKey": []
           }
         ],
-        "responses": {
-          "200": {
-            "description": "The key works.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiKey"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "No API key was sent.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "The key doesn't work.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/auth/api-keys/{keyId}": {
-      "delete": {
-        "tags": [
-          "API keys"
-        ],
-        "summary": "Revoke an API key",
-        "description": "It stops working straight away.",
-        "security": [
-          {
-            "session": []
-          }
-        ],
         "parameters": [
           {
             "schema": {
-              "type": "string"
+              "type": "string",
+              "maxLength": 200,
+              "description": "Words in the name, description or ingredients."
             },
-            "required": true,
-            "name": "keyId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Revoked."
+            "required": false,
+            "description": "Words in the name, description or ingredients.",
+            "name": "q",
+            "in": "query"
           },
-          "401": {
-            "description": "Not signed in.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Not allowed.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "You have no such key.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/settings/server": {
-      "get": {
-        "tags": [
-          "Settings"
-        ],
-        "summary": "The server's settings",
-        "description": "Server admins only. Every server setting that can be seen here, with where its value comes from, and a little about the server.",
-        "security": [
           {
-            "session": []
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ],
+              "description": "Only recipes with this tag. Repeat it for all of several."
+            },
+            "required": false,
+            "description": "Only recipes with this tag. Repeat it for all of several.",
+            "name": "tag",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "newest",
+                "name",
+                "updated",
+                "rating"
+              ],
+              "default": "newest"
+            },
+            "required": false,
+            "name": "sort",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 48
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "description": "The settings.",
+            "description": "The recipes that match.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServerSettings"
+                  "$ref": "#/components/schemas/RecipeList"
                 }
               }
             }
@@ -2185,15 +2740,18 @@
           }
         }
       },
-      "patch": {
+      "post": {
         "tags": [
-          "Settings"
+          "Recipes"
         ],
-        "summary": "Change the server's settings",
-        "description": "Server admins only. Send only what changes. Nothing is saved if anything is wrong, and settings from environment variables can't be changed.",
+        "summary": "Add a recipe",
+        "description": "Ingredients and steps are lines, one each, as typed in the editor; a line starting with \"#\" starts a section. Each ingredient line is read into its amount, unit, food and note. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
+          },
+          {
+            "apiKey": []
           }
         ],
         "requestBody": {
@@ -2201,18 +2759,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SettingChanges"
+                "$ref": "#/components/schemas/RecipeInput"
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "Saved.",
+          "201": {
+            "description": "Added.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ServerSettings"
+                  "$ref": "#/components/schemas/Recipe"
                 }
               }
             }
@@ -2239,6 +2797,803 @@
           },
           "403": {
             "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/deleted": {
+      "get": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Recently deleted",
+        "description": "Deleted recipes, which can be put back for 30 days, latest first. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What's there.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeletedRecipe"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Empty Recently deleted",
+        "description": "Deletes everything in it for good. This can't be undone. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Emptied."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/deleted/{recipeId}": {
+      "delete": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Delete a recipe for good",
+        "description": "Only for a recipe in Recently deleted. This can't be undone. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "recipeId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted for good."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe in Recently deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/deleted/{recipeId}/restore": {
+      "post": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Put a recipe back",
+        "description": "Takes a recipe out of Recently deleted, back where it was. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "recipeId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Put back.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe in Recently deleted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/tags": {
+      "get": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Recipe tags",
+        "description": "The household's tags, with how many recipes have each, alphabetically. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The tags.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Tag"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/tags/{tagId}": {
+      "patch": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Rename or merge a tag",
+        "description": "Renaming a tag to another tag's name merges them: every recipe with either has the one tag. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "tagId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "All the tags, after the change.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Tag"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such tag.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Delete a tag",
+        "description": "Takes it off every recipe. The recipes stay. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "tagId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such tag.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}": {
+      "get": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "A recipe",
+        "description": "With its ingredients, read into amounts, units and foods, and its steps. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Change a recipe",
+        "description": "Replaces the whole recipe, as the editor saves it. The recipe as it was is kept as a version, so the change can be undone; its slug stays the same. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Something isn't right, field by field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Delete a recipe",
+        "description": "Moves it to Recently deleted, where it can be put back for 30 days. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Moved to Recently deleted."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/versions": {
+      "get": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "A recipe's earlier versions",
+        "description": "How it was before each change, newest first, so any change can be undone. The last 50 are kept. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The versions.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RecipeVersion"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/versions/{versionId}/restore": {
+      "post": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Go back to a version",
+        "description": "Makes the recipe what it was in that version. How it is now is kept as a version too, so this can be undone as well. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "versionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The recipe, as it was.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe or version.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2360,13 +3715,13 @@
         }
       }
     },
-    "/api/telemetry/report": {
+    "/api/settings/server": {
       "get": {
         "tags": [
           "Settings"
         ],
-        "summary": "The next telemetry summary",
-        "description": "Server admins only. Exactly what the daily summary would send, whether or not it's on.",
+        "summary": "The server's settings",
+        "description": "Server admins only. Every server setting that can be seen here, with where its value comes from, and a little about the server.",
         "security": [
           {
             "session": []
@@ -2374,11 +3729,75 @@
         ],
         "responses": {
           "200": {
-            "description": "The summary.",
+            "description": "The settings.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TelemetryReport"
+                  "$ref": "#/components/schemas/ServerSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Change the server's settings",
+        "description": "Server admins only. Send only what changes. Nothing is saved if anything is wrong, and settings from environment variables can't be changed.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Something isn't right, field by field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -2421,6 +3840,52 @@
         "responses": {
           "200": {
             "description": "The next summary, with the new id.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/telemetry/report": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "The next telemetry summary",
+        "description": "Server admins only. Exactly what the daily summary would send, whether or not it's on.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The summary.",
             "content": {
               "application/json": {
                 "schema": {

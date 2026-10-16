@@ -65,13 +65,19 @@ export const Recipe = defineEntity({
     createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
+    // Replacing a recipe's lines deletes the ones it no longer has.
     ingredients: () =>
       p
         .oneToMany(RecipeIngredient)
         .mappedBy("recipe")
-        .orderBy({ position: "asc" }),
+        .orderBy({ position: "asc" })
+        .orphanRemoval(),
     steps: () =>
-      p.oneToMany(RecipeStep).mappedBy("recipe").orderBy({ position: "asc" }),
+      p
+        .oneToMany(RecipeStep)
+        .mappedBy("recipe")
+        .orderBy({ position: "asc" })
+        .orphanRemoval(),
   },
   uniques: [{ properties: ["household", "slug"] }],
   indexes: [{ properties: ["household", "sourceUrl"] }],

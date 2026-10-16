@@ -13,8 +13,8 @@
     "start": "pnpm --filter @merran/server start",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "format": "prettier --write apps",
-    "format:check": "prettier --check apps",
+    "format": "prettier --write apps packages",
+    "format:check": "prettier --check apps packages",
     "merran": "pnpm --filter @merran/server merran"
   },
   "devDependencies": {
