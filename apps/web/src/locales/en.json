@@ -946,7 +946,8 @@
       "delete": "Delete this note",
       "deleted": "Note deleted.",
       "byWhen": "{{when}} · {{name}}",
-      "lastTime": "Last time:"
+      "lastTime": "Last time:",
+      "savedSuggesting": "Saved. Your note's being turned into a suggested change to the recipe, which will wait in Review."
     },
     "diets": {
       "names": {
@@ -1082,7 +1083,8 @@
         "tags": "Tags",
         "description": "Description",
         "details": "Servings and times",
-        "marks": "What it can do without"
+        "marks": "What it can do without",
+        "notes": "Notes"
       },
       "now": "Now",
       "tidied": "Tidied",
@@ -1143,6 +1145,38 @@
         "started_one": "Tidying {{count}} recipe.",
         "started_other": "Tidying {{count}} recipes."
       }
+    },
+    "review": {
+      "fromNote": "From a cooking note: “{{note}}”",
+      "fromNoteLabel": "From a cooking note",
+      "fromNoteHere": "A change from a cooking note: {{summary}}",
+      "noteTitle": "A change from a cooking note",
+      "noNotes": "No notes yet.",
+      "suggested": "Suggested",
+      "noteDescription": "Here's what your note suggests changing. Tick what to keep."
+    },
+    "swaps": {
+      "button": "Swap {{line}}",
+      "standIn": "Find a stand-in",
+      "title": "Instead of {{line}}",
+      "description": "Stand-ins that work in this recipe, what's at home first. Use one this time, or save it to the recipe.",
+      "finding": "Finding stand-ins…",
+      "none": "Nothing that suits this recipe and your household. You can change the recipe by hand instead.",
+      "atHome": "At home",
+      "changesSteps_one": "Changes {{count}} step:",
+      "changesSteps_other": "Changes {{count}} steps:",
+      "use": "Use this time",
+      "save": "Save to recipe",
+      "saved": "Swapped in the recipe.",
+      "undo": "Undo",
+      "insteadOf": "instead of {{line}}",
+      "changedStep": "Changed for the swap",
+      "label": "Swapped this time",
+      "thisTime": "{{lines}} instead of {{line}}, this time.",
+      "showOriginal": "Show the original",
+      "hideOriginal": "Hide the original",
+      "using": "Using {{lines}} this time.",
+      "unswap": "Back to {{line}}"
     }
   },
   "cook": {
@@ -1851,7 +1885,13 @@
         "ownLimit": "This month's limit on the household's own AI keys is reached."
       },
       "fixAdmin": "Set it up in <link>Settings, Household</link>.",
-      "fixMember": "A household admin can set it up in Settings, Household."
+      "fixMember": "A household admin can set it up in Settings, Household.",
+      "swaps": {
+        "noKey": "Finding stand-ins needs AI, and this household has no AI key yet.",
+        "notCovered": "Finding stand-ins needs AI, and this household has no AI key yet.",
+        "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
+        "ownLimit": "This month's limit on the household's own AI keys is reached."
+      }
     }
   }
 }

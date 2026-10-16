@@ -4,7 +4,7 @@ import { cancelJob } from "../../../../../../services/jobs/jobs.ts"
 import {
   describeTidyRun,
   findTidyRun,
-} from "../../../../../../services/recipes/tidy/tidy-run.ts"
+} from "../../../../../../services/recipes/review/tidy-run.ts"
 import { inHousehold, openToKeys } from "../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../router.ts"
 import {

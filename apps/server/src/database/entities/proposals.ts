@@ -6,8 +6,11 @@ import { householdRef } from "./households.ts"
 import { Recipe } from "./recipes.ts"
 import { User } from "./users.ts"
 
-/** What a proposal changes. Tidy ups for now; the assistant's come later. */
-export const PROPOSAL_KINDS = ["tidy"] as const
+/**
+ * Where a proposal came from: tidy up, or a note left after cooking. The
+ * assistant's come later.
+ */
+export const PROPOSAL_KINDS = ["tidy", "note"] as const
 
 /**
  * A change the AI suggests, waiting in the Review queue for someone to
@@ -25,6 +28,8 @@ export const Proposal = defineEntity({
     status: p.enum(PROPOSAL_STATUSES),
     /** What it changes, in a sentence from the AI. */
     summary: p.text(),
+    /** The cooking note it came from. */
+    note: p.text().nullable(),
     /** The sections it changes, as they were and as it suggests. */
     before: p.json<TidyValues>(),
     after: p.json<TidyValues>(),

@@ -159,6 +159,11 @@ function ProposalItem({
                 {proposal.recipe.name}
               </Link>
             )}
+            {proposal.kind === "note" && (
+              <p className="text-sm text-muted-foreground">
+                {t("recipes.review.fromNoteLabel")}
+              </p>
+            )}
             <div className="flex flex-wrap gap-1">
               {proposal.sections.map((section) => (
                 <Badge key={section} variant="secondary">

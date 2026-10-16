@@ -1,6 +1,6 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { createRecipe } from "../recipes.ts"
-import { tidyAfterImport } from "../tidy/tidy-run.ts"
+import { tidyAfterImport } from "../review/tidy-run.ts"
 import {
   photoContent,
   readRecipe,

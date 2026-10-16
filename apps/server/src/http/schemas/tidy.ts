@@ -1,6 +1,7 @@
 import { z } from "@hono/zod-openapi"
 import {
   INGREDIENT_MARKS,
+  PROPOSAL_SECTIONS,
   PROPOSAL_STATUSES,
   TIDY_SECTIONS,
 } from "@merran/shared"
@@ -12,6 +13,13 @@ export const TidySectionSchema = z.enum(TIDY_SECTIONS).openapi("TidySection", {
   description:
     "A part of a recipe tidy up can change: its ingredients, steps, tags, a missing description, missing servings and times, and the marks on its ingredients.",
 })
+
+export const ProposalSectionSchema = z
+  .enum(PROPOSAL_SECTIONS)
+  .openapi("ProposalSection", {
+    description:
+      "A part of a recipe a suggestion can change: tidy up's sections, and the notes, which a cooking note can add to.",
+  })
 
 const MarkedLineSchema = z
   .object({
@@ -35,6 +43,7 @@ const TidyValuesSchema = z
       })
       .optional(),
     marks: z.array(MarkedLineSchema).optional(),
+    notes: z.string().nullable().optional(),
   })
   .openapi("TidyValues", {
     description:
@@ -53,6 +62,7 @@ const PROPOSAL = {
   },
   summary: "Split a long step and marked the chicken as needed.",
   sections: ["steps", "marks"] as ("steps" | "marks")[],
+  note: null,
   before: {
     steps: [
       "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!",
@@ -86,9 +96,12 @@ export const ProposalSchema = z
     summary: z
       .string()
       .openapi({ description: "What it changes, in a sentence." }),
-    sections: z.array(TidySectionSchema).openapi({
+    sections: z.array(ProposalSectionSchema).openapi({
       description:
         "The sections it changes, each applied or skipped on its own.",
+    }),
+    note: z.string().nullable().openapi({
+      description: "The cooking note it came from, for one made from a note.",
     }),
     before: TidyValuesSchema,
     after: TidyValuesSchema,
@@ -107,6 +120,9 @@ export const ProposalListSchema = z
 export const ProposalListQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
   offset: z.coerce.number().int().min(0).default(0),
+  recipe: z.string().optional().openapi({
+    description: "Only this recipe's, by its id or address.",
+  }),
 })
 
 export const ProposalParam = z.object({
@@ -136,7 +152,7 @@ export const TidyInputSchema = z
 export const ApplyInputSchema = z
   .object({
     sections: z
-      .array(TidySectionSchema)
+      .array(ProposalSectionSchema)
       .min(1, "Pick something to apply.")
       .openapi({ description: "The sections to apply. The rest are skipped." }),
   })

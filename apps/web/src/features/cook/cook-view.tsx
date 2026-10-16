@@ -55,6 +55,15 @@ import {
   useTicks,
 } from "@/features/recipes/ingredient-list"
 import { useRefreshRecipes, type Recipe } from "@/features/recipes/queries"
+import { withMarks } from "@/features/recipes/swaps/marks"
+import { StepSwapNote } from "@/features/recipes/swaps/step-swap-note"
+import { SwapDialog } from "@/features/recipes/swaps/swap-dialog"
+import { useCapability } from "@/features/capabilities/queries"
+import {
+  clearSwaps,
+  useSwapsThisTime,
+  withSwaps,
+} from "@/features/recipes/swaps/this-time"
 import { mergeLeftOut, useRecipeTastes } from "@/features/recipes/use-tastes"
 import { useUnitSystem } from "@/features/recipes/use-unit-system"
 import { api, ApiError, unwrap } from "@/lib/api/client"
@@ -106,13 +115,22 @@ export function CookView({
   const canGoBack = useCanGoBack()
   const navigate = useNavigate()
   const refresh = useRefreshRecipes()
-  const both = paired ? pairRecipes(recipe, paired, scale) : null
-  const ingredients = both?.ingredients ?? recipe.ingredients
-  const steps = both?.steps ?? recipe.steps
+  // Stand-ins used this time, from the recipe page or picked while cooking.
+  const thisTime = useSwapsThisTime(recipe.id)
+  const { swaps } = thisTime
+  const aiOn = useCapability("ai")
+  const [swapping, setSwapping] = React.useState<Line | null>(null)
+  const swapped = React.useMemo(() => withSwaps(recipe, swaps), [recipe, swaps])
+  const both = paired ? pairRecipes(swapped.recipe, paired, scale) : null
+  const ingredients = both?.ingredients ?? swapped.recipe.ingredients
+  const steps = both?.steps ?? swapped.recipe.steps
   /** How much each line is scaled: a pairing has its own amount. */
   const factorOf = (lineId: string) => both?.factors.get(lineId) ?? scale
   /** Lines left out for someone who doesn't like them. */
-  const leftOut = mergeLeftOut(useRecipeTastes(recipe), useRecipeTastes(paired))
+  const leftOut = mergeLeftOut(
+    useRecipeTastes(swapped.recipe),
+    useRecipeTastes(paired)
+  )
   const name = paired
     ? t("recipes.pairing.name", { base: recipe.name, paired: paired.name })
     : recipe.name
@@ -225,6 +243,8 @@ export function CookView({
         })
       )
       saveProgress(recipe.id, null)
+      // Swaps are for this time: next time starts as written.
+      clearSwaps(recipe.id)
       await refresh()
       toast.success(t("cook.made"))
       // Then "How did it go?", and back where cooking started.
@@ -362,6 +382,10 @@ export function CookView({
       ticks={ticks}
       highlighted={highlighted}
       leftOut={leftOut}
+      swapped={swapped.lines}
+      // A pairing's lines are another recipe's: swap those from its page.
+      onSwap={aiOn && !paired ? setSwapping : undefined}
+      onUnswap={thisTime.undo}
       size={size}
     />
   )
@@ -552,8 +576,18 @@ export function CookView({
                   STEP_TEXT[textSize]
                 )}
               >
-                <StepText text={step.text} system={system} cooking={cooking} />
+                <StepText
+                  text={step.text}
+                  system={system}
+                  cooking={cooking}
+                  marks={swapped.steps.get(step.id)?.names}
+                />
               </p>
+              <StepSwapNote
+                key={step.id}
+                swap={swapped.steps.get(step.id)}
+                system={system}
+              />
 
               {stepIngredients.length > 0 && (
                 <div className="grid gap-2">
@@ -695,6 +729,17 @@ export function CookView({
         )}
       </footer>
 
+      <SwapDialog
+        recipe={recipe}
+        line={swapping}
+        factor={scale}
+        system={system}
+        onUse={thisTime.use}
+        onUndo={thisTime.undo}
+        onOpenChange={(open) => {
+          if (!open) setSwapping(null)
+        }}
+      />
       <CookNoteDialog
         recipe={recipe}
         open={asking}
@@ -715,15 +760,20 @@ function StepText({
   text,
   system,
   cooking,
+  marks = [],
 }: {
   text: string
   system: UnitSystem
   cooking: Cooking
+  /** Names to mark: a stand-in used this time. */
+  marks?: readonly string[]
 }) {
   const { t } = useTranslation()
   return splitDurations(convertTemperatures(text, system)).map((piece, i) => {
     if (piece.type === "text") {
-      return <React.Fragment key={i}>{piece.text}</React.Fragment>
+      return (
+        <React.Fragment key={i}>{withMarks(piece.text, marks)}</React.Fragment>
+      )
     }
     const label = formatDuration(t, piece.seconds, piece.upTo)
     return (

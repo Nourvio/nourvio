@@ -2,14 +2,20 @@ import { convertTemperatures, type UnitSystem } from "@merran/shared"
 
 import { bySection } from "./ingredient-list"
 import type { Recipe } from "./queries"
+import { withMarks } from "./swaps/marks"
+import { StepSwapNote } from "./swaps/step-swap-note"
+import type { SwappedStep } from "./swaps/this-time"
 
 /** The steps, numbered right through, under their sections. */
 export function StepList({
   steps,
   system,
+  changed,
 }: {
   steps: Recipe["steps"]
   system: UnitSystem
+  /** Steps a stand-in used this time changes, by id. */
+  changed?: ReadonlyMap<string, SwappedStep>
 }) {
   let number = 0
   return (
@@ -30,9 +36,18 @@ export function StepList({
                   >
                     {number}
                   </span>
-                  <p className="pt-1 text-lg leading-relaxed">
-                    {convertTemperatures(step.text, system)}
-                  </p>
+                  <div className="grid gap-1 pt-1">
+                    <p className="text-lg leading-relaxed">
+                      {withMarks(
+                        convertTemperatures(step.text, system),
+                        changed?.get(step.id)?.names ?? []
+                      )}
+                    </p>
+                    <StepSwapNote
+                      swap={changed?.get(step.id)}
+                      system={system}
+                    />
+                  </div>
                 </li>
               )
             })}

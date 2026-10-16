@@ -21,6 +21,13 @@ export const TIDY_SECTIONS = [
 ] as const
 export type TidySection = (typeof TIDY_SECTIONS)[number]
 
+/**
+ * What any suggestion can change: tidy up's sections, and the notes, which
+ * a cooking note can add to.
+ */
+export const PROPOSAL_SECTIONS = [...TIDY_SECTIONS, "notes"] as const
+export type ProposalSection = (typeof PROPOSAL_SECTIONS)[number]
+
 /** A suggestion's state: waiting in Review, applied, or dismissed. */
 export const PROPOSAL_STATUSES = ["pending", "applied", "dismissed"] as const
 export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number]
@@ -48,4 +55,5 @@ export type TidyValues = {
   description?: string | null
   details?: RecipeDetails
   marks?: MarkedLine[]
+  notes?: string | null
 }

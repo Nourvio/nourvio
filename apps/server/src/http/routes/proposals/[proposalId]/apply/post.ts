@@ -1,6 +1,6 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
-import { applyProposal } from "../../../../../services/recipes/tidy/proposals.ts"
+import { applyProposal } from "../../../../../services/recipes/review/proposals.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import {

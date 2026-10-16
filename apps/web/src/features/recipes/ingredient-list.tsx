@@ -1,4 +1,6 @@
 import {
+  ArrowDataTransferHorizontalIcon,
+  ArrowTurnBackwardIcon,
   MinusSignCircleIcon,
   MinusSignIcon,
   PlusSignIcon,
@@ -15,6 +17,7 @@ import { cn } from "@/lib/utils"
 
 import { formatServings } from "./format"
 import type { Recipe } from "./queries"
+import type { SwappedLine } from "./swaps/this-time"
 import type { LeftOutLine } from "./use-tastes"
 
 type Line = Recipe["ingredients"][number]
@@ -89,6 +92,15 @@ export function ServingsStepper({ servings }: { servings: Servings }) {
       )}
     </div>
   )
+}
+
+/** A line as shown, at a scale and in units: "2 ½ tbsp tomato paste". */
+function shownLine(
+  text: string,
+  options: { factor: number; system: UnitSystem }
+) {
+  const { amount, rest } = displayIngredient(text, options)
+  return `${amount}${rest}`
 }
 
 /** Whether showing metric or US amounts would change any line. */
@@ -167,6 +179,9 @@ export function IngredientList({
   ticks,
   highlighted,
   leftOut,
+  swapped,
+  onSwap,
+  onUnswap,
   size = "default",
 }: {
   lines: Line[]
@@ -180,6 +195,12 @@ export function IngredientList({
   highlighted?: ReadonlySet<string>
   /** Lines left out for the household's dislikes, by id. */
   leftOut?: ReadonlyMap<string, LeftOutLine>
+  /** Lines of a stand-in used this time, by id: what they're instead of. */
+  swapped?: ReadonlyMap<string, SwappedLine>
+  /** Offers stand-ins for a line. */
+  onSwap?: (line: Line) => void
+  /** Goes back to a swapped line's ingredient, by its id. */
+  onUnswap?: (ingredientId: string) => void
   size?: "default" | "lg"
 }) {
   const { t } = useTranslation()
@@ -202,12 +223,27 @@ export function IngredientList({
                 system,
               })
               const out = leftOut?.get(line.id)
+              const swapButton = onSwap && (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="mt-0.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
+                  aria-label={t("recipes.swaps.button", { line: line.text })}
+                  title={t("recipes.swaps.button", { line: line.text })}
+                  onClick={() => onSwap(line)}
+                >
+                  <HugeiconsIcon
+                    icon={ArrowDataTransferHorizontalIcon}
+                    strokeWidth={2}
+                  />
+                </Button>
+              )
               if (out) {
                 return (
-                  <li key={line.id}>
+                  <li key={line.id} className="group flex items-start gap-1">
                     <div
                       className={cn(
-                        "flex items-start gap-3 rounded-xl px-2 py-1.5 text-muted-foreground",
+                        "flex min-w-0 flex-1 items-start gap-3 rounded-xl px-2 py-1.5 text-muted-foreground",
                         size === "lg" && "py-2"
                       )}
                     >
@@ -238,15 +274,17 @@ export function IngredientList({
                         </span>
                       </span>
                     </div>
+                    {swapButton}
                   </li>
                 )
               }
               const done = ticked.has(line.id)
+              const swap = swapped?.get(line.id)
               return (
-                <li key={line.id}>
+                <li key={line.id} className="group flex items-start gap-1">
                   <label
                     className={cn(
-                      "flex cursor-pointer items-start gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted/60",
+                      "flex min-w-0 flex-1 cursor-pointer items-start gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted/60",
                       highlighted?.has(line.id) &&
                         !done &&
                         "bg-accent text-accent-foreground hover:bg-accent/80",
@@ -269,8 +307,39 @@ export function IngredientList({
                         <span className="font-semibold">{amount}</span>
                       )}
                       {rest}
+                      {swap && (
+                        <span className="ml-1.5 text-sm text-primary">
+                          {t("recipes.swaps.insteadOf", {
+                            line: shownLine(swap.insteadOf, {
+                              factor: factorOf?.(line.id) ?? factor,
+                              system,
+                            }),
+                          })}
+                        </span>
+                      )}
                     </span>
                   </label>
+                  {swap
+                    ? onUnswap && (
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          className="mt-0.5 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
+                          aria-label={t("recipes.swaps.unswap", {
+                            line: swap.insteadOf,
+                          })}
+                          title={t("recipes.swaps.unswap", {
+                            line: swap.insteadOf,
+                          })}
+                          onClick={() => onUnswap(swap.ingredientId)}
+                        >
+                          <HugeiconsIcon
+                            icon={ArrowTurnBackwardIcon}
+                            strokeWidth={2}
+                          />
+                        </Button>
+                      )
+                    : swapButton}
                 </li>
               )
             })}

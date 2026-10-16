@@ -3,7 +3,7 @@ import type { AppDeps } from "../../../../core/context.ts"
 import {
   describeTidyRun,
   startTidyRun,
-} from "../../../../services/recipes/tidy/tidy-run.ts"
+} from "../../../../services/recipes/review/tidy-run.ts"
 import {
   asHouseholdAdmin,
   inHousehold,

@@ -1859,7 +1859,7 @@ export interface paths {
         put?: never;
         /**
          * Say how cooking a recipe went
-         * @description Stars, a note for next time, or both. The stars become the recipe's rating, without keeping a version. With an API key, it needs the `recipes: write` permission.
+         * @description Stars, a note for next time, or both. The stars become the recipe's rating, without keeping a version. With AI for cooking notes, a note is turned into a suggested change to the recipe in the background, waiting in the Review queue; `suggesting` says so. An opinion ("the kids loved it") is just kept. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["createCookNote"];
         delete?: never;
@@ -2034,6 +2034,46 @@ export interface paths {
          */
         put: operations["rateRecipe"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/stand-ins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stand-ins for an ingredient
+         * @description For an ingredient someone's out of, or doesn't eat: two to four stand-ins that work in this recipe, with amounts for the recipe as written, what's in the pantry first, and nothing the household avoids or that's against its diets. Each says how to use it, and rewrites any step it changes. Nothing is saved; use `POST /recipes/{recipe}/swap` to put one in the recipe. Uses the household's model for swaps, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["suggestStandIns"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/swap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Swap an ingredient in a recipe for good
+         * @description Puts lines in an ingredient's place, and rewrites the steps given, as one change that keeps a version of how it was. The answer has that version's id, to restore to undo it. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["saveSwap"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5411,6 +5451,7 @@ export interface components {
          *             "steps",
          *             "marks"
          *           ],
+         *           "note": null,
          *           "before": {
          *             "steps": [
          *               "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -5469,6 +5510,7 @@ export interface components {
          *         "steps",
          *         "marks"
          *       ],
+         *       "note": null,
          *       "before": {
          *         "steps": [
          *           "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -5506,7 +5548,7 @@ export interface components {
         Proposal: {
             id: string;
             /** @enum {string} */
-            kind: "tidy";
+            kind: "tidy" | "note";
             /** @enum {string} */
             status: "pending" | "applied" | "dismissed";
             recipe: {
@@ -5517,7 +5559,9 @@ export interface components {
             /** @description What it changes, in a sentence. */
             summary: string;
             /** @description The sections it changes, each applied or skipped on its own. */
-            sections: components["schemas"]["TidySection"][];
+            sections: components["schemas"]["ProposalSection"][];
+            /** @description The cooking note it came from, for one made from a note. */
+            note: string | null;
             before: components["schemas"]["TidyValues"];
             after: components["schemas"]["TidyValues"];
             /** Format: date-time */
@@ -5526,10 +5570,10 @@ export interface components {
             resolvedAt: string | null;
         };
         /**
-         * @description A part of a recipe tidy up can change: its ingredients, steps, tags, a missing description, missing servings and times, and the marks on its ingredients.
+         * @description A part of a recipe a suggestion can change: tidy up's sections, and the notes, which a cooking note can add to.
          * @enum {string}
          */
-        TidySection: "ingredients" | "steps" | "tags" | "description" | "details" | "marks";
+        ProposalSection: "ingredients" | "steps" | "tags" | "description" | "details" | "marks" | "notes";
         /** @description A recipe's sections, only the ones a suggestion changes. Ingredients and steps are editor lines. */
         TidyValues: {
             ingredients?: string[];
@@ -5543,6 +5587,7 @@ export interface components {
                 totalMinutes: number | null;
             };
             marks?: components["schemas"]["MarkedLine"][];
+            notes?: string | null;
         };
         MarkedLine: {
             line: string;
@@ -5566,6 +5611,7 @@ export interface components {
          *           "steps",
          *           "marks"
          *         ],
+         *         "note": null,
          *         "before": {
          *           "steps": [
          *             "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -5933,7 +5979,7 @@ export interface components {
          */
         ApplyInput: {
             /** @description The sections to apply. The rest are skipped. */
-            sections: components["schemas"]["TidySection"][];
+            sections: components["schemas"]["ProposalSection"][];
         };
         /**
          * @example {
@@ -6515,6 +6561,20 @@ export interface components {
         };
         /**
          * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000c",
+         *       "rating": 5,
+         *       "note": "More lemon next time.",
+         *       "by": "Sam Rivera",
+         *       "createdAt": "2026-10-09T01:15:00.000Z",
+         *       "suggesting": true
+         *     }
+         */
+        AddedCookNote: components["schemas"]["CookNote"] & {
+            /** @description Its note is being turned into a suggested change to the recipe, which will wait in the Review queue. */
+            suggesting: boolean;
+        };
+        /**
+         * @example {
          *       "rating": 5,
          *       "note": "More lemon next time."
          *     }
@@ -6661,6 +6721,181 @@ export interface components {
         };
         /**
          * @example {
+         *       "swaps": [
+         *         {
+         *           "lines": [
+         *             "1 cup Greek yogurt"
+         *           ],
+         *           "note": "Stir in off the heat so it doesn't split; a little tangier.",
+         *           "atHome": true,
+         *           "steps": []
+         *         }
+         *       ]
+         *     }
+         */
+        Swaps: {
+            swaps: components["schemas"]["Swap"][];
+        };
+        /**
+         * @example {
+         *       "lines": [
+         *         "1 cup Greek yogurt"
+         *       ],
+         *       "note": "Stir in off the heat so it doesn't split; a little tangier.",
+         *       "atHome": true,
+         *       "steps": []
+         *     }
+         */
+        Swap: {
+            /** @description Ingredient lines in its place, with amounts for the recipe as written. */
+            lines: string[];
+            /** @description How to use it, and how it changes the dish. */
+            note: string;
+            /** @description It's in the pantry. */
+            atHome: boolean;
+            /** @description Steps it changes, rewritten. Usually none. */
+            steps: {
+                stepId: string;
+                /** @description The step, rewritten. */
+                text: string;
+            }[];
+        };
+        /**
+         * @example {
+         *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012"
+         *     }
+         */
+        StandInInput: {
+            /** @example 0199e8b0-5a10-7a01-8b00-000000000012 */
+            ingredientId: string;
+        };
+        /**
+         * @example {
+         *       "recipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "slug": "lemon-chicken",
+         *         "name": "Lemon Chicken",
+         *         "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *         "servings": 4,
+         *         "totalMinutes": 50,
+         *         "rating": 5,
+         *         "tags": [
+         *           "chicken",
+         *           "dinner"
+         *         ],
+         *         "diets": [
+         *           "gluten-free",
+         *           "dairy-free",
+         *           "egg-free",
+         *           "nut-free"
+         *         ],
+         *         "photo": {
+         *           "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         },
+         *         "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *         "createdAt": "2026-10-01T17:30:00.000Z",
+         *         "updatedAt": "2026-10-15T18:30:00.000Z",
+         *         "origin": "link",
+         *         "sourceUrl": "https://example.com/lemon-chicken",
+         *         "yieldText": null,
+         *         "prepMinutes": 10,
+         *         "cookMinutes": 40,
+         *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
+         *         "dietOverrides": {},
+         *         "needs": [],
+         *         "ingredients": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *             "section": null,
+         *             "text": "2 lb chicken thighs",
+         *             "quantity": 2,
+         *             "quantityMax": null,
+         *             "unit": "pound",
+         *             "food": "chicken thighs",
+         *             "note": null,
+         *             "mark": "needed"
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *             "section": null,
+         *             "text": "1 tbsp olive oil",
+         *             "quantity": 1,
+         *             "quantityMax": null,
+         *             "unit": "tablespoon",
+         *             "food": "olive oil",
+         *             "note": null,
+         *             "mark": "optional"
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+         *             "section": null,
+         *             "text": "2 lemons, juiced",
+         *             "quantity": 2,
+         *             "quantityMax": null,
+         *             "unit": null,
+         *             "food": "lemons",
+         *             "note": "juiced",
+         *             "mark": "needed"
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+         *             "section": null,
+         *             "text": "4 cloves garlic, smashed",
+         *             "quantity": 4,
+         *             "quantityMax": null,
+         *             "unit": "clove",
+         *             "food": "garlic",
+         *             "note": "smashed",
+         *             "mark": "swappable"
+         *           }
+         *         ],
+         *         "steps": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *             "section": null,
+         *             "text": "Heat the oven to 425°F."
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+         *             "section": null,
+         *             "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+         *             "section": null,
+         *             "text": "Roast skin side up for 40 minutes, until crisp."
+         *           }
+         *         ]
+         *       },
+         *       "undoVersionId": "0199e8b0-5a10-7a01-8b00-00000000000d"
+         *     }
+         */
+        SavedSwap: {
+            recipe: components["schemas"]["Recipe"];
+            /** @description The version of the recipe as it was, to restore to undo the swap. */
+            undoVersionId: string | null;
+        };
+        /**
+         * @example {
+         *       "ingredientId": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *       "lines": [
+         *         "1 tbsp butter"
+         *       ],
+         *       "steps": []
+         *     }
+         */
+        SaveSwapInput: {
+            ingredientId: string;
+            lines: string[];
+            steps?: {
+                stepId: string;
+                /** @description The step, rewritten. */
+                text: string;
+            }[];
+        };
+        /**
+         * @example {
          *       "proposal": {
          *         "id": "0199e8b0-5a10-7a01-8b00-000000000029",
          *         "kind": "tidy",
@@ -6676,6 +6911,7 @@ export interface components {
          *           "steps",
          *           "marks"
          *         ],
+         *         "note": null,
          *         "before": {
          *           "steps": [
          *             "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -6727,6 +6963,11 @@ export interface components {
             /** @description What to tidy; every section when left out. */
             sections?: components["schemas"]["TidySection"][];
         };
+        /**
+         * @description A part of a recipe tidy up can change: its ingredients, steps, tags, a missing description, missing servings and times, and the marks on its ingredients.
+         * @enum {string}
+         */
+        TidySection: "ingredients" | "steps" | "tags" | "description" | "details" | "marks";
         /**
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-00000000000d",
@@ -10941,6 +11182,8 @@ export interface operations {
             query?: {
                 limit?: number;
                 offset?: number | null;
+                /** @description Only this recipe's, by its id or address. */
+                recipe?: string;
             };
             header?: never;
             path?: never;
@@ -12497,7 +12740,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CookNote"];
+                    "application/json": components["schemas"]["AddedCookNote"];
                 };
             };
             /** @description Neither stars nor a note, or something else is off. */
@@ -13148,6 +13391,150 @@ export interface operations {
             };
             /** @description No such recipe. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    suggestStandIns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StandInInput"];
+            };
+        };
+        responses: {
+            /** @description Stand-ins, best first; maybe none. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Swaps"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe, or no such ingredient in it. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description This month's AI limit is reached, or the AI is busy. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The AI provider failed. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    saveSwap: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveSwapInput"];
+            };
+        };
+        responses: {
+            /** @description Swapped. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SavedSwap"];
+                };
+            };
+            /** @description No lines, or too many. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The recipe changed since: the ingredient or a step is gone. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

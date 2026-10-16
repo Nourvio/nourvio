@@ -235,6 +235,13 @@ export const CookNoteSchema = z
   })
   .openapi("CookNote", { example: COOK_NOTE })
 
+export const AddedCookNoteSchema = CookNoteSchema.extend({
+  suggesting: z.boolean().openapi({
+    description:
+      "Its note is being turned into a suggested change to the recipe, which will wait in the Review queue.",
+  }),
+}).openapi("AddedCookNote", { example: { ...COOK_NOTE, suggesting: true } })
+
 export const CookNoteInputSchema = z
   .object({
     rating: z

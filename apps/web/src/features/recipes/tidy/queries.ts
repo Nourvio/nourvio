@@ -8,6 +8,7 @@ import { api, unwrap, type Schemas } from "@/lib/api/client"
 
 export type Proposal = Schemas["Proposal"]
 export type TidySection = Schemas["TidySection"]
+export type ProposalSection = Schemas["ProposalSection"]
 export type TidyRun = Schemas["TidyRun"]
 export type TidyValues = Schemas["TidyValues"]
 
@@ -62,6 +63,18 @@ export const recipeTidyQuery = (recipeId: string) =>
       unwrap(
         api.GET("/api/recipes/{recipe}/tidy", {
           params: { path: { recipe: recipeId } },
+        })
+      ),
+  })
+
+/** What's waiting for one recipe: tidy ups and cooking notes' changes. */
+export const recipeProposalsQuery = (recipeId: string) =>
+  queryOptions({
+    queryKey: ["review", "recipe", recipeId, "all"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/proposals", {
+          params: { query: { recipe: recipeId } },
         })
       ),
   })

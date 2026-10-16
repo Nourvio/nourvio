@@ -1,6 +1,7 @@
 import {
   INGREDIENT_MARKS,
   parseIngredient,
+  PROPOSAL_SECTIONS,
   TIDY_SECTIONS,
   type MarkedLine,
   type RecipeDetails,
@@ -107,14 +108,14 @@ function recipeText(input: RecipeInput) {
 }
 
 /** Lines tidied, and kept to the editor's limits. */
-const cleanLines = (values: string[], max: number, length: number) =>
+export const cleanLines = (values: string[], max: number, length: number) =>
   values
     .map((line) => line.replace(/\s+/g, " ").trim())
     .filter(Boolean)
     .slice(0, max)
     .map((line) => line.slice(0, length))
 
-const sameList = (a: readonly unknown[], b: readonly unknown[]) =>
+export const sameList = (a: readonly unknown[], b: readonly unknown[]) =>
   JSON.stringify(a) === JSON.stringify(b)
 
 const minutes = (value: number | null) =>
@@ -251,7 +252,8 @@ export function describeProposal(proposal: Proposal) {
         ? { id: recipe.id, slug: recipe.slug, name: recipe.name }
         : null,
     summary: proposal.summary,
-    sections: TIDY_SECTIONS.filter((section) => section in proposal.after),
+    sections: PROPOSAL_SECTIONS.filter((section) => section in proposal.after),
+    note: proposal.note ?? null,
     before: proposal.before,
     after: proposal.after,
     createdAt: proposal.createdAt.toISOString(),

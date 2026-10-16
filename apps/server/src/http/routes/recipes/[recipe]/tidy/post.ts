@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { AppError } from "../../../../../core/errors.ts"
-import { proposeTidy } from "../../../../../services/recipes/tidy/tidy.ts"
+import { proposeTidy } from "../../../../../services/recipes/review/tidy.ts"
 import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import { RecipeParam } from "../../../../schemas/recipes.ts"

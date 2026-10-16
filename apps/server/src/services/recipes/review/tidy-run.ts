@@ -118,6 +118,14 @@ export const tidyRunJob: JobHandler = {
       await progress(counts.done, counts.total, counts)
     }
     await progress(counts.done, counts.total, counts)
+    // Open pages show what it suggested.
+    if (counts.suggested > 0) {
+      deps.events.changed(householdId, {
+        area: "recipes",
+        by: null,
+        client: null,
+      })
+    }
     return counts
   },
 }

@@ -3958,9 +3958,27 @@
           "comment": null,
           "collation": null,
           "enumItems": [
-            "tidy"
+            "tidy",
+            "note"
           ],
           "mappedType": "enum"
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
         },
         "recipe_id": {
           "name": "recipe_id",
@@ -4098,8 +4116,8 @@
       "checks": [
         {
           "name": "proposals_kind_check",
-          "expression": "\"kind\" in ('tidy')",
-          "definition": "check (\"kind\" in ('tidy'))",
+          "expression": "\"kind\" in ('tidy', 'note')",
+          "definition": "check (\"kind\" in ('tidy', 'note'))",
           "columnName": "kind"
         },
         {

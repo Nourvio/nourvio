@@ -1,4 +1,4 @@
-import type { MarkedLine, TidySection } from "@merran/shared"
+import type { MarkedLine, ProposalSection } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../../core/errors.ts"
 import { Proposal, User } from "../../../database/entities/index.ts"
@@ -12,30 +12,42 @@ import { describeProposal, detailsOf, tidyView } from "./tidy.ts"
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 /** What each section is called, in an error. */
-const NAMES: Record<TidySection, string> = {
+const NAMES: Record<ProposalSection, string> = {
   ingredients: "ingredients",
   steps: "steps",
   tags: "tags",
   description: "description",
   details: "servings and times",
   marks: "marks",
+  notes: "notes",
 }
 
 /** "The steps", "The steps and tags", "The steps, tags and description". */
-function listed(sections: TidySection[]) {
+function listed(sections: ProposalSection[]) {
   const names = sections.map((section) => NAMES[section])
   const last = names.pop()!
   return `The ${names.length > 0 ? `${names.join(", ")} and ${last}` : last}`
 }
 
-/** The suggestions waiting, newest first, a page at a time. */
+/**
+ * The suggestions waiting, newest first, a page at a time: all of them, or
+ * one recipe's.
+ */
 export async function listProposals(
   em: EntityManager,
-  { limit = 50, offset = 0 }: { limit?: number; offset?: number } = {}
+  {
+    limit = 50,
+    offset = 0,
+    recipe,
+  }: { limit?: number; offset?: number; recipe?: string } = {}
 ) {
+  const recipeId = recipe ? (await findRecipe(em, recipe)).id : null
   const [proposals, total] = await em.findAndCount(
     Proposal,
-    { status: "pending", recipe: { deletedAt: null } },
+    {
+      status: "pending",
+      recipe: recipeId ? recipeId : { deletedAt: null },
+    },
     {
       populate: ["recipe"],
       orderBy: { createdAt: "desc", id: "desc" },
@@ -118,7 +130,7 @@ export async function applyProposal(
     householdId: string
     userId: string | null
     proposalId: string
-    sections: readonly TidySection[]
+    sections: readonly ProposalSection[]
   }
 ) {
   const proposal = await findPending(em, options.proposalId)
@@ -135,13 +147,14 @@ export async function applyProposal(
   const now = await tidyView(em, recipe)
   const { before, after } = proposal
 
-  const current: Record<TidySection, unknown> = {
+  const current: Record<ProposalSection, unknown> = {
     ingredients: now.input.ingredients,
     steps: now.input.steps,
     tags: now.input.tags,
     description: now.input.description,
     details: detailsOf(now.input),
     marks: now.marks,
+    notes: now.input.notes,
   }
   const changed = chosen.filter(
     (section) => !same(current[section], before[section])
@@ -162,6 +175,7 @@ export async function applyProposal(
     input.description = after.description ?? null
   }
   if (chosen.includes("details")) Object.assign(input, after.details)
+  if (chosen.includes("notes")) input.notes = after.notes ?? null
   // Marks go on whichever lines it ends up with, by line or by food.
   const marks: MarkedLine[] | undefined = chosen.includes("marks")
     ? after.marks
@@ -172,7 +186,8 @@ export async function applyProposal(
     userId: options.userId,
     recipe: recipe.id,
     input,
-    source: "tidy",
+    // A cooking note's change is an edit, as if they'd made it themselves.
+    source: proposal.kind === "tidy" ? "tidy" : "edit",
     marks,
   })
   resolve(em, proposal, "applied", options.userId)

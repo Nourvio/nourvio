@@ -76,7 +76,7 @@ function CookNoteForm({
   async function save() {
     setSaving(true)
     try {
-      await unwrap(
+      const added = await unwrap(
         api.POST("/api/recipes/{recipe}/cook-notes", {
           params: { path: { recipe: recipe.id } },
           body: { rating, note: note.trim() || null },
@@ -88,7 +88,12 @@ function CookNoteForm({
           queryKey: cookNotesQuery(recipe.id).queryKey,
         }),
       ])
-      toast.success(t("recipes.cookNotes.saved"))
+      // A note with AI becomes a suggested change, shown when it's ready.
+      toast.success(
+        added.suggesting
+          ? t("recipes.cookNotes.savedSuggesting")
+          : t("recipes.cookNotes.saved")
+      )
       onDone()
     } catch (error) {
       if (!(error instanceof ApiError)) throw error

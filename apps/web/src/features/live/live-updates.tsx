@@ -18,7 +18,8 @@ const REFRESH: Record<string, QueryKey[]> = {
   plan: [["plan"]],
   list: [["list"]],
   pantry: [["pantry"]],
-  recipes: [["recipes"], ["tags"]],
+  // What AI suggests for recipes is in Review.
+  recipes: [["recipes"], ["tags"], ["review"]],
   household: [["household"]],
 }
 

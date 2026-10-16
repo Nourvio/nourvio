@@ -13,7 +13,7 @@ import { useRefreshRecipes } from "../queries"
 import {
   useRefreshReview,
   type Proposal,
-  type TidySection,
+  type ProposalSection,
   type TidyValues,
 } from "./queries"
 
@@ -38,7 +38,7 @@ export function ProposalReview({
   const { t } = useTranslation()
   const refreshReview = useRefreshReview()
   const refreshRecipes = useRefreshRecipes()
-  const [picked, setPicked] = React.useState<Set<TidySection>>(
+  const [picked, setPicked] = React.useState<Set<ProposalSection>>(
     () => new Set(proposal.sections)
   )
   const [busy, setBusy] = React.useState<"apply" | "dismiss" | null>(null)
@@ -77,6 +77,11 @@ export function ProposalReview({
 
   return (
     <div className={cn("grid gap-4", className)}>
+      {proposal.note && (
+        <blockquote className="border-l-2 pl-3 text-sm italic">
+          {t("recipes.review.fromNote", { note: proposal.note })}
+        </blockquote>
+      )}
       <p className="text-sm text-muted-foreground">{proposal.summary}</p>
       <ul className="grid gap-3">
         {proposal.sections.map((section) => {
@@ -108,6 +113,7 @@ export function ProposalReview({
                 section={section}
                 before={proposal.before}
                 after={proposal.after}
+                tidied={proposal.kind === "tidy"}
               />
             </li>
           )
@@ -141,10 +147,13 @@ function SectionChange({
   section,
   before,
   after,
+  tidied,
 }: {
-  section: TidySection
+  section: ProposalSection
   before: TidyValues
   after: TidyValues
+  /** From tidy up, rather than a cooking note. */
+  tidied: boolean
 }) {
   const { t } = useTranslation()
   switch (section) {
@@ -152,6 +161,7 @@ function SectionChange({
     case "steps":
       return (
         <BeforeAfter
+          tidied={tidied}
           before={<Lines lines={before[section] ?? []} />}
           after={<Lines lines={after[section] ?? []} />}
         />
@@ -162,9 +172,22 @@ function SectionChange({
       return <p className="text-sm">{after.description}</p>
     case "details":
       return <DetailsChange before={before.details} after={after.details} />
+    case "notes":
+      return (
+        <BeforeAfter
+          tidied={tidied}
+          before={
+            <p className="text-sm whitespace-pre-line">
+              {before.notes || t("recipes.review.noNotes")}
+            </p>
+          }
+          after={<p className="text-sm whitespace-pre-line">{after.notes}</p>}
+        />
+      )
     case "marks":
       return (
         <BeforeAfter
+          tidied={tidied}
           before={
             (before.marks ?? []).some((line) => line.mark) ? (
               <MarkGroups lines={before.marks ?? []} />
@@ -183,9 +206,11 @@ function SectionChange({
 function BeforeAfter({
   before,
   after,
+  tidied = true,
 }: {
   before: React.ReactNode
   after: React.ReactNode
+  tidied?: boolean
 }) {
   const { t } = useTranslation()
   return (
@@ -198,7 +223,7 @@ function BeforeAfter({
       </div>
       <div className="grid content-start gap-1.5">
         <p className="text-xs font-medium tracking-wide text-primary uppercase">
-          {t("recipes.tidy.tidied")}
+          {tidied ? t("recipes.tidy.tidied") : t("recipes.review.suggested")}
         </p>
         {after}
       </div>

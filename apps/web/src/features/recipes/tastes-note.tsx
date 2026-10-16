@@ -14,9 +14,12 @@ import { useSetNeeds, type RecipeTastes } from "./use-tastes"
 export function TastesNote({
   recipe,
   tastes,
+  onStandIn,
 }: {
   recipe: Recipe
   tastes: RecipeTastes
+  /** Offers stand-ins for a line left out, by its place in the lines. */
+  onStandIn?: (line: number) => void
 }) {
   const { t } = useTranslation()
   const needs = useSetNeeds(recipe)
@@ -24,7 +27,7 @@ export function TastesNote({
 
   return (
     <ul className="grid gap-1.5" aria-label={t("recipes.tastes.label")}>
-      {tastes.leaveOut.map(({ food, who, swap }) => (
+      {tastes.leaveOut.map(({ food, who, swap, lines }) => (
         <Note
           key={`out:${food}`}
           text={
@@ -39,6 +42,14 @@ export function TastesNote({
           action={t("recipes.tastes.need", { food })}
           disabled={needs.saving}
           onAction={() => void needs.need(food)}
+          other={
+            onStandIn && lines[0] !== undefined
+              ? {
+                  label: t("recipes.swaps.standIn"),
+                  onClick: () => onStandIn(lines[0]!),
+                }
+              : undefined
+          }
         />
       ))}
       {tastes.ruledOut.map((item) => {
@@ -85,12 +96,15 @@ function Note({
   action,
   disabled,
   onAction,
+  other,
 }: {
   text: string
   tone?: "muted" | "warning"
   action?: string
   disabled: boolean
   onAction: () => void
+  /** Another way out, like finding a stand-in. */
+  other?: { label: string; onClick: () => void }
 }) {
   return (
     <li
@@ -101,16 +115,24 @@ function Note({
       }
     >
       <span className="min-w-0">{text}</span>
-      {action && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="-my-1 -mr-2"
-          disabled={disabled}
-          onClick={onAction}
-        >
-          {action}
-        </Button>
+      {(action || other) && (
+        <span className="-my-1 -mr-2 flex flex-wrap gap-1">
+          {other && (
+            <Button variant="ghost" size="sm" onClick={other.onClick}>
+              {other.label}
+            </Button>
+          )}
+          {action && (
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={disabled}
+              onClick={onAction}
+            >
+              {action}
+            </Button>
+          )}
+        </span>
       )}
     </li>
   )

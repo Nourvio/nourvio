@@ -20,7 +20,12 @@ import {
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query"
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -58,8 +63,15 @@ import { StepList } from "@/features/recipes/step-list"
 import { TastesNote } from "@/features/recipes/tastes-note"
 import { mergeLeftOut, useRecipeTastes } from "@/features/recipes/use-tastes"
 import { useUnitSystem } from "@/features/recipes/use-unit-system"
+import { SwapDialog } from "@/features/recipes/swaps/swap-dialog"
+import { SwapsNote } from "@/features/recipes/swaps/swaps-note"
+import {
+  clearSwaps,
+  useSwapsThisTime,
+  withSwaps,
+} from "@/features/recipes/swaps/this-time"
 import { TidyDialog } from "@/features/recipes/tidy/tidy-dialog"
-import { TidyWaiting } from "@/features/recipes/tidy/tidy-waiting"
+import { RecipeSuggestions } from "@/features/recipes/tidy/recipe-suggestions"
 import { VersionsDialog } from "@/features/recipes/versions-dialog"
 import { useCapability } from "@/features/capabilities/queries"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
@@ -108,13 +120,34 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
     withSlug && pairedQuery.data?.id !== recipe.id
       ? pairedQuery.data
       : undefined
-  const both = paired ? pairRecipes(recipe, paired, servings.factor) : null
-  const ingredients = both?.ingredients ?? recipe.ingredients
-  const steps = both?.steps ?? recipe.steps
+  // Stand-ins used this time take their lines' places.
+  const thisTime = useSwapsThisTime(recipe.id)
+  const swapped = React.useMemo(
+    () => withSwaps(recipe, thisTime.swaps),
+    [recipe, thisTime.swaps]
+  )
+  const [swapping, setSwapping] = React.useState<
+    Recipe["ingredients"][number] | null
+  >(null)
+  const router = useRouter()
+  React.useEffect(
+    () => () => {
+      // Left for another page, not cooking it: they're forgotten.
+      const path = router.state.location.pathname
+      const here = `/recipes/${recipe.slug}`
+      if (path !== here && !path.startsWith(`${here}/`)) clearSwaps(recipe.id)
+    },
+    [router, recipe.id, recipe.slug]
+  )
+  const both = paired
+    ? pairRecipes(swapped.recipe, paired, servings.factor)
+    : null
+  const ingredients = both?.ingredients ?? swapped.recipe.ingredients
+  const steps = both?.steps ?? swapped.recipe.steps
   const factorOf = both
     ? (lineId: string) => both.factors.get(lineId) ?? servings.factor
     : undefined
-  const tastes = useRecipeTastes(recipe)
+  const tastes = useRecipeTastes(swapped.recipe)
   const pairedTastes = useRecipeTastes(paired)
   const leftOut = mergeLeftOut(tastes, pairedTastes)
   const showWith = (slug: string | undefined) =>
@@ -411,7 +444,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
         </div>
       </div>
 
-      <TidyWaiting recipeId={recipe.id} onReview={() => setTidying(true)} />
+      <RecipeSuggestions recipeId={recipe.id} />
 
       {/* Ingredients in a tall column on the left, the steps beside them. */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] lg:gap-10">
@@ -431,7 +464,17 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
           </CardHeader>
           <CardContent className="grid gap-4">
             {paired && <TastesNote recipe={paired} tastes={pairedTastes} />}
-            <TastesNote recipe={recipe} tastes={tastes} />
+            <TastesNote
+              recipe={recipe}
+              tastes={tastes}
+              onStandIn={
+                aiOn && !paired
+                  ? (index) =>
+                      setSwapping(swapped.recipe.ingredients[index] ?? null)
+                  : undefined
+              }
+            />
+            <SwapsNote swaps={thisTime.swaps} onUndo={thisTime.undo} />
             {ingredients.length === 0 ? (
               <p className="text-muted-foreground">
                 {t("recipes.noIngredients")}
@@ -443,6 +486,9 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                 factorOf={factorOf}
                 system={system}
                 leftOut={leftOut}
+                swapped={swapped.lines}
+                onSwap={aiOn && !paired ? setSwapping : undefined}
+                onUnswap={thisTime.undo}
               />
             )}
           </CardContent>
@@ -456,7 +502,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             {steps.length === 0 ? (
               <p className="text-muted-foreground">{t("recipes.noSteps")}</p>
             ) : (
-              <StepList steps={steps} system={system} />
+              <StepList steps={steps} system={system} changed={swapped.steps} />
             )}
           </section>
           {recipe.notes && (
@@ -500,6 +546,17 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
         onOpenChange={setShowDiets}
       />
       <TidyDialog recipe={recipe} open={tidying} onOpenChange={setTidying} />
+      <SwapDialog
+        recipe={recipe}
+        line={swapping}
+        factor={servings.factor}
+        system={system}
+        onUse={thisTime.use}
+        onUndo={thisTime.undo}
+        onOpenChange={(open) => {
+          if (!open) setSwapping(null)
+        }}
+      />
     </article>
   )
 }

@@ -418,6 +418,14 @@ describe("tidying many recipes", () => {
     const again = await kyle.post("/api/recipes/tidy", {})
     expect(again.status).toBe(400)
     expect((await again.json()).error.code).toBe("all_tidied")
+
+    // Finished, it can't be stopped; another household's isn't there.
+    const stop = await kyle.post(`/api/recipes/tidy/${started.id}/stop`)
+    expect(stop.status).toBe(409)
+    expect((await stop.json()).error.code).toBe("job_finished")
+    expect((await kyle.post("/api/recipes/tidy/not-a-run/stop")).status).toBe(
+      404
+    )
   })
 
   test("or just the ones picked, by anyone", async () => {

@@ -3,7 +3,7 @@ import type { AppDeps } from "../../../../core/context.ts"
 import {
   tidyRuns,
   untidiedCount,
-} from "../../../../services/recipes/tidy/tidy-run.ts"
+} from "../../../../services/recipes/review/tidy-run.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import { jsonResponse, SIGNED_IN_ERRORS } from "../../../schemas/responses.ts"
