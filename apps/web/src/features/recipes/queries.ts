@@ -1,3 +1,4 @@
+import { DIETS, type Diet } from "@merran/shared"
 import {
   infiniteQueryOptions,
   queryOptions,
@@ -30,10 +31,18 @@ export type RecipeSort = (typeof RECIPE_SORTS)[number]
 export type RecipeSearch = {
   q?: string
   tags?: string
+  /** Diet labels, comma-separated like tags: "vegan,gluten-free". */
+  diets?: string
+  /** Only recipes ready in this many minutes or fewer. */
+  time?: RecipeTime
   /** Only recipes not made yet. */
   new?: true
   sort?: RecipeSort
 }
+
+/** The times to filter by, in minutes. */
+export const RECIPE_TIMES = [15, 30, 45, 60] as const
+export type RecipeTime = (typeof RECIPE_TIMES)[number]
 
 /** The tags a search is for, as a list. */
 export function searchTags(search: RecipeSearch): string[] {
@@ -41,6 +50,12 @@ export function searchTags(search: RecipeSearch): string[] {
     .split(",")
     .map((tag) => tag.trim())
     .filter(Boolean)
+}
+
+/** The diet labels a search is for, as a list. */
+export function searchDiets(search: RecipeSearch): Diet[] {
+  const picked = (search.diets ?? "").split(",")
+  return DIETS.filter((diet) => picked.includes(diet))
 }
 
 const PAGE = 48
@@ -57,6 +72,10 @@ export const recipesQuery = (search: RecipeSearch) =>
               ...(searchTags(search).length > 0
                 ? { tag: searchTags(search) }
                 : {}),
+              ...(searchDiets(search).length > 0
+                ? { diet: searchDiets(search) }
+                : {}),
+              ...(search.time ? { maxMinutes: search.time } : {}),
               ...(search.new ? { new: "true" } : {}),
               sort: search.sort ?? "newest",
               limit: PAGE,

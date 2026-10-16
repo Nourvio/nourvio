@@ -484,6 +484,35 @@
       "deleted": "Note deleted.",
       "byWhen": "{{when}} · {{name}}",
       "lastTime": "Last time:"
+    },
+    "diets": {
+      "names": {
+        "vegetarian": "Vegetarian",
+        "vegan": "Vegan",
+        "gluten-free": "Gluten-free",
+        "dairy-free": "Dairy-free",
+        "egg-free": "Egg-free",
+        "nut-free": "Nut-free"
+      },
+      "label": "Diet labels",
+      "notRight": "Not right?",
+      "description": "Worked out from the ingredients. If something's wrong, change it here; it sticks when the recipe is edited.",
+      "ruledOut": "Ruled out by {{lines}}",
+      "setDespite": "Set by you, though the recipe has {{lines}}",
+      "set": "Set by you",
+      "fits": "Nothing in the ingredients says otherwise",
+      "andMore": "{{lines}} and {{count}} more",
+      "caution": "Packaged ingredients can surprise (stock, soy sauce, oats, chocolate). Check labels when it matters.",
+      "automatic": "Back to automatic",
+      "save": "Save",
+      "saved": "Diet labels saved.",
+      "filter": "Diet"
+    },
+    "timeFilter": {
+      "label": "Time",
+      "any": "Any time",
+      "under": "Under {{minutes}} min",
+      "hour": "Under an hour"
     }
   },
   "cook": {

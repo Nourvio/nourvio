@@ -1183,6 +1183,10 @@ export interface paths {
                     q?: string;
                     /** @description Only recipes with this tag. Repeat it for all of several. */
                     tag?: string | string[];
+                    /** @description Only recipes with this diet label. Repeat it for all of several. */
+                    diet?: components["schemas"]["Diet"] | components["schemas"]["Diet"][];
+                    /** @description Only recipes ready in this many minutes or fewer. */
+                    maxMinutes?: number;
                     /** @description Only recipes not made yet (true), or only ones made (false). */
                     new?: string;
                     /** @description Newest added, name, recently changed, top rated, or recently made. */
@@ -2181,6 +2185,88 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/diets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Correct a recipe's diet labels
+         * @description The labels are worked out from the ingredients. Corrections that differ from them are kept, and stick when the recipe is edited. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DietsInput"];
+                };
+            };
+            responses: {
+                /** @description The recipe, with its labels. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Recipe"];
+                    };
+                };
+                /** @description A label Merran doesn't know. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3788,6 +3874,8 @@ export interface components {
             totalMinutes: number | null;
             rating: number | null;
             tags: string[];
+            /** @description Diet labels worked out from the ingredients, with the household's corrections. */
+            diets: components["schemas"]["Diet"][];
             /** @description Where its photo is, in each size, or null. The links change with the photo, so they can be kept. */
             photo: {
                 /** @description For the recipe page. */
@@ -3802,6 +3890,8 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
+        /** @enum {string} */
+        Diet: "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "egg-free" | "nut-free";
         Recipe: components["schemas"]["RecipeSummary"] & {
             /** @enum {string} */
             origin: "link" | "video" | "text" | "photo" | "manual" | "assistant" | "mealie" | "paprika" | "merran";
@@ -3810,8 +3900,18 @@ export interface components {
             prepMinutes: number | null;
             cookMinutes: number | null;
             notes: string | null;
+            dietOverrides: components["schemas"]["DietOverrides"];
             ingredients: components["schemas"]["Ingredient"][];
             steps: components["schemas"]["Step"][];
+        };
+        /** @description Where the household corrected the labels the ingredients suggest. */
+        DietOverrides: {
+            vegetarian?: boolean;
+            vegan?: boolean;
+            "gluten-free"?: boolean;
+            "dairy-free"?: boolean;
+            "egg-free"?: boolean;
+            "nut-free"?: boolean;
         };
         Ingredient: {
             id: string;
@@ -3896,6 +3996,9 @@ export interface components {
             rating?: number | null;
             /** @description Anything to change next time. */
             note?: string | null;
+        };
+        DietsInput: {
+            overrides: components["schemas"]["DietOverrides"] & unknown;
         };
         RecipeRatingInput: {
             /** @description From 1 to 5 stars, or null to clear it. */

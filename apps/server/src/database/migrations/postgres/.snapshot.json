@@ -4085,6 +4085,23 @@
           "enumItems": [],
           "mappedType": "json"
         },
+        "diets": {
+          "name": "diets",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": "''",
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
         "household_id": {
           "name": "household_id",
           "type": "uuid",

@@ -5,6 +5,7 @@ import {
   Edit02Icon,
   ImageAdd02Icon,
   ImageRemove01Icon,
+  LeafIcon,
   LinkSquare02Icon,
   MoreHorizontalIcon,
   Tick02Icon,
@@ -28,6 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { CookNotes } from "@/features/recipes/cook-notes"
+import { DietBadges, DietDialog } from "@/features/recipes/diet-labels"
 import { formatMinutes, sourceName } from "@/features/recipes/format"
 import {
   convertible,
@@ -70,6 +72,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   const servings = useServings(recipe)
   const [system, setSystem] = useUnitSystem()
   const [showVersions, setShowVersions] = React.useState(false)
+  const [showDiets, setShowDiets] = React.useState(false)
   const photo = usePhotoActions(recipe)
 
   async function rate(rating: number | null) {
@@ -221,6 +224,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               ))}
             </div>
           )}
+          <DietBadges recipe={recipe} onCorrect={() => setShowDiets(true)} />
           <div className="flex flex-wrap gap-2 pt-2">
             <Button
               size="lg"
@@ -286,6 +290,10 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                 <DropdownMenuItem onClick={() => setShowVersions(true)}>
                   <HugeiconsIcon icon={Time04Icon} strokeWidth={2} />
                   {t("recipes.versions.title")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowDiets(true)}>
+                  <HugeiconsIcon icon={LeafIcon} strokeWidth={2} />
+                  {t("recipes.diets.label")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={photo.choose}>
                   <HugeiconsIcon icon={ImageAdd02Icon} strokeWidth={2} />
@@ -388,6 +396,11 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
         recipe={recipe}
         open={showVersions}
         onOpenChange={setShowVersions}
+      />
+      <DietDialog
+        recipe={recipe}
+        open={showDiets}
+        onOpenChange={setShowDiets}
       />
     </article>
   )

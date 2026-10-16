@@ -1,7 +1,8 @@
 // Code the server and the web app both use, so they always agree: reading
-// ingredient lines, scaling them, showing them in other units, and reading
-// steps for the cook view, and cooking hands-free.
+// ingredient lines, scaling them, showing them in other units, diet labels,
+// reading steps for the cook view, and cooking hands-free.
 
+export * from "./diets/diets.ts"
 export * from "./ingredients/display.ts"
 export * from "./ingredients/parse.ts"
 export * from "./ingredients/sections.ts"

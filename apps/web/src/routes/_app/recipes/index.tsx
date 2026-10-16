@@ -32,9 +32,12 @@ import { AddRecipeDialog } from "@/features/recipes/add-recipe-dialog"
 import { ManageTagsDialog } from "@/features/recipes/manage-tags-dialog"
 import {
   RECIPE_SORTS,
+  RECIPE_TIMES,
   recipesQuery,
+  searchDiets,
   type RecipeSearch,
   type RecipeSort,
+  type RecipeTime,
 } from "@/features/recipes/queries"
 import { RecipeCard } from "@/features/recipes/recipe-card"
 import { RecipeFilters } from "@/features/recipes/recipe-filters"
@@ -43,9 +46,15 @@ export const Route = createFileRoute("/_app/recipes/")({
   validateSearch: (search: Record<string, unknown>): RecipeSearch => {
     const q = asText(search.q)
     const tags = asText(search.tags)
+    // Only labels Merran knows, in its order.
+    const diets = searchDiets({ diets: asText(search.diets) }).join(",")
     return {
       ...(q ? { q } : {}),
       ...(tags ? { tags } : {}),
+      ...(diets ? { diets } : {}),
+      ...((RECIPE_TIMES as readonly unknown[]).includes(Number(search.time))
+        ? { time: Number(search.time) as RecipeTime }
+        : {}),
       ...(search.new === true || search.new === "true"
         ? { new: true as const }
         : {}),
@@ -75,7 +84,9 @@ function RecipesPage() {
     (next: RecipeSearch) => void navigate({ search: next, replace: true }),
     [navigate]
   )
-  const filtered = Boolean(search.q || search.tags || search.new)
+  const filtered = Boolean(
+    search.q || search.tags || search.diets || search.time || search.new
+  )
   const total = recipes.data?.pages[0]?.total ?? 0
   const items = recipes.data?.pages.flatMap((page) => page.recipes) ?? []
 

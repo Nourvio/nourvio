@@ -1,7 +1,15 @@
 import { z } from "@hono/zod-openapi"
+import { DIETS } from "@merran/shared"
 import { RECIPE_ORIGINS } from "../../database/entities/index.ts"
 
 const minutes = z.number().int().min(0).max(100_000).nullish()
+
+const DietSchema = z.enum(DIETS).openapi("Diet")
+
+/** The household's corrections to a recipe's diet labels: true adds one, false takes it away. */
+const DietOverridesSchema = z
+  .partialRecord(DietSchema, z.boolean())
+  .openapi("DietOverrides")
 const text = (max: number, message: string) =>
   z
     .string()
@@ -82,6 +90,10 @@ export const RecipeSummarySchema = z
     }),
     rating: z.number().nullable(),
     tags: z.array(z.string()),
+    diets: z.array(DietSchema).openapi({
+      description:
+        "Diet labels worked out from the ingredients, with the household's corrections.",
+    }),
     photo: z
       .object({
         full: z.string().openapi({ description: "For the recipe page." }),
@@ -126,6 +138,10 @@ export const RecipeSchema = RecipeSummarySchema.extend({
   prepMinutes: z.number().nullable(),
   cookMinutes: z.number().nullable(),
   notes: z.string().nullable(),
+  dietOverrides: DietOverridesSchema.openapi({
+    description:
+      "Where the household corrected the labels the ingredients suggest.",
+  }),
   ingredients: z.array(IngredientSchema),
   steps: z.array(StepSchema),
 }).openapi("Recipe")
@@ -152,6 +168,17 @@ export const RecipeListQuerySchema = z.object({
     .openapi({
       description: "Only recipes with this tag. Repeat it for all of several.",
     }),
+  diet: z
+    .union([DietSchema, z.array(DietSchema)])
+    .optional()
+    .transform((value) => (value === undefined ? [] : [value].flat()))
+    .openapi({
+      description:
+        "Only recipes with this diet label. Repeat it for all of several.",
+    }),
+  maxMinutes: z.coerce.number().int().min(1).max(100_000).optional().openapi({
+    description: "Only recipes ready in this many minutes or fewer.",
+  }),
   new: z.stringbool().optional().openapi({
     description: "Only recipes not made yet (true), or only ones made (false).",
   }),
@@ -220,6 +247,15 @@ export type CookNoteInput = z.infer<typeof CookNoteInputSchema>
 export const CookNoteParam = RecipeParam.extend({
   noteId: z.string().openapi({ param: { name: "noteId", in: "path" } }),
 })
+
+export const DietsInputSchema = z
+  .object({
+    overrides: DietOverridesSchema.openapi({
+      description:
+        "The labels as they should be, where they differ from the ingredients. An empty object goes back to what the ingredients say.",
+    }),
+  })
+  .openapi("DietsInput")
 
 export const RatingInputSchema = z
   .object({

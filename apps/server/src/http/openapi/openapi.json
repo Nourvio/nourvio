@@ -769,6 +769,13 @@
               "type": "string"
             }
           },
+          "diets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Diet"
+            },
+            "description": "Diet labels worked out from the ingredients, with the household's corrections."
+          },
           "photo": {
             "type": [
               "object",
@@ -815,10 +822,22 @@
           "totalMinutes",
           "rating",
           "tags",
+          "diets",
           "photo",
           "lastMadeAt",
           "createdAt",
           "updatedAt"
+        ]
+      },
+      "Diet": {
+        "type": "string",
+        "enum": [
+          "vegetarian",
+          "vegan",
+          "gluten-free",
+          "dairy-free",
+          "egg-free",
+          "nut-free"
         ]
       },
       "Recipe": {
@@ -873,6 +892,9 @@
                   "null"
                 ]
               },
+              "dietOverrides": {
+                "$ref": "#/components/schemas/DietOverrides"
+              },
               "ingredients": {
                 "type": "array",
                 "items": {
@@ -893,11 +915,36 @@
               "prepMinutes",
               "cookMinutes",
               "notes",
+              "dietOverrides",
               "ingredients",
               "steps"
             ]
           }
         ]
+      },
+      "DietOverrides": {
+        "type": "object",
+        "properties": {
+          "vegetarian": {
+            "type": "boolean"
+          },
+          "vegan": {
+            "type": "boolean"
+          },
+          "gluten-free": {
+            "type": "boolean"
+          },
+          "dairy-free": {
+            "type": "boolean"
+          },
+          "egg-free": {
+            "type": "boolean"
+          },
+          "nut-free": {
+            "type": "boolean"
+          }
+        },
+        "description": "Where the household corrected the labels the ingredients suggest."
       },
       "Ingredient": {
         "type": "object",
@@ -1241,6 +1288,24 @@
             "description": "Anything to change next time."
           }
         }
+      },
+      "DietsInput": {
+        "type": "object",
+        "properties": {
+          "overrides": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DietOverrides"
+              },
+              {
+                "description": "The labels as they should be, where they differ from the ingredients. An empty object goes back to what the ingredients say."
+              }
+            ]
+          }
+        },
+        "required": [
+          "overrides"
+        ]
       },
       "RecipeRatingInput": {
         "type": "object",
@@ -2786,6 +2851,38 @@
           },
           {
             "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Diet"
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Diet"
+                  }
+                }
+              ],
+              "description": "Only recipes with this diet label. Repeat it for all of several."
+            },
+            "required": false,
+            "description": "Only recipes with this diet label. Repeat it for all of several.",
+            "name": "diet",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000,
+              "description": "Only recipes ready in this many minutes or fewer."
+            },
+            "required": false,
+            "description": "Only recipes ready in this many minutes or fewer.",
+            "name": "maxMinutes",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "string",
               "description": "Only recipes not made yet (true), or only ones made (false)."
             },
@@ -3920,6 +4017,98 @@
           },
           "404": {
             "description": "No such recipe or note.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/diets": {
+      "put": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Correct a recipe's diet labels",
+        "description": "The labels are worked out from the ingredients. Corrections that differ from them are kept, and stick when the recipe is edited. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DietsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The recipe, with its labels.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "A label Merran doesn't know.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
             "content": {
               "application/json": {
                 "schema": {

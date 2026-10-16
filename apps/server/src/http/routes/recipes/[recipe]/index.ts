@@ -2,6 +2,7 @@ import type { AppDeps } from "../../../../core/context.ts"
 import type { Router } from "../../../router.ts"
 import cookNotesRoutes from "./cook-notes/index.ts"
 import remove from "./delete.ts"
+import dietsRoutes from "./diets/index.ts"
 import get from "./get.ts"
 import madeRoutes from "./made/index.ts"
 import photoRoutes from "./photo/index.ts"
@@ -14,6 +15,7 @@ export default (router: Router, deps: AppDeps) => {
   put(router, deps)
   remove(router, deps)
   cookNotesRoutes(router, deps)
+  dietsRoutes(router, deps)
   madeRoutes(router, deps)
   photoRoutes(router, deps)
   ratingRoutes(router, deps)

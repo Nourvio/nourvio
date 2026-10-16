@@ -1,5 +1,14 @@
-import { joinSections, parseIngredient, splitSections } from "@merran/shared"
-import type { FilterQuery } from "@mikro-orm/core"
+import {
+  applyDietOverrides,
+  dietsFor,
+  joinSections,
+  keptOverrides,
+  parseIngredient,
+  splitSections,
+  type Diet,
+  type DietOverrides,
+} from "@merran/shared"
+import { raw, type FilterQuery } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import {
   Recipe,
@@ -14,6 +23,13 @@ import type { FileStore } from "../storage/files.ts"
 import { containing } from "../../database/text.ts"
 import { AppError } from "../../core/errors.ts"
 import type { RecipeInput } from "../../http/schemas/recipes.ts"
+import {
+  decodeDiets,
+  encodeDiets,
+  overridesOf,
+  withDiet,
+  workOutDiets,
+} from "./diet-labels.ts"
 import { photoUrls, removePhoto, storePhoto } from "./photos.ts"
 import { uniqueSlug } from "./slugs.ts"
 import { pruneTags, setTags, tagKey, tagsOf } from "./tags.ts"
@@ -77,6 +93,7 @@ export function summarize(recipe: Recipe, tags: string[]) {
     totalMinutes: totalMinutes(recipe),
     rating: recipe.rating ?? null,
     tags,
+    diets: decodeDiets(recipe.diets),
     photo: photoUrls(recipe),
     lastMadeAt: recipe.lastMadeAt?.toISOString() ?? null,
     createdAt: recipe.createdAt.toISOString(),
@@ -94,6 +111,7 @@ export function describeRecipe(recipe: Recipe, tags: string[]) {
     prepMinutes: recipe.prepMinutes ?? null,
     cookMinutes: recipe.cookMinutes ?? null,
     notes: recipe.notes ?? null,
+    dietOverrides: overridesOf(recipe),
     ingredients: recipe.ingredients.getItems().map((line) => ({
       id: line.id,
       section: line.section ?? null,
@@ -180,6 +198,10 @@ async function fill(
       })
     })
   )
+  workOutDiets(
+    recipe,
+    recipe.ingredients.getItems().map((line) => line.rawText)
+  )
   recipe.steps.set(
     splitSections(input.steps).map((item, position) =>
       tx.create(RecipeStep, {
@@ -265,6 +287,10 @@ export type RecipeListOptions = {
   tag: string[]
   /** Only recipes not made yet, or only ones made. */
   new?: boolean | undefined
+  /** Only recipes with all these diet labels. */
+  diet: Diet[]
+  /** Only recipes ready in this many minutes or fewer. */
+  maxMinutes?: number | undefined
   sort: keyof typeof ORDER
   limit: number
   offset: number
@@ -282,12 +308,31 @@ const ORDER = {
 /** Recipes matching a search and tags, a page at a time. */
 export async function listRecipes(
   em: EntityManager,
-  { q, tag, new: fresh, sort, limit, offset }: RecipeListOptions
+  {
+    q,
+    tag,
+    new: fresh,
+    diet,
+    maxMinutes,
+    sort,
+    limit,
+    offset,
+  }: RecipeListOptions
 ) {
   const where: FilterQuery<Recipe> = {}
   const and: FilterQuery<Recipe>[] = []
   if (fresh !== undefined) {
     and.push({ lastMadeAt: fresh ? null : { $ne: null } })
+  }
+  for (const label of new Set(diet)) and.push({ diets: withDiet(label) })
+  if (maxMinutes !== undefined) {
+    // Its total as given, or prep and cook added up, as it's shown.
+    and.push({
+      [raw(
+        (alias) =>
+          `coalesce(${alias}.total_minutes, ${alias}.prep_minutes + ${alias}.cook_minutes, ${alias}.prep_minutes, ${alias}.cook_minutes)`
+      )]: { $lte: maxMinutes },
+    })
   }
 
   const words = q?.trim()
@@ -401,6 +446,26 @@ export async function clearPhoto(
 export async function markMade(em: EntityManager, options: { recipe: string }) {
   const recipe = await findRecipe(em, options.recipe)
   recipe.lastMadeAt = new Date()
+  await em.flush()
+  return loadRecipe(em, recipe.id)
+}
+
+/**
+ * Corrects a recipe's diet labels. Only corrections that differ from what
+ * the ingredients suggest are kept; they stick when the recipe is edited.
+ * Not an edit, so no version is kept.
+ */
+export async function setDiets(
+  em: EntityManager,
+  options: { recipe: string; overrides: DietOverrides }
+) {
+  const recipe = await findRecipe(em, options.recipe)
+  const suggested = dietsFor(
+    recipe.ingredients.getItems().map((line) => line.rawText)
+  )
+  const kept = keptOverrides(suggested, options.overrides)
+  recipe.dietOverrides = Object.keys(kept).length > 0 ? kept : null
+  recipe.diets = encodeDiets(applyDietOverrides(suggested, kept))
   await em.flush()
   return loadRecipe(em, recipe.id)
 }

@@ -58,6 +58,11 @@ export const Recipe = defineEntity({
     nutrition: p.json<Nutrition>().nullable(),
     /** The household's corrections to the diet labels worked out from the ingredients. */
     dietOverrides: p.json<Record<string, boolean>>().nullable(),
+    /**
+     * The diet labels, corrections and all, as ",vegetarian,gluten-free,":
+     * worked out whenever the ingredients change, and found with `like`.
+     */
+    diets: p.string().default(""),
     origin: p.enum(RECIPE_ORIGINS),
     lastMadeAt: p.datetime().nullable(),
     /** Set while the recipe is in Recently deleted. */
