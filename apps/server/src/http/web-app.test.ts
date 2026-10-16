@@ -65,6 +65,36 @@ describe("the web app", () => {
     expect(res.headers.get("content-type")).toContain("application/json")
   })
 
+  it("takes a share without the service worker on to the share page", async () => {
+    const shareForm = (fields: Record<string, string | File>) => {
+      const form = new FormData()
+      for (const [key, value] of Object.entries(fields)) form.append(key, value)
+      return app.request("/share", { method: "POST", body: form })
+    }
+
+    const text = await shareForm({
+      title: "Lemon Chicken",
+      text: " https://example.com/lemon-chicken ",
+      file: new File([], ""),
+    })
+    expect(text.status).toBe(303)
+    const to = new URL(text.headers.get("location")!, "http://merran.test")
+    expect(to.pathname).toBe("/share")
+    expect(Object.fromEntries(to.searchParams)).toEqual({
+      title: "Lemon Chicken",
+      text: "https://example.com/lemon-chicken",
+    })
+
+    // Its photos can't be kept: the page says so.
+    const photo = await shareForm({
+      file: new File([new Uint8Array([0xff, 0xd8, 0xff])], "receipt.jpg", {
+        type: "image/jpeg",
+      }),
+    })
+    expect(photo.status).toBe(303)
+    expect(photo.headers.get("location")).toBe("/share?lost=1")
+  })
+
   it("doesn't escape its folder", async () => {
     const res = await app.request("/..%2f..%2fetc/passwd")
     expect(await res.text()).not.toContain("root:")

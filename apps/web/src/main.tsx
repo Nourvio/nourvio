@@ -13,6 +13,7 @@ import { TimerAlarm } from "@/features/cook/timers"
 import { startErrorTracking } from "@/features/error-tracking/start"
 import { HouseholdSwitchOverlay } from "@/features/household/switching"
 import { listenForInstall } from "@/features/install/install"
+import { registerServiceWorker } from "@/features/share/shared-files"
 import { queryClient } from "@/lib/query-client"
 
 import { routeTree } from "./routeTree.gen"
@@ -32,6 +33,7 @@ declare module "@tanstack/react-router" {
 
 void startErrorTracking(queryClient)
 listenForInstall()
+registerServiceWorker()
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -39,9 +41,9 @@ createRoot(document.getElementById("root")!).render(
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <RouterProvider router={router} />
+          <HouseholdSwitchOverlay />
           <Toaster />
           <TimerAlarm />
-          <HouseholdSwitchOverlay />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>
