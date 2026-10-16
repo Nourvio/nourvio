@@ -26,3 +26,4 @@ npm-debug.log*
 .DS_Store
 *.suo
 *.sw?
+.tanstack
