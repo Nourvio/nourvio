@@ -52,4 +52,39 @@ describe("public fetches", () => {
     )
     server.close()
   })
+
+  test("reach the home network only when asked, and stay there", async () => {
+    // Like the server admin's Mealie: on this network, wanting a token.
+    const server = createServer((req, res) => {
+      if (req.url === "/away") {
+        res.writeHead(302, { location: "https://example.com/" })
+        return res.end()
+      }
+      if (req.headers.authorization !== "Bearer token") {
+        res.writeHead(401)
+        return res.end("Sign in")
+      }
+      res.end("hello")
+    })
+    await new Promise<void>((resolve) => server.listen(0, resolve))
+    const { port } = server.address() as AddressInfo
+    const fetcher = createPublicFetcher({ version: "0.0.0" })
+    const home = `http://127.0.0.1:${port}`
+
+    await expect(fetcher(`${home}/`)).rejects.toThrow(/private network/)
+    const answer = await fetcher(`${home}/`, {
+      homeNetwork: true,
+      headers: { authorization: "Bearer token" },
+    })
+    expect(answer.body.toString()).toBe("hello")
+    const refused = await fetcher(`${home}/`, {
+      homeNetwork: true,
+      keepErrors: true,
+    })
+    expect(refused.status).toBe(401)
+    await expect(
+      fetcher(`${home}/away`, { homeNetwork: true })
+    ).rejects.toThrow(/redirects somewhere else/)
+    server.close()
+  })
 })

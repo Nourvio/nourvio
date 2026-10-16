@@ -1,5 +1,3 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -20,23 +18,15 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
 import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { useMe, useRefreshAll } from "@/features/auth/use-me"
-import { useRefreshRecipes } from "@/features/recipes/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
-import { householdJobQuery, isActive } from "./queries"
+import { ImportProgress } from "./import-progress"
+import { asFileBody } from "./upload"
 
 type Target = "this" | "new"
-
-/** The zip itself is the body, not JSON. */
-const asZip = (file: File) => ({
-  body: file as unknown as string,
-  bodySerializer: (body: unknown) => body as BodyInit,
-  headers: { "content-type": "application/zip" },
-})
 
 /**
  * Imports a Merran export, into this household or (for the server admin) as
@@ -60,14 +50,14 @@ export function ImportCard() {
     try {
       if (target === "new") {
         const made = await unwrap(
-          api.POST("/api/households/import", asZip(file))
+          api.POST("/api/households/import", asFileBody(file))
         )
         setJobId(made.job.id)
         // The new household is the one in use now: everything follows it.
         await refreshAll()
       } else {
         const job = await unwrap(
-          api.POST("/api/households/current/import", asZip(file))
+          api.POST("/api/households/current/import", asFileBody(file))
         )
         setJobId(job.id)
       }
@@ -158,120 +148,5 @@ export function ImportCard() {
         </>
       )}
     </Card>
-  )
-}
-
-/** How the import is getting on, and what it did. */
-function ImportProgress({
-  jobId,
-  onAgain,
-}: {
-  jobId: string
-  onAgain: () => void
-}) {
-  const { t } = useTranslation()
-  const navigate = useNavigate()
-  const queryClient = useQueryClient()
-  const refreshRecipes = useRefreshRecipes()
-  const { data: job } = useQuery(householdJobQuery(jobId))
-  const [stopping, setStopping] = React.useState(false)
-
-  // Once it's finished, the recipes it brought in show everywhere.
-  const finished = Boolean(job && !isActive(job))
-  const refreshed = React.useRef(false)
-  React.useEffect(() => {
-    if (!finished || refreshed.current) return
-    refreshed.current = true
-    void refreshRecipes()
-  }, [finished, refreshRecipes])
-
-  async function stop() {
-    setStopping(true)
-    try {
-      queryClient.setQueryData(
-        householdJobQuery(jobId).queryKey,
-        await unwrap(
-          api.POST("/api/households/current/jobs/{jobId}/cancel", {
-            params: { path: { jobId } },
-          })
-        )
-      )
-    } finally {
-      setStopping(false)
-    }
-  }
-
-  const result = job?.result as
-    { recipes?: number; skipped?: number } | null | undefined
-  const percent =
-    job?.progress && job.progress.total > 0
-      ? Math.round((job.progress.done / job.progress.total) * 100)
-      : 0
-
-  return (
-    <>
-      <CardContent className="grid gap-3" aria-live="polite">
-        {!job || job.status === "queued" ? (
-          <p className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Spinner />
-            {t("settings.transfer.import.waiting")}
-          </p>
-        ) : job.status === "running" ? (
-          <>
-            <Progress value={percent} />
-            <p className="text-sm text-muted-foreground">
-              {job.progress
-                ? t("settings.transfer.import.progress", {
-                    done: job.progress.done,
-                    total: job.progress.total,
-                  })
-                : t("settings.transfer.import.waiting")}
-            </p>
-          </>
-        ) : job.status === "done" ? (
-          <p className="text-sm">
-            {t("settings.transfer.import.done", {
-              count: result?.recipes ?? 0,
-            })}
-            {(result?.skipped ?? 0) > 0 &&
-              ` ${t("settings.transfer.import.skipped", {
-                count: result?.skipped ?? 0,
-              })}`}
-          </p>
-        ) : job.status === "failed" ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              {t("settings.transfer.import.failed", { error: job.error })}
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <p className="text-sm text-muted-foreground">
-            {t("settings.transfer.import.stopped")}
-          </p>
-        )}
-      </CardContent>
-      <CardFooter className="gap-2">
-        {job && isActive(job) ? (
-          <Button
-            variant="outline"
-            disabled={stopping}
-            onClick={() => void stop()}
-          >
-            {t("settings.transfer.import.stop")}
-          </Button>
-        ) : (
-          <>
-            {job?.status === "done" && (
-              <Button onClick={() => void navigate({ to: "/recipes" })}>
-                {t("settings.transfer.import.seeRecipes")}
-              </Button>
-            )}
-            <Button variant="outline" onClick={onAgain}>
-              {t("settings.transfer.import.another")}
-            </Button>
-          </>
-        )}
-      </CardFooter>
-    </>
   )
 }

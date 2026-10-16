@@ -4,7 +4,6 @@ import { mkdir, readdir, rm, stat } from "node:fs/promises"
 import { join } from "node:path"
 import { Readable, Transform } from "node:stream"
 import { pipeline } from "node:stream/promises"
-import yauzl from "yauzl"
 import type { z } from "zod"
 import { AppError } from "../../core/errors.ts"
 import {
@@ -14,6 +13,7 @@ import {
   ManifestSchema,
   RecipeFileSchema,
 } from "./format.ts"
+import { openZip, type OpenZip } from "./zip.ts"
 
 /** The largest export that can be uploaded. */
 export const MAX_IMPORT_BYTES = 2_000_000_000
@@ -26,20 +26,30 @@ export const uploadsFolder = (dataDir: string) =>
   join(dataDir, "tmp", "imports")
 
 /**
+ * Where an upload is kept. One with an owner (a household) can only be
+ * found again with it, so its id alone can't reach someone else's file.
+ */
+export const uploadPath = (dataDir: string, id: string, owner?: string) =>
+  join(uploadsFolder(dataDir), owner ? `${owner}.${id}.zip` : `${id}.zip`)
+
+/**
  * Saves an upload to disk as it arrives, for a job to read. Stops past
  * `maxBytes`, without keeping any of it.
  */
 export async function saveUpload(
   dataDir: string,
   body: ReadableStream<Uint8Array> | null,
-  maxBytes = MAX_IMPORT_BYTES
+  {
+    owner,
+    maxBytes = MAX_IMPORT_BYTES,
+  }: { owner?: string; maxBytes?: number } = {}
 ) {
   if (!body) {
-    throw new AppError("invalid", "no_file", "Choose an export to import.")
+    throw new AppError("invalid", "no_file", "Choose a file to import.")
   }
-  const folder = uploadsFolder(dataDir)
-  await mkdir(folder, { recursive: true })
-  const path = join(folder, `${randomUUID()}.zip`)
+  await mkdir(uploadsFolder(dataDir), { recursive: true })
+  const id = randomUUID()
+  const path = uploadPath(dataDir, id, owner)
   let size = 0
   const limit = new Transform({
     transform(chunk: Buffer, _encoding, done) {
@@ -69,9 +79,9 @@ export async function saveUpload(
   }
   if (size === 0) {
     await rm(path, { force: true })
-    throw new AppError("invalid", "no_file", "Choose an export to import.")
+    throw new AppError("invalid", "no_file", "Choose a file to import.")
   }
-  return path
+  return { id, path }
 }
 
 /** Clears away uploads old enough that no one's trying them again. */
@@ -97,44 +107,19 @@ const notAnExport = () =>
     "That isn't a Merran export. Export one from Settings → Import and export."
   )
 
-async function toBuffer(stream: Readable) {
-  const chunks: Buffer[] = []
-  for await (const chunk of stream) chunks.push(Buffer.from(chunk as Buffer))
-  return Buffer.concat(chunks)
-}
-
 /**
  * Opens an export: its manifest, checked at once, and its other files read
  * when they're wanted. Close it when done.
  */
 export async function openExport(path: string) {
-  let zip: yauzl.ZipFile
+  let zip: OpenZip
   try {
-    zip = await yauzl.openPromise(path, { autoClose: false, lazyEntries: true })
+    zip = await openZip(path)
   } catch {
     throw notAnExport()
-  }
-  const entries = new Map<string, yauzl.Entry>()
-  try {
-    for await (const entry of zip.eachEntry()) {
-      entries.set(entry.fileName, entry)
-    }
-  } catch {
-    zip.close()
-    throw notAnExport()
-  }
-
-  let open = true
-  const close = () => {
-    if (open) zip.close()
-    open = false
-  }
-  const read = async (name: string) => {
-    const entry = entries.get(name)
-    return entry ? toBuffer(await zip.openReadStreamPromise(entry)) : null
   }
   const readJson = async <S extends z.ZodType>(name: string, schema: S) => {
-    const file = await read(name)
+    const file = await zip.read(name)
     if (!file) throw notAnExport()
     let parsed: unknown
     try {
@@ -167,11 +152,11 @@ export async function openExport(path: string) {
       household: () => readJson(EXPORT_FILES.household, HouseholdFileSchema),
       recipes: () => readJson(EXPORT_FILES.recipes, RecipeFileSchema.array()),
       /** A file in the export, like a photo, or null if it's not there. */
-      read,
-      close,
+      read: zip.read,
+      close: zip.close,
     }
   } catch (err) {
-    close()
+    zip.close()
     throw err
   }
 }

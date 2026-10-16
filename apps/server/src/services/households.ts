@@ -24,6 +24,26 @@ function slugFor(name: string) {
 }
 
 /**
+ * Finds the household's members by email, for imports that name people that
+ * way. Anyone who isn't a member is null.
+ */
+export async function membersByEmail(em: EntityManager, householdId: string) {
+  const members = await em.find(
+    HouseholdMember,
+    { household: householdId },
+    { ...ACROSS_HOUSEHOLDS, populate: ["user"] }
+  )
+  const byEmail = new Map(
+    members.map((member) => [
+      member.user.getEntity().email.toLowerCase(),
+      member.user.id,
+    ])
+  )
+  return (email: string | null | undefined) =>
+    (email && byEmail.get(email.toLowerCase())) ?? null
+}
+
+/**
  * Starts a household with its first person as the owner, and the main
  * shopping list every household has.
  */

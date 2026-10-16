@@ -44,7 +44,7 @@ const route = createRoute({
 export default (router: Router, { config }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = asHouseholdAdmin(c)
-    const file = await saveUpload(config.dataDir, c.req.raw.body)
+    const { path: file } = await saveUpload(config.dataDir, c.req.raw.body)
     await checkUpload(file)
     const job = await startImport(em, {
       householdId,

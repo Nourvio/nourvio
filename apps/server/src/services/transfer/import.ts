@@ -4,18 +4,14 @@ import { joinSections } from "@merran/shared"
 import { z } from "zod"
 import {
   Household,
-  HouseholdMember,
   Recipe,
   RecipePairing,
   RECIPE_ORIGINS,
   type Nutrition,
 } from "../../database/entities/index.ts"
-import {
-  ACROSS_HOUSEHOLDS,
-  HOUSEHOLD_FILTER,
-  NOT_DELETED_FILTER,
-} from "../../database/scope.ts"
+import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { RecipeInputSchema } from "../../http/schemas/recipes.ts"
+import { membersByEmail } from "../households.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import { JobStopped, type JobDeps, type JobHandler } from "../jobs/runner.ts"
 import { storePhoto } from "../recipes/photos.ts"
@@ -127,19 +123,7 @@ export const importJob: JobHandler = {
       const recipes = await data.recipes()
 
       // People are matched by email to who's in this household.
-      const members = await em.find(
-        HouseholdMember,
-        { household: householdId },
-        { ...ACROSS_HOUSEHOLDS, populate: ["user"] }
-      )
-      const userByEmail = new Map(
-        members.map((member) => [
-          member.user.getEntity().email.toLowerCase(),
-          member.user.id,
-        ])
-      )
-      const userOf = (email: string | null) =>
-        (email && userByEmail.get(email.toLowerCase())) ?? null
+      const userOf = await membersByEmail(em, householdId)
 
       /** Each recipe's id in the export, and its id here. */
       const ids = new Map<string, string>()
@@ -190,6 +174,7 @@ export const importJob: JobHandler = {
           origin: (RECIPE_ORIGINS as readonly string[]).includes(recipe.origin)
             ? (recipe.origin as RecipeOrigin)
             : "merran",
+          importedFrom: recipe.importedFrom ?? null,
           photoId,
           createdBy: userOf(recipe.createdBy),
           lastMadeAt: recipe.lastMadeAt ? new Date(recipe.lastMadeAt) : null,

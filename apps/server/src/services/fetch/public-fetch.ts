@@ -6,7 +6,8 @@ import { AppError } from "../../core/errors.ts"
 // The one way Merran fetches things from the internet for someone: pages
 // to import, their photos, later feeds and store prices. It only reaches
 // public addresses, so it can't be used to poke at machines on the home
-// network, and it says honestly what it is.
+// network, and it says honestly what it is. The one exception is an address
+// the server admin gave, like their Mealie's (see `homeNetwork`).
 
 /**
  * Addresses a public fetch must never reach: loopback, private networks,
@@ -76,9 +77,13 @@ const publicAgent = new Agent({
   },
 })
 
+/** For addresses the server admin gave, which may be on the home network. */
+const homeAgent = new Agent({ allowH2: true })
+
 export type FetchedResource = {
   /** Where it ended up, after redirects. */
   url: string
+  status: number
   contentType: string
   body: Buffer
 }
@@ -90,6 +95,16 @@ export type FetchOptions = {
   referer?: string
   /** Sends this as JSON, in a POST, rather than asking for a page. */
   json?: unknown
+  /** More headers, like a token. */
+  headers?: Record<string, string>
+  /**
+   * The address is one the server admin gave, like their Mealie's, so it may
+   * be on the home network. Only ever for an address the admin typed in;
+   * redirects must stay where they started.
+   */
+  homeNetwork?: boolean
+  /** Hands back an error answer, with its status, rather than throwing. */
+  keepErrors?: boolean
 }
 
 export type Fetcher = (
@@ -102,8 +117,11 @@ const notALink = () =>
     url: "Use a full link, starting with https://",
   })
 
-/** A link Merran may fetch: http or https, and not to a private address. */
-export function checkLink(raw: string): URL {
+/**
+ * A link Merran may fetch: http or https, and not to a private address
+ * unless it's on the home network on purpose.
+ */
+export function checkLink(raw: string, { homeNetwork = false } = {}): URL {
   let url: URL
   try {
     url = new URL(raw)
@@ -112,7 +130,9 @@ export function checkLink(raw: string): URL {
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") throw notALink()
   const host = url.hostname.replace(/^\[|\]$/g, "")
-  if (isIP(host) && isBlockedAddress(host)) throw privateAddress()
+  if (!homeNetwork && isIP(host) && isBlockedAddress(host)) {
+    throw privateAddress()
+  }
   return url
 }
 
@@ -140,16 +160,20 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       maxBytes = 5_000_000,
       referer,
       json,
+      headers = {},
+      homeNetwork = false,
+      keepErrors = false,
     } = {}
   ) => {
-    let url = checkLink(raw)
+    let url = checkLink(raw, { homeNetwork })
+    const start = url.origin
     const signal = AbortSignal.timeout(TIMEOUT_MS)
 
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       let response
       try {
         response = await fetch(url, {
-          dispatcher: publicAgent,
+          dispatcher: homeNetwork ? homeAgent : publicAgent,
           redirect: "manual",
           signal,
           ...(json === undefined
@@ -163,6 +187,7 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
             ...(json === undefined
               ? {}
               : { "content-type": "application/json" }),
+            ...headers,
           },
         })
       } catch (error) {
@@ -193,10 +218,17 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
             "That site sent a broken redirect."
           )
         }
-        url = checkLink(new URL(location, url).toString())
+        url = checkLink(new URL(location, url).toString(), { homeNetwork })
+        if (homeNetwork && url.origin !== start) {
+          throw new AppError(
+            "upstream",
+            "site_error",
+            "That address redirects somewhere else."
+          )
+        }
         continue
       }
-      if (!response.ok) {
+      if (!response.ok && !keepErrors) {
         await response.body?.cancel()
         throw response.status === 403 || response.status === 429
           ? new AppError(
@@ -226,6 +258,7 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       }
       return {
         url: url.toString(),
+        status: response.status,
         contentType: response.headers.get("content-type") ?? "",
         body: Buffer.concat(chunks),
       }
