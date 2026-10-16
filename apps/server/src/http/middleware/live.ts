@@ -18,6 +18,8 @@ const CHANGES: [RegExp, LiveArea[]][] = [
   // Made it cooks the meal; Recently deleted takes meals off the plan.
   [/^\/api\/recipes(\/|$)/, ["recipes", "plan", "list", "pantry"]],
   [/^\/api\/households\/current\/(tastes|themes|on-hand)$/, ["household"]],
+  // A household's AI keys and models.
+  [/^\/api\/households\/current\/ai(\/|$)/, ["household"]],
   [/^\/api\/households\/current$/, ["household"]],
 ]
 

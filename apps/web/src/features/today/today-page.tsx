@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { AiLimitNote } from "@/features/ai/household-ai-card"
 import { useMe } from "@/features/auth/use-me"
 import { InstallBanner } from "@/features/install/install-ui"
 import { listQuery } from "@/features/list/queries"
@@ -98,6 +99,7 @@ export function TodayPage() {
       </header>
 
       <AutoplanNote />
+      <AiLimitNote />
       <InstallBanner />
 
       {recent.data?.total === 0 ? (

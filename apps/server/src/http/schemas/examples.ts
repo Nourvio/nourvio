@@ -36,6 +36,7 @@ export const IDS = {
   otherPlanEntry: id(36),
   costcoList: id(37),
   pantryItems: [id(38), id(39)],
+  aiKey: id(40),
 }
 
 export const TIMES = {

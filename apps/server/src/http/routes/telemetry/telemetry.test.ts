@@ -38,7 +38,7 @@ test("the next summary can be seen before saying yes to it", async () => {
       testDatabaseKind === "sqlite"
         ? "sqlite"
         : expect.stringMatching(/^postgres \d+$/),
-    modules: { errorTracking: false, telemetry: false },
+    modules: { ai: false, errorTracking: false, telemetry: false },
     households: "1",
     people: "2-5",
     recipes: "0",

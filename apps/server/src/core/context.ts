@@ -7,6 +7,7 @@ import type { Auth } from "../services/auth/auth.ts"
 import type { Authenticated } from "../services/auth/session.ts"
 import type { SetupCode } from "../services/auth/setup-code.ts"
 import type { EventBus } from "../services/events/events.ts"
+import type { AiModels } from "../services/ai/providers.ts"
 import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import type { JobRunner } from "../services/jobs/runner.ts"
 import type { Settings } from "../services/settings/settings.ts"
@@ -28,6 +29,8 @@ export type AppDeps = {
   files: FileStore
   /** The one way to fetch from the internet: public addresses only. Tests pass a fake. */
   fetcher: Fetcher
+  /** The AI models to call, through AI SDK. Tests pass mock ones. */
+  ai: AiModels
   /** Runs background work; routes stop jobs through it. */
   jobs: JobRunner
   /** What changed in each household, for live updates. */

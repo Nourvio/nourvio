@@ -1,6 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router"
 
 import { meQuery } from "@/features/auth/queries"
+import {
+  ServerAiKeysCard,
+  ServerAiPolicyCard,
+  ServerAiSpendCard,
+} from "@/features/ai/server-ai-cards"
+import { serverAiQuery } from "@/features/ai/queries"
 import { AboutCard } from "@/features/server/about-card"
 import { ErrorTrackingCard } from "@/features/server/error-tracking-card"
 import { JobsCard, serverJobsQuery } from "@/features/server/jobs-card"
@@ -20,6 +26,7 @@ export const Route = createFileRoute("/_app/settings/server")({
       queryClient.ensureQueryData(serverSettingsQuery),
       queryClient.ensureQueryData(telemetryReportQuery),
       queryClient.ensureQueryData(serverJobsQuery),
+      queryClient.ensureQueryData(serverAiQuery),
     ]),
   component: ServerSettings,
 })
@@ -28,6 +35,9 @@ function ServerSettings() {
   return (
     <>
       <AboutCard />
+      <ServerAiKeysCard />
+      <ServerAiPolicyCard />
+      <ServerAiSpendCard />
       <ErrorTrackingCard />
       <TelemetryCard />
       <JobsCard />

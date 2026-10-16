@@ -1006,6 +1006,1178 @@
           "weekStartsOn": 1
         }
       },
+      "HouseholdAi": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "object",
+            "properties": {
+              "available": {
+                "type": "boolean"
+              },
+              "tasks": {
+                "type": "object",
+                "properties": {
+                  "assistant": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  },
+                  "import": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  },
+                  "tidy": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  },
+                  "notes": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  },
+                  "swaps": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  },
+                  "nutrition": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  },
+                  "shopping": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  },
+                  "receipts": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  },
+                  "discover": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  },
+                  "reminders": {
+                    "anyOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              true
+                            ]
+                          },
+                          "ref": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": [
+                              "server",
+                              "household"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "ref",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "ok": {
+                            "type": "boolean",
+                            "enum": [
+                              false
+                            ]
+                          },
+                          "why": {
+                            "type": "string",
+                            "enum": [
+                              "noKey",
+                              "notCovered",
+                              "overLimit",
+                              "ownLimit"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "ok",
+                          "why"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "description": "For each task, the model and whose key, or why none."
+              },
+              "month": {
+                "type": "string"
+              },
+              "server": {
+                "type": "object",
+                "properties": {
+                  "covers": {
+                    "type": "boolean"
+                  },
+                  "hasKeys": {
+                    "type": "boolean"
+                  },
+                  "limit": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "In US dollars."
+                  },
+                  "spent": {
+                    "type": "number",
+                    "description": "In US dollars."
+                  },
+                  "near": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "covers",
+                  "hasKeys",
+                  "limit",
+                  "spent",
+                  "near"
+                ]
+              },
+              "own": {
+                "type": "object",
+                "properties": {
+                  "limit": {
+                    "type": [
+                      "number",
+                      "null"
+                    ],
+                    "description": "In US dollars."
+                  },
+                  "spent": {
+                    "type": "number",
+                    "description": "In US dollars."
+                  },
+                  "near": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "limit",
+                  "spent",
+                  "near"
+                ]
+              },
+              "mayAddKeys": {
+                "type": "boolean"
+              },
+              "mayAddAddresses": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "available",
+              "tasks",
+              "month",
+              "server",
+              "own",
+              "mayAddKeys",
+              "mayAddAddresses"
+            ]
+          },
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiKey"
+            }
+          },
+          "settings": {
+            "$ref": "#/components/schemas/HouseholdAiSettings"
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiModelOption"
+            }
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "months": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "month": {
+                      "type": "string"
+                    },
+                    "server": {
+                      "type": "number",
+                      "description": "In US dollars."
+                    },
+                    "household": {
+                      "type": "number",
+                      "description": "In US dollars."
+                    },
+                    "calls": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "month",
+                    "server",
+                    "household",
+                    "calls"
+                  ]
+                }
+              },
+              "tasks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "task": {
+                      "type": "string"
+                    },
+                    "cost": {
+                      "type": "number",
+                      "description": "In US dollars."
+                    },
+                    "calls": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "task",
+                    "cost",
+                    "calls"
+                  ]
+                }
+              },
+              "people": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "userId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "cost": {
+                      "type": "number",
+                      "description": "In US dollars."
+                    },
+                    "calls": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "userId",
+                    "name",
+                    "cost",
+                    "calls"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "months",
+              "tasks",
+              "people"
+            ]
+          }
+        },
+        "required": [
+          "status",
+          "keys",
+          "settings",
+          "models",
+          "usage"
+        ],
+        "example": {
+          "status": {
+            "available": true,
+            "tasks": {
+              "assistant": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              },
+              "import": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              },
+              "tidy": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              },
+              "notes": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              },
+              "swaps": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              },
+              "nutrition": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              },
+              "shopping": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              },
+              "receipts": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              },
+              "discover": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              },
+              "reminders": {
+                "ok": true,
+                "ref": "anthropic:claude-opus-5-5",
+                "source": "server"
+              }
+            },
+            "month": "2026-10",
+            "server": {
+              "covers": true,
+              "hasKeys": true,
+              "limit": 5,
+              "spent": 1.24,
+              "near": false
+            },
+            "own": {
+              "limit": null,
+              "spent": 0,
+              "near": false
+            },
+            "mayAddKeys": true,
+            "mayAddAddresses": false
+          },
+          "keys": [],
+          "settings": {
+            "large": null,
+            "small": null,
+            "tasks": {},
+            "monthlyLimit": null
+          },
+          "models": [],
+          "usage": {
+            "months": [
+              {
+                "month": "2026-10",
+                "server": 1.24,
+                "household": 0,
+                "calls": 31
+              }
+            ],
+            "tasks": [
+              {
+                "task": "import",
+                "cost": 1.24,
+                "calls": 31
+              }
+            ],
+            "people": [
+              {
+                "userId": "0199e8b0-5a10-7a01-8b00-000000000001",
+                "name": "Sam",
+                "cost": 1.24,
+                "calls": 31
+              }
+            ]
+          }
+        }
+      },
+      "AiKey": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Its id; \"env:anthropic\" and the like for a key set in the server's environment."
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "anthropic",
+              "openai",
+              "google",
+              "openai-compatible"
+            ]
+          },
+          "name": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "An address's name."
+          },
+          "baseUrl": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "An OpenAI-compatible address."
+          },
+          "hint": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The key's last four characters. The key itself is never sent."
+          },
+          "models": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "description": "What it can use, from its last test."
+          },
+          "testedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "fromEnvironment": {
+            "type": "boolean",
+            "description": "Set in the server's environment, so it can't be changed here."
+          },
+          "unreadable": {
+            "type": "boolean",
+            "description": "Sealed with a master key the server no longer has: take it off and add it again."
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "name",
+          "baseUrl",
+          "hint",
+          "models",
+          "testedAt",
+          "fromEnvironment",
+          "unreadable"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000028",
+          "provider": "anthropic",
+          "name": null,
+          "baseUrl": null,
+          "hint": "7xQa",
+          "models": [
+            "claude-haiku-5-5",
+            "claude-opus-5-5"
+          ],
+          "testedAt": "2026-10-16T17:00:00.000Z",
+          "fromEnvironment": false,
+          "unreadable": false
+        }
+      },
+      "HouseholdAiSettings": {
+        "type": "object",
+        "properties": {
+          "large": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300,
+            "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+            "example": "anthropic:claude-opus-5-5"
+          },
+          "small": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300,
+            "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+            "example": "anthropic:claude-opus-5-5"
+          },
+          "tasks": {
+            "type": "object",
+            "properties": {
+              "assistant": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              },
+              "import": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              },
+              "tidy": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              },
+              "notes": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              },
+              "swaps": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              },
+              "nutrition": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              },
+              "shopping": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              },
+              "receipts": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              },
+              "discover": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              },
+              "reminders": {
+                "type": "string",
+                "maxLength": 300,
+                "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+                "example": "anthropic:claude-opus-5-5"
+              }
+            },
+            "description": "A model for a task of its own."
+          },
+          "monthlyLimit": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100000,
+            "description": "A monthly limit on its own keys, in US dollars; null for none."
+          }
+        },
+        "required": [
+          "large",
+          "small",
+          "tasks",
+          "monthlyLimit"
+        ],
+        "example": {
+          "large": null,
+          "small": null,
+          "tasks": {},
+          "monthlyLimit": 10
+        }
+      },
+      "AiModelOption": {
+        "type": "object",
+        "properties": {
+          "ref": {
+            "type": "string",
+            "maxLength": 300,
+            "description": "A model: \"anthropic:claude-opus-5-5\", or on an address, \"endpoint:<its id>:llama3.1\".",
+            "example": "anthropic:claude-opus-5-5"
+          },
+          "name": {
+            "type": "string"
+          },
+          "size": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "large",
+              "small",
+              null
+            ]
+          },
+          "price": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "description": "US dollars per million tokens, in and out; null when unknown, or free on an address."
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "server",
+              "household"
+            ],
+            "description": "Whose key runs it."
+          }
+        },
+        "required": [
+          "ref",
+          "name",
+          "size",
+          "price",
+          "source"
+        ]
+      },
+      "NewAiKey": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "anthropic",
+                  "openai",
+                  "google"
+                ]
+              },
+              "key": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "provider",
+              "key"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "provider": {
+                "type": "string",
+                "enum": [
+                  "openai-compatible"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 60
+              },
+              "baseUrl": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 500
+              },
+              "key": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 500
+              }
+            },
+            "required": [
+              "provider",
+              "name",
+              "baseUrl"
+            ]
+          }
+        ],
+        "description": "A provider's key, or an OpenAI-compatible address (an Ollama, LM Studio, OpenRouter and the like) with a key or none. It's tested before it's kept.",
+        "example": {
+          "provider": "anthropic",
+          "key": "sk-ant-api03-...7xQa"
+        }
+      },
       "Job": {
         "type": "object",
         "properties": {
@@ -6602,7 +7774,8 @@
               "switch",
               "choice",
               "list",
-              "secret"
+              "secret",
+              "json"
             ]
           },
           "value": {
@@ -6758,6 +7931,363 @@
               }
             }
           ]
+        }
+      },
+      "ServerAi": {
+        "type": "object",
+        "properties": {
+          "keys": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiKey"
+            }
+          },
+          "policy": {
+            "$ref": "#/components/schemas/AiPolicy"
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiModelOption"
+            },
+            "description": "The models the server's keys can run."
+          },
+          "providers": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "anthropic",
+                "openai",
+                "google"
+              ]
+            }
+          },
+          "households": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "covered": {
+                  "type": "boolean"
+                },
+                "serverAdmin": {
+                  "type": "boolean",
+                  "description": "A server admin is in it."
+                },
+                "limit": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "description": "In US dollars."
+                },
+                "spent": {
+                  "type": "number",
+                  "description": "This month, on the server's keys."
+                },
+                "near": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "covered",
+                "serverAdmin",
+                "limit",
+                "spent",
+                "near"
+              ]
+            },
+            "description": "Every household, and its spend on the server's keys."
+          },
+          "usage": {
+            "type": "object",
+            "properties": {
+              "months": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "month": {
+                      "type": "string"
+                    },
+                    "cost": {
+                      "type": "number",
+                      "description": "In US dollars."
+                    },
+                    "calls": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "month",
+                    "cost",
+                    "calls"
+                  ]
+                }
+              },
+              "models": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "anthropic",
+                        "openai",
+                        "google",
+                        "openai-compatible"
+                      ]
+                    },
+                    "model": {
+                      "type": "string"
+                    },
+                    "cost": {
+                      "type": "number",
+                      "description": "In US dollars."
+                    },
+                    "calls": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "provider",
+                    "model",
+                    "cost",
+                    "calls"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "months",
+              "models"
+            ]
+          }
+        },
+        "required": [
+          "keys",
+          "policy",
+          "models",
+          "providers",
+          "households",
+          "usage"
+        ],
+        "example": {
+          "keys": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000028",
+              "provider": "anthropic",
+              "name": null,
+              "baseUrl": null,
+              "hint": "7xQa",
+              "models": [
+                "claude-haiku-5-5",
+                "claude-opus-5-5"
+              ],
+              "testedAt": "2026-10-16T17:00:00.000Z",
+              "fromEnvironment": false,
+              "unreadable": false
+            }
+          ],
+          "policy": {
+            "serverKeysFor": "admins",
+            "households": [],
+            "monthlyLimit": null,
+            "limits": {},
+            "tasks": [
+              "assistant",
+              "import",
+              "tidy",
+              "notes",
+              "swaps",
+              "nutrition",
+              "shopping",
+              "receipts",
+              "discover",
+              "reminders"
+            ],
+            "models": [],
+            "householdKeys": true,
+            "householdAddresses": false,
+            "large": null,
+            "small": null
+          },
+          "models": [
+            {
+              "ref": "anthropic:claude-opus-5-5",
+              "name": "Claude Opus 5.5",
+              "size": "large",
+              "price": [
+                4,
+                20
+              ],
+              "source": "server"
+            }
+          ],
+          "providers": [
+            "anthropic",
+            "openai",
+            "google"
+          ],
+          "households": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+              "name": "The Johnsons",
+              "covered": true,
+              "serverAdmin": true,
+              "limit": null,
+              "spent": 1.24,
+              "near": false
+            }
+          ],
+          "usage": {
+            "months": [
+              {
+                "month": "2026-10",
+                "cost": 1.24,
+                "calls": 31
+              }
+            ],
+            "models": [
+              {
+                "provider": "anthropic",
+                "model": "claude-opus-5-5",
+                "cost": 1.24,
+                "calls": 31
+              }
+            ]
+          }
+        }
+      },
+      "AiPolicy": {
+        "type": "object",
+        "properties": {
+          "serverKeysFor": {
+            "type": "string",
+            "enum": [
+              "admins",
+              "chosen",
+              "all",
+              "none"
+            ]
+          },
+          "households": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "maxItems": 1000
+          },
+          "monthlyLimit": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100000
+          },
+          "limits": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100000
+            }
+          },
+          "tasks": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "assistant",
+                "import",
+                "tidy",
+                "notes",
+                "swaps",
+                "nutrition",
+                "shopping",
+                "receipts",
+                "discover",
+                "reminders"
+              ]
+            },
+            "maxItems": 10
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "maxItems": 100
+          },
+          "householdKeys": {
+            "type": "boolean"
+          },
+          "householdAddresses": {
+            "type": "boolean"
+          },
+          "large": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300
+          },
+          "small": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 300
+          }
+        },
+        "required": [
+          "serverKeysFor",
+          "households",
+          "monthlyLimit",
+          "limits",
+          "tasks",
+          "models",
+          "householdKeys",
+          "householdAddresses",
+          "large",
+          "small"
+        ],
+        "description": "Who may use the server's keys: `serverKeysFor` is admins, chosen, all, none (the server admins' households, the chosen `households`, every household, or none). `monthlyLimit` is each household's in US dollars on the server's keys (null for none), and `limits` a household's own instead. `tasks` and `models` are what the server's keys cover (no models means any). `householdKeys` and `householdAddresses` say whether households may add their own keys and addresses. `large` and `small` are the models households use when they haven't picked.",
+        "example": {
+          "serverKeysFor": "admins",
+          "households": [],
+          "monthlyLimit": 5,
+          "limits": {},
+          "tasks": [
+            "assistant",
+            "import",
+            "tidy",
+            "notes",
+            "swaps",
+            "nutrition",
+            "shopping",
+            "receipts",
+            "discover",
+            "reminders"
+          ],
+          "models": [],
+          "householdKeys": true,
+          "householdAddresses": false,
+          "large": null,
+          "small": null
         }
       },
       "JobList": {
@@ -7988,6 +9518,314 @@
           },
           "403": {
             "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/ai": {
+      "get": {
+        "operationId": "getHouseholdAi",
+        "tags": [
+          "AI"
+        ],
+        "summary": "The household's AI",
+        "description": "Anyone in the household. For each AI task, the model and whose key pays, the household's or the server's, or why there's none; this month's spend against the limits; its own keys and addresses (only their last four characters); the models it can pick; and what it's spent by month, task and person.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The household's AI.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdAi"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "saveHouseholdAi",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Pick the household's AI models",
+        "description": "Household admins only. Its models for big and small tasks, and for any task of its own; null goes by its keys, or the server's. And a monthly limit on its own keys.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HouseholdAiSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdAi"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/ai/keys": {
+      "post": {
+        "operationId": "addHouseholdAiKey",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Add an AI key or address for the household",
+        "description": "Household admins only, when the server admin lets households add their own: keys, and separately, OpenAI-compatible addresses, which must be public. Only this household uses them. A provider's key replaces its one before. It's tested against the provider first, at no cost, and kept sealed.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewAiKey"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tested and kept.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKey"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider couldn't be reached, or answered with an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/ai/keys/{keyId}": {
+      "delete": {
+        "operationId": "removeHouseholdAiKey",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Take off one of the household's AI keys",
+        "description": "Household admins only.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Taken off."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/ai/keys/{keyId}/test": {
+      "post": {
+        "operationId": "testHouseholdAiKey",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Test one of the household's AI keys",
+        "description": "Household admins only. Asks the provider what the key can use, which costs nothing, and notes it.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "It works.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKey"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider couldn't be reached, or answered with an error.",
             "content": {
               "application/json": {
                 "schema": {
@@ -14872,6 +16710,326 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server/ai": {
+      "get": {
+        "operationId": "getServerAi",
+        "tags": [
+          "AI"
+        ],
+        "summary": "The server's AI",
+        "description": "Server admins only. The server's AI keys and addresses (never the keys themselves, only their last four characters), who may use them and how much, the models they can run, every household's spend on them this month, and the last months'.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The server's AI.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerAi"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server/ai/keys": {
+      "post": {
+        "operationId": "addServerAiKey",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Add an AI key or address for the server",
+        "description": "Server admins only. A provider's key replaces the server's one before it; there can be several addresses, which may be on the home network (an Ollama, say). It's tested against the provider first, at no cost, and kept sealed.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewAiKey"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tested and kept.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKey"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider couldn't be reached, or answered with an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server/ai/keys/{keyId}": {
+      "delete": {
+        "operationId": "removeServerAiKey",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Take off one of the server's AI keys",
+        "description": "Server admins only. One set in the server's environment can only be taken off there.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Taken off."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It's set in the server's environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server/ai/keys/{keyId}/test": {
+      "post": {
+        "operationId": "testServerAiKey",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Test one of the server's AI keys",
+        "description": "Server admins only. Asks the provider what the key can use, which costs nothing, and notes it.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "It works.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKey"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The provider couldn't be reached, or answered with an error.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server/ai/policy": {
+      "put": {
+        "operationId": "saveAiPolicy",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Change who may use the server's AI keys",
+        "description": "Server admins only. Which households the server's keys cover, each one's monthly limit on them, the tasks and models they cover, and whether households may add keys and addresses of their own. Households that are gone are dropped.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiPolicy"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerAi"
                 }
               }
             }

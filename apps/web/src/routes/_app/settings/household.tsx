@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/empty"
 import { meQuery } from "@/features/auth/queries"
 import { useActiveHousehold, useMe } from "@/features/auth/use-me"
+import { HouseholdAiCard } from "@/features/ai/household-ai-card"
+import { householdAiQuery } from "@/features/ai/queries"
 import { AutoplanCard } from "@/features/household/autoplan-card"
 import { DetailsCard } from "@/features/household/details-card"
 import { InvitesCard } from "@/features/household/invites-card"
@@ -41,6 +43,7 @@ export const Route = createFileRoute("/_app/settings/household")({
       queryClient.ensureQueryData(tastesQuery),
       isAdminRole(active.role) && queryClient.ensureQueryData(themesQuery),
       isAdminRole(active.role) && queryClient.ensureQueryData(autoplanQuery),
+      isAdminRole(active.role) && queryClient.ensureQueryData(householdAiQuery),
       isAdminRole(active.role) && queryClient.ensureQueryData(invitesQuery),
     ])
   },
@@ -61,6 +64,7 @@ function HouseholdSettings() {
           <TastesCard />
           {isAdminRole(household.role) && <ThemeNightsCard />}
           {isAdminRole(household.role) && <AutoplanCard />}
+          {isAdminRole(household.role) && <HouseholdAiCard />}
           <MembersCard />
           {isAdminRole(household.role) && <InvitesCard />}
         </>

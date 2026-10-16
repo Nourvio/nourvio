@@ -11,6 +11,7 @@ import { migrate, openDatabase, type Database } from "./database/orm.ts"
 import { MODULES } from "./modules/index.ts"
 import { startModules } from "./modules/module.ts"
 import { createPublicFetcher } from "./services/fetch/public-fetch.ts"
+import { createAiModels } from "./services/ai/providers.ts"
 import { createEventBus } from "./services/events/events.ts"
 import { JOB_HANDLERS, JOB_SCHEDULES } from "./services/jobs/handlers.ts"
 import { JobRunner } from "./services/jobs/runner.ts"
@@ -66,6 +67,7 @@ if ((await database.em.fork().count(User)) === 0) {
 
 const files = new LocalFileStore(join(config.dataDir, "files"))
 const fetcher = createPublicFetcher({ version: config.version })
+const ai = createAiModels()
 const events = createEventBus()
 const jobs = new JobRunner({
   deps: {
@@ -76,6 +78,7 @@ const jobs = new JobRunner({
     modules: MODULES,
     files,
     fetcher,
+    ai,
     events,
   },
   handlers: JOB_HANDLERS,
@@ -92,6 +95,7 @@ const app = createApp({
   modules: MODULES,
   files,
   fetcher,
+  ai,
   jobs,
   events,
 })

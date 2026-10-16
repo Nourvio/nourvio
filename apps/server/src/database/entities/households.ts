@@ -1,4 +1,5 @@
 import type {
+  HouseholdAi,
   AutoplanRun,
   AutoplanSettings,
   HouseholdTastes,
@@ -20,6 +21,8 @@ export type HouseholdSettings = {
    * last (its week isn't planned twice).
    */
   autoplan?: AutoplanSettings & { last?: AutoplanRun | null }
+  /** The models it picked, and a limit on its own AI keys (see services/ai). */
+  ai?: HouseholdAi
   /** Usual buys passed over, by food, until the day they're offered again. */
   usualSkipped?: Record<string, string>
   /** Dinner's theme each weekday, Sunday first. */

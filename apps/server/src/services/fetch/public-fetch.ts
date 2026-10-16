@@ -80,6 +80,23 @@ const publicAgent = new Agent({
 /** For addresses the server admin gave, which may be on the home network. */
 const homeAgent = new Agent({ allowH2: true })
 
+/**
+ * A fetch for another library to call an address with, like an AI SDK
+ * provider on an OpenAI-compatible address: public addresses only, unless
+ * it's one the server admin gave.
+ */
+export function addressFetch({
+  homeNetwork,
+}: {
+  homeNetwork: boolean
+}): typeof globalThis.fetch {
+  return ((input: string | URL | Request, init?: RequestInit) =>
+    fetch(input as string, {
+      ...(init as object),
+      dispatcher: homeNetwork ? homeAgent : publicAgent,
+    })) as unknown as typeof globalThis.fetch
+}
+
 export type FetchedResource = {
   /** Where it ended up, after redirects. */
   url: string

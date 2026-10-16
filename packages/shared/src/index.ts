@@ -3,6 +3,9 @@
 // pairing recipes, reading steps for the cook view, cooking hands-free, and
 // adding up the shopping list.
 
+export * from "./ai/catalog.ts"
+export * from "./ai/policy.ts"
+export * from "./ai/resolve.ts"
 export * from "./diets/diets.ts"
 export * from "./ingredients/display.ts"
 export * from "./ingredients/parse.ts"

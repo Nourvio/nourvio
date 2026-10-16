@@ -143,7 +143,7 @@ An MCP server at `/mcp` (Streamable HTTP, through the official MCP TypeScript SD
 | OpenAI-compatible | Anything with an OpenAI-style API at an address you give: Ollama, LM Studio, vLLM, LiteLLM, OpenRouter, Groq, Mistral and others |
 | Google | Gemini models (worth adding: a free tier and good vision) |
 
-All through AI SDK 6, behind Merran's own thin layer.
+All through AI SDK 7, behind Merran's own thin layer.
 
 **Models know what they can do.** Each model has abilities: structured output, tools, reading images, web search, making images, transcribing, speaking. A feature checks before it runs and says what's missing. Local models are free but vary a lot; the docs keep a short list of local models that handle recipe import well.
 

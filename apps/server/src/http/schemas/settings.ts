@@ -4,7 +4,15 @@ import { SECRET_SETTING, SETTING } from "./examples.ts"
 export const SettingStateSchema = z
   .object({
     key: z.string().openapi({ example: "errorTracking.environment" }),
-    kind: z.enum(["text", "number", "switch", "choice", "list", "secret"]),
+    kind: z.enum([
+      "text",
+      "number",
+      "switch",
+      "choice",
+      "list",
+      "secret",
+      "json",
+    ]),
     value: z.unknown().openapi({
       description:
         "Its value, or null for a secret or a setting that isn't set.",

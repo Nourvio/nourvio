@@ -284,6 +284,90 @@ export interface paths {
         patch: operations["updateHousehold"];
         trace?: never;
     };
+    "/api/households/current/ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's AI
+         * @description Anyone in the household. For each AI task, the model and whose key pays, the household's or the server's, or why there's none; this month's spend against the limits; its own keys and addresses (only their last four characters); the models it can pick; and what it's spent by month, task and person.
+         */
+        get: operations["getHouseholdAi"];
+        /**
+         * Pick the household's AI models
+         * @description Household admins only. Its models for big and small tasks, and for any task of its own; null goes by its keys, or the server's. And a monthly limit on its own keys.
+         */
+        put: operations["saveHouseholdAi"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/ai/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add an AI key or address for the household
+         * @description Household admins only, when the server admin lets households add their own: keys, and separately, OpenAI-compatible addresses, which must be public. Only this household uses them. A provider's key replaces its one before. It's tested against the provider first, at no cost, and kept sealed.
+         */
+        post: operations["addHouseholdAiKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/ai/keys/{keyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Take off one of the household's AI keys
+         * @description Household admins only.
+         */
+        delete: operations["removeHouseholdAiKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/ai/keys/{keyId}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test one of the household's AI keys
+         * @description Household admins only. Asks the provider what the key can use, which costs nothing, and notes it.
+         */
+        post: operations["testHouseholdAiKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households/current/export": {
         parameters: {
             query?: never;
@@ -1880,6 +1964,106 @@ export interface paths {
         patch: operations["updateServerSettings"];
         trace?: never;
     };
+    "/api/settings/server/ai": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The server's AI
+         * @description Server admins only. The server's AI keys and addresses (never the keys themselves, only their last four characters), who may use them and how much, the models they can run, every household's spend on them this month, and the last months'.
+         */
+        get: operations["getServerAi"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/server/ai/keys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add an AI key or address for the server
+         * @description Server admins only. A provider's key replaces the server's one before it; there can be several addresses, which may be on the home network (an Ollama, say). It's tested against the provider first, at no cost, and kept sealed.
+         */
+        post: operations["addServerAiKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/server/ai/keys/{keyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Take off one of the server's AI keys
+         * @description Server admins only. One set in the server's environment can only be taken off there.
+         */
+        delete: operations["removeServerAiKey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/server/ai/keys/{keyId}/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test one of the server's AI keys
+         * @description Server admins only. Asks the provider what the key can use, which costs nothing, and notes it.
+         */
+        post: operations["testServerAiKey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/server/ai/policy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change who may use the server's AI keys
+         * @description Server admins only. Which households the server's keys cover, each one's monthly limit on them, the tasks and models they cover, and whether households may add keys and addresses of their own. Households that are gone are dropped.
+         */
+        put: operations["saveAiPolicy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings/server/jobs": {
         parameters: {
             query?: never;
@@ -2631,6 +2815,435 @@ export interface components {
             weekStartsOn?: number;
             /** @description The meals filled for it. */
             meals?: ("breakfast" | "lunch" | "dinner" | "snack")[];
+        };
+        /**
+         * @example {
+         *       "status": {
+         *         "available": true,
+         *         "tasks": {
+         *           "assistant": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           },
+         *           "import": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           },
+         *           "tidy": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           },
+         *           "notes": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           },
+         *           "swaps": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           },
+         *           "nutrition": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           },
+         *           "shopping": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           },
+         *           "receipts": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           },
+         *           "discover": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           },
+         *           "reminders": {
+         *             "ok": true,
+         *             "ref": "anthropic:claude-opus-5-5",
+         *             "source": "server"
+         *           }
+         *         },
+         *         "month": "2026-10",
+         *         "server": {
+         *           "covers": true,
+         *           "hasKeys": true,
+         *           "limit": 5,
+         *           "spent": 1.24,
+         *           "near": false
+         *         },
+         *         "own": {
+         *           "limit": null,
+         *           "spent": 0,
+         *           "near": false
+         *         },
+         *         "mayAddKeys": true,
+         *         "mayAddAddresses": false
+         *       },
+         *       "keys": [],
+         *       "settings": {
+         *         "large": null,
+         *         "small": null,
+         *         "tasks": {},
+         *         "monthlyLimit": null
+         *       },
+         *       "models": [],
+         *       "usage": {
+         *         "months": [
+         *           {
+         *             "month": "2026-10",
+         *             "server": 1.24,
+         *             "household": 0,
+         *             "calls": 31
+         *           }
+         *         ],
+         *         "tasks": [
+         *           {
+         *             "task": "import",
+         *             "cost": 1.24,
+         *             "calls": 31
+         *           }
+         *         ],
+         *         "people": [
+         *           {
+         *             "userId": "0199e8b0-5a10-7a01-8b00-000000000001",
+         *             "name": "Sam",
+         *             "cost": 1.24,
+         *             "calls": 31
+         *           }
+         *         ]
+         *       }
+         *     }
+         */
+        HouseholdAi: {
+            status: {
+                available: boolean;
+                /** @description For each task, the model and whose key, or why none. */
+                tasks: {
+                    assistant?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                    import?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                    tidy?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                    notes?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                    swaps?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                    nutrition?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                    shopping?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                    receipts?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                    discover?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                    reminders?: {
+                        /** @enum {boolean} */
+                        ok: true;
+                        ref: string;
+                        /** @enum {string} */
+                        source: "server" | "household";
+                    } | {
+                        /** @enum {boolean} */
+                        ok: false;
+                        /** @enum {string} */
+                        why: "noKey" | "notCovered" | "overLimit" | "ownLimit";
+                    };
+                };
+                month: string;
+                server: {
+                    covers: boolean;
+                    hasKeys: boolean;
+                    /** @description In US dollars. */
+                    limit: number | null;
+                    /** @description In US dollars. */
+                    spent: number;
+                    near: boolean;
+                };
+                own: {
+                    /** @description In US dollars. */
+                    limit: number | null;
+                    /** @description In US dollars. */
+                    spent: number;
+                    near: boolean;
+                };
+                mayAddKeys: boolean;
+                mayAddAddresses: boolean;
+            };
+            keys: components["schemas"]["AiKey"][];
+            settings: components["schemas"]["HouseholdAiSettings"];
+            models: components["schemas"]["AiModelOption"][];
+            usage: {
+                months: {
+                    month: string;
+                    /** @description In US dollars. */
+                    server: number;
+                    /** @description In US dollars. */
+                    household: number;
+                    calls: number;
+                }[];
+                tasks: {
+                    task: string;
+                    /** @description In US dollars. */
+                    cost: number;
+                    calls: number;
+                }[];
+                people: {
+                    userId: string | null;
+                    name: string | null;
+                    /** @description In US dollars. */
+                    cost: number;
+                    calls: number;
+                }[];
+            };
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000028",
+         *       "provider": "anthropic",
+         *       "name": null,
+         *       "baseUrl": null,
+         *       "hint": "7xQa",
+         *       "models": [
+         *         "claude-haiku-5-5",
+         *         "claude-opus-5-5"
+         *       ],
+         *       "testedAt": "2026-10-16T17:00:00.000Z",
+         *       "fromEnvironment": false,
+         *       "unreadable": false
+         *     }
+         */
+        AiKey: {
+            /** @description Its id; "env:anthropic" and the like for a key set in the server's environment. */
+            id: string;
+            /** @enum {string} */
+            provider: "anthropic" | "openai" | "google" | "openai-compatible";
+            /** @description An address's name. */
+            name: string | null;
+            /** @description An OpenAI-compatible address. */
+            baseUrl: string | null;
+            /** @description The key's last four characters. The key itself is never sent. */
+            hint: string | null;
+            /** @description What it can use, from its last test. */
+            models: string[] | null;
+            /** Format: date-time */
+            testedAt: string | null;
+            /** @description Set in the server's environment, so it can't be changed here. */
+            fromEnvironment: boolean;
+            /** @description Sealed with a master key the server no longer has: take it off and add it again. */
+            unreadable: boolean;
+        };
+        /**
+         * @example {
+         *       "large": null,
+         *       "small": null,
+         *       "tasks": {},
+         *       "monthlyLimit": 10
+         *     }
+         */
+        HouseholdAiSettings: {
+            /**
+             * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+             * @example anthropic:claude-opus-5-5
+             */
+            large: string | null;
+            /**
+             * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+             * @example anthropic:claude-opus-5-5
+             */
+            small: string | null;
+            /** @description A model for a task of its own. */
+            tasks: {
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                assistant?: string;
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                import?: string;
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                tidy?: string;
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                notes?: string;
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                swaps?: string;
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                nutrition?: string;
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                shopping?: string;
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                receipts?: string;
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                discover?: string;
+                /**
+                 * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+                 * @example anthropic:claude-opus-5-5
+                 */
+                reminders?: string;
+            };
+            /** @description A monthly limit on its own keys, in US dollars; null for none. */
+            monthlyLimit: number | null;
+        };
+        AiModelOption: {
+            /**
+             * @description A model: "anthropic:claude-opus-5-5", or on an address, "endpoint:<its id>:llama3.1".
+             * @example anthropic:claude-opus-5-5
+             */
+            ref: string;
+            name: string;
+            /** @enum {string|null} */
+            size: "large" | "small" | null;
+            /** @description US dollars per million tokens, in and out; null when unknown, or free on an address. */
+            price: [
+                number,
+                number
+            ] | null;
+            /**
+             * @description Whose key runs it.
+             * @enum {string}
+             */
+            source: "server" | "household";
+        };
+        /**
+         * @description A provider's key, or an OpenAI-compatible address (an Ollama, LM Studio, OpenRouter and the like) with a key or none. It's tested before it's kept.
+         * @example {
+         *       "provider": "anthropic",
+         *       "key": "sk-ant-api03-...7xQa"
+         *     }
+         */
+        NewAiKey: {
+            /** @enum {string} */
+            provider: "anthropic" | "openai" | "google";
+            key: string;
+        } | {
+            /** @enum {string} */
+            provider: "openai-compatible";
+            name: string;
+            baseUrl: string;
+            key?: string | null;
         };
         /**
          * @example {
@@ -5397,7 +6010,7 @@ export interface components {
             /** @example errorTracking.environment */
             key: string;
             /** @enum {string} */
-            kind: "text" | "number" | "switch" | "choice" | "list" | "secret";
+            kind: "text" | "number" | "switch" | "choice" | "list" | "secret" | "json";
             /** @description Its value, or null for a secret or a setting that isn't set. */
             value?: unknown;
             default?: unknown;
@@ -5470,6 +6083,171 @@ export interface components {
                 publicUrl: string | null;
             };
             settings: components["schemas"]["SettingState"][];
+        };
+        /**
+         * @example {
+         *       "keys": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000028",
+         *           "provider": "anthropic",
+         *           "name": null,
+         *           "baseUrl": null,
+         *           "hint": "7xQa",
+         *           "models": [
+         *             "claude-haiku-5-5",
+         *             "claude-opus-5-5"
+         *           ],
+         *           "testedAt": "2026-10-16T17:00:00.000Z",
+         *           "fromEnvironment": false,
+         *           "unreadable": false
+         *         }
+         *       ],
+         *       "policy": {
+         *         "serverKeysFor": "admins",
+         *         "households": [],
+         *         "monthlyLimit": null,
+         *         "limits": {},
+         *         "tasks": [
+         *           "assistant",
+         *           "import",
+         *           "tidy",
+         *           "notes",
+         *           "swaps",
+         *           "nutrition",
+         *           "shopping",
+         *           "receipts",
+         *           "discover",
+         *           "reminders"
+         *         ],
+         *         "models": [],
+         *         "householdKeys": true,
+         *         "householdAddresses": false,
+         *         "large": null,
+         *         "small": null
+         *       },
+         *       "models": [
+         *         {
+         *           "ref": "anthropic:claude-opus-5-5",
+         *           "name": "Claude Opus 5.5",
+         *           "size": "large",
+         *           "price": [
+         *             4,
+         *             20
+         *           ],
+         *           "source": "server"
+         *         }
+         *       ],
+         *       "providers": [
+         *         "anthropic",
+         *         "openai",
+         *         "google"
+         *       ],
+         *       "households": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *           "name": "The Johnsons",
+         *           "covered": true,
+         *           "serverAdmin": true,
+         *           "limit": null,
+         *           "spent": 1.24,
+         *           "near": false
+         *         }
+         *       ],
+         *       "usage": {
+         *         "months": [
+         *           {
+         *             "month": "2026-10",
+         *             "cost": 1.24,
+         *             "calls": 31
+         *           }
+         *         ],
+         *         "models": [
+         *           {
+         *             "provider": "anthropic",
+         *             "model": "claude-opus-5-5",
+         *             "cost": 1.24,
+         *             "calls": 31
+         *           }
+         *         ]
+         *       }
+         *     }
+         */
+        ServerAi: {
+            keys: components["schemas"]["AiKey"][];
+            policy: components["schemas"]["AiPolicy"];
+            /** @description The models the server's keys can run. */
+            models: components["schemas"]["AiModelOption"][];
+            providers: ("anthropic" | "openai" | "google")[];
+            /** @description Every household, and its spend on the server's keys. */
+            households: {
+                id: string;
+                name: string;
+                covered: boolean;
+                /** @description A server admin is in it. */
+                serverAdmin: boolean;
+                /** @description In US dollars. */
+                limit: number | null;
+                /** @description This month, on the server's keys. */
+                spent: number;
+                near: boolean;
+            }[];
+            usage: {
+                months: {
+                    month: string;
+                    /** @description In US dollars. */
+                    cost: number;
+                    calls: number;
+                }[];
+                models: {
+                    /** @enum {string} */
+                    provider: "anthropic" | "openai" | "google" | "openai-compatible";
+                    model: string;
+                    /** @description In US dollars. */
+                    cost: number;
+                    calls: number;
+                }[];
+            };
+        };
+        /**
+         * @description Who may use the server's keys: `serverKeysFor` is admins, chosen, all, none (the server admins' households, the chosen `households`, every household, or none). `monthlyLimit` is each household's in US dollars on the server's keys (null for none), and `limits` a household's own instead. `tasks` and `models` are what the server's keys cover (no models means any). `householdKeys` and `householdAddresses` say whether households may add their own keys and addresses. `large` and `small` are the models households use when they haven't picked.
+         * @example {
+         *       "serverKeysFor": "admins",
+         *       "households": [],
+         *       "monthlyLimit": 5,
+         *       "limits": {},
+         *       "tasks": [
+         *         "assistant",
+         *         "import",
+         *         "tidy",
+         *         "notes",
+         *         "swaps",
+         *         "nutrition",
+         *         "shopping",
+         *         "receipts",
+         *         "discover",
+         *         "reminders"
+         *       ],
+         *       "models": [],
+         *       "householdKeys": true,
+         *       "householdAddresses": false,
+         *       "large": null,
+         *       "small": null
+         *     }
+         */
+        AiPolicy: {
+            /** @enum {string} */
+            serverKeysFor: "admins" | "chosen" | "all" | "none";
+            households: string[];
+            monthlyLimit: number | null;
+            limits: {
+                [key: string]: number;
+            };
+            tasks: ("assistant" | "import" | "tidy" | "notes" | "swaps" | "nutrition" | "shopping" | "receipts" | "discover" | "reminders")[];
+            models: string[];
+            householdKeys: boolean;
+            householdAddresses: boolean;
+            large: string | null;
+            small: string | null;
         };
         /**
          * @example {
@@ -6298,6 +7076,242 @@ export interface operations {
             };
             /** @description Not allowed. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getHouseholdAi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The household's AI. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdAi"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    saveHouseholdAi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdAiSettings"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdAi"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addHouseholdAiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewAiKey"];
+            };
+        };
+        responses: {
+            /** @description Tested and kept. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiKey"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The provider couldn't be reached, or answered with an error. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeHouseholdAiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                keyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Taken off. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    testHouseholdAiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                keyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description It works. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiKey"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The provider couldn't be reached, or answered with an error. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -11086,6 +12100,251 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getServerAi: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The server's AI. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerAi"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addServerAiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewAiKey"];
+            };
+        };
+        responses: {
+            /** @description Tested and kept. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiKey"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The provider couldn't be reached, or answered with an error. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeServerAiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                keyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Taken off. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It's set in the server's environment. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    testServerAiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                keyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description It works. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiKey"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The provider couldn't be reached, or answered with an error. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    saveAiPolicy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiPolicy"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerAi"];
                 };
             };
             /** @description Not signed in. */

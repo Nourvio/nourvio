@@ -10,7 +10,7 @@ export type SettingLevel = "server" | "household"
 
 /** What sort of value it is, which decides how Settings shows it. */
 export type SettingKind =
-  "text" | "number" | "switch" | "choice" | "list" | "secret"
+  "text" | "number" | "switch" | "choice" | "list" | "secret" | "json"
 
 export type Setting<T = unknown, D extends T | null = T | null> = {
   /** The module, then the setting: "errorTracking.dsn". */
@@ -146,6 +146,23 @@ export function choiceSetting<
     schema,
     default: (options.default ?? null) as D,
     choices: options.choices,
+  })
+}
+
+/**
+ * Something with parts, like the AI policy: kept by Merran and changed
+ * through its own routes, never set from the environment.
+ */
+export function jsonSetting<T>(
+  options: Omit<Common, "env" | "envOnly"> & {
+    schema: z.ZodType<T>
+    default: T
+  }
+) {
+  return define<T, T>(options, {
+    kind: "json",
+    schema: options.schema,
+    default: options.default,
   })
 }
 

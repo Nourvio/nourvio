@@ -19,7 +19,7 @@ Versions are what's current in October 2026. Pin exact versions in the lockfile 
 | Sign-in and accounts | Written by hand (scrypt, sessions, invites, tokens) | **Better Auth** | Change |
 | Background jobs | `setInterval` loops and job tables | **A small job runner of our own** on a `jobs` table, with `croner` for schedules | Change |
 | Live updates | Server-sent events | Server-sent events from an in-process event stream | Keep |
-| AI | Our own interface over `@anthropic-ai/sdk` and `openai` | **AI SDK 6** (`ai`), behind a thin Merran layer | Change |
+| AI | Our own interface over `@anthropic-ai/sdk` and `openai` | **AI SDK 7** (`ai`), behind a thin Merran layer | Change |
 | Model prices | A table in the shared package | A bundled model catalog, refreshed each release, with overrides | Change |
 | Web app | React 19 + Vite | React 19 + Vite | Keep |
 | Routing | React Router | **TanStack Router** | Change |
@@ -117,7 +117,7 @@ Merran runs as one process on either database, so the runner and the live event 
 
 Households bringing their own keys means far more providers than Claude and OpenAI: Ollama and LM Studio at home, OpenRouter, Mistral, Gemini, anything with an OpenAI-style API. Writing and testing each by hand doesn't scale.
 
-AI SDK 6 gives one way to do structured output from a Zod schema, tools, streaming, vision, image generation, transcription and speech across `@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/openai-compatible` and the rest. Provider-specific features the REFERENCE app relies on are still reachable through provider options and provider tools: Claude's and OpenAI's web search, prompt caching, thinking and effort.
+AI SDK 7 (current since June 2026; this said 6 when it was written) gives one way to do structured output from a Zod schema, tools, streaming, vision, image generation, transcription and speech across `@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/openai-compatible` and the rest. Provider-specific features the REFERENCE app relies on are still reachable through provider options and provider tools: Claude's and OpenAI's web search, prompt caching, thinking and effort.
 
 Merran keeps a thin layer on top (`server/src/ai/`) that features call: `extractRecipe()`, `runChat()` and so on. It picks whose key pays, which model runs the task, checks the model can do the job, enforces spending limits and records usage. Features never import the SDK, which also contains the SDK's yearly major-version churn to one folder.
 

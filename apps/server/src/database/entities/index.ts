@@ -1,6 +1,8 @@
 // One file per table, named after the table.
 
 import { Account } from "./accounts.ts"
+import { AiKey } from "./ai_keys.ts"
+import { AiUsage } from "./ai_usage.ts"
 import { ApiKey } from "./api_keys.ts"
 import { Aisle } from "./aisles.ts"
 import { CookNote } from "./cook_notes.ts"
@@ -32,6 +34,8 @@ import { Verification } from "./verifications.ts"
 import { WeeklyItem } from "./weekly_items.ts"
 
 export * from "./accounts.ts"
+export * from "./ai_keys.ts"
+export * from "./ai_usage.ts"
 export * from "./api_keys.ts"
 export * from "./aisles.ts"
 export * from "./cook_notes.ts"
@@ -65,6 +69,8 @@ export * from "./weekly_items.ts"
 /** Every entity. A new one goes here, or the database won't know about it. */
 export const entities = [
   Account,
+  AiKey,
+  AiUsage,
   ApiKey,
   Aisle,
   CookNote,
@@ -106,6 +112,8 @@ export const SHARED_TABLES = [
   // The runner sees every household's; the job services check the household.
   "jobs",
   "rate_limits",
+  // The server's own keys and each household's, found by whose they are.
+  "ai_keys",
   // Reached only through the settings that point at them.
   "secrets",
   "server_settings",

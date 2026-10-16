@@ -5,6 +5,7 @@ import { pino } from "pino"
 import { createApp, type App } from "../app.ts"
 import { MODULES } from "../modules/index.ts"
 import { startModules, type Module } from "../modules/module.ts"
+import type { AiModels } from "../services/ai/providers.ts"
 import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import { JOB_HANDLERS } from "../services/jobs/handlers.ts"
 import { JobRunner, type JobHandler } from "../services/jobs/runner.ts"
@@ -32,6 +33,8 @@ export async function createTestApp(
     env?: Record<string, string>
     /** What fetching from the internet answers with. Tests never reach it. */
     fetcher?: Fetcher
+    /** The AI models to call. Tests never reach a provider. */
+    ai?: AiModels
     /** Kinds of job beyond Merran's own, for tests of the runner. */
     jobHandlers?: readonly JobHandler[]
   } = {}
@@ -73,6 +76,11 @@ export async function createTestApp(
     options.fetcher ??
     (() => Promise.reject(new Error("Tests don't reach the internet.")))
   const events = createEventBus()
+  const ai: AiModels =
+    options.ai ??
+    (() => {
+      throw new Error("Tests don't reach AI providers.")
+    })
   // Not started: tests run what's waiting with `jobs.drain()`.
   const jobs = new JobRunner({
     deps: {
@@ -83,6 +91,7 @@ export async function createTestApp(
       modules,
       files,
       fetcher,
+      ai,
       events,
     },
     handlers: [...JOB_HANDLERS, ...(options.jobHandlers ?? [])],
@@ -97,6 +106,7 @@ export async function createTestApp(
     modules,
     files,
     fetcher,
+    ai,
     jobs,
     events,
   })

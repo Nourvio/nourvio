@@ -1527,5 +1527,144 @@
       "see": "See the plan",
       "gotIt": "Got it"
     }
+  },
+  "ai": {
+    "tasks": {
+      "assistant": "The assistant",
+      "import": "Importing recipes",
+      "tidy": "Tidying recipes",
+      "notes": "Cooking notes into edits",
+      "swaps": "Ingredient swaps",
+      "nutrition": "Nutrition",
+      "shopping": "Picking store products",
+      "receipts": "Reading receipts",
+      "discover": "Finding recipes",
+      "reminders": "Prep reminders"
+    },
+    "keys": {
+      "fromEnvironment": "From the environment",
+      "unreadable": "Enter it again",
+      "endsIn": "Key ending {{hint}}",
+      "models_one": "{{count}} model",
+      "models_other": "{{count}} models",
+      "test": "Test",
+      "works": "{{name}} works.",
+      "remove": "Take off {{name}}",
+      "add": "Add a key",
+      "addTitle": "Add a key",
+      "addHint": "It's tested with the provider first, which costs nothing, then kept sealed. Only its last four characters are ever shown.",
+      "provider": "From",
+      "address": "An address of your own (Ollama, LM Studio, OpenRouter…)",
+      "name": "Name",
+      "namePlaceholder": "Ollama at home",
+      "baseUrl": "Address",
+      "baseUrlHint": "Where its OpenAI-style API starts, usually ending in /v1.",
+      "key": "Key",
+      "keyOptional": "Key, if it needs one",
+      "keyHint": "Pasted whole. It can't be read back once it's added.",
+      "cancel": "Cancel",
+      "testAndAdd": "Test and add",
+      "added": "Added."
+    },
+    "models": {
+      "large": "Model for big tasks",
+      "small": "Model for small tasks",
+      "sizesHint": "Big tasks read pages and hold conversations; small ones match ingredients and pick products, where a cheap model does as well.",
+      "default": "Go by the keys",
+      "keyDefault": "Each key's own default",
+      "largeDefault": "The model for big tasks",
+      "smallDefault": "The model for small tasks",
+      "perTask": "A model for each task",
+      "priced": "{{name}} · {{input}} in, {{output}} out a million tokens",
+      "gone": "{{ref}} (no key for it now)",
+      "onServer": "{{name}}, on the server's keys"
+    },
+    "status": {
+      "uses": {
+        "large": "Big tasks use {{model}}, on {{whose}}.",
+        "small": "Small tasks use {{model}}, on {{whose}}."
+      },
+      "none": {
+        "large": "Big tasks can't run: {{why}}",
+        "small": "Small tasks can't run: {{why}}"
+      },
+      "whose": {
+        "server": "the server's keys",
+        "household": "your own key"
+      },
+      "why": {
+        "noKey": "There's no AI key yet. Add one below, or ask whoever runs Merran to share the server's.",
+        "notCovered": "The server's keys don't cover this household. Add a key of your own below, or ask whoever runs Merran.",
+        "overLimit": "This month's limit on the server's keys is reached. It's back next month.",
+        "ownLimit": "This month's limit on your own keys is reached. Raise it below."
+      }
+    },
+    "server": {
+      "keysTitle": "AI keys",
+      "keysDescription": "The server's keys and addresses, for the households the policy below covers. A local Ollama goes here, as an address, for the households you choose. Keys can also be set in the environment (MERRAN_ANTHROPIC_API_KEY and the like)."
+    },
+    "policy": {
+      "title": "Who may use the server's AI",
+      "description": "You don't have to pay for everyone you share Merran with. Households the server's keys don't cover can bring their own.",
+      "whoLabel": "The server's keys cover",
+      "who": {
+        "admins": "Households a server admin is in",
+        "chosen": "Chosen households",
+        "all": "Every household",
+        "none": "No household"
+      },
+      "limit": "Monthly limit for each household, in US dollars",
+      "noLimit": "No limit",
+      "limitHint": "On the server's keys. Past it, a household waits for next month or uses its own key.",
+      "tasks": "Tasks they cover",
+      "models": "Models they cover",
+      "anyModel": "Any model",
+      "householdKeys": "Households may add keys of their own",
+      "householdKeysHint": "Only that household uses them, and pays for them.",
+      "householdAddresses": "Households may add addresses of their own",
+      "householdAddressesHint": "Merran would call an address someone else picked. Addresses on a private network are refused even so.",
+      "save": "Save",
+      "saved": "Saved."
+    },
+    "spend": {
+      "title": "Spent",
+      "serverTitle": "AI spend",
+      "serverDescription": "On the server's keys, by household and month. Models with no known price, like a local Ollama's, count as free.",
+      "thisMonth": "This month",
+      "notCovered": "Not covered",
+      "nearLimit": "Near its limit",
+      "ofLimit": "{{spent}} of {{limit}}",
+      "byMonth": "By month",
+      "byModel": "By model, this month",
+      "costCalls_one": "{{cost}} · {{count}} call",
+      "costCalls_other": "{{cost}} · {{count}} calls",
+      "split": "{{server}} on the server's keys · {{own}} on your own",
+      "background": "Background work",
+      "nothingYet": "Nothing spent yet.",
+      "byTask": "This month, by task",
+      "byPerson": "By person"
+    },
+    "household": {
+      "title": "AI",
+      "description": "Which model each task uses, and whose key pays: your own, if you have one for it, or else the server's.",
+      "serverKeys": "The server's keys",
+      "serverNone": "The server has no AI keys.",
+      "serverNotCovered": "The server's keys don't cover this household.",
+      "serverSpent": "They cover this household: {{spent}} spent this month.",
+      "serverSpentOf": "They cover this household: {{spent}} of {{limit}} spent this month.",
+      "ownKeys": "Your own keys",
+      "noOwnKeys": "Whoever runs Merran hasn't let households add keys of their own.",
+      "ownLimit": "Monthly limit on your own keys, in US dollars",
+      "ownSpent": "{{spent}} spent on them this month.",
+      "ownSpentOf": "{{spent}} of {{limit}} spent on them this month.",
+      "save": "Save",
+      "saved": "Saved.",
+      "addressHint": "A model on your own network, like Ollama, is added by whoever runs Merran. Once it's there, it shows in the models below.",
+      "addressHintAdmin": "A model on your own network, like Ollama, goes in <link>Settings, This server, AI keys</link>, as an address. Households the server's keys cover can then pick it below."
+    },
+    "near": {
+      "server": "AI this month: {{spent}} of {{limit}} on the server's keys.",
+      "own": "AI this month: {{spent}} of {{limit}} on your own keys."
+    }
   }
 }

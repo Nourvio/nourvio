@@ -8,6 +8,7 @@ import { MODULES } from "../../modules/index.ts"
 import { createAuth } from "../../services/auth/auth.ts"
 import { SetupCode } from "../../services/auth/setup-code.ts"
 import { createPublicFetcher } from "../../services/fetch/public-fetch.ts"
+import { createAiModels } from "../../services/ai/providers.ts"
 import { JobRunner } from "../../services/jobs/runner.ts"
 import { createEventBus } from "../../services/events/events.ts"
 import { createSettings } from "../../services/settings/settings.ts"
@@ -40,6 +41,7 @@ export async function createOpenApiFile(): Promise<string> {
     // Describing the API never stores, fetches or runs anything.
     const files = new LocalFileStore(join(tmpdir(), "merran-openapi"))
     const fetcher = createPublicFetcher({ version: config.version })
+    const ai = createAiModels()
     const events = createEventBus()
     const app = createApp({
       config,
@@ -51,6 +53,7 @@ export async function createOpenApiFile(): Promise<string> {
       modules: MODULES,
       files,
       fetcher,
+      ai,
       jobs: new JobRunner({
         deps: {
           config,
@@ -60,6 +63,7 @@ export async function createOpenApiFile(): Promise<string> {
           modules: MODULES,
           files,
           fetcher,
+          ai,
           events,
         },
         handlers: [],
