@@ -294,6 +294,9 @@
   html {
     @apply font-sans;
     -webkit-tap-highlight-color: transparent;
+    /* Keep the scrollbar's room, so the layout doesn't jump when a page
+       grows tall enough to scroll (like select mode's room for its bar). */
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground antialiased;
