@@ -14,6 +14,7 @@ import {
   firstDuration,
   goodVoices,
   ingredientsInStep,
+  pairRecipes,
   splitDurations,
   voiceLabel,
   type CookCommand,
@@ -88,18 +89,36 @@ const DETAIL_TEXT: Record<TextSize, string> = {
  * Cooking a recipe: getting everything out first, then one step at a time in
  * big text, with timers, the step's ingredients, and the screen kept on.
  */
-export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
+export function CookView({
+  recipe,
+  paired,
+  scale,
+}: {
+  recipe: Recipe
+  /** A recipe it goes with, cooked with it: its lines first. */
+  paired?: Recipe
+  scale: number
+}) {
   const { t } = useTranslation()
   const router = useRouter()
   const canGoBack = useCanGoBack()
   const navigate = useNavigate()
   const refresh = useRefreshRecipes()
-  const { ingredients, steps } = recipe
+  const both = paired ? pairRecipes(recipe, paired, scale) : null
+  const ingredients = both?.ingredients ?? recipe.ingredients
+  const steps = both?.steps ?? recipe.steps
+  /** How much each line is scaled: a pairing has its own amount. */
+  const factorOf = (lineId: string) => both?.factors.get(lineId) ?? scale
+  const name = paired
+    ? t("recipes.pairing.name", { base: recipe.name, paired: paired.name })
+    : recipe.name
 
   // A "get ready" page first, to gather everything, then the steps.
   const hasPrep = ingredients.length > 0
   const pages = steps.length + (hasPrep ? 1 : 0)
-  const [resumed] = React.useState(() => loadProgress(recipe.id, scale))
+  const [resumed] = React.useState(() =>
+    loadProgress(recipe.id, scale, paired?.id ?? null)
+  )
   const [page, setPage] = React.useState(() =>
     Math.min(resumed?.page ?? 0, Math.max(0, pages - 1))
   )
@@ -116,13 +135,21 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
   const step = onPrep ? undefined : steps[stepIndex]
   const next = onPrep ? undefined : steps[stepIndex + 1]
   const isLast = page >= pages - 1
-  const highlighted = React.useMemo(
-    () =>
-      step ? ingredientsInStep(step.text, ingredients) : new Set<string>(),
-    [step, ingredients]
-  )
+  const highlighted = React.useMemo(() => {
+    if (!step) return new Set<string>()
+    // Cooked with a pairing, a step only uses its own recipe's ingredients.
+    const from = "from" in step ? step.from : undefined
+    return ingredientsInStep(
+      step.text,
+      ingredients.filter((line) => !("from" in line) || line.from === from)
+    )
+  }, [step, ingredients])
   const stepIngredients = ingredients.filter((line) => highlighted.has(line.id))
-  const cooking: Cooking = { slug: recipe.slug, scale }
+  const cooking: Cooking = {
+    slug: recipe.slug,
+    scale,
+    ...(paired ? { with: paired.slug } : {}),
+  }
   const showUnits = convertible(ingredients)
 
   const go = React.useCallback(
@@ -156,10 +183,11 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
             page,
             ticked: [...ticks.ticked],
             scale,
+            with: paired?.id ?? null,
             savedAt: Date.now(),
           }
     )
-  }, [recipe.id, page, ticks.ticked, scale])
+  }, [recipe.id, page, ticks.ticked, scale, paired?.id])
 
   React.useEffect(() => {
     function onKey(event: KeyboardEvent) {
@@ -209,7 +237,7 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
   /** An ingredient as it's said: "1 and a third tablespoons olive oil". */
   const says = (line: Line) => {
     const { amount, rest } = displayIngredient(line.text, {
-      factor: scale,
+      factor: factorOf(line.id),
       system,
     })
     return `${amount}${rest}`.trim()
@@ -321,6 +349,7 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
     <IngredientList
       lines={ingredients}
       factor={scale}
+      factorOf={factorOf}
       system={system}
       ticks={ticks}
       highlighted={highlighted}
@@ -341,9 +370,7 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
           {t("cook.exit")}
         </Button>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-heading text-lg font-semibold">
-            {recipe.name}
-          </p>
+          <p className="truncate font-heading text-lg font-semibold">{name}</p>
           <p className="text-sm text-muted-foreground">
             {onPrep
               ? t("cook.getReady")
@@ -528,7 +555,7 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
                     {stepIngredients.map((line) => {
                       const done = ticks.ticked.has(line.id)
                       const { amount, rest } = displayIngredient(line.text, {
-                        factor: scale,
+                        factor: factorOf(line.id),
                         system,
                       })
                       return (

@@ -257,6 +257,71 @@ export const DietsInputSchema = z
   })
   .openapi("DietsInput")
 
+export const PairOptionSchema = z
+  .object({
+    id: z.string(),
+    slug: z.string(),
+    name: z.string(),
+    photo: z
+      .string()
+      .nullable()
+      .openapi({ description: "Its card-sized photo, or null." }),
+    servings: z.number().nullable(),
+    totalMinutes: z.number().nullable(),
+  })
+  .openapi("PairOption")
+
+export const PairingSchema = z
+  .discriminatedUnion("kind", [
+    z.object({
+      id: z.string(),
+      kind: z.literal("recipe"),
+      recipe: PairOptionSchema,
+    }),
+    z.object({
+      id: z.string(),
+      kind: z.literal("tag"),
+      tag: z.string().openapi({ description: "Every recipe with this tag." }),
+    }),
+  ])
+  .openapi("Pairing")
+
+export const RecipePairingsSchema = z
+  .object({
+    pairings: z
+      .array(PairingSchema)
+      .openapi({ description: "What it goes with, as set." }),
+    options: z.array(PairOptionSchema).openapi({
+      description:
+        "Every recipe that adds up to: picked ones first, then tagged ones by name.",
+    }),
+    pairsWith: z.array(PairOptionSchema).openapi({
+      description: "Recipes it's offered with: the other way round.",
+    }),
+  })
+  .openapi("RecipePairings")
+
+export const PairingsInputSchema = z
+  .object({
+    recipes: z
+      .array(z.string())
+      .max(100, "Pick 100 recipes or fewer.")
+      .optional()
+      .openapi({ description: "Recipes it goes with, by id or slug." }),
+    tag: z.string().trim().min(1).max(40).optional().openapi({
+      description: "Or every recipe with this tag, now and later.",
+    }),
+  })
+  .refine((input) => (input.recipes?.length ?? 0) > 0 || input.tag, {
+    message: "Pick a recipe or a tag.",
+  })
+  .openapi("PairingsInput")
+export type PairingsInput = z.infer<typeof PairingsInputSchema>
+
+export const PairingParam = RecipeParam.extend({
+  pairingId: z.string().openapi({ param: { name: "pairingId", in: "path" } }),
+})
+
 export const RatingInputSchema = z
   .object({
     rating: z.number().int().min(1).max(5).nullable().openapi({

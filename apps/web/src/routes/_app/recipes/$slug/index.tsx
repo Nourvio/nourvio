@@ -12,7 +12,12 @@ import {
   Time04Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query"
+import { pairRecipes } from "@merran/shared"
+import {
+  useQuery,
+  useQueryClient,
+  useSuspenseQuery,
+} from "@tanstack/react-query"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
@@ -31,6 +36,7 @@ import {
 import { CookNotes } from "@/features/recipes/cook-notes"
 import { DietBadges, DietDialog } from "@/features/recipes/diet-labels"
 import { formatMinutes, sourceName } from "@/features/recipes/format"
+import { GoesWith } from "@/features/recipes/goes-with"
 import {
   convertible,
   IngredientList,
@@ -51,7 +57,14 @@ import { VersionsDialog } from "@/features/recipes/versions-dialog"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
 
+type RecipePageSearch = {
+  /** A recipe it goes with, shown with it. */
+  with?: string
+}
+
 export const Route = createFileRoute("/_app/recipes/$slug/")({
+  validateSearch: (search: Record<string, unknown>): RecipePageSearch =>
+    typeof search.with === "string" && search.with ? { with: search.with } : {},
   loader: ({ context, params }) =>
     context.queryClient.ensureQueryData(recipeQuery(params.slug)),
   component: RecipePage,
@@ -71,6 +84,26 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   const refresh = useRefreshRecipes()
   const servings = useServings(recipe)
   const [system, setSystem] = useUnitSystem()
+  const setSearch = Route.useNavigate()
+
+  // Shown with a recipe it goes with: both, the pairing first and scaled.
+  const { with: withSlug } = Route.useSearch()
+  const pairedQuery = useQuery({
+    ...recipeQuery(withSlug ?? ""),
+    enabled: Boolean(withSlug),
+  })
+  const paired =
+    withSlug && pairedQuery.data?.id !== recipe.id
+      ? pairedQuery.data
+      : undefined
+  const both = paired ? pairRecipes(recipe, paired, servings.factor) : null
+  const ingredients = both?.ingredients ?? recipe.ingredients
+  const steps = both?.steps ?? recipe.steps
+  const factorOf = both
+    ? (lineId: string) => both.factors.get(lineId) ?? servings.factor
+    : undefined
+  const showWith = (slug: string | undefined) =>
+    void setSearch({ search: slug ? { with: slug } : {}, replace: true })
   const [showVersions, setShowVersions] = React.useState(false)
   const [showDiets, setShowDiets] = React.useState(false)
   const photo = usePhotoActions(recipe)
@@ -224,7 +257,17 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               ))}
             </div>
           )}
-          <DietBadges recipe={recipe} onCorrect={() => setShowDiets(true)} />
+          <DietBadges
+            recipe={recipe}
+            diets={both?.diets}
+            onCorrect={() => setShowDiets(true)}
+          />
+          <GoesWith
+            recipe={recipe}
+            selected={withSlug}
+            paired={paired}
+            onSelect={showWith}
+          />
           <div className="flex flex-wrap gap-2 pt-2">
             <Button
               size="lg"
@@ -232,11 +275,12 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                 <Link
                   to="/recipes/$slug/cook"
                   params={{ slug: recipe.slug }}
-                  search={
-                    servings.changed
+                  search={{
+                    ...(servings.changed
                       ? { scale: Math.round(servings.factor * 1000) / 1000 }
-                      : {}
-                  }
+                      : {}),
+                    ...(paired ? { with: paired.slug } : {}),
+                  }}
                 />
               }
             >
@@ -325,10 +369,8 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             <CardTitle className="text-xl font-semibold">
               {t("recipes.fields.ingredients")}
             </CardTitle>
-            {recipe.ingredients.length > 0 && (
-              <ServingsStepper servings={servings} />
-            )}
-            {convertible(recipe.ingredients) && (
+            {ingredients.length > 0 && <ServingsStepper servings={servings} />}
+            {convertible(ingredients) && (
               <UnitToggle
                 system={system}
                 onChange={setSystem}
@@ -337,14 +379,15 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             )}
           </CardHeader>
           <CardContent>
-            {recipe.ingredients.length === 0 ? (
+            {ingredients.length === 0 ? (
               <p className="text-muted-foreground">
                 {t("recipes.noIngredients")}
               </p>
             ) : (
               <IngredientList
-                lines={recipe.ingredients}
+                lines={ingredients}
                 factor={servings.factor}
+                factorOf={factorOf}
                 system={system}
               />
             )}
@@ -356,10 +399,10 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             <h2 className="text-2xl font-semibold">
               {t("recipes.fields.steps")}
             </h2>
-            {recipe.steps.length === 0 ? (
+            {steps.length === 0 ? (
               <p className="text-muted-foreground">{t("recipes.noSteps")}</p>
             ) : (
-              <StepList steps={recipe.steps} system={system} />
+              <StepList steps={steps} system={system} />
             )}
           </section>
           {recipe.notes && (

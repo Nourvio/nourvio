@@ -73,11 +73,11 @@ export async function findRecipe(em: EntityManager, idOrSlug: string) {
 }
 
 /** A double column, which the database driver may hand back as text. */
-const toNumber = (value: string | number | null | undefined) =>
+export const toNumber = (value: string | number | null | undefined) =>
   value == null ? null : Number(value)
 
 /** Total time as given, or prep and cook added up. */
-function totalMinutes(recipe: Recipe) {
+export function totalMinutes(recipe: Recipe) {
   if (recipe.totalMinutes != null) return recipe.totalMinutes
   if (recipe.prepMinutes == null && recipe.cookMinutes == null) return null
   return (recipe.prepMinutes ?? 0) + (recipe.cookMinutes ?? 0)

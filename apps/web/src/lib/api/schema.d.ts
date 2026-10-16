@@ -2341,6 +2341,211 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recipes/{recipe}/pairings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a recipe goes with
+         * @description Recipes it pairs with, picked or by a whole tag, every recipe that adds up to, and the recipes it's offered with. Recipes in Recently deleted are left out. With an API key, it needs the `recipes: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description What it goes with. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecipePairings"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Add to what a recipe goes with
+         * @description Recipes, or every recipe with a tag, so new ones join by themselves. Ones it already goes with, and the recipe itself, are skipped. With an API key, it needs the `recipes: write` permission.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["PairingsInput"];
+                };
+            };
+            responses: {
+                /** @description What it goes with now. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecipePairings"];
+                    };
+                };
+                /** @description Nothing picked, or no tag by that name. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe, or one of those to pair isn't there. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/pairings/{pairingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Take something off what a recipe goes with
+         * @description The recipes stay. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                    pairingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description What it goes with now. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["RecipePairings"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe or pairing. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/{recipe}/photo": {
         parameters: {
             query?: never;
@@ -3999,6 +4204,41 @@ export interface components {
         };
         DietsInput: {
             overrides: components["schemas"]["DietOverrides"] & unknown;
+        };
+        RecipePairings: {
+            /** @description What it goes with, as set. */
+            pairings: components["schemas"]["Pairing"][];
+            /** @description Every recipe that adds up to: picked ones first, then tagged ones by name. */
+            options: components["schemas"]["PairOption"][];
+            /** @description Recipes it's offered with: the other way round. */
+            pairsWith: components["schemas"]["PairOption"][];
+        };
+        Pairing: {
+            id: string;
+            /** @enum {string} */
+            kind: "recipe";
+            recipe: components["schemas"]["PairOption"];
+        } | {
+            id: string;
+            /** @enum {string} */
+            kind: "tag";
+            /** @description Every recipe with this tag. */
+            tag: string;
+        };
+        PairOption: {
+            id: string;
+            slug: string;
+            name: string;
+            /** @description Its card-sized photo, or null. */
+            photo: string | null;
+            servings: number | null;
+            totalMinutes: number | null;
+        };
+        PairingsInput: {
+            /** @description Recipes it goes with, by id or slug. */
+            recipes?: string[];
+            /** @description Or every recipe with this tag, now and later. */
+            tag?: string;
         };
         RecipeRatingInput: {
             /** @description From 1 to 5 stars, or null to clear it. */

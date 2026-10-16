@@ -1,5 +1,10 @@
 import type { EntityManager } from "@mikro-orm/sql"
-import { RecipeTag, Tag, type Recipe } from "../../database/entities/index.ts"
+import {
+  RecipePairing,
+  RecipeTag,
+  Tag,
+  type Recipe,
+} from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER } from "../../database/scope.ts"
 import { AppError } from "../../core/errors.ts"
 
@@ -102,6 +107,23 @@ export async function listTags(em: EntityManager) {
     .sort((a, b) => byName(a.name, b.name))
 }
 
+/**
+ * Pairings with a whole tag ("any Sauce") follow it when it's renamed or
+ * merged into another.
+ */
+async function movePairings(tx: EntityManager, from: string, to: string) {
+  if (from === to) return
+  const there = new Set(
+    (await tx.find(RecipePairing, { tagKey: to }, { fields: ["recipe"] })).map(
+      (pairing) => pairing.recipe.id
+    )
+  )
+  for (const pairing of await tx.find(RecipePairing, { tagKey: from })) {
+    if (there.has(pairing.recipe.id)) tx.remove(pairing)
+    else pairing.tagKey = to
+  }
+}
+
 async function findTag(em: EntityManager, tagId: string) {
   const tag = await em.findOne(Tag, { id: tagId })
   if (!tag)
@@ -126,6 +148,7 @@ export async function renameTag(
       nameKey: tagKey(name),
       id: { $ne: tag.id },
     })
+    await movePairings(tx, tag.nameKey, tagKey(name))
     if (!other) {
       tag.name = name.trim()
       tag.nameKey = tagKey(name)
@@ -152,9 +175,10 @@ export async function renameTag(
   })
 }
 
-/** Takes a tag off every recipe, and deletes it. */
+/** Takes a tag off every recipe, and out of what recipes go with, and deletes it. */
 export async function deleteTag(em: EntityManager, tagId: string) {
   const tag = await findTag(em, tagId)
   await em.nativeDelete(RecipeTag, { tag: tag.id })
+  await em.nativeDelete(RecipePairing, { tagKey: tag.nameKey })
   await em.remove(tag).flush()
 }

@@ -5,6 +5,7 @@ import remove from "./delete.ts"
 import dietsRoutes from "./diets/index.ts"
 import get from "./get.ts"
 import madeRoutes from "./made/index.ts"
+import pairingsRoutes from "./pairings/index.ts"
 import photoRoutes from "./photo/index.ts"
 import put from "./put.ts"
 import ratingRoutes from "./rating/index.ts"
@@ -17,6 +18,7 @@ export default (router: Router, deps: AppDeps) => {
   cookNotesRoutes(router, deps)
   dietsRoutes(router, deps)
   madeRoutes(router, deps)
+  pairingsRoutes(router, deps)
   photoRoutes(router, deps)
   ratingRoutes(router, deps)
   versionsRoutes(router, deps)

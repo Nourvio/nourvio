@@ -1307,6 +1307,146 @@
           "overrides"
         ]
       },
+      "RecipePairings": {
+        "type": "object",
+        "properties": {
+          "pairings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Pairing"
+            },
+            "description": "What it goes with, as set."
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PairOption"
+            },
+            "description": "Every recipe that adds up to: picked ones first, then tagged ones by name."
+          },
+          "pairsWith": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PairOption"
+            },
+            "description": "Recipes it's offered with: the other way round."
+          }
+        },
+        "required": [
+          "pairings",
+          "options",
+          "pairsWith"
+        ]
+      },
+      "Pairing": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "recipe"
+                ]
+              },
+              "recipe": {
+                "$ref": "#/components/schemas/PairOption"
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "recipe"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "tag"
+                ]
+              },
+              "tag": {
+                "type": "string",
+                "description": "Every recipe with this tag."
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "tag"
+            ]
+          }
+        ]
+      },
+      "PairOption": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "photo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Its card-sized photo, or null."
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "totalMinutes": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "photo",
+          "servings",
+          "totalMinutes"
+        ]
+      },
+      "PairingsInput": {
+        "type": "object",
+        "properties": {
+          "recipes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 100,
+            "description": "Recipes it goes with, by id or slug."
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "description": "Or every recipe with this tag, now and later."
+          }
+        }
+      },
       "RecipeRatingInput": {
         "type": "object",
         "properties": {
@@ -4181,6 +4321,248 @@
           },
           "404": {
             "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/pairings": {
+      "get": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "What a recipe goes with",
+        "description": "Recipes it pairs with, picked or by a whole tag, every recipe that adds up to, and the recipes it's offered with. Recipes in Recently deleted are left out. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What it goes with.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipePairings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Add to what a recipe goes with",
+        "description": "Recipes, or every recipe with a tag, so new ones join by themselves. Ones it already goes with, and the recipe itself, are skipped. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What it goes with now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipePairings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nothing picked, or no tag by that name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe, or one of those to pair isn't there.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/pairings/{pairingId}": {
+      "delete": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Take something off what a recipe goes with",
+        "description": "The recipes stay. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "pairingId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What it goes with now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipePairings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe or pairing.",
             "content": {
               "application/json": {
                 "schema": {

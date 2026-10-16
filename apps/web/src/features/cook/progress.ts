@@ -5,6 +5,8 @@ export type Progress = {
   page: number
   ticked: string[]
   scale: number
+  /** The recipe it was cooked with, if any. */
+  with: string | null
   savedAt: number
 }
 
@@ -13,8 +15,12 @@ export type Progress = {
 const KEEP_HOURS = 12
 const key = (recipeId: string) => `merran-cooking.${recipeId}`
 
-/** Where this recipe's cooking got to, if it was at this scale lately. */
-export function loadProgress(recipeId: string, scale: number) {
+/** Where this recipe's cooking got to, if it was cooked the same way lately. */
+export function loadProgress(
+  recipeId: string,
+  scale: number,
+  withId: string | null
+) {
   try {
     const saved = JSON.parse(
       localStorage.getItem(key(recipeId)) ?? "null"
@@ -22,6 +28,7 @@ export function loadProgress(recipeId: string, scale: number) {
     if (
       !saved ||
       saved.scale !== scale ||
+      (saved.with ?? null) !== withId ||
       Date.now() - saved.savedAt > KEEP_HOURS * 3_600_000
     ) {
       return null

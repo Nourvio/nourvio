@@ -14,6 +14,7 @@ export type RecipeVersion = Schemas["RecipeVersion"]
 export type DeletedRecipe = Schemas["DeletedRecipe"]
 export type Tag = Schemas["Tag"]
 export type CookNote = Schemas["CookNote"]
+export type RecipePairings = Schemas["RecipePairings"]
 
 export const RECIPE_SORTS = [
   "newest",
@@ -139,6 +140,17 @@ export const cookNotesQuery = (recipeId: string) =>
     queryFn: () =>
       unwrap(
         api.GET("/api/recipes/{recipe}/cook-notes", {
+          params: { path: { recipe: recipeId } },
+        })
+      ),
+  })
+
+export const pairingsQuery = (recipeId: string) =>
+  queryOptions({
+    queryKey: ["recipes", "pairings", recipeId],
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/recipes/{recipe}/pairings", {
           params: { path: { recipe: recipeId } },
         })
       ),

@@ -156,6 +156,7 @@ export type Ticks = ReturnType<typeof useTicks>
 export function IngredientList({
   lines,
   factor,
+  factorOf,
   system,
   ticks,
   highlighted,
@@ -163,6 +164,8 @@ export function IngredientList({
 }: {
   lines: Line[]
   factor: number
+  /** Each line's own factor, when they differ: a sauce made with a main. */
+  factorOf?: (lineId: string) => number
   system: UnitSystem
   /** Ticks kept by the page, as the cook view does; otherwise kept here. */
   ticks?: Ticks
@@ -185,7 +188,7 @@ export function IngredientList({
           <ul className="grid gap-0.5">
             {group.lines.map((line) => {
               const { amount, rest } = displayIngredient(line.text, {
-                factor,
+                factor: factorOf?.(line.id) ?? factor,
                 system,
               })
               const done = ticked.has(line.id)

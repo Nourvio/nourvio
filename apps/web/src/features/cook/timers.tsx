@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils"
 import { formatDuration } from "./durations"
 
 /** Where a timer was started from, to get back to it. */
-export type Cooking = { slug: string; scale: number }
+export type Cooking = { slug: string; scale: number; with?: string }
 
 export type Timer = {
   id: string
@@ -325,7 +325,10 @@ export function TimerBadges() {
               <Link
                 to="/recipes/$slug/cook"
                 params={{ slug: timer.cooking.slug }}
-                search={{ scale: timer.cooking.scale }}
+                search={{
+                  scale: timer.cooking.scale,
+                  ...(timer.cooking.with ? { with: timer.cooking.with } : {}),
+                }}
                 className={style}
                 title={timer.label}
               >

@@ -32,13 +32,17 @@ import { recipeQuery, useRefreshRecipes, type Recipe } from "./queries"
 /** The recipe's diet labels, each a link to recipes like it, and a way to correct them. */
 export function DietBadges({
   recipe,
+  diets = recipe.diets,
   onCorrect,
 }: {
   recipe: Recipe
+  /** Labels for the recipe with what it goes with, which can't be corrected here. */
+  diets?: readonly Diet[]
   onCorrect: () => void
 }) {
   const { t } = useTranslation()
-  if (recipe.diets.length === 0) return null
+  const own = diets === recipe.diets
+  if (diets.length === 0) return null
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <HugeiconsIcon
@@ -47,7 +51,7 @@ export function DietBadges({
         className="size-4 text-primary"
         aria-hidden
       />
-      {recipe.diets.map((diet) => (
+      {diets.map((diet) => (
         <Badge
           key={diet}
           variant="outline"
@@ -56,14 +60,16 @@ export function DietBadges({
           {t(`recipes.diets.names.${diet}`)}
         </Badge>
       ))}
-      <Button
-        variant="link"
-        size="sm"
-        className="h-auto px-1 text-xs text-muted-foreground"
-        onClick={onCorrect}
-      >
-        {t("recipes.diets.notRight")}
-      </Button>
+      {own && (
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto px-1 text-xs text-muted-foreground"
+          onClick={onCorrect}
+        >
+          {t("recipes.diets.notRight")}
+        </Button>
+      )}
     </div>
   )
 }
