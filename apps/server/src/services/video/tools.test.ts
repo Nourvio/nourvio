@@ -25,6 +25,31 @@ describe("pickCaptions", () => {
     ).toEqual({ url: "spoken", lang: "es-orig" })
   })
 
+  test("of a dubbed video, what was said in its own language, not a dub's", () => {
+    // YouTube's dubs each have their own "-orig"; Arabic comes first.
+    const dubbed = {
+      "ar-orig": vtt("arabic"),
+      ar: vtt("arabic translated"),
+      "de-DE-orig": vtt("german"),
+      en: vtt("english translated"),
+      "en-orig": vtt("english"),
+    }
+    expect(
+      pickCaptions({ language: "en-US", automatic_captions: dubbed })
+    ).toEqual({ url: "english", lang: "en-orig" })
+    // Not knowing its language, English as said.
+    expect(pickCaptions({ automatic_captions: dubbed })).toEqual({
+      url: "english",
+      lang: "en-orig",
+    })
+    // Not dubbed: what was said, whatever the language.
+    expect(
+      pickCaptions({
+        automatic_captions: { "es-orig": vtt("spanish"), en: vtt("en") },
+      })
+    ).toEqual({ url: "spanish", lang: "es-orig" })
+  })
+
   test("is null without captions it can use", () => {
     expect(pickCaptions({})).toBeNull()
     expect(

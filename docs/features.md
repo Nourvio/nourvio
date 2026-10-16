@@ -102,6 +102,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Video links (TikTok, YouTube, Instagram, Facebook) | Headline | Built | Module, on by default: yt-dlp and ffmpeg (in the image) and AI; listens to videos without captions on an OpenAI key |
 | Follow recipe sites and see their newest recipes | Key | Planned | Module; respects `robots.txt` |
 | Starter collections | Detail | Planned | Module; data files per language |
+| Imports in your language: a recipe from another language translated as it comes in | Key | Planned | AI; a setting, with the app's translations |
 | Discover: find recipes for any theme with AI | Key | Built | AI, with web search; each page is opened first, so they all import |
 | Browser extension: import a page, right-click, the list in a side panel | Key | Planned | Chrome, Edge, Firefox |
 | Tandoor import | Detail | Later | |

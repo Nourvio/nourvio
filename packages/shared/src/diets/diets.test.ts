@@ -99,6 +99,21 @@ describe("dietsFor", () => {
     expect(dietsFor([])).toEqual([])
     expect(dietsFor(["", "  "])).toEqual([])
   })
+
+  test("says nothing about words it can't read", () => {
+    // A bagel kept in Arabic: flour and honey, which it can't see.
+    expect(
+      dietsFor([
+        "25 جرامًا من بادئ العجين المخمر",
+        "450 جرامًا من دقيق الخبز",
+        "20 جرامًا من العسل",
+      ])
+    ).toEqual([])
+    // A word or two in another script is fine.
+    expect(dietsFor(["2 cups rice", "1 tbsp 味醂 (mirin)", "salt"])).toEqual(
+      without()
+    )
+  })
 })
 
 describe("dietConflicts", () => {

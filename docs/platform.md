@@ -302,6 +302,7 @@ Carried over from the REFERENCE app, plus what a public project needs:
 - **Aisles** come from a list per country, and households can rename, add and reorder them.
 - **Ingredient parsing** starts with English, with the units and words for other languages added as data, not code.
 - **The assistant** answers in the person's language.
+- **Imported recipes** keep the language they were written in, for now. With translations, a setting in Settings, You has AI imports written in the person's language instead, translated, saying in the notes what language it was. Diet labels skip ingredient lines in a script they can't read rather than guessing.
 - **Starter collections and suggested sites** are data files per language, open to contributions.
 - **Nutrition:** USDA at first. Open Food Facts and national food databases can be added as nutrition sources later.
 

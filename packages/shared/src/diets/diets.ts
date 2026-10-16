@@ -116,11 +116,24 @@ export function dietConflicts(
 }
 
 /**
+ * Whether the words are ones Merran can read for diets: the Latin
+ * alphabet, for now. Most lines in another script (a recipe kept in
+ * Arabic, say) say nothing either way.
+ */
+function readable(lines: readonly string[]) {
+  const written = lines.filter((line) => /\p{L}/u.test(line))
+  const latin = written.filter((line) => /\p{Script=Latin}{2}/u.test(line))
+  return latin.length * 2 >= written.length
+}
+
+/**
  * Diet labels that fit, judging by the ingredients alone: only those with
- * nothing against them. A recipe without ingredients gets none.
+ * nothing against them. A recipe without ingredients gets none, and so
+ * does one whose words can't be read.
  */
 export function dietsFor(ingredients: readonly string[], language = "en") {
   if (!ingredients.some((line) => line.trim())) return []
+  if (!readable(ingredients)) return []
   const conflicts = dietConflicts(ingredients, language)
   return DIETS.filter((diet) => conflicts[diet].length === 0)
 }

@@ -144,21 +144,39 @@ export function ytDlpError(error: unknown, logger?: Logger): AppError {
 
 type Track = { ext?: string; url?: string }
 
-/** Captions in English (or the video's own language): written ones first, then automatic. */
+/** A caption track's language without its region or "-orig": "en-US-orig" is "en". */
+const languageOf = (lang: string) =>
+  lang
+    .replace(/-orig$/i, "")
+    .toLowerCase()
+    .split(/[-_]/)[0]!
+
+/**
+ * The captions to read: written ones in the video's own language, or
+ * English; then what was actually said ("-orig"), in the video's own
+ * language. A dubbed video has an "-orig" for each dub, so another's is
+ * only taken when there's just the one. Machine translations come last.
+ */
 export function pickCaptions(raw: {
   language?: string | null
   subtitles?: Record<string, Track[]> | null
   automatic_captions?: Record<string, Track[]> | null
 }): VideoCaptions | null {
-  const own = raw.language ?? undefined
-  const wanted = (lang: string) =>
-    /^en/i.test(lang) || (own !== undefined && lang.startsWith(own))
+  const own = raw.language ? languageOf(raw.language) : null
+  const isOwn = (lang: string) => own !== null && languageOf(lang) === own
+  const isEnglish = (lang: string) => languageOf(lang) === "en"
+  const said = (lang: string) => /-orig$/i.test(lang)
+  const written = raw.subtitles ?? {}
+  const automatic = raw.automatic_captions ?? {}
+  const spoken = Object.keys(automatic).filter(said)
   const sources: [Record<string, Track[]>, (lang: string) => boolean][] = [
-    [raw.subtitles ?? {}, wanted],
-    // Automatic captions come in many machine-translated languages; "-orig"
-    // is what was actually said.
-    [raw.automatic_captions ?? {}, (lang) => lang.endsWith("-orig")],
-    [raw.automatic_captions ?? {}, wanted],
+    [written, isOwn],
+    [written, isEnglish],
+    [automatic, (lang) => said(lang) && isOwn(lang)],
+    [automatic, (lang) => said(lang) && spoken.length === 1],
+    [automatic, (lang) => said(lang) && isEnglish(lang)],
+    [automatic, isOwn],
+    [automatic, isEnglish],
   ]
   for (const [tracks, accept] of sources) {
     for (const [lang, formats] of Object.entries(tracks)) {
