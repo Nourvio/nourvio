@@ -45,6 +45,7 @@ import { DayCard, PastDays, PoolCard } from "./day-card"
 import { FillWeekDialog } from "./fill-week-dialog"
 import { formatDay, formatWeek } from "./format"
 import { NextMealCard } from "./next-meal-card"
+import { NotFilledNote, useNotFilled } from "./not-filled"
 import {
   planQuery,
   useHouseholdClock,
@@ -61,6 +62,7 @@ import { usePlanActions } from "./use-plan-actions"
 export function PlanPage({ week: asked }: { week?: string }) {
   const { t, i18n } = useTranslation()
   const clock = useHouseholdClock()
+  const notFilled = useNotFilled()
   const actions = usePlanActions()
   const week = weekStartOf(asked ?? clock.today, clock.weekStartsOn)
   const days = weekDays(week)
@@ -194,11 +196,14 @@ export function PlanPage({ week: asked }: { week?: string }) {
             )}
           </div>
           {plan.data && (
-            <WeekSummary
-              entries={entries}
-              meals={clock.meals}
-              days={days.length}
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <NotFilledNote meals={notFilled} />
+              <WeekSummary
+                entries={entries}
+                meals={clock.meals}
+                days={days.length}
+              />
+            </div>
           )}
         </div>
 
@@ -241,7 +246,6 @@ export function PlanPage({ week: asked }: { week?: string }) {
                 key={day}
                 day={day}
                 today={clock.today}
-                meals={clock.meals}
                 theme={themes[dayOfWeek(day)] ?? null}
                 entries={onDay(day)}
                 selection={selection}

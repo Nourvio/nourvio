@@ -11,42 +11,48 @@ import { cn } from "@/lib/utils"
 
 import { formatMonthDay, formatShortWeekday, formatWeekday } from "./format"
 import { MealTile } from "./meal-tile"
+import { NotFilledIcon, useNotFilled } from "./not-filled"
 import type { Meal, PlanEntry } from "./queries"
 
 /** The frame every part of the week sits in. */
 const FRAME =
   "@container grid gap-3.5 rounded-3xl border bg-card p-5 text-card-foreground md:px-6"
 
-/** A small heading over a meal's dishes: "DINNER". */
+/** A small heading over a meal's dishes: "DINNER", with an (i) if it isn't filled for you. */
 function MealLabel({
   meal,
+  notFilled,
   hideNarrow = false,
 }: {
   meal: Meal
+  notFilled: boolean
   hideNarrow?: boolean
 }) {
   const { t } = useTranslation()
   return (
-    <p
+    <div
       className={cn(
-        "h-6 text-xs leading-6 font-semibold tracking-wide text-muted-foreground uppercase",
-        hideNarrow && "hidden @2xl:block"
+        "flex h-6 items-center gap-0.5",
+        hideNarrow && "hidden @2xl:flex"
       )}
     >
-      {t(`plan.meals.${meal}`)}
-    </p>
+      <p className="text-xs leading-6 font-semibold tracking-wide text-muted-foreground uppercase">
+        {t(`plan.meals.${meal}`)}
+      </p>
+      {notFilled && <NotFilledIcon meal={meal} />}
+    </div>
   )
 }
 
 /**
- * One day of the plan, full width, with its meals side by side when there's
- * room. An empty meal is a "+ Add lunch" box in its place; on a narrow card
- * they shrink to small buttons after what's planned.
+ * One day of the plan, full width, with every meal side by side when there's
+ * room: the ones the household doesn't plan on its own can still be planned
+ * by hand. An empty meal is a "+ Add lunch" box in its place; on a narrow
+ * card they shrink to small buttons after what's planned.
  */
 export function DayCard({
   day,
   today,
-  meals,
   theme,
   entries,
   selection,
@@ -54,7 +60,6 @@ export function DayCard({
 }: {
   day: string
   today: string
-  meals: readonly Meal[]
   /** Dinner's theme that night. */
   theme: NightTheme | null
   entries: PlanEntry[]
@@ -67,9 +72,8 @@ export function DayCard({
   for (const entry of entries) {
     byMeal.set(entry.meal, [...(byMeal.get(entry.meal) ?? []), entry])
   }
-  // A meal the household stopped planning still shows if something's in it.
-  const shown = MEALS.filter((meal) => meals.includes(meal) || byMeal.has(meal))
   const isToday = day === today
+  const notFilled = useNotFilled()
 
   return (
     <section
@@ -88,7 +92,7 @@ export function DayCard({
           {formatMonthDay(day, i18n.language)}
         </span>
         {isToday && <Badge className="self-center">{t("plan.today")}</Badge>}
-        {theme && shown.includes("dinner") && (
+        {theme && (
           <Badge variant="secondary" className="self-center">
             {themeLabel(theme)}
           </Badge>
@@ -99,15 +103,15 @@ export function DayCard({
         className="flex flex-wrap gap-2 @2xl:grid @2xl:grid-cols-(--meal-columns) @2xl:gap-3"
         style={
           {
-            "--meal-columns": `repeat(${shown.length}, minmax(0, 1fr))`,
+            "--meal-columns": `repeat(${MEALS.length}, minmax(0, 1fr))`,
           } as React.CSSProperties
         }
       >
-        {shown.map((meal) =>
+        {MEALS.map((meal) =>
           byMeal.has(meal) ? (
             <div key={meal} className="grid basis-full content-start gap-1.5">
               <div className="flex h-6 items-center justify-between">
-                <MealLabel meal={meal} />
+                <MealLabel meal={meal} notFilled={notFilled.includes(meal)} />
                 {!selection.selecting && (
                   <Button
                     variant="ghost"
@@ -134,7 +138,11 @@ export function DayCard({
               key={meal}
               className="order-last grid content-start gap-1.5 @2xl:order-none"
             >
-              <MealLabel meal={meal} hideNarrow />
+              <MealLabel
+                meal={meal}
+                notFilled={notFilled.includes(meal)}
+                hideNarrow
+              />
               <Button
                 variant="outline"
                 size="sm"

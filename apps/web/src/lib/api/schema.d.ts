@@ -2612,7 +2612,7 @@ export interface components {
             currency: string | null;
             timeZone: string;
             weekStartsOn: number;
-            /** @description The meals it plans, in a day's order: every meal until it opts out of some. */
+            /** @description The meals filled for it (by Fill the week and Plan each week), in a day's order: every meal until it opts out of some. Any meal can be planned by hand. */
             meals: ("breakfast" | "lunch" | "dinner" | "snack")[];
             /** @enum {string} */
             role: "owner" | "admin" | "member";
@@ -2629,7 +2629,7 @@ export interface components {
             currency?: string | null;
             timeZone?: string;
             weekStartsOn?: number;
-            /** @description The meals it plans. */
+            /** @description The meals filled for it. */
             meals?: ("breakfast" | "lunch" | "dinner" | "snack")[];
         };
         /**

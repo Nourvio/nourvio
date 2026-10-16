@@ -72,7 +72,7 @@ export function PlanItDialog({
         </DialogHeader>
         <FieldGroup>
           <WhenField week={clock.thisWeek} value={when} onChange={setWhen} />
-          <MealField meals={clock.meals} value={meal} onChange={setMeal} />
+          <MealField value={meal} onChange={setMeal} />
         </FieldGroup>
         <DialogFooter>
           <Button disabled={busy} onClick={() => void plan()}>

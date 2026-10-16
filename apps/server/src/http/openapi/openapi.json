@@ -922,7 +922,7 @@
                 "snack"
               ]
             },
-            "description": "The meals it plans, in a day's order: every meal until it opts out of some."
+            "description": "The meals filled for it (by Fill the week and Plan each week), in a day's order: every meal until it opts out of some. Any meal can be planned by hand."
           },
           "role": {
             "type": "string",
@@ -998,7 +998,7 @@
               ]
             },
             "minItems": 1,
-            "description": "The meals it plans."
+            "description": "The meals filled for it."
           }
         },
         "example": {

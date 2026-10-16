@@ -217,8 +217,8 @@
       "tab": "Household",
       "planning": {
         "title": "Planning",
-        "description": "The meals your household plans: all of them, unless you turn some off. A meal you turn off keeps anything already planned in it.",
-        "meals": "Meals",
+        "description": "The meals Fill the week and Plan each week fill for you: all of them, unless you turn some off. Every meal still shows on the plan, so you can plan one you've turned off yourself whenever you like.",
+        "meals": "Meals to fill",
         "save": "Save",
         "saved": "Saved."
       },
@@ -505,6 +505,22 @@
       "lunch": "Lunch",
       "dinner": "Dinner",
       "snack": "Snack"
+    },
+    "mealNames": {
+      "breakfast": "breakfast",
+      "lunch": "lunch",
+      "dinner": "dinner",
+      "snack": "snacks"
+    },
+    "notFilled": {
+      "short": "Not filled for you",
+      "label": "{{meal}} isn't filled for you. Why?",
+      "note": "Not filled for you: {{meals}}",
+      "title": "Not filled for you",
+      "why_one": "Fill the week and Plan each week leave {{meals}} empty, because it's turned off in Settings → Household → Planning. You can still plan it yourself on any day, suggestions included.",
+      "why_other": "Fill the week and Plan each week leave {{meals}} empty, because they're turned off in Settings → Household → Planning. You can still plan them yourself on any day, suggestions included.",
+      "change": "Change in Settings",
+      "askAdmin": "An admin of your household can change this."
     },
     "add": {
       "breakfast": "Add breakfast",

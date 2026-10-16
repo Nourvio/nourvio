@@ -82,7 +82,7 @@ export function mealOfTheHour(hour: number): Meal {
   return "dinner"
 }
 
-/** The meals a household plans, in a day's order: every meal until it opts out. */
+/** The meals filled for a household, in a day's order: every meal until it opts out. */
 export function plannedMeals(
   meals: readonly Meal[] | null | undefined
 ): Meal[] {

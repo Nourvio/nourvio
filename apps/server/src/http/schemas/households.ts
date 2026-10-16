@@ -30,7 +30,7 @@ export const HouseholdSchema = z
     weekStartsOn: z.number().int(),
     meals: z.array(z.enum(MEALS)).openapi({
       description:
-        "The meals it plans, in a day's order: every meal until it opts out of some.",
+        "The meals filled for it (by Fill the week and Plan each week), in a day's order: every meal until it opts out of some. Any meal can be planned by hand.",
     }),
     /** Your role in it. */
     role: z.enum(HOUSEHOLD_ROLES),
@@ -59,7 +59,7 @@ export const HouseholdChangesSchema = z
     meals: z
       .array(z.enum(MEALS))
       .min(1, "Plan at least one meal.")
-      .openapi({ description: "The meals it plans." }),
+      .openapi({ description: "The meals filled for it." }),
   })
   .partial()
   .openapi("HouseholdChanges", {

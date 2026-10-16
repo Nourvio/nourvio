@@ -312,7 +312,7 @@ New people get a short tour of each page the first time they open it, and every 
 - **A tour for each main page:** Today, Recipes, a recipe, the cook view, Plan, List, Pantry, the assistant and Settings. Three to six steps each, pointing at the real thing on screen and saying what it is and why you'd use it, in plain words: "Every week: things you buy every week whatever's planned, like bananas. They go on the list with each week's plan."
 - **The right tour for each person:**
   - **The server admin,** after setup: Settings → This server, step by step: AI keys and who may use them, sign-up, inviting people, backups, and where problems and updates show up.
-  - **A new household's admin:** inviting people, the meals the household plans (every meal until they turn some off in Settings → Household → Planning, which the tour points out), tastes and rules, its lists and stores, and adding its own AI key if the server doesn't cover it.
+  - **A new household's admin:** inviting people, the meals filled for the household (every meal until they turn some off in Settings → Household → Planning, which the tour points out; every meal can still be planned by hand), tastes and rules, its lists and stores, and adding its own AI key if the server doesn't cover it.
   - **Everyone else:** each page, the first time they open it.
   - The new household's "three steps to start" on Today (from the REFERENCE app) stays, and each step can open its tour.
 - **Only what's there:** steps for modules that are off are skipped, so nobody's shown an AI button they don't have. A household admin may get one step instead, saying what turning it on would add.

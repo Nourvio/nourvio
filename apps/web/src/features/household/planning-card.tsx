@@ -20,7 +20,7 @@ import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { householdQuery } from "./queries"
 
-/** Settings → Household → Planning: the meals the household plans. */
+/** Settings → Household → Planning: the meals filled for the household. Any can be planned by hand. */
 export function PlanningCard() {
   const { t } = useTranslation()
   const queryClient = useQueryClient()

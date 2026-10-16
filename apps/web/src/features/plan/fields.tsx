@@ -1,3 +1,4 @@
+import { MEALS } from "@merran/shared"
 import { useTranslation } from "react-i18next"
 
 import { Field, FieldLabel } from "@/components/ui/field"
@@ -9,7 +10,6 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-import type { Meal } from "./queries"
 import { useWhenWords } from "./use-when-words"
 import { whenOptions } from "./when"
 
@@ -76,14 +76,12 @@ export function WhenField({
   )
 }
 
-/** Which meal, of the ones the household plans (and this one's own). */
+/** Which meal: any of them, planned on its own or not. */
 export function MealField({
-  meals,
   value,
   onChange,
   keepOwn = false,
 }: {
-  meals: readonly Meal[]
   value: string
   onChange: (value: string) => void
   /** Offer "each one's own", for moving several. */
@@ -92,7 +90,7 @@ export function MealField({
   const { t } = useTranslation()
   const options = [
     ...(keepOwn ? [{ value: "", label: t("plan.keepMeal") }] : []),
-    ...meals.map((meal) => ({ value: meal, label: t(`plan.meals.${meal}`) })),
+    ...MEALS.map((meal) => ({ value: meal, label: t(`plan.meals.${meal}`) })),
   ]
   return (
     <SelectField

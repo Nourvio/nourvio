@@ -1,4 +1,4 @@
-import { MEALS, weekStartOf } from "@merran/shared"
+import { weekStartOf } from "@merran/shared"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -47,10 +47,6 @@ export function ChangeMealDialog({
   const [side, setSide] = React.useState(entry.withRecipe)
   const [pickingSide, setPickingSide] = React.useState(false)
   const [busy, setBusy] = React.useState(false)
-
-  const meals = MEALS.filter(
-    (option) => clock.meals.includes(option) || option === entry.meal
-  )
 
   async function save() {
     const changes: Parameters<typeof actions.change>[1] = {}
@@ -117,7 +113,7 @@ export function ChangeMealDialog({
                 value={when}
                 onChange={setWhen}
               />
-              <MealField meals={meals} value={meal} onChange={setMeal} />
+              <MealField value={meal} onChange={setMeal} />
               {entry.recipe ? (
                 <>
                   <Field>
@@ -213,7 +209,6 @@ export function MoveMealsDialog({
   onMoved: () => void
 }) {
   const { t } = useTranslation()
-  const clock = useHouseholdClock()
   const actions = usePlanActions()
   const [when, setWhen] = React.useState(`any:${week}`)
   const [meal, setMeal] = React.useState("")
@@ -243,12 +238,7 @@ export function MoveMealsDialog({
         </DialogHeader>
         <FieldGroup>
           <WhenField week={week} value={when} onChange={setWhen} />
-          <MealField
-            meals={clock.meals}
-            value={meal}
-            onChange={setMeal}
-            keepOwn
-          />
+          <MealField value={meal} onChange={setMeal} keepOwn />
         </FieldGroup>
         <DialogFooter>
           <Button disabled={busy} onClick={() => void move()}>

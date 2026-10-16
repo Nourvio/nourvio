@@ -10,7 +10,7 @@ import { createdAt, id } from "./base.ts"
 
 /** Planning settings a household reads and saves as a whole. */
 export type HouseholdSettings = {
-  /** The meals it plans: every meal until it opts out of some. */
+  /** The meals filled for it: every meal until it opts out of some. Any can be planned by hand. */
   meals?: Meal[]
   alwaysOnHand?: string[]
   /** What it eats and doesn't. */
