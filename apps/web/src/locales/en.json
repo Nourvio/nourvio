@@ -1891,7 +1891,136 @@
         "notCovered": "Finding stand-ins needs AI, and this household has no AI key yet.",
         "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
         "ownLimit": "This month's limit on the household's own AI keys is reached."
+      },
+      "assistant": {
+        "noKey": "The assistant needs AI, and this household has no AI key yet.",
+        "notCovered": "The assistant needs AI, and this household has no AI key yet.",
+        "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
+        "ownLimit": "This month's limit on the household's own AI keys is reached."
+      },
+      "discover": {
+        "noKey": "Discover needs AI, and this household has no AI key yet.",
+        "notCovered": "Discover needs AI, and this household has no AI key yet.",
+        "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
+        "ownLimit": "This month's limit on the household's own AI keys is reached."
       }
     }
+  },
+  "assistant": {
+    "title": "Assistant",
+    "open": "Ask the assistant",
+    "description": "Chat with Merran's assistant about your recipes, plan, list and pantry.",
+    "chats": "Your chats",
+    "history": "Earlier chats",
+    "back": "Back to the chat",
+    "new": "New chat",
+    "none": "No chats yet.",
+    "delete": "Delete {{title}}",
+    "deleted": "Chat deleted.",
+    "hello": "Ask about your recipes, plan a week, find something new online, or work out what to do with what's in the fridge.",
+    "ideas": {
+      "tonight": "What can I make tonight?",
+      "week": "Plan dinners for this week",
+      "fridge": "What should I use up first?",
+      "online": "Find me a new soup recipe online"
+    },
+    "placeholder": "Ask anything",
+    "send": "Send",
+    "stop": "Stop",
+    "thinking": "Thinking…",
+    "about": "About {{name}}",
+    "notAbout": "Don't send what's on the screen",
+    "sources": "Sources:",
+    "inLibrary": "{{name}} is in your library already.",
+    "tools": {
+      "search_recipes": "Looked through your recipes",
+      "search_recipes_query": "Looked through your recipes for “{{query}}”",
+      "get_recipe": "Read the recipe",
+      "list_tags": "Looked at your tags",
+      "get_meal_plan": "Looked at the plan",
+      "get_shopping_list": "Looked at the list",
+      "get_pantry": "Looked in the pantry",
+      "web_search": "Searched the web",
+      "web_search_query": "Searched the web for “{{query}}”",
+      "google_search": "Searched the web",
+      "google_search_query": "Searched the web for “{{query}}”"
+    },
+    "cards": {
+      "apply": {
+        "edit": "Review",
+        "recipe": "Save recipe",
+        "meals": "Add to the plan",
+        "list": "Add to the list",
+        "tastes": "Remember",
+        "import": "Import",
+        "tidy": "Review",
+        "note": "Review",
+        "swap": "Save to recipe"
+      },
+      "applied": {
+        "edit": "Recipe changed.",
+        "recipe": "Recipe saved.",
+        "meals": "Added to the plan.",
+        "list": "Added to the list.",
+        "tastes": "Remembered.",
+        "import": "Recipe imported.",
+        "tidy": "Recipe tidied.",
+        "note": "Recipe changed.",
+        "swap": "Swapped in the recipe."
+      },
+      "done": {
+        "edit": "Changed.",
+        "recipe": "Saved.",
+        "meals": "Added.",
+        "list": "Added.",
+        "tastes": "Remembered.",
+        "import": "Imported.",
+        "tidy": "Tidied.",
+        "note": "Changed.",
+        "swap": "Saved to the recipe."
+      },
+      "dismiss": "Dismiss",
+      "dismissed": "Dismissed.",
+      "open": "Open it",
+      "see": "See it",
+      "meal": "{{day}}, {{meal}}: {{what}}",
+      "avoid": {
+        "allergy": "{{food}}: an allergy, for {{who}}",
+        "never": "{{food}}: never, for {{who}}",
+        "leave-out": "{{food}}: left out, for {{who}}"
+      },
+      "everyone": "everyone",
+      "diets": "Every meal: {{diets}}",
+      "weeknight": "Weeknight dinners in {{minutes}} minutes or less",
+      "recipeSize": "{{ingredients}} ingredients, {{steps}} steps",
+      "minutes": "{{minutes}} min"
+    },
+    "close": "Close",
+    "photos": {
+      "add": "Add a photo",
+      "remove": "Remove this photo",
+      "attached": "A photo to send",
+      "sent": "A photo you sent",
+      "tooMany": "Up to {{count}} photos at a time.",
+      "camera": "Take a photo"
+    }
+  },
+  "discover": {
+    "title": "Discover",
+    "description": "New recipes online for whatever you're in the mood for, picked to suit your household. Merran opens each one first, so they all import.",
+    "placeholder": "What sounds good?",
+    "find": "Find recipes",
+    "ideas": {
+      "soups": "Cozy fall soups",
+      "pasta": "Quick weeknight pasta",
+      "sheetPan": "Sheet-pan dinners",
+      "chicken": "Something new with chicken",
+      "vegetarian": "Hearty vegetarian mains"
+    },
+    "searching": "Searching the web for “{{theme}}”. It takes about a minute.",
+    "earlier": "Earlier searches",
+    "minutes": "{{minutes}} min",
+    "import": "Import",
+    "open": "Open it"
   }
 }

@@ -1,8 +1,23 @@
-import type { MarkedLine, ProposalSection } from "@merran/shared"
+import type { MarkedLine, ProposalSection, TidyValues } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../../core/errors.ts"
 import { Proposal, User } from "../../../database/entities/index.ts"
-import { findRecipe, updateRecipe } from "../recipes.ts"
+import { RecipeInputSchema } from "../../../http/schemas/recipes.ts"
+import type { AiDeps } from "../../ai/run.ts"
+import {
+  ImportPayload,
+  ListPayload,
+  MealsPayload,
+  SwapPayload,
+  TastesPayload,
+} from "../../assistant/payloads.ts"
+import { addTyped } from "../../list/list.ts"
+import { addEntries } from "../../plan/plan.ts"
+import { getTastes, saveTastes } from "../../plan/preferences.ts"
+import type { FileStore } from "../../storage/files.ts"
+import { importLink } from "../import/import-link.ts"
+import { createRecipe, findRecipe, updateRecipe } from "../recipes.ts"
+import { saveSwap } from "../swaps.ts"
 import { describeProposal, detailsOf, tidyView } from "./tidy.ts"
 
 // The Review queue: suggestions waiting to be applied, a section at a
@@ -46,6 +61,8 @@ export async function listProposals(
     Proposal,
     {
       status: "pending",
+      // The assistant's are shown in its chats, not here.
+      chat: null,
       recipe: recipeId ? recipeId : { deletedAt: null },
     },
     {
@@ -67,6 +84,60 @@ export async function recipeProposal(em: EntityManager, idOrSlug: string) {
     { populate: ["recipe"], orderBy: { createdAt: "desc" } }
   )
   return proposal ? describeProposal(proposal) : null
+}
+
+/** One suggestion, whatever's become of it. */
+export async function getProposal(em: EntityManager, proposalId: string) {
+  const proposal = UUID.test(proposalId)
+    ? await em.findOne(Proposal, { id: proposalId }, { populate: ["recipe"] })
+    : null
+  if (!proposal) {
+    throw new AppError(
+      "not_found",
+      "proposal_not_found",
+      "There's no such suggestion."
+    )
+  }
+  return describeProposal(proposal)
+}
+
+/**
+ * Keeps a suggestion: from tidy up, a cooking note, or the assistant (with
+ * its chat). It waits to be applied or dismissed.
+ */
+export async function createProposal(
+  em: EntityManager,
+  options: {
+    householdId: string
+    userId: string | null
+    kind: Proposal["kind"]
+    summary: string
+    recipeId?: string | null
+    before?: TidyValues
+    after?: TidyValues
+    payload?: Record<string, unknown> | null
+    chat?: string | null
+    note?: string | null
+    job?: string | null
+  }
+) {
+  const proposal = em.create(Proposal, {
+    household: options.householdId,
+    kind: options.kind,
+    recipe: options.recipeId ?? null,
+    status: "pending",
+    summary: options.summary.trim().slice(0, 300) || "A suggestion.",
+    before: options.before ?? {},
+    after: options.after ?? {},
+    payload: options.payload ?? null,
+    chat: options.chat ?? null,
+    note: options.note ?? null,
+    job: options.job ?? null,
+    createdBy: options.userId,
+  })
+  await em.flush()
+  await em.populate(proposal, ["recipe"])
+  return describeProposal(proposal)
 }
 
 async function findPending(em: EntityManager, proposalId: string) {
@@ -120,20 +191,124 @@ function resolve(
 }
 
 /**
- * Applies the sections of a suggestion that are chosen, as one change to
- * the recipe. A section changed since it was suggested is refused rather
- * than overwritten, and says which.
+ * Applies a suggestion. Changes to a recipe apply the sections chosen, as
+ * one change that keeps a version; a section changed since it was
+ * suggested is refused rather than overwritten, and says which. The
+ * assistant's other suggestions add what they say: a recipe, meals, things
+ * for the list, tastes to remember, or a recipe from the web.
  */
 export async function applyProposal(
   em: EntityManager,
+  deps: AiDeps & { files: FileStore },
   options: {
     householdId: string
     userId: string | null
     proposalId: string
-    sections: readonly ProposalSection[]
+    sections?: readonly ProposalSection[]
   }
 ) {
   const proposal = await findPending(em, options.proposalId)
+  const recipe = await applyKind(em, deps, proposal, options)
+  resolve(em, proposal, "applied", options.userId)
+  await em.flush()
+  return { proposal: describeProposal(proposal), recipe }
+}
+
+/** What applying each kind of suggestion does; the recipe it made or changed. */
+async function applyKind(
+  em: EntityManager,
+  deps: AiDeps & { files: FileStore },
+  proposal: Proposal,
+  options: {
+    householdId: string
+    userId: string | null
+    sections?: readonly ProposalSection[]
+  }
+) {
+  const { householdId, userId } = options
+  const payload = proposal.payload ?? {}
+  switch (proposal.kind) {
+    case "tidy":
+    case "note":
+    case "edit":
+      return applySections(em, proposal, {
+        householdId,
+        userId,
+        sections: options.sections ?? [],
+      })
+    case "recipe":
+      return createRecipe(em, {
+        householdId,
+        userId,
+        input: RecipeInputSchema.parse(payload.recipe),
+        origin: "assistant",
+      })
+    case "meals": {
+      const { meals } = MealsPayload.parse(payload)
+      await addEntries(
+        em,
+        householdId,
+        meals.map((meal) => ({
+          date: meal.date,
+          meal: meal.meal,
+          recipe: meal.recipe?.id ?? null,
+          withRecipe: meal.with?.id ?? null,
+          note: meal.note,
+          servings: meal.servings,
+        }))
+      )
+      return null
+    }
+    case "list": {
+      const { items } = ListPayload.parse(payload)
+      for (const text of items) await addTyped(em, householdId, { text })
+      return null
+    }
+    case "tastes": {
+      const add = TastesPayload.parse(payload)
+      const now = await getTastes(em, householdId)
+      await saveTastes(em, householdId, {
+        avoid: [...now.avoid, ...add.avoid],
+        diets: [...new Set([...now.diets, ...add.diets])],
+        weeknightMinutes: add.weeknightMinutes ?? now.weeknightMinutes,
+      })
+      return null
+    }
+    case "swap": {
+      // Saved to the recipe; using it this time is the web app's own.
+      const swap = SwapPayload.parse(payload)
+      const { recipe } = await saveSwap(em, {
+        householdId,
+        userId,
+        recipe: proposal.recipe!.id,
+        ingredientId: swap.ingredientId,
+        lines: swap.lines,
+        steps: swap.steps,
+      })
+      return recipe
+    }
+    case "import": {
+      const { url } = ImportPayload.parse(payload)
+      const { recipe } = await importLink(em, deps, {
+        householdId,
+        userId,
+        url,
+      })
+      return recipe
+    }
+  }
+}
+
+/** Applies the sections of a change to a recipe that are chosen. */
+async function applySections(
+  em: EntityManager,
+  proposal: Proposal,
+  options: {
+    householdId: string
+    userId: string | null
+    sections: readonly ProposalSection[]
+  }
+) {
   const chosen = options.sections.filter((section) => section in proposal.after)
   if (chosen.length === 0) {
     throw new AppError(
@@ -163,7 +338,7 @@ export async function applyProposal(
     throw new AppError(
       "conflict",
       "proposal_outdated",
-      `${listed(changed)} changed since this was suggested. Tidy it up again for new suggestions.`
+      `${listed(changed)} changed since this was suggested. Ask again for new suggestions.`
     )
   }
 
@@ -181,18 +356,16 @@ export async function applyProposal(
     ? after.marks
     : undefined
 
-  const updated = await updateRecipe(em, {
+  return updateRecipe(em, {
     householdId: options.householdId,
     userId: options.userId,
     recipe: recipe.id,
     input,
-    // A cooking note's change is an edit, as if they'd made it themselves.
+    // A cooking note's or the assistant's change is an edit, as if they'd
+    // made it themselves.
     source: proposal.kind === "tidy" ? "tidy" : "edit",
     marks,
   })
-  resolve(em, proposal, "applied", options.userId)
-  await em.flush()
-  return { proposal: describeProposal(proposal), recipe: updated }
 }
 
 /** Dismisses a suggestion, leaving the recipe as it is. */

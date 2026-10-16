@@ -83,8 +83,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Screen stays on, and your place is kept | Detail | Built | |
 | Hands-free: steps read aloud, voice commands | Key | Built | Uses the device's voice |
 | A better server voice (Kokoro or OpenAI) | Detail | Planned | Module |
-| Swap an ingredient you're out of | Key | Planned | AI |
-| Turn a cooking note into a suggested edit | Detail | Planned | AI |
+| Swap an ingredient you're out of | Key | Built | AI; for this time or saved to the recipe, with the steps rewritten to match, in cook view too |
+| Turn a cooking note into a suggested edit | Detail | Built | AI |
 
 ## Adding recipes
 
@@ -98,11 +98,11 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Import from Paprika | Key | Built | |
 | Merran export and import of a whole household | Key | Built | |
 | Share to Merran from Android's share sheet or an iPhone Shortcut | Key | Built | |
-| Tidy up: AI fixes a recipe, you review each change | Key | Building | AI; also marks which ingredients a recipe can do without |
+| Tidy up: AI fixes a recipe, you review each change | Key | Built | AI; also marks which ingredients a recipe can do without |
 | Video links (TikTok, YouTube, Instagram) | Headline | Planned | Module |
 | Follow recipe sites and see their newest recipes | Key | Planned | Module; respects `robots.txt` |
 | Starter collections | Detail | Planned | Module; data files per language |
-| Discover: find recipes for any theme with AI | Key | Planned | AI, with web search |
+| Discover: find recipes for any theme with AI | Key | Built | AI, with web search; each page is opened first, so they all import |
 | Browser extension: import a page, right-click, the list in a side panel | Key | Planned | Chrome, Edge, Firefox |
 | Tandoor import | Detail | Later | |
 
@@ -153,9 +153,11 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | The server admin doesn't pay for everyone: household keys, a policy, monthly limits | Headline | Built | |
 | Usage and cost by key; warnings when a key runs low | Detail | Built | |
 | A suggested model for each task | Detail | Built | |
-| The AI proposes, people apply: a Review queue | Key | Building | |
-| A cooking assistant to chat with, that can plan and edit with your OK | Headline | Planned | AI |
-| Finding recipes online in chat | Key | Planned | AI, with web search |
+| The AI proposes, people apply: a Review queue | Key | Built | |
+| A cooking assistant to chat with, that can plan and edit with your OK | Headline | Built | AI; knows the recipe or week on screen, and offers changes as cards to apply |
+| Show the assistant a photo: is it done, is the sauce thick enough? | Key | Built | AI; any model that reads images; the camera opens on phones |
+| Ask what to use instead, and get a swap to use this time or save | Detail | Built | AI |
+| Finding recipes online in chat | Key | Built | AI, with web search |
 
 ## Everywhere
 

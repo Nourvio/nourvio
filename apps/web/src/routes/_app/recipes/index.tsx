@@ -1,6 +1,7 @@
 import {
   AiMagicIcon,
   CookBookIcon,
+  Search01Icon,
   Delete02Icon,
   MoreHorizontalIcon,
   Tag01Icon,
@@ -174,6 +175,12 @@ function RecipesPage() {
                     <HugeiconsIcon icon={Tag01Icon} strokeWidth={2} />
                     {t("recipes.manageTags")}
                   </DropdownMenuItem>
+                  {aiOn && (
+                    <DropdownMenuItem render={<Link to="/recipes/discover" />}>
+                      <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
+                      {t("discover.title")}
+                    </DropdownMenuItem>
+                  )}
                   {aiOn && (
                     <DropdownMenuItem render={<Link to="/recipes/review" />}>
                       <HugeiconsIcon icon={TaskDone01Icon} strokeWidth={2} />

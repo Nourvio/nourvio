@@ -4,6 +4,114 @@
  */
 
 export interface paths {
+    "/api/assistant/chats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Your chats
+         * @description Your chats with the assistant in the household you're in, newest first. Nobody else's: each person's are their own. With an API key, it needs the `assistant: read` permission.
+         */
+        get: operations["listChats"];
+        put?: never;
+        /**
+         * Start a chat
+         * @description A new chat with the assistant, to send messages to at `POST /assistant/chats/{chatId}/messages`. Its first message names it. With an API key, it needs the `assistant: write` permission.
+         */
+        post: operations["startChat"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/chats/{chatId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A chat, with its messages
+         * @description With an API key, it needs the `assistant: read` permission.
+         */
+        get: operations["getChat"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete a chat
+         * @description Gone for good, with its messages and the photos in them. What was applied from it stays. With an API key, it needs the `assistant: write` permission.
+         */
+        delete: operations["deleteChat"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/chats/{chatId}/messages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask the assistant
+         * @description Sends a message, and streams the assistant's answer back as AI SDK's UI message stream (server-sent events), the way `useChat` reads it: its text, and the tools it uses as it uses them. It can see photos sent with a message (uploaded first, with `POST /assistant/photos`) when the model reads photos, look things up in the household's recipes, plan, list and pantry, search the web when the model can, and propose changes, which come back as suggestions (`GET /proposals/{proposalId}`) for the person to apply. Both messages are kept. Uses the household's model for the assistant, which must be able to use tools, and counts towards its AI spend. With an API key, it needs the `assistant: write` permission.
+         */
+        post: operations["sendChatMessage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a photo for the assistant
+         * @description A photo to send with a message, like what's in the pan: its id goes in the message's `photos`. JPEG, PNG or WebP, up to 15 MB; it's kept smaller, the right way up, with the person's chats. With an API key, it needs the `assistant: write` permission.
+         */
+        post: operations["uploadAssistantPhoto"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/photos/{photoId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A photo sent to the assistant
+         * @description As JPEG. Only the person who sent it sees it, like their chats. A photo never changes, so it can be kept for good. With an API key, it needs the `assistant: read` permission.
+         */
+        get: operations["getAssistantPhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/api-keys": {
         parameters: {
             query?: never;
@@ -165,6 +273,50 @@ export interface paths {
          * @description Which of Merran's optional parts are on, what they make possible, and what the web app needs from them. Needs no sign-in: the web app reads it before anyone signs in.
          */
         get: operations["getCapabilities"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/discover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Recent searches
+         * @description The household's last twelve searches, newest first. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listDiscoveries"];
+        put?: never;
+        /**
+         * Find new recipes online
+         * @description Searches the web for recipes that fit a theme ("cozy fall soups") and suit the household, in the background, with the household's model for finding recipes, which must be able to search the web. Merran opens each page and keeps those it can import. Follow it at `GET /discover/{discoveryId}`; one at a time for a household. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["startDiscovery"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/discover/{discoveryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A search
+         * @description With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["getDiscovery"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1416,6 +1568,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proposals/{proposalId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A suggestion
+         * @description Waiting, applied or dismissed. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["getProposal"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/proposals/{proposalId}/apply": {
         parameters: {
             query?: never;
@@ -1427,7 +1599,7 @@ export interface paths {
         put?: never;
         /**
          * Apply a suggestion
-         * @description Applies the sections picked, as one change to the recipe that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. With an API key, it needs the `recipes: write` permission.
+         * @description Changes to a recipe apply the sections picked, as one change that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. The assistant's other suggestions add what they say: a recipe, meals, things for the list, tastes, or a recipe from the web. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["applyProposal"];
         delete?: never;
@@ -2674,6 +2846,102 @@ export interface components {
         };
         /**
          * @example {
+         *       "chats": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000002b",
+         *           "title": "What can I make with leftover chicken?",
+         *           "createdAt": "2026-10-01T17:30:00.000Z",
+         *           "updatedAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        ChatList: {
+            chats: components["schemas"]["Chat"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000002b",
+         *       "title": "What can I make with leftover chicken?",
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "updatedAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
+        Chat: {
+            id: string;
+            /** @description From its first message. */
+            title: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000002b",
+         *       "title": "What can I make with leftover chicken?",
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "updatedAt": "2026-10-15T18:30:00.000Z",
+         *       "messages": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000002c",
+         *           "role": "user",
+         *           "parts": [
+         *             {
+         *               "type": "text",
+         *               "text": "What can I make with leftover chicken?"
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        ChatWithMessages: components["schemas"]["Chat"] & {
+            /** @description Its messages in order, as AI SDK's UI messages: each with an id, a role, and parts (text, and the assistant's tool calls with their results). */
+            messages: {
+                [key: string]: unknown;
+            }[];
+        };
+        /**
+         * @example {
+         *       "text": "Is this thick enough?",
+         *       "photos": [
+         *         "4f1c2a9e7b3d5f6a8c0e1b2d"
+         *       ],
+         *       "context": {
+         *         "recipe": "0199e8b0-5a10-7a01-8b00-000000000006"
+         *       }
+         *     }
+         */
+        ChatMessageInput: {
+            /**
+             * @description What they say. Can be left out with photos.
+             * @default
+             */
+            text: string;
+            /** @description Photos to send with it, up to 4, by the ids `POST /assistant/photos` gave them: of what they're cooking, say. The message keeps them as file parts, linking to each photo. */
+            photos?: string[];
+            /** @description What's on their screen, for the assistant to know: "this recipe" is the one there. */
+            context?: {
+                /** @description The recipe on their screen, by id or address. */
+                recipe?: string;
+                /** @description The first day of the week of the plan on their screen. */
+                week?: string;
+            };
+        };
+        /**
+         * @example {
+         *       "id": "4f1c2a9e7b3d5f6a8c0e1b2d",
+         *       "url": "/api/assistant/photos/4f1c2a9e7b3d5f6a8c0e1b2d"
+         *     }
+         */
+        AssistantPhoto: {
+            id: string;
+            /** @description Where it's shown from. */
+            url: string;
+        };
+        /**
+         * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
          *       "name": "Home Assistant",
          *       "start": "mrn_3fK9aQ",
@@ -2998,6 +3266,86 @@ export interface components {
                     [key: string]: unknown;
                 };
             };
+        };
+        /**
+         * @example {
+         *       "searches": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
+         *           "theme": "cozy fall soups",
+         *           "status": "done",
+         *           "error": null,
+         *           "recipes": [
+         *             {
+         *               "url": "https://cooking.example/butternut-squash-soup",
+         *               "name": "Roasted Butternut Squash Soup",
+         *               "site": "cooking.example",
+         *               "minutes": 60,
+         *               "photo": "https://cooking.example/images/squash-soup.jpg",
+         *               "why": "Vegetarian and freezes well, with the squash roasted for depth."
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-01T17:30:00.000Z",
+         *           "updatedAt": "2026-10-01T17:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        DiscoveryList: {
+            searches: components["schemas"]["Discovery"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
+         *       "theme": "cozy fall soups",
+         *       "status": "done",
+         *       "error": null,
+         *       "recipes": [
+         *         {
+         *           "url": "https://cooking.example/butternut-squash-soup",
+         *           "name": "Roasted Butternut Squash Soup",
+         *           "site": "cooking.example",
+         *           "minutes": 60,
+         *           "photo": "https://cooking.example/images/squash-soup.jpg",
+         *           "why": "Vegetarian and freezes well, with the squash roasted for depth."
+         *         }
+         *       ],
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "updatedAt": "2026-10-01T17:30:00.000Z"
+         *     }
+         */
+        Discovery: {
+            id: string;
+            theme: string;
+            /**
+             * @description Still searching, done, or failed (`error` says why).
+             * @enum {string}
+             */
+            status: "searching" | "done" | "failed";
+            error: string | null;
+            /** @description Up to eight, each a page Merran opened and can import, no more than two from a site unless there aren't others. */
+            recipes: {
+                /** @description The recipe's page, to import at `POST /recipes/import`. */
+                url: string;
+                name: string;
+                site: string;
+                minutes: number | null;
+                photo: string | null;
+                /** @description Why it's a good pick. */
+                why: string;
+            }[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        /**
+         * @example {
+         *       "theme": "cozy fall soups"
+         *     }
+         */
+        DiscoverInput: {
+            theme: string;
         };
         /**
          * @example {
@@ -5452,6 +5800,8 @@ export interface components {
          *             "marks"
          *           ],
          *           "note": null,
+         *           "payload": null,
+         *           "chat": null,
          *           "before": {
          *             "steps": [
          *               "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -5511,6 +5861,8 @@ export interface components {
          *         "marks"
          *       ],
          *       "note": null,
+         *       "payload": null,
+         *       "chat": null,
          *       "before": {
          *         "steps": [
          *           "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -5548,7 +5900,7 @@ export interface components {
         Proposal: {
             id: string;
             /** @enum {string} */
-            kind: "tidy" | "note";
+            kind: "tidy" | "note" | "edit" | "recipe" | "meals" | "list" | "tastes" | "import" | "swap";
             /** @enum {string} */
             status: "pending" | "applied" | "dismissed";
             recipe: {
@@ -5562,6 +5914,12 @@ export interface components {
             sections: components["schemas"]["ProposalSection"][];
             /** @description The cooking note it came from, for one made from a note. */
             note: string | null;
+            /** @description What an assistant's suggestion adds, by kind: `recipe` (a recipe, as the editor writes one), `meals` (meals for the plan), `items` (lines for the list), tastes to remember (`avoid`, `diets`, `weeknightMinutes`), a recipe page to import (`url`, `name`, `site`, `photo`, `minutes`, `why`), or a stand-in for an ingredient (`ingredientId`, `insteadOf`, `lines`, `note`, `steps`), which applying saves to the recipe. Null for changes to a recipe's sections. */
+            payload: {
+                [key: string]: unknown;
+            } | null;
+            /** @description The assistant's chat it came from, for one from the assistant. */
+            chat: string | null;
             before: components["schemas"]["TidyValues"];
             after: components["schemas"]["TidyValues"];
             /** Format: date-time */
@@ -5612,6 +5970,8 @@ export interface components {
          *           "marks"
          *         ],
          *         "note": null,
+         *         "payload": null,
+         *         "chat": null,
          *         "before": {
          *           "steps": [
          *             "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -5746,7 +6106,8 @@ export interface components {
          */
         ApplyResult: {
             proposal: components["schemas"]["Proposal"];
-            recipe: components["schemas"]["Recipe"];
+            /** @description The recipe it changed or made, if it did. */
+            recipe: components["schemas"]["Recipe"] | null;
         };
         /**
          * @example {
@@ -5978,8 +6339,8 @@ export interface components {
          *     }
          */
         ApplyInput: {
-            /** @description The sections to apply. The rest are skipped. */
-            sections: components["schemas"]["ProposalSection"][];
+            /** @description For changes to a recipe: the sections to apply. The rest are skipped. */
+            sections?: components["schemas"]["ProposalSection"][];
         };
         /**
          * @example {
@@ -6912,6 +7273,8 @@ export interface components {
          *           "marks"
          *         ],
          *         "note": null,
+         *         "payload": null,
+         *         "chat": null,
          *         "before": {
          *           "steps": [
          *             "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -7443,6 +7806,361 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    listChats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your chats. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Started. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Chat"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The chat. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatWithMessages"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such chat of yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteChat: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such chat of yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    sendChatMessage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                chatId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChatMessageInput"];
+            };
+        };
+        responses: {
+            /** @description The answer, as it comes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such chat of yours, or no such photo. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The model can't use tools, or read photos. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description This month's AI limit is reached. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    uploadAssistantPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    photo?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Kept. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantPhoto"];
+                };
+            };
+            /** @description No photo, or not one Merran can read. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The photo is too big. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAssistantPhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                photoId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The photo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/jpeg": string;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such photo of yours. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listApiKeys: {
         parameters: {
             query?: never;
@@ -7873,6 +8591,144 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Capabilities"];
+                };
+            };
+        };
+    };
+    listDiscoveries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its searches. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DiscoveryList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startDiscovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoverInput"];
+            };
+        };
+        responses: {
+            /** @description Searching. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Discovery"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A search is going already. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getDiscovery: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                discoveryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The search, as far as it's got. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Discovery"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such search. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -11211,6 +12067,55 @@ export interface operations {
             };
             /** @description Not allowed. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The suggestion. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Proposal"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such suggestion. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -22,6 +22,7 @@ import { Route as AppShareRouteImport } from './routes/_app/share'
 import { Route as JoinTokenRouteImport } from './routes/join/$token'
 import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 import { Route as AppRecipesDeletedRouteImport } from './routes/_app/recipes/deleted'
+import { Route as AppRecipesDiscoverRouteImport } from './routes/_app/recipes/discover'
 import { Route as AppRecipesNewRouteImport } from './routes/_app/recipes/new'
 import { Route as AppRecipesReviewRouteImport } from './routes/_app/recipes/review'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
@@ -97,6 +98,11 @@ const AppRecipesDeletedRoute = AppRecipesDeletedRouteImport.update({
   path: '/recipes/deleted',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRecipesDiscoverRoute = AppRecipesDiscoverRouteImport.update({
+  id: '/recipes/discover',
+  path: '/recipes/discover',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRecipesNewRoute = AppRecipesNewRouteImport.update({
   id: '/recipes/new',
   path: '/recipes/new',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
+  '/recipes/discover': typeof AppRecipesDiscoverRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
+  '/recipes/discover': typeof AppRecipesDiscoverRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/join/$token': typeof JoinTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/recipes/deleted': typeof AppRecipesDeletedRoute
+  '/_app/recipes/discover': typeof AppRecipesDiscoverRoute
   '/_app/recipes/new': typeof AppRecipesNewRoute
   '/_app/recipes/review': typeof AppRecipesReviewRoute
   '/_app/settings/household': typeof AppSettingsHouseholdRoute
@@ -241,6 +250,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/join/$token'
     | '/recipes/deleted'
+    | '/recipes/discover'
     | '/recipes/new'
     | '/recipes/review'
     | '/settings/household'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/join/$token'
     | '/recipes/deleted'
+    | '/recipes/discover'
     | '/recipes/new'
     | '/recipes/review'
     | '/settings/household'
@@ -290,6 +301,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/_app/'
     | '/_app/recipes/deleted'
+    | '/_app/recipes/discover'
     | '/_app/recipes/new'
     | '/_app/recipes/review'
     | '/_app/settings/household'
@@ -405,6 +417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesDeletedRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/recipes/discover': {
+      id: '/_app/recipes/discover'
+      path: '/recipes/discover'
+      fullPath: '/recipes/discover'
+      preLoaderRoute: typeof AppRecipesDiscoverRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/recipes/new': {
       id: '/_app/recipes/new'
       path: '/recipes/new'
@@ -513,6 +532,7 @@ interface AppRouteChildren {
   AppShareRoute: typeof AppShareRoute
   AppIndexRoute: typeof AppIndexRoute
   AppRecipesDeletedRoute: typeof AppRecipesDeletedRoute
+  AppRecipesDiscoverRoute: typeof AppRecipesDiscoverRoute
   AppRecipesNewRoute: typeof AppRecipesNewRoute
   AppRecipesReviewRoute: typeof AppRecipesReviewRoute
   AppRecipesIndexRoute: typeof AppRecipesIndexRoute
@@ -529,6 +549,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppShareRoute: AppShareRoute,
   AppIndexRoute: AppIndexRoute,
   AppRecipesDeletedRoute: AppRecipesDeletedRoute,
+  AppRecipesDiscoverRoute: AppRecipesDiscoverRoute,
   AppRecipesNewRoute: AppRecipesNewRoute,
   AppRecipesReviewRoute: AppRecipesReviewRoute,
   AppRecipesIndexRoute: AppRecipesIndexRoute,

@@ -39,6 +39,9 @@ export const IDS = {
   aiKey: id(40),
   proposal: id(41),
   tidyRun: id(42),
+  chat: id(43),
+  chatMessage: id(44),
+  discovery: id(45),
 }
 
 export const TIMES = {

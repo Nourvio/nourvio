@@ -1,5 +1,5 @@
 import { APICallError } from "ai"
-import { MockLanguageModelV4 } from "ai/test"
+import { convertArrayToReadableStream, MockLanguageModelV4 } from "ai/test"
 import type { AiModels, AiTarget } from "../services/ai/providers.ts"
 import type { FetchOptions, Fetcher } from "../services/fetch/public-fetch.ts"
 
@@ -85,6 +85,10 @@ const NO_CREDIT = JSON.stringify({
 /** What a mock model is asked: the prompt, and the form of answer wanted. */
 export type MockCall = { prompt: unknown; responseFormat?: unknown }
 
+/** What a mock model answers: text, or text and tools to call. */
+export type MockReply =
+  string | { text?: string; toolCalls?: { toolName: string; input: unknown }[] }
+
 /**
  * Models that answer "ok", or what `reply` says, taking `tokens`, and
  * remember where calls went. Calls to a provider in `outOfCredit` are
@@ -94,44 +98,90 @@ export function mockAiModels(
   tokens = { input: 10_000, output: 1_000 },
   targets: AiTarget[] = [],
   outOfCredit: Set<string> = new Set(),
-  reply: (call: MockCall) => string = () => "ok"
+  reply: (call: MockCall) => MockReply = () => "ok"
 ): AiModels {
   return (target) => {
     targets.push(target)
+    const refuse = () => {
+      if (!outOfCredit.has(target.provider)) return
+      throw new APICallError({
+        message: "Your credit balance is too low to access the Anthropic API.",
+        url: "https://api.anthropic.com/v1/messages",
+        requestBodyValues: {},
+        statusCode: 400,
+        responseBody: NO_CREDIT,
+        isRetryable: false,
+      })
+    }
+    const usage = {
+      inputTokens: {
+        total: tokens.input,
+        noCache: tokens.input,
+        cacheRead: 0,
+        cacheWrite: 0,
+      },
+      outputTokens: { total: tokens.output, text: tokens.output, reasoning: 0 },
+    }
+    /** A reply as text and tool calls, each call with its own id. */
+    const answer = (call: MockCall) => {
+      const replied = reply(call)
+      const { text, toolCalls = [] } =
+        typeof replied === "string" ? { text: replied } : replied
+      return {
+        text,
+        toolCalls: toolCalls.map((toolCall, i) => ({
+          type: "tool-call" as const,
+          toolCallId: `call-${++calls}-${i}`,
+          toolName: toolCall.toolName,
+          input: JSON.stringify(toolCall.input),
+        })),
+      }
+    }
     return new MockLanguageModelV4({
       provider: target.provider,
       modelId: target.model,
       doGenerate: async (call) => {
-        if (outOfCredit.has(target.provider)) {
-          throw new APICallError({
-            message:
-              "Your credit balance is too low to access the Anthropic API.",
-            url: "https://api.anthropic.com/v1/messages",
-            requestBodyValues: {},
-            statusCode: 400,
-            responseBody: NO_CREDIT,
-            isRetryable: false,
-          })
-        }
+        refuse()
+        const { text, toolCalls } = answer(call)
         return {
-          content: [{ type: "text", text: reply(call) }],
-          finishReason: { unified: "stop", raw: "stop" },
-          usage: {
-            inputTokens: {
-              total: tokens.input,
-              noCache: tokens.input,
-              cacheRead: 0,
-              cacheWrite: 0,
-            },
-            outputTokens: {
-              total: tokens.output,
-              text: tokens.output,
-              reasoning: 0,
-            },
-          },
+          content: [
+            ...(text ? [{ type: "text" as const, text }] : []),
+            ...toolCalls,
+          ],
+          finishReason: toolCalls.length
+            ? { unified: "tool-calls", raw: "tool_use" }
+            : { unified: "stop", raw: "stop" },
+          usage,
           warnings: [],
+        }
+      },
+      doStream: async (call) => {
+        refuse()
+        const { text, toolCalls } = answer(call)
+        return {
+          stream: convertArrayToReadableStream([
+            { type: "stream-start", warnings: [] },
+            ...(text
+              ? [
+                  { type: "text-start" as const, id: "text" },
+                  { type: "text-delta" as const, id: "text", delta: text },
+                  { type: "text-end" as const, id: "text" },
+                ]
+              : []),
+            ...toolCalls,
+            {
+              type: "finish",
+              finishReason: toolCalls.length
+                ? { unified: "tool-calls", raw: "tool_use" }
+                : { unified: "stop", raw: "stop" },
+              usage,
+            },
+          ]),
         }
       },
     })
   }
 }
+
+/** Tool calls made so far, for their ids. */
+let calls = 0

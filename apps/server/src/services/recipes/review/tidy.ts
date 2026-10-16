@@ -254,6 +254,8 @@ export function describeProposal(proposal: Proposal) {
     summary: proposal.summary,
     sections: PROPOSAL_SECTIONS.filter((section) => section in proposal.after),
     note: proposal.note ?? null,
+    payload: proposal.payload ?? null,
+    chat: proposal.chat ?? null,
     before: proposal.before,
     after: proposal.after,
     createdAt: proposal.createdAt.toISOString(),

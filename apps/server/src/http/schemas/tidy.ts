@@ -63,6 +63,8 @@ const PROPOSAL = {
   summary: "Split a long step and marked the chicken as needed.",
   sections: ["steps", "marks"] as ("steps" | "marks")[],
   note: null,
+  payload: null,
+  chat: null,
   before: {
     steps: [
       "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!",
@@ -102,6 +104,14 @@ export const ProposalSchema = z
     }),
     note: z.string().nullable().openapi({
       description: "The cooking note it came from, for one made from a note.",
+    }),
+    payload: z.record(z.string(), z.unknown()).nullable().openapi({
+      description:
+        "What an assistant's suggestion adds, by kind: `recipe` (a recipe, as the editor writes one), `meals` (meals for the plan), `items` (lines for the list), tastes to remember (`avoid`, `diets`, `weeknightMinutes`), a recipe page to import (`url`, `name`, `site`, `photo`, `minutes`, `why`), or a stand-in for an ingredient (`ingredientId`, `insteadOf`, `lines`, `note`, `steps`), which applying saves to the recipe. Null for changes to a recipe's sections.",
+    }),
+    chat: z.string().nullable().openapi({
+      description:
+        "The assistant's chat it came from, for one from the assistant.",
     }),
     before: TidyValuesSchema,
     after: TidyValuesSchema,
@@ -151,15 +161,20 @@ export const TidyInputSchema = z
 
 export const ApplyInputSchema = z
   .object({
-    sections: z
-      .array(ProposalSectionSchema)
-      .min(1, "Pick something to apply.")
-      .openapi({ description: "The sections to apply. The rest are skipped." }),
+    sections: z.array(ProposalSectionSchema).optional().openapi({
+      description:
+        "For changes to a recipe: the sections to apply. The rest are skipped.",
+    }),
   })
   .openapi("ApplyInput", { example: { sections: ["steps", "marks"] } })
 
 export const ApplyResultSchema = z
-  .object({ proposal: ProposalSchema, recipe: RecipeSchema })
+  .object({
+    proposal: ProposalSchema,
+    recipe: z.union([RecipeSchema, z.null()]).openapi({
+      description: "The recipe it changed or made, if it did.",
+    }),
+  })
   .openapi("ApplyResult", {
     example: {
       proposal: { ...PROPOSAL, status: "applied", resolvedAt: TIMES.now },

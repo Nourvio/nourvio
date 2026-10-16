@@ -5,7 +5,10 @@ import { AiKey } from "./ai_keys.ts"
 import { AiUsage } from "./ai_usage.ts"
 import { ApiKey } from "./api_keys.ts"
 import { Aisle } from "./aisles.ts"
+import { ChatMessage } from "./chat_messages.ts"
+import { Chat } from "./chats.ts"
 import { CookNote } from "./cook_notes.ts"
+import { Discovery } from "./discoveries.ts"
 import { EmailInvitation } from "./email_invitations.ts"
 import { FoodPlacement } from "./food_placements.ts"
 import { HouseholdMember } from "./household_members.ts"
@@ -39,7 +42,10 @@ export * from "./ai_keys.ts"
 export * from "./ai_usage.ts"
 export * from "./api_keys.ts"
 export * from "./aisles.ts"
+export * from "./chat_messages.ts"
+export * from "./chats.ts"
 export * from "./cook_notes.ts"
+export * from "./discoveries.ts"
 export * from "./email_invitations.ts"
 export * from "./food_placements.ts"
 export * from "./household_members.ts"
@@ -75,7 +81,10 @@ export const entities = [
   AiUsage,
   ApiKey,
   Aisle,
+  Chat,
+  ChatMessage,
   CookNote,
+  Discovery,
   EmailInvitation,
   FoodPlacement,
   Household,

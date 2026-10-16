@@ -21,7 +21,7 @@ const route = createRoute({
   tags: ["Review"],
   summary: "Apply a suggestion",
   description:
-    "Applies the sections picked, as one change to the recipe that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which.",
+    "Changes to a recipe apply the sections picked, as one change that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. The assistant's other suggestions add what they say: a recipe, meals, things for the list, tastes, or a recipe from the web.",
   ...openToKeys("recipes", "write"),
   request: {
     params: ProposalParam,
@@ -42,10 +42,10 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId, userId } = inHousehold(c)
-    const result = await applyProposal(em, {
+    const result = await applyProposal(em, deps, {
       householdId,
       userId,
       proposalId: c.req.valid("param").proposalId,

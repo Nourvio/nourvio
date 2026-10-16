@@ -53,6 +53,7 @@ import {
   type PlanEntry,
 } from "./queries"
 import { usePlanActions } from "./use-plan-actions"
+import { useAssistantPage } from "@/features/assistant/assistant-context"
 
 /**
  * The week plan: the week to show and how full it is, what's next, the
@@ -65,6 +66,8 @@ export function PlanPage({ week: asked }: { week?: string }) {
   const notFilled = useNotFilled()
   const actions = usePlanActions()
   const week = weekStartOf(asked ?? clock.today, clock.weekStartsOn)
+  // The assistant knows which week is on screen.
+  useAssistantPage({ week })
   const days = weekDays(week)
   const plan = useQuery(planQuery(week, addDays(week, 6)))
   const entries = plan.data?.entries ?? []

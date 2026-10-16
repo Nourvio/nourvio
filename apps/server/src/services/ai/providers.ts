@@ -3,7 +3,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
 import { PROVIDER_NAMES, type AiProvider } from "@merran/shared"
-import type { LanguageModel } from "ai"
+import type { LanguageModel, ToolSet } from "ai"
 import { AppError } from "../../core/errors.ts"
 import { addressFetch, type Fetcher } from "../fetch/public-fetch.ts"
 
@@ -46,6 +46,32 @@ export function createAiModels(): AiModels {
           supportsStructuredOutputs: true,
         })(target.model)
     }
+  }
+}
+
+/**
+ * The provider's own web search, run on its side, for a model that can
+ * search: a few searches a reply. None for an address of one's own.
+ */
+export function webSearchTools(target: AiTarget): ToolSet {
+  const apiKey = target.apiKey ?? undefined
+  switch (target.provider) {
+    case "anthropic":
+      return {
+        web_search: createAnthropic({ apiKey }).tools.webSearch_20250305({
+          maxUses: 5,
+        }),
+      }
+    case "openai":
+      return { web_search: createOpenAI({ apiKey }).tools.webSearch({}) }
+    case "google":
+      return {
+        google_search: createGoogleGenerativeAI({ apiKey }).tools.googleSearch(
+          {}
+        ),
+      }
+    case "openai-compatible":
+      return {}
   }
 }
 

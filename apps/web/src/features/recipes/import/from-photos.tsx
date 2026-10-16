@@ -18,6 +18,7 @@ import { FieldDescription, FieldError } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { NeedsAi, useAiFor } from "@/features/ai/needs-ai"
 import { api, ApiError, unwrap } from "@/lib/api/client"
+import { shrinkPhoto } from "@/lib/shrink-photo"
 import { cn } from "@/lib/utils"
 
 import type { Recipe } from "../queries"
@@ -29,34 +30,6 @@ const MAX_PHOTOS = 4
 const MAX_SIDE = 2000
 
 type Photo = { id: string; blob: Blob; url: string }
-
-/**
- * A photo made smaller to send, the right way up, as JPEG. One the browser
- * can't draw goes as it is, for the server to say what's wrong with it.
- */
-async function shrink(file: File): Promise<Blob> {
-  try {
-    const bitmap = await createImageBitmap(file)
-    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height))
-    if (scale === 1 && file.type === "image/jpeg") {
-      bitmap.close()
-      return file
-    }
-    const canvas = document.createElement("canvas")
-    canvas.width = Math.round(bitmap.width * scale)
-    canvas.height = Math.round(bitmap.height * scale)
-    canvas
-      .getContext("2d")!
-      .drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-    bitmap.close()
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.85)
-    )
-    return blob ?? file
-  } catch {
-    return file
-  }
-}
 
 /**
  * Photos of a recipe, for the Add a recipe dialog: a cookbook page or two,
@@ -96,7 +69,7 @@ export function FromPhotos({
     setError(images.length > room ? t("recipes.import.photos.tooMany") : null)
     const added = await Promise.all(
       images.slice(0, Math.max(room, 0)).map(async (file) => {
-        const blob = await shrink(file)
+        const blob = await shrinkPhoto(file, MAX_SIDE)
         return { id: crypto.randomUUID(), blob, url: URL.createObjectURL(blob) }
       })
     )

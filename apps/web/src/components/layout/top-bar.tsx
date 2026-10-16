@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import { Logo } from "@/components/brand/logo"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { AssistantButton } from "@/features/assistant/assistant-panel"
 import { TimerBadges } from "@/features/cook/timers"
 
 import { UserMenu } from "./user-menu"
@@ -19,6 +20,7 @@ export function TopBar() {
         <div className="ml-auto flex items-center gap-2">
           {/* Kitchen timers still counting, while cooking elsewhere. */}
           <TimerBadges />
+          <AssistantButton />
           {/* iPad and desktop have the account menu at the foot of the sidebar. */}
           <div className="md:hidden">
             <UserMenu />

@@ -11,6 +11,7 @@ const RESERVED = new Set([
   "bulk",
   "tidy",
   "review",
+  "discover",
 ])
 
 /** "Mom's Lemon Chicken!" → "moms-lemon-chicken". */

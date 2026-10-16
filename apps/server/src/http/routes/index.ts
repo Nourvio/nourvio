@@ -1,7 +1,9 @@
 import type { AppDeps } from "../../core/context.ts"
 import type { Router } from "../router.ts"
+import assistantRoutes from "./assistant/index.ts"
 import authRoutes from "./auth/index.ts"
 import capabilitiesRoutes from "./capabilities/index.ts"
+import discoverRoutes from "./discover/index.ts"
 import eventsRoutes from "./events/index.ts"
 import healthRoutes from "./health/index.ts"
 import householdsRoutes from "./households/index.ts"
@@ -20,8 +22,10 @@ import telemetryRoutes from "./telemetry/index.ts"
  * files only register their folder's routes and its folders.
  */
 export default (router: Router, deps: AppDeps) => {
+  assistantRoutes(router, deps)
   authRoutes(router, deps)
   capabilitiesRoutes(router, deps)
+  discoverRoutes(router, deps)
   eventsRoutes(router, deps)
   healthRoutes(router, deps)
   householdsRoutes(router, deps)

@@ -43,6 +43,14 @@
       "description": "What AI suggests, waiting to be applied or dismissed: tidy ups of recipes, for now. AI never changes a recipe by itself. Each section of a suggestion is applied or skipped on its own, and applying keeps a version."
     },
     {
+      "name": "Assistant",
+      "description": "Chatting with the assistant, which knows the household's recipes, plan, list and pantry, and proposes changes rather than making them. Each person's chats are their own."
+    },
+    {
+      "name": "Discover",
+      "description": "Finding new recipes online for a theme, with AI and web search: pages Merran has opened and can import."
+    },
+    {
       "name": "Plan",
       "description": "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone."
     },
@@ -116,6 +124,166 @@
         "required": [
           "error"
         ]
+      },
+      "ChatList": {
+        "type": "object",
+        "properties": {
+          "chats": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Chat"
+            }
+          }
+        },
+        "required": [
+          "chats"
+        ],
+        "example": {
+          "chats": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000002b",
+              "title": "What can I make with leftover chicken?",
+              "createdAt": "2026-10-01T17:30:00.000Z",
+              "updatedAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "Chat": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string",
+            "description": "From its first message."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "createdAt",
+          "updatedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000002b",
+          "title": "What can I make with leftover chicken?",
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "updatedAt": "2026-10-15T18:30:00.000Z"
+        }
+      },
+      "ChatWithMessages": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Chat"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "messages": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": {}
+                },
+                "description": "Its messages in order, as AI SDK's UI messages: each with an id, a role, and parts (text, and the assistant's tool calls with their results)."
+              }
+            },
+            "required": [
+              "messages"
+            ]
+          }
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000002b",
+          "title": "What can I make with leftover chicken?",
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "updatedAt": "2026-10-15T18:30:00.000Z",
+          "messages": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000002c",
+              "role": "user",
+              "parts": [
+                {
+                  "type": "text",
+                  "text": "What can I make with leftover chicken?"
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "ChatMessageInput": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 4000,
+            "default": "",
+            "description": "What they say. Can be left out with photos."
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{24}$"
+            },
+            "maxItems": 4,
+            "description": "Photos to send with it, up to 4, by the ids `POST /assistant/photos` gave them: of what they're cooking, say. The message keeps them as file parts, linking to each photo."
+          },
+          "context": {
+            "type": "object",
+            "properties": {
+              "recipe": {
+                "type": "string",
+                "description": "The recipe on their screen, by id or address."
+              },
+              "week": {
+                "type": "string",
+                "description": "The first day of the week of the plan on their screen."
+              }
+            },
+            "description": "What's on their screen, for the assistant to know: \"this recipe\" is the one there."
+          }
+        },
+        "example": {
+          "text": "Is this thick enough?",
+          "photos": [
+            "4f1c2a9e7b3d5f6a8c0e1b2d"
+          ],
+          "context": {
+            "recipe": "0199e8b0-5a10-7a01-8b00-000000000006"
+          }
+        }
+      },
+      "AssistantPhoto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "description": "Where it's shown from."
+          }
+        },
+        "required": [
+          "id",
+          "url"
+        ],
+        "example": {
+          "id": "4f1c2a9e7b3d5f6a8c0e1b2d",
+          "url": "/api/assistant/photos/4f1c2a9e7b3d5f6a8c0e1b2d"
+        }
       },
       "ApiKey": {
         "type": "object",
@@ -837,6 +1005,162 @@
               "release": "0.1.0"
             }
           }
+        }
+      },
+      "DiscoveryList": {
+        "type": "object",
+        "properties": {
+          "searches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Discovery"
+            }
+          }
+        },
+        "required": [
+          "searches"
+        ],
+        "example": {
+          "searches": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
+              "theme": "cozy fall soups",
+              "status": "done",
+              "error": null,
+              "recipes": [
+                {
+                  "url": "https://cooking.example/butternut-squash-soup",
+                  "name": "Roasted Butternut Squash Soup",
+                  "site": "cooking.example",
+                  "minutes": 60,
+                  "photo": "https://cooking.example/images/squash-soup.jpg",
+                  "why": "Vegetarian and freezes well, with the squash roasted for depth."
+                }
+              ],
+              "createdAt": "2026-10-01T17:30:00.000Z",
+              "updatedAt": "2026-10-01T17:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "Discovery": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "theme": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "searching",
+              "done",
+              "failed"
+            ],
+            "description": "Still searching, done, or failed (`error` says why)."
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "recipes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "description": "The recipe's page, to import at `POST /recipes/import`."
+                },
+                "name": {
+                  "type": "string"
+                },
+                "site": {
+                  "type": "string"
+                },
+                "minutes": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "photo": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "why": {
+                  "type": "string",
+                  "description": "Why it's a good pick."
+                }
+              },
+              "required": [
+                "url",
+                "name",
+                "site",
+                "minutes",
+                "photo",
+                "why"
+              ]
+            },
+            "description": "Up to eight, each a page Merran opened and can import, no more than two from a site unless there aren't others."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "theme",
+          "status",
+          "error",
+          "recipes",
+          "createdAt",
+          "updatedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
+          "theme": "cozy fall soups",
+          "status": "done",
+          "error": null,
+          "recipes": [
+            {
+              "url": "https://cooking.example/butternut-squash-soup",
+              "name": "Roasted Butternut Squash Soup",
+              "site": "cooking.example",
+              "minutes": 60,
+              "photo": "https://cooking.example/images/squash-soup.jpg",
+              "why": "Vegetarian and freezes well, with the squash roasted for depth."
+            }
+          ],
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "updatedAt": "2026-10-01T17:30:00.000Z"
+        }
+      },
+      "DiscoverInput": {
+        "type": "object",
+        "properties": {
+          "theme": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "theme"
+        ],
+        "example": {
+          "theme": "cozy fall soups"
         }
       },
       "Health": {
@@ -6192,6 +6516,8 @@
                 "marks"
               ],
               "note": null,
+              "payload": null,
+              "chat": null,
               "before": {
                 "steps": [
                   "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -6239,7 +6565,14 @@
             "type": "string",
             "enum": [
               "tidy",
-              "note"
+              "note",
+              "edit",
+              "recipe",
+              "meals",
+              "list",
+              "tastes",
+              "import",
+              "swap"
             ]
           },
           "status": {
@@ -6290,6 +6623,21 @@
             ],
             "description": "The cooking note it came from, for one made from a note."
           },
+          "payload": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "additionalProperties": {},
+            "description": "What an assistant's suggestion adds, by kind: `recipe` (a recipe, as the editor writes one), `meals` (meals for the plan), `items` (lines for the list), tastes to remember (`avoid`, `diets`, `weeknightMinutes`), a recipe page to import (`url`, `name`, `site`, `photo`, `minutes`, `why`), or a stand-in for an ingredient (`ingredientId`, `insteadOf`, `lines`, `note`, `steps`), which applying saves to the recipe. Null for changes to a recipe's sections."
+          },
+          "chat": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The assistant's chat it came from, for one from the assistant."
+          },
           "before": {
             "$ref": "#/components/schemas/TidyValues"
           },
@@ -6316,6 +6664,8 @@
           "summary",
           "sections",
           "note",
+          "payload",
+          "chat",
           "before",
           "after",
           "createdAt",
@@ -6337,6 +6687,8 @@
             "marks"
           ],
           "note": null,
+          "payload": null,
+          "chat": null,
           "before": {
             "steps": [
               "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -6492,7 +6844,15 @@
             "$ref": "#/components/schemas/Proposal"
           },
           "recipe": {
-            "$ref": "#/components/schemas/Recipe"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Recipe"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The recipe it changed or made, if it did."
           }
         },
         "required": [
@@ -6516,6 +6876,8 @@
               "marks"
             ],
             "note": null,
+            "payload": null,
+            "chat": null,
             "before": {
               "steps": [
                 "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -7119,13 +7481,9 @@
             "items": {
               "$ref": "#/components/schemas/ProposalSection"
             },
-            "minItems": 1,
-            "description": "The sections to apply. The rest are skipped."
+            "description": "For changes to a recipe: the sections to apply. The rest are skipped."
           }
         },
-        "required": [
-          "sections"
-        ],
         "example": {
           "sections": [
             "steps",
@@ -8911,6 +9269,8 @@
               "marks"
             ],
             "note": null,
+            "payload": null,
+            "chat": null,
             "before": {
               "steps": [
                 "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
@@ -9971,6 +10331,504 @@
     "parameters": {}
   },
   "paths": {
+    "/api/assistant/chats": {
+      "get": {
+        "operationId": "listChats",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Your chats",
+        "description": "Your chats with the assistant in the household you're in, newest first. Nobody else's: each person's are their own. With an API key, it needs the `assistant: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "assistant:read",
+        "responses": {
+          "200": {
+            "description": "Your chats.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startChat",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Start a chat",
+        "description": "A new chat with the assistant, to send messages to at `POST /assistant/chats/{chatId}/messages`. Its first message names it. With an API key, it needs the `assistant: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "assistant:write",
+        "responses": {
+          "201": {
+            "description": "Started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Chat"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistant/chats/{chatId}": {
+      "get": {
+        "operationId": "getChat",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "A chat, with its messages",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "assistant:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002b"
+            },
+            "required": true,
+            "name": "chatId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The chat.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatWithMessages"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such chat of yours.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "With an API key, it needs the `assistant: read` permission."
+      },
+      "delete": {
+        "operationId": "deleteChat",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Delete a chat",
+        "description": "Gone for good, with its messages and the photos in them. What was applied from it stays. With an API key, it needs the `assistant: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "assistant:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002b"
+            },
+            "required": true,
+            "name": "chatId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such chat of yours.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistant/chats/{chatId}/messages": {
+      "post": {
+        "operationId": "sendChatMessage",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Ask the assistant",
+        "description": "Sends a message, and streams the assistant's answer back as AI SDK's UI message stream (server-sent events), the way `useChat` reads it: its text, and the tools it uses as it uses them. It can see photos sent with a message (uploaded first, with `POST /assistant/photos`) when the model reads photos, look things up in the household's recipes, plan, list and pantry, search the web when the model can, and propose changes, which come back as suggestions (`GET /proposals/{proposalId}`) for the person to apply. Both messages are kept. Uses the household's model for the assistant, which must be able to use tools, and counts towards its AI spend. With an API key, it needs the `assistant: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "assistant:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002b"
+            },
+            "required": true,
+            "name": "chatId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatMessageInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The answer, as it comes.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "AI SDK's UI message stream."
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such chat of yours, or no such photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The model can't use tools, or read photos.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This month's AI limit is reached.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistant/photos": {
+      "post": {
+        "operationId": "uploadAssistantPhoto",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Add a photo for the assistant",
+        "description": "A photo to send with a message, like what's in the pan: its id goes in the message's `photos`. JPEG, PNG or WebP, up to 15 MB; it's kept smaller, the right way up, with the person's chats. With an API key, it needs the `assistant: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "assistant:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "photo": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Kept.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantPhoto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No photo, or not one Merran can read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The photo is too big.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/assistant/photos/{photoId}": {
+      "get": {
+        "operationId": "getAssistantPhoto",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "A photo sent to the assistant",
+        "description": "As JPEG. Only the person who sent it sees it, like their chats. A photo never changes, so it can be kept for good. With an API key, it needs the `assistant: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "assistant:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "4f1c2a9e7b3d5f6a8c0e1b2d"
+            },
+            "required": true,
+            "name": "photoId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photo.",
+            "content": {
+              "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such photo of yours.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/api-keys": {
       "get": {
         "operationId": "listApiKeys",
@@ -10511,6 +11369,198 @@
             }
           }
         }
+      }
+    },
+    "/api/discover": {
+      "get": {
+        "operationId": "listDiscoveries",
+        "tags": [
+          "Discover"
+        ],
+        "summary": "Recent searches",
+        "description": "The household's last twelve searches, newest first. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "Its searches.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiscoveryList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startDiscovery",
+        "tags": [
+          "Discover"
+        ],
+        "summary": "Find new recipes online",
+        "description": "Searches the web for recipes that fit a theme (\"cozy fall soups\") and suit the household, in the background, with the household's model for finding recipes, which must be able to search the web. Merran opens each page and keeps those it can import. Follow it at `GET /discover/{discoveryId}`; one at a time for a household. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DiscoverInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Searching.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A search is going already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/discover/{discoveryId}": {
+      "get": {
+        "operationId": "getDiscovery",
+        "tags": [
+          "Discover"
+        ],
+        "summary": "A search",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002d"
+            },
+            "required": true,
+            "name": "discoveryId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The search, as far as it's got.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such search.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "With an API key, it needs the `recipes: read` permission."
       }
     },
     "/api/events": {
@@ -15206,6 +16256,78 @@
         }
       }
     },
+    "/api/proposals/{proposalId}": {
+      "get": {
+        "operationId": "getProposal",
+        "tags": [
+          "Review"
+        ],
+        "summary": "A suggestion",
+        "description": "Waiting, applied or dismissed. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000029"
+            },
+            "required": true,
+            "name": "proposalId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The suggestion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such suggestion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/proposals/{proposalId}/apply": {
       "post": {
         "operationId": "applyProposal",
@@ -15213,7 +16335,7 @@
           "Review"
         ],
         "summary": "Apply a suggestion",
-        "description": "Applies the sections picked, as one change to the recipe that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. With an API key, it needs the `recipes: write` permission.",
+        "description": "Changes to a recipe apply the sections picked, as one change that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. The assistant's other suggestions add what they say: a recipe, meals, things for the list, tastes, or a recipe from the web. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []

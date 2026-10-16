@@ -37,6 +37,16 @@ const TAGS = [
       "What AI suggests, waiting to be applied or dismissed: tidy ups of recipes, for now. AI never changes a recipe by itself. Each section of a suggestion is applied or skipped on its own, and applying keeps a version.",
   },
   {
+    name: "Assistant",
+    description:
+      "Chatting with the assistant, which knows the household's recipes, plan, list and pantry, and proposes changes rather than making them. Each person's chats are their own.",
+  },
+  {
+    name: "Discover",
+    description:
+      "Finding new recipes online for a theme, with AI and web search: pages Merran has opened and can import.",
+  },
+  {
     name: "Plan",
     description:
       "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone.",

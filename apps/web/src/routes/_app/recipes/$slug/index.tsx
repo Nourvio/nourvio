@@ -74,6 +74,7 @@ import { TidyDialog } from "@/features/recipes/tidy/tidy-dialog"
 import { RecipeSuggestions } from "@/features/recipes/tidy/recipe-suggestions"
 import { VersionsDialog } from "@/features/recipes/versions-dialog"
 import { useCapability } from "@/features/capabilities/queries"
+import { useAssistantPage } from "@/features/assistant/assistant-context"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
@@ -156,6 +157,8 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   const [showDiets, setShowDiets] = React.useState(false)
   const [tidying, setTidying] = React.useState(false)
   const aiOn = useCapability("ai")
+  // The assistant knows this is the recipe on screen.
+  useAssistantPage({ recipe: { id: recipe.id, name: recipe.name } })
   const photo = usePhotoActions(recipe)
 
   async function rate(rating: number | null) {
