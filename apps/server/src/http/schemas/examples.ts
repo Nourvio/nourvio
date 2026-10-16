@@ -34,6 +34,7 @@ export const IDS = {
   aisles: [id(32), id(33), id(34)],
   everyWeek: id(35),
   otherPlanEntry: id(36),
+  costcoList: id(37),
 }
 
 export const TIMES = {

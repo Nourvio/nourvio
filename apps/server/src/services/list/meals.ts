@@ -21,7 +21,7 @@ import {
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
 import { aislesOf } from "./aisles.ts"
-import { mainList } from "./list.ts"
+import { listsOf } from "./lists.ts"
 
 // Planned meals onto the list, added up, and off again: the list follows
 // the plan. Each item keeps how much of it is each meal's, so taking a
@@ -112,9 +112,13 @@ export async function listMeals(
   let added = 0
   let merged = 0
   if (combined.length > 0) {
-    const list = await mainList(em, householdId)
     const waiting = await em.find(ShoppingItem, { checked: false })
     const aisles = await aislesOf(em, householdId, combined)
+    const lists = await listsOf(
+      em,
+      householdId,
+      combined.map((item, index) => ({ name: item.name, aisle: aisles[index] }))
+    )
     for (const [index, item] of combined.entries()) {
       // The line of the same food it adds up with: garlic cloves go with
       // cloves, not with a head of garlic.
@@ -142,7 +146,7 @@ export async function listMeals(
         waiting.push(
           em.create(ShoppingItem, {
             household: householdId,
-            list,
+            list: lists[index]!,
             foodKey: item.food,
             name: item.name,
             quantity: item.quantity,
@@ -330,12 +334,19 @@ export async function addEveryWeek(em: EntityManager, householdId: string) {
   const have = new Set(waiting.map((item) => item.foodKey))
   const missing = weekly.filter((item) => !have.has(foodKey(item.name)))
   if (missing.length === 0) return 0
-  const list = await mainList(em, householdId)
   const guessed = await aislesOf(em, householdId, missing)
+  const routed = await listsOf(
+    em,
+    householdId,
+    missing.map((item, index) => ({
+      name: item.name,
+      aisle: item.aisle ?? guessed[index],
+    }))
+  )
   for (const [index, item] of missing.entries()) {
     em.create(ShoppingItem, {
       household: householdId,
-      list,
+      list: item.list ?? routed[index]!,
       foodKey: foodKey(item.name),
       name: item.name,
       amountText: item.amountText ?? null,

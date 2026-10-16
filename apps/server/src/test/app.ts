@@ -12,6 +12,7 @@ import { createSettings } from "../services/settings/settings.ts"
 import { LocalFileStore } from "../services/storage/files.ts"
 import { createAuth } from "../services/auth/auth.ts"
 import { SetupCode } from "../services/auth/setup-code.ts"
+import { createEventBus } from "../services/events/events.ts"
 import { loadConfig } from "../core/config.ts"
 import { createTestDatabase } from "./database.ts"
 
@@ -76,6 +77,7 @@ export async function createTestApp(
     deps: { config, logger, database, settings, modules, files, fetcher },
     handlers: [...JOB_HANDLERS, ...(options.jobHandlers ?? [])],
   })
+  const events = createEventBus()
   const app = createApp({
     config,
     logger,
@@ -87,8 +89,19 @@ export async function createTestApp(
     files,
     fetcher,
     jobs,
+    events,
   })
-  return { app, database, auth, setupCode, settings, filesDir, jobs, close }
+  return {
+    app,
+    database,
+    auth,
+    setupCode,
+    settings,
+    filesDir,
+    jobs,
+    events,
+    close,
+  }
 }
 
 /** A response whose JSON tests can read without declaring its type. */
@@ -101,6 +114,8 @@ export type TestResponse = Omit<Response, "json"> & {
 export class TestClient {
   readonly app: App
   readonly cookies = new Map<string, string>()
+  /** Which device this is, sent with each request as the web app does. */
+  client: string | null = null
 
   constructor(app: App) {
     this.app = app
@@ -130,13 +145,7 @@ export class TestClient {
     path: string,
     content?: { body: string | Uint8Array; type: string }
   ): Promise<TestResponse> {
-    const headers = new Headers({ origin: TEST_ORIGIN })
-    if (this.cookies.size > 0) {
-      headers.set(
-        "cookie",
-        [...this.cookies].map(([name, value]) => `${name}=${value}`).join("; ")
-      )
-    }
+    const headers = this.headers()
     if (content) headers.set("content-type", content.type)
 
     const res = await this.app.request(`${TEST_ORIGIN}${path}`, {
@@ -152,6 +161,19 @@ export class TestClient {
       else this.cookies.set(name, value)
     }
     return res
+  }
+
+  /** The headers a request from this client starts with: its cookies too. */
+  headers() {
+    const headers = new Headers({ origin: TEST_ORIGIN })
+    if (this.client) headers.set("x-merran-client", this.client)
+    if (this.cookies.size > 0) {
+      headers.set(
+        "cookie",
+        [...this.cookies].map(([name, value]) => `${name}=${value}`).join("; ")
+      )
+    }
+    return headers
   }
 
   get(path: string) {

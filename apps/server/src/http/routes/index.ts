@@ -2,6 +2,7 @@ import type { AppDeps } from "../../core/context.ts"
 import type { Router } from "../router.ts"
 import authRoutes from "./auth/index.ts"
 import capabilitiesRoutes from "./capabilities/index.ts"
+import eventsRoutes from "./events/index.ts"
 import healthRoutes from "./health/index.ts"
 import householdsRoutes from "./households/index.ts"
 import listRoutes from "./list/index.ts"
@@ -19,6 +20,7 @@ import telemetryRoutes from "./telemetry/index.ts"
 export default (router: Router, deps: AppDeps) => {
   authRoutes(router, deps)
   capabilitiesRoutes(router, deps)
+  eventsRoutes(router, deps)
   healthRoutes(router, deps)
   householdsRoutes(router, deps)
   listRoutes(router, deps)

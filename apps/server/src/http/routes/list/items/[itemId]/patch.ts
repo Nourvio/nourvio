@@ -21,7 +21,7 @@ const route = createRoute({
   tags: ["List"],
   summary: "Change something on the list",
   description:
-    "Check it off or not, rename it, change how much, or move it to another aisle, which the household remembers for the food.",
+    "Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food.",
   ...openToKeys("list", "write"),
   request: {
     params: ItemParam,
@@ -32,7 +32,7 @@ const route = createRoute({
   },
   responses: {
     200: jsonResponse(ListItemSchema, "Changed."),
-    404: errorResponse("Not on the list, or no such aisle."),
+    404: errorResponse("Not on the list, or no such aisle or list."),
     ...SIGNED_IN_ERRORS,
   },
 })

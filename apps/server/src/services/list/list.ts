@@ -24,27 +24,22 @@ import {
   householdAisles,
   rememberAisle,
 } from "./aisles.ts"
+import {
+  describeList,
+  findList,
+  householdLists,
+  listsOf,
+  mainList,
+  rememberList,
+} from "./lists.ts"
 
-// The shopping list: what to buy, by aisle. Things go on it from the plan
-// (added up), typed in, or every week. Checking something off keeps it
-// until the list is cleared.
+// The shopping lists: what to buy, by aisle, on the list for the store
+// it's bought at. Things go on from the plan (added up), typed in, or
+// every week. Checking something off keeps it until the list is cleared.
 
 export type ItemSource = (typeof ITEM_SOURCES)[number]
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-
-/** The household's main list, which takes anything not sent elsewhere. */
-export async function mainList(em: EntityManager, householdId: string) {
-  const list = await em.findOne(ShoppingList, { main: true })
-  if (list) return list
-  const created = em.create(ShoppingList, {
-    household: householdId,
-    name: "Shopping list",
-    main: true,
-  })
-  await em.flush()
-  return created
-}
 
 /** The planned meals items are for: their names, by id. */
 async function mealNames(em: EntityManager, items: readonly ShoppingItem[]) {
@@ -106,6 +101,7 @@ export async function describeItems(
 export function itemSnapshot(item: ShoppingItem) {
   return {
     id: item.id,
+    list: item.list.id,
     name: item.name,
     foodKey: item.foodKey ?? null,
     quantity: toNumber(item.quantity),
@@ -121,9 +117,12 @@ export function itemSnapshot(item: ShoppingItem) {
 
 export type ItemSnapshot = ReturnType<typeof itemSnapshot>
 
-/** The list: its aisles in walking order, and its items by aisle. */
+/**
+ * The household's lists, the main one first; its aisles in walking order;
+ * and everything on the lists, by aisle.
+ */
 export async function getList(em: EntityManager, householdId: string) {
-  const list = await mainList(em, householdId)
+  const lists = await householdLists(em, householdId)
   const aisles = await householdAisles(em, householdId)
   const items = await em.find(
     ShoppingItem,
@@ -138,7 +137,7 @@ export async function getList(em: EntityManager, householdId: string) {
       (order.get(b.aisle?.id ?? "") ?? last)
   )
   return {
-    list: { id: list.id, name: list.name },
+    lists: lists.map(describeList),
     aisles: aisles.map(describeAisle),
     items: await describeItems(em, sorted),
   }
@@ -156,11 +155,14 @@ async function findItem(em: EntityManager, id: string) {
   return item
 }
 
-/** Something typed in: "2 lb ground beef" or "paper towels". */
+/**
+ * Something typed in: "2 lb ground beef" or "paper towels". It goes on the
+ * list given, else where its food goes.
+ */
 export async function addTyped(
   em: EntityManager,
   householdId: string,
-  input: { text: string; aisle?: string | null }
+  input: { text: string; aisle?: string | null; list?: string | null }
 ) {
   const { name, quantity, unit } = readItem(input.text)
   if (!name) {
@@ -168,10 +170,12 @@ export async function addTyped(
       text: "Say what to add.",
     })
   }
-  const list = await mainList(em, householdId)
   const aisle = input.aisle
     ? await findAisle(em, input.aisle)
     : (await aislesOf(em, householdId, [{ name, unit }]))[0]!
+  const list = input.list
+    ? await findList(em, input.list)
+    : (await listsOf(em, householdId, [{ name, aisle }]))[0]!
   const item = em.create(ShoppingItem, {
     household: householdId,
     list,
@@ -193,6 +197,8 @@ export type ItemChanges = Partial<{
   checked: boolean
   /** An aisle's id, remembered for the food next time; null for none. */
   aisle: string | null
+  /** A list's id, remembered for the food next time. */
+  list: string
 }>
 
 function check(item: ShoppingItem, checked: boolean) {
@@ -221,6 +227,11 @@ export async function updateItem(
       : null
     await rememberAisle(em, householdId, [item.name], aisle)
   }
+  if (changes.list !== undefined) {
+    const list = await findList(em, changes.list)
+    item.list = em.getReference(ShoppingList, list.id, { wrapped: true })
+    await rememberList(em, householdId, [item.name], list)
+  }
   await em.flush()
   return (await describeItems(em, [item]))[0]!
 }
@@ -236,12 +247,13 @@ export async function removeItem(em: EntityManager, id: string) {
 export type ItemBulk =
   | { action: "remove" | "check" | "uncheck" | "every-week" }
   | { action: "aisle"; aisle: string | null }
+  | { action: "move"; list: string }
 
 /**
  * Several items at once, all or none: taken off, checked or not, moved to
- * an aisle (remembered, as moving one is), or bought every week. The
- * answer says what they were before, for Undo. Ids not on the list are
- * passed over.
+ * an aisle or another list (remembered, as moving one is), or bought
+ * every week. The answer says what they were before, for Undo. Ids not on
+ * the list are passed over.
  */
 export async function bulkItems(
   em: EntityManager,
@@ -276,6 +288,18 @@ export async function bulkItems(
         )
         break
       }
+      case "move": {
+        const list = await findList(tx, bulk.list)
+        for (const item of items)
+          item.list = tx.getReference(ShoppingList, list.id, { wrapped: true })
+        await rememberList(
+          tx,
+          householdId,
+          items.map((item) => item.name),
+          list
+        )
+        break
+      }
       case "every-week":
         await makeEveryWeek(tx, householdId, items)
         break
@@ -296,6 +320,7 @@ async function makeEveryWeek(
   items: readonly ShoppingItem[]
 ) {
   const weekly = await em.find(WeeklyItem, {})
+  const main = await mainList(em, householdId)
   const have = new Set(weekly.map((item) => foodKey(item.name)))
   let position = Math.max(-1, ...weekly.map((item) => item.position)) + 1
   for (const item of items) {
@@ -308,6 +333,8 @@ async function makeEveryWeek(
         name: item.name,
         amountText: amount || null,
         aisle: item.aisle ?? null,
+        // Bought where it's bought now, unless that's anywhere.
+        list: item.list.id === main.id ? null : item.list,
         position: position++,
       })
     }
@@ -335,7 +362,8 @@ export async function clearList(
 
 /**
  * Puts items back as they were (Undo). An id another household has can't
- * come back here, and an aisle that's gone is left empty.
+ * come back here; an aisle that's gone is left empty, and a list that's
+ * gone is the main list.
  */
 export async function restoreItems(
   em: EntityManager,
@@ -343,7 +371,9 @@ export async function restoreItems(
   snapshots: readonly ItemSnapshot[]
 ) {
   return inHouseholdTransaction(em, householdId, async (tx) => {
-    const list = await mainList(tx, householdId)
+    const lists = await householdLists(tx, householdId)
+    const listOf = (id: string) =>
+      lists.find((list) => list.id === id) ?? lists[0]!
     const aisles = new Map(
       (await householdAisles(tx, householdId)).map((aisle) => [aisle.id, aisle])
     )
@@ -361,7 +391,7 @@ export async function restoreItems(
         item = tx.create(ShoppingItem, {
           id: snapshot.id,
           household: householdId,
-          list,
+          list: listOf(snapshot.list),
           name: snapshot.name,
           source: snapshot.source,
           createdAt: new Date(snapshot.createdAt),
@@ -369,6 +399,7 @@ export async function restoreItems(
       }
       const aisle = snapshot.aisle ? aisles.get(snapshot.aisle) : undefined
       tx.assign(item, {
+        list: listOf(snapshot.list),
         name: snapshot.name,
         foodKey: snapshot.foodKey ?? foodKey(snapshot.name),
         quantity: snapshot.quantity,

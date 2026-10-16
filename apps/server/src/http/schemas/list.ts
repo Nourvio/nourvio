@@ -2,8 +2,8 @@ import { z } from "@hono/zod-openapi"
 import { ITEM_SOURCES, MEALS } from "../../database/entities/index.ts"
 import { IDS, TIMES } from "./examples.ts"
 
-// The shopping list: what to buy, by aisle, from the plan, typed in, or
-// every week.
+// The shopping lists: what to buy, by aisle, on the list for the store
+// it's bought at; from the plan, typed in, or every week.
 
 const Day = z
   .string()
@@ -38,6 +38,7 @@ const ITEM = {
 
 const SNAPSHOT = {
   id: IDS.listItems[0],
+  list: IDS.shoppingList,
   name: "chicken thighs",
   foodKey: "chicken thigh",
   quantity: 3,
@@ -80,9 +81,44 @@ const AisleSchema = z
   .object({ id: z.string(), name: z.string(), position: z.number().int() })
   .openapi("Aisle")
 
+const LISTS = [
+  {
+    id: IDS.shoppingList,
+    name: "Shopping list",
+    store: null,
+    main: true,
+    aisles: [],
+  },
+  {
+    id: IDS.costcoList,
+    name: "Costco",
+    store: "costco",
+    main: false,
+    aisles: [IDS.aisles[1]],
+  },
+]
+
+const ListSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    store: z.string().nullable().openapi({
+      description: 'The store it\'s for, like "costco"; null for any.',
+    }),
+    main: z.boolean().openapi({
+      description: "The main list, which takes what no other list does.",
+    }),
+    aisles: z.array(z.string()).openapi({
+      description: "The ids of the aisles that go on it.",
+    }),
+  })
+  .openapi("List")
+
 export const ShoppingListSchema = z
   .object({
-    list: z.object({ id: z.string(), name: z.string() }),
+    lists: z.array(ListSchema).openapi({
+      description: "The household's lists, the main one first.",
+    }),
     aisles: z.array(AisleSchema).openapi({
       description:
         "In a walk through the store, the household's country's to start.",
@@ -93,7 +129,7 @@ export const ShoppingListSchema = z
   })
   .openapi("ShoppingList", {
     example: {
-      list: { id: IDS.shoppingList, name: "Shopping list" },
+      lists: LISTS,
       aisles: [
         { id: IDS.aisles[0], name: "Produce", position: 0 },
         { id: IDS.aisles[1], name: "Meat & seafood", position: 1 },
@@ -109,10 +145,39 @@ export const ShoppingListSchema = z
           unit: null,
           aisle: IDS.aisles[0],
         },
-        ITEM,
+        { ...ITEM, list: IDS.costcoList },
       ],
     },
   })
+
+export const ListsInputSchema = z
+  .object({
+    lists: z
+      .array(
+        z.object({
+          id: z.string().nullish().openapi({
+            description: "An existing list's id; none for a new one.",
+          }),
+          name: z.string().trim().min(1, "Name the list.").max(40),
+          store: z.string().max(40).nullable(),
+          aisles: z.array(z.string()).max(40),
+        })
+      )
+      .min(1)
+      .max(10),
+  })
+  .openapi("ListsInput", {
+    example: {
+      lists: [
+        { id: IDS.shoppingList, name: "Groceries", store: null, aisles: [] },
+        { name: "Costco", store: "costco", aisles: [IDS.aisles[1]] },
+      ],
+    },
+  })
+
+export const ListsSchema = z
+  .object({ lists: z.array(ListSchema) })
+  .openapi("Lists", { example: { lists: LISTS } })
 
 export const ItemParam = z.object({
   itemId: z.string().openapi({
@@ -132,6 +197,9 @@ export const NewListItemSchema = z
     aisle: z.string().nullish().openapi({
       description: "An aisle's id; the food's usual aisle when left out.",
     }),
+    list: z.string().nullish().openapi({
+      description: "A list's id; the food's usual list when left out.",
+    }),
   })
   .openapi("NewListItem", { example: { text: "2 lb ground beef" } })
 
@@ -146,6 +214,10 @@ export const ListItemChangesSchema = z
       description:
         "An aisle's id, or null. The household's remembered for the food: next time it goes there.",
     }),
+    list: z.string().openapi({
+      description:
+        "Another list's id. Remembered for the food too: next time it goes on that list.",
+    }),
   })
   .partial()
   .openapi("ListItemChanges", { example: { checked: true } })
@@ -153,6 +225,7 @@ export const ListItemChangesSchema = z
 export const ListItemSnapshotSchema = z
   .object({
     id: z.string(),
+    list: z.string(),
     name: z.string().min(1).max(200),
     foodKey: z.string().max(200).nullable(),
     quantity: z.number().nullable(),
@@ -172,14 +245,28 @@ export const ListItemSnapshotSchema = z
 export const ListBulkSchema = z
   .object({
     ids: z.array(z.string()).min(1).max(500),
-    action: z.enum(["remove", "check", "uncheck", "aisle", "every-week"]),
+    action: z.enum([
+      "remove",
+      "check",
+      "uncheck",
+      "aisle",
+      "move",
+      "every-week",
+    ]),
     aisle: z.string().nullish().openapi({
       description: "For aisle: the aisle's id, or null for none.",
+    }),
+    list: z.string().optional().openapi({
+      description: "For move: the list's id.",
     }),
   })
   .refine((bulk) => bulk.action !== "aisle" || bulk.aisle !== undefined, {
     message: "Say which aisle.",
     path: ["aisle"],
+  })
+  .refine((bulk) => bulk.action !== "move" || bulk.list !== undefined, {
+    message: "Say which list.",
+    path: ["list"],
   })
   .openapi("ListBulk", {
     example: { ids: [IDS.listItems[0], IDS.listItems[1]], action: "check" },

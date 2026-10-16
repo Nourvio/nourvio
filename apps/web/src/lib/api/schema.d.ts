@@ -173,6 +173,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What changes, as it happens
+         * @description Server-sent events for the household, for as long as the connection stays open:
+         *
+         *     - `ready` when it's open, with the areas it hears about.
+         *     - `plan`, `list`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.
+         *     - `presence` with who has `page` open, when someone opens or leaves it.
+         *     - `ping` now and then, to keep the connection open.
+         *
+         *     A device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.
+         */
+        get: operations["streamEvents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -605,8 +632,8 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * The shopping list
-         * @description Everything to buy, by aisle in a walk through the store, with what's checked off. Each item says how much, and which planned meals it's for. With an API key, it needs the `list: read` permission.
+         * The shopping lists
+         * @description The household's lists (one for each store it shops at, the main one first), and everything to buy, by aisle in a walk through the store, with what's checked off. Each item says which list it's on, how much, and which planned meals it's for. With an API key, it needs the `list: read` permission.
          */
         get: operations["getList"];
         put?: never;
@@ -720,7 +747,7 @@ export interface paths {
         put?: never;
         /**
          * Put something on the list
-         * @description As typed: "2 lb ground beef" is ground beef, 2 lb; "paper towels" is just that. It goes in the aisle the household last put the food in, else a first guess. With an API key, it needs the `list: write` permission.
+         * @description As typed: "2 lb ground beef" is ground beef, 2 lb; "paper towels" is just that. It goes in the aisle and on the list the household last put the food in, else a first guess and the list for that aisle. With an API key, it needs the `list: write` permission.
          */
         post: operations["addListItem"];
         delete?: never;
@@ -740,7 +767,7 @@ export interface paths {
         put?: never;
         /**
          * Change several things on the list at once
-         * @description Take them off, check them off or not, move them to an aisle (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With an API key, it needs the `list: write` permission.
+         * @description Take them off, check them off or not, move them to an aisle or another list (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With an API key, it needs the `list: write` permission.
          */
         post: operations["changeListItems"];
         delete?: never;
@@ -768,9 +795,29 @@ export interface paths {
         head?: never;
         /**
          * Change something on the list
-         * @description Check it off or not, rename it, change how much, or move it to another aisle, which the household remembers for the food. With an API key, it needs the `list: write` permission.
+         * @description Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food. With an API key, it needs the `list: write` permission.
          */
         patch: operations["updateListItem"];
+        trace?: never;
+    };
+    "/api/list/lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Change the household's lists
+         * @description Household admins only. The lists as a whole, in order: one with no id is new, and one left out goes, with what's on it moving to the main list, which has to stay. Each store has one list, and each aisle goes on one. Then what's waiting on the main list moves to the list its food or aisle goes on now.
+         */
+        put: operations["saveLists"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/list/restore": {
@@ -2613,10 +2660,24 @@ export interface components {
         };
         /**
          * @example {
-         *       "list": {
-         *         "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
-         *         "name": "Shopping list"
-         *       },
+         *       "lists": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *           "name": "Shopping list",
+         *           "store": null,
+         *           "main": true,
+         *           "aisles": []
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000025",
+         *           "name": "Costco",
+         *           "store": "costco",
+         *           "main": false,
+         *           "aisles": [
+         *             "0199e8b0-5a10-7a01-8b00-000000000021"
+         *           ]
+         *         }
+         *       ],
          *       "aisles": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-000000000020",
@@ -2656,7 +2717,7 @@ export interface components {
          *         },
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-         *           "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *           "list": "0199e8b0-5a10-7a01-8b00-000000000025",
          *           "name": "chicken thighs",
          *           "amount": "3 lb",
          *           "quantity": 3,
@@ -2677,14 +2738,22 @@ export interface components {
          *     }
          */
         ShoppingList: {
-            list: {
-                id: string;
-                name: string;
-            };
+            /** @description The household's lists, the main one first. */
+            lists: components["schemas"]["List"][];
             /** @description In a walk through the store, the household's country's to start. */
             aisles: components["schemas"]["Aisle"][];
             /** @description By aisle, in the aisles' order, oldest first in each. */
             items: components["schemas"]["ListItem"][];
+        };
+        List: {
+            id: string;
+            name: string;
+            /** @description The store it's for, like "costco"; null for any. */
+            store: string | null;
+            /** @description The main list, which takes what no other list does. */
+            main: boolean;
+            /** @description The ids of the aisles that go on it. */
+            aisles: string[];
         };
         Aisle: {
             id: string;
@@ -2747,6 +2816,7 @@ export interface components {
          *       "before": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
          *           "name": "chicken thighs",
          *           "foodKey": "chicken thigh",
          *           "quantity": 3,
@@ -2774,6 +2844,7 @@ export interface components {
          * @description An item as it was, to put it back (Undo).
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *       "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
          *       "name": "chicken thighs",
          *       "foodKey": "chicken thigh",
          *       "quantity": 3,
@@ -2794,6 +2865,7 @@ export interface components {
          */
         ListItemSnapshot: {
             id: string;
+            list: string;
             name: string;
             foodKey: string | null;
             quantity: number | null;
@@ -2944,6 +3016,8 @@ export interface components {
             text: string;
             /** @description An aisle's id; the food's usual aisle when left out. */
             aisle?: string | null;
+            /** @description A list's id; the food's usual list when left out. */
+            list?: string | null;
         };
         /**
          * @example {
@@ -2951,6 +3025,7 @@ export interface components {
          *       "before": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
          *           "name": "chicken thighs",
          *           "foodKey": "chicken thigh",
          *           "quantity": 3,
@@ -2987,9 +3062,11 @@ export interface components {
         ListBulk: {
             ids: string[];
             /** @enum {string} */
-            action: "remove" | "check" | "uncheck" | "aisle" | "every-week";
+            action: "remove" | "check" | "uncheck" | "aisle" | "move" | "every-week";
             /** @description For aisle: the aisle's id, or null for none. */
             aisle?: string | null;
+            /** @description For move: the list's id. */
+            list?: string;
         };
         /**
          * @example {
@@ -3003,6 +3080,61 @@ export interface components {
             checked?: boolean;
             /** @description An aisle's id, or null. The household's remembered for the food: next time it goes there. */
             aisle?: string | null;
+            /** @description Another list's id. Remembered for the food too: next time it goes on that list. */
+            list?: string;
+        };
+        /**
+         * @example {
+         *       "lists": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *           "name": "Shopping list",
+         *           "store": null,
+         *           "main": true,
+         *           "aisles": []
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000025",
+         *           "name": "Costco",
+         *           "store": "costco",
+         *           "main": false,
+         *           "aisles": [
+         *             "0199e8b0-5a10-7a01-8b00-000000000021"
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        Lists: {
+            lists: components["schemas"]["List"][];
+        };
+        /**
+         * @example {
+         *       "lists": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *           "name": "Groceries",
+         *           "store": null,
+         *           "aisles": []
+         *         },
+         *         {
+         *           "name": "Costco",
+         *           "store": "costco",
+         *           "aisles": [
+         *             "0199e8b0-5a10-7a01-8b00-000000000021"
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        ListsInput: {
+            lists: {
+                /** @description An existing list's id; none for a new one. */
+                id?: string | null;
+                name: string;
+                store: string | null;
+                aisles: string[];
+            }[];
         };
         /**
          * @example {
@@ -3037,6 +3169,7 @@ export interface components {
          *       "items": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
          *           "name": "chicken thighs",
          *           "foodKey": "chicken thigh",
          *           "quantity": 3,
@@ -5177,6 +5310,49 @@ export interface operations {
             };
         };
     };
+    streamEvents: {
+        parameters: {
+            query?: {
+                /** @description The page open, to say who else has it open. */
+                page?: "list" | "plan";
+                /** @description This device's id, as sent with its changes. */
+                client?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The events, until the connection closes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     checkHealth: {
         parameters: {
             query?: never;
@@ -6782,7 +6958,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description No such aisle. */
+            /** @description No such aisle or list. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -6833,7 +7009,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description No such aisle. */
+            /** @description No such aisle or list. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -6935,7 +7111,67 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Not on the list, or no such aisle. */
+            /** @description Not on the list, or no such aisle or list. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    saveLists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListsInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Lists"];
+                };
+            };
+            /** @description The main list left out, too many lists, a store twice or an aisle on two lists. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such list or aisle. */
             404: {
                 headers: {
                     [name: string]: unknown;

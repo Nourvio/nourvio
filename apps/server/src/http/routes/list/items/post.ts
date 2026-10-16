@@ -17,7 +17,7 @@ const route = createRoute({
   tags: ["List"],
   summary: "Put something on the list",
   description:
-    'As typed: "2 lb ground beef" is ground beef, 2 lb; "paper towels" is just that. It goes in the aisle the household last put the food in, else a first guess.',
+    'As typed: "2 lb ground beef" is ground beef, 2 lb; "paper towels" is just that. It goes in the aisle and on the list the household last put the food in, else a first guess and the list for that aisle.',
   ...openToKeys("list", "write"),
   request: {
     body: {
@@ -27,7 +27,7 @@ const route = createRoute({
   },
   responses: {
     201: jsonResponse(ListItemSchema, "On the list."),
-    404: errorResponse("No such aisle."),
+    404: errorResponse("No such aisle or list."),
     ...SIGNED_IN_ERRORS,
   },
 })

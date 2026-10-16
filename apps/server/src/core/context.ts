@@ -6,6 +6,7 @@ import type { ApiAccess, ApiArea } from "../services/auth/api-keys.ts"
 import type { Auth } from "../services/auth/auth.ts"
 import type { Authenticated } from "../services/auth/session.ts"
 import type { SetupCode } from "../services/auth/setup-code.ts"
+import type { EventBus } from "../services/events/events.ts"
 import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import type { JobRunner } from "../services/jobs/runner.ts"
 import type { Settings } from "../services/settings/settings.ts"
@@ -29,6 +30,8 @@ export type AppDeps = {
   fetcher: Fetcher
   /** Runs background work; routes stop jobs through it. */
   jobs: JobRunner
+  /** What changed in each household, for live updates. */
+  events: EventBus
 }
 
 /** Variables set on every request. `requestId` comes from Hono's middleware. */

@@ -42,6 +42,11 @@ const TAGS = [
       "The shopping list, by aisle: from the plan (added up, and following the plan when meals change), typed in, or every week. Changes say what things were before, for Undo.",
   },
   {
+    name: "Live",
+    description:
+      "What changes in the household, as it happens: the live updates the app uses, and who has the list open.",
+  },
+  {
     name: "Settings",
     description:
       "Settings for the server (its admin only) and the household in use. A setting from an environment variable is locked, and a secret is never sent back: only whether it's set, and its last four characters.",

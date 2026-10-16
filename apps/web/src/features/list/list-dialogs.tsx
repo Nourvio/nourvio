@@ -31,6 +31,7 @@ import {
   everyWeekQuery,
   onHandQuery,
   type Aisle,
+  type List,
   type ListItem,
 } from "./queries"
 import { useListActions } from "./use-list-actions"
@@ -77,14 +78,19 @@ function AisleSelect({
   )
 }
 
-/** Changing one thing on the list: its name, how much, and its aisle. */
+/**
+ * Changing one thing on the list: its name, how much, its aisle, and the
+ * list it's on when there's more than one.
+ */
 export function EditItemDialog({
   item,
   aisles,
+  lists,
   onClose,
 }: {
   item: ListItem | null
   aisles: readonly Aisle[]
+  lists: readonly List[]
   onClose: () => void
 }) {
   return (
@@ -95,7 +101,14 @@ export function EditItemDialog({
       }}
     >
       <DialogContent className="sm:max-w-md">
-        {item && <EditItem item={item} aisles={aisles} onDone={onClose} />}
+        {item && (
+          <EditItem
+            item={item}
+            aisles={aisles}
+            lists={lists}
+            onDone={onClose}
+          />
+        )}
       </DialogContent>
     </Dialog>
   )
@@ -104,10 +117,12 @@ export function EditItemDialog({
 function EditItem({
   item,
   aisles,
+  lists,
   onDone,
 }: {
   item: ListItem
   aisles: readonly Aisle[]
+  lists: readonly List[]
   onDone: () => void
 }) {
   const { t } = useTranslation()
@@ -115,7 +130,12 @@ function EditItem({
   const [name, setName] = React.useState(item.name)
   const [amount, setAmount] = React.useState(item.amount)
   const [aisle, setAisle] = React.useState(item.aisle)
+  const [list, setList] = React.useState(item.list)
   const [busy, setBusy] = React.useState(false)
+  const listOptions = lists.map((option) => ({
+    value: option.id,
+    label: option.name,
+  }))
 
   async function save() {
     setBusy(true)
@@ -123,6 +143,7 @@ function EditItem({
       ...(name.trim() !== item.name ? { name: name.trim() } : {}),
       ...(amount.trim() !== item.amount ? { amount: amount.trim() } : {}),
       ...(aisle !== item.aisle ? { aisle } : {}),
+      ...(list !== item.list ? { list } : {}),
     })
     setBusy(false)
     if (done) onDone()
@@ -176,6 +197,32 @@ function EditItem({
         />
         <FieldDescription>{t("list.editItem.aisleHint")}</FieldDescription>
       </Field>
+      {lists.length > 1 && (
+        <Field>
+          <FieldLabel htmlFor="list-item-list">
+            {t("list.editItem.list")}
+          </FieldLabel>
+          <Select
+            items={listOptions}
+            value={list}
+            onValueChange={(next) => {
+              if (next) setList(next)
+            }}
+          >
+            <SelectTrigger id="list-item-list" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {listOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FieldDescription>{t("list.editItem.listHint")}</FieldDescription>
+        </Field>
+      )}
       <DialogFooter className="sm:justify-between">
         <Button
           type="button"
@@ -194,6 +241,46 @@ function EditItem({
         </Button>
       </DialogFooter>
     </form>
+  )
+}
+
+/** Which list selected things go on, remembered for each food. */
+export function ListPickDialog({
+  count,
+  lists,
+  open,
+  onOpenChange,
+  onPick,
+}: {
+  count: number
+  lists: readonly List[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onPick: (list: List) => void
+}) {
+  const { t } = useTranslation()
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-sm">
+        <DialogHeader>
+          <DialogTitle>{t("list.listDialog.title", { count })}</DialogTitle>
+          <DialogDescription>{t("list.listDialog.hint")}</DialogDescription>
+        </DialogHeader>
+        <ul className="-mx-2 grid">
+          {lists.map((list) => (
+            <li key={list.id}>
+              <button
+                type="button"
+                onClick={() => onPick(list)}
+                className="w-full rounded-lg px-2 py-2.5 text-left text-sm font-medium outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+              >
+                {list.name}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
   )
 }
 

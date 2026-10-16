@@ -9,6 +9,7 @@ import { createAuth } from "../../services/auth/auth.ts"
 import { SetupCode } from "../../services/auth/setup-code.ts"
 import { createPublicFetcher } from "../../services/fetch/public-fetch.ts"
 import { JobRunner } from "../../services/jobs/runner.ts"
+import { createEventBus } from "../../services/events/events.ts"
 import { createSettings } from "../../services/settings/settings.ts"
 import { LocalFileStore } from "../../services/storage/files.ts"
 import { buildOpenApiDocument, DEFAULT_SERVER_URL } from "./document.ts"
@@ -61,6 +62,7 @@ export async function createOpenApiFile(): Promise<string> {
         },
         handlers: [],
       }),
+      events: createEventBus(),
     })
     const document = await buildOpenApiDocument(app, auth, {
       version: config.version,

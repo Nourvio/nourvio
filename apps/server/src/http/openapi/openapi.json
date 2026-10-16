@@ -47,6 +47,10 @@
       "description": "The shopping list, by aisle: from the plan (added up, and following the plan when meals change), typed in, or every week. Changes say what things were before, for Undo."
     },
     {
+      "name": "Live",
+      "description": "What changes in the household, as it happens: the live updates the app uses, and who has the list open."
+    },
+    {
       "name": "Settings",
       "description": "Settings for the server (its admin only) and the household in use. A setting from an environment variable is locked, and a secret is never sent back: only whether it's set, and its last four characters."
     },
@@ -1600,20 +1604,12 @@
       "ShoppingList": {
         "type": "object",
         "properties": {
-          "list": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              }
+          "lists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/List"
             },
-            "required": [
-              "id",
-              "name"
-            ]
+            "description": "The household's lists, the main one first."
           },
           "aisles": {
             "type": "array",
@@ -1631,15 +1627,29 @@
           }
         },
         "required": [
-          "list",
+          "lists",
           "aisles",
           "items"
         ],
         "example": {
-          "list": {
-            "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
-            "name": "Shopping list"
-          },
+          "lists": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
+              "name": "Shopping list",
+              "store": null,
+              "main": true,
+              "aisles": []
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000025",
+              "name": "Costco",
+              "store": "costco",
+              "main": false,
+              "aisles": [
+                "0199e8b0-5a10-7a01-8b00-000000000021"
+              ]
+            }
+          ],
           "aisles": [
             {
               "id": "0199e8b0-5a10-7a01-8b00-000000000020",
@@ -1679,7 +1689,7 @@
             },
             {
               "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
-              "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
+              "list": "0199e8b0-5a10-7a01-8b00-000000000025",
               "name": "chicken thighs",
               "amount": "3 lb",
               "quantity": 3,
@@ -1698,6 +1708,42 @@
             }
           ]
         }
+      },
+      "List": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "store": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The store it's for, like \"costco\"; null for any."
+          },
+          "main": {
+            "type": "boolean",
+            "description": "The main list, which takes what no other list does."
+          },
+          "aisles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The ids of the aisles that go on it."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "store",
+          "main",
+          "aisles"
+        ]
       },
       "Aisle": {
         "type": "object",
@@ -1855,6 +1901,7 @@
           "before": [
             {
               "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+              "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
               "name": "chicken thighs",
               "foodKey": "chicken thigh",
               "quantity": 3,
@@ -1879,6 +1926,9 @@
         "type": "object",
         "properties": {
           "id": {
+            "type": "string"
+          },
+          "list": {
             "type": "string"
           },
           "name": {
@@ -1964,6 +2014,7 @@
         },
         "required": [
           "id",
+          "list",
           "name",
           "foodKey",
           "quantity",
@@ -1978,6 +2029,7 @@
         "description": "An item as it was, to put it back (Undo).",
         "example": {
           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+          "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
           "name": "chicken thighs",
           "foodKey": "chicken thigh",
           "quantity": 3,
@@ -2265,6 +2317,13 @@
               "null"
             ],
             "description": "An aisle's id; the food's usual aisle when left out."
+          },
+          "list": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A list's id; the food's usual list when left out."
           }
         },
         "required": [
@@ -2296,6 +2355,7 @@
           "before": [
             {
               "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+              "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
               "name": "chicken thighs",
               "foodKey": "chicken thigh",
               "quantity": 3,
@@ -2334,6 +2394,7 @@
               "check",
               "uncheck",
               "aisle",
+              "move",
               "every-week"
             ]
           },
@@ -2343,6 +2404,10 @@
               "null"
             ],
             "description": "For aisle: the aisle's id, or null for none."
+          },
+          "list": {
+            "type": "string",
+            "description": "For move: the list's id."
           }
         },
         "required": [
@@ -2379,10 +2444,114 @@
               "null"
             ],
             "description": "An aisle's id, or null. The household's remembered for the food: next time it goes there."
+          },
+          "list": {
+            "type": "string",
+            "description": "Another list's id. Remembered for the food too: next time it goes on that list."
           }
         },
         "example": {
           "checked": true
+        }
+      },
+      "Lists": {
+        "type": "object",
+        "properties": {
+          "lists": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/List"
+            }
+          }
+        },
+        "required": [
+          "lists"
+        ],
+        "example": {
+          "lists": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
+              "name": "Shopping list",
+              "store": null,
+              "main": true,
+              "aisles": []
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000025",
+              "name": "Costco",
+              "store": "costco",
+              "main": false,
+              "aisles": [
+                "0199e8b0-5a10-7a01-8b00-000000000021"
+              ]
+            }
+          ]
+        }
+      },
+      "ListsInput": {
+        "type": "object",
+        "properties": {
+          "lists": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "description": "An existing list's id; none for a new one."
+                },
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "store": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 40
+                },
+                "aisles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "maxItems": 40
+                }
+              },
+              "required": [
+                "name",
+                "store",
+                "aisles"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 10
+          }
+        },
+        "required": [
+          "lists"
+        ],
+        "example": {
+          "lists": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
+              "name": "Groceries",
+              "store": null,
+              "aisles": []
+            },
+            {
+              "name": "Costco",
+              "store": "costco",
+              "aisles": [
+                "0199e8b0-5a10-7a01-8b00-000000000021"
+              ]
+            }
+          ]
         }
       },
       "ListItems": {
@@ -2441,6 +2610,7 @@
           "items": [
             {
               "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+              "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
               "name": "chicken thighs",
               "foodKey": "chicken thigh",
               "quantity": 3,
@@ -6439,6 +6609,84 @@
         }
       }
     },
+    "/api/events": {
+      "get": {
+        "operationId": "streamEvents",
+        "tags": [
+          "Live"
+        ],
+        "summary": "What changes, as it happens",
+        "description": "Server-sent events for the household, for as long as the connection stays open:\n\n- `ready` when it's open, with the areas it hears about.\n- `plan`, `list`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.\n- `presence` with who has `page` open, when someone opens or leaves it.\n- `ping` now and then, to keep the connection open.\n\nA device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "any:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "list",
+                "plan"
+              ],
+              "description": "The page open, to say who else has it open."
+            },
+            "required": false,
+            "description": "The page open, to say who else has it open.",
+            "name": "page",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "description": "This device's id, as sent with its changes."
+            },
+            "required": false,
+            "description": "This device's id, as sent with its changes.",
+            "name": "client",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The events, until the connection closes.",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "checkHealth",
@@ -8068,8 +8316,8 @@
         "tags": [
           "List"
         ],
-        "summary": "The shopping list",
-        "description": "Everything to buy, by aisle in a walk through the store, with what's checked off. Each item says how much, and which planned meals it's for. With an API key, it needs the `list: read` permission.",
+        "summary": "The shopping lists",
+        "description": "The household's lists (one for each store it shops at, the main one first), and everything to buy, by aisle in a walk through the store, with what's checked off. Each item says which list it's on, how much, and which planned meals it's for. With an API key, it needs the `list: read` permission.",
         "security": [
           {
             "session": []
@@ -8588,7 +8836,7 @@
           "List"
         ],
         "summary": "Put something on the list",
-        "description": "As typed: \"2 lb ground beef\" is ground beef, 2 lb; \"paper towels\" is just that. It goes in the aisle the household last put the food in, else a first guess. With an API key, it needs the `list: write` permission.",
+        "description": "As typed: \"2 lb ground beef\" is ground beef, 2 lb; \"paper towels\" is just that. It goes in the aisle and on the list the household last put the food in, else a first guess and the list for that aisle. With an API key, it needs the `list: write` permission.",
         "security": [
           {
             "session": []
@@ -8640,7 +8888,7 @@
             }
           },
           "404": {
-            "description": "No such aisle.",
+            "description": "No such aisle or list.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8659,7 +8907,7 @@
           "List"
         ],
         "summary": "Change several things on the list at once",
-        "description": "Take them off, check them off or not, move them to an aisle (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With an API key, it needs the `list: write` permission.",
+        "description": "Take them off, check them off or not, move them to an aisle or another list (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With an API key, it needs the `list: write` permission.",
         "security": [
           {
             "session": []
@@ -8711,7 +8959,7 @@
             }
           },
           "404": {
-            "description": "No such aisle.",
+            "description": "No such aisle or list.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8730,7 +8978,7 @@
           "List"
         ],
         "summary": "Change something on the list",
-        "description": "Check it off or not, rename it, change how much, or move it to another aisle, which the household remembers for the food. With an API key, it needs the `list: write` permission.",
+        "description": "Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food. With an API key, it needs the `list: write` permission.",
         "security": [
           {
             "session": []
@@ -8793,7 +9041,7 @@
             }
           },
           "404": {
-            "description": "Not on the list, or no such aisle.",
+            "description": "Not on the list, or no such aisle or list.",
             "content": {
               "application/json": {
                 "schema": {
@@ -8864,6 +9112,83 @@
           },
           "404": {
             "description": "Not on the list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list/lists": {
+      "put": {
+        "operationId": "saveLists",
+        "tags": [
+          "List"
+        ],
+        "summary": "Change the household's lists",
+        "description": "Household admins only. The lists as a whole, in order: one with no id is new, and one left out goes, with what's on it moving to the main list, which has to stay. Each store has one list, and each aisle goes on one. Then what's waiting on the main list moves to the list its food or aisle goes on now.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ListsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Lists"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The main list left out, too many lists, a store twice or an aisle on two lists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such list or aisle.",
             "content": {
               "application/json": {
                 "schema": {

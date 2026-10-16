@@ -128,7 +128,9 @@ describe("the list", () => {
   test("starts empty, with the household's country's aisles", async () => {
     const res = await (await kyle.get("/api/list")).json()
     expect(res.items).toEqual([])
-    expect(res.list.name).toBe("Shopping list")
+    expect(res.lists).toMatchObject([
+      { name: "Shopping list", main: true, store: null, aisles: [] },
+    ])
     expect(
       res.aisles.slice(0, 3).map((aisle: { name: string }) => aisle.name)
     ).toEqual(["Fruit & veg", "Bakery", "Meat & fish"])

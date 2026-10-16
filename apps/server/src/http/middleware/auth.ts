@@ -53,6 +53,16 @@ export const OPEN_TO_ANY_KEY = {
 } as const
 
 /**
+ * For a route open to any key that can read something, like the live
+ * stream: what the key gets is up to what it can read. Use with
+ * `readingHousehold()`.
+ */
+export const OPEN_TO_READERS = {
+  security: SESSION_OR_API_KEY_SECURITY,
+  [KEY_PERMISSION]: "any:read",
+} as const
+
+/**
  * Reads who sent each request (the auth service does the checking) and puts
  * them, the household they're using, and any API key they used on the
  * request. Requests with a key are also held to the key's rate limit.
@@ -156,6 +166,37 @@ export function inHousehold(c: Context<AppEnv>) {
     em: forHousehold(c.var.em, household.id),
     userId: user.id,
   }
+}
+
+/**
+ * The household in use for a route open to readers, and which of `areas`
+ * the asker can read: all of them for someone signed in, those its
+ * permissions say for a key. A key that can read none is turned away.
+ */
+export function readingHousehold<A extends ApiArea>(
+  c: Context<AppEnv>,
+  areas: readonly A[]
+) {
+  const { user, apiKey, household } = c.var
+  let readable = areas
+  if (apiKey) {
+    readable = areas.filter((area) => allows(apiKey.permissions, area, "read"))
+    if (readable.length === 0) {
+      throw new AppError(
+        "forbidden",
+        "missing_permission",
+        "This API key can't read anything."
+      )
+    }
+  } else signedIn(c)
+  if (!user || !household) {
+    throw new AppError(
+      "forbidden",
+      "no_household",
+      "You're not in a household."
+    )
+  }
+  return { householdId: household.id, user, apiKey, readable }
 }
 
 /** The household in use, by one of its owners or admins, signed in: never a key. */

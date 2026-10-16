@@ -3,6 +3,7 @@ import { queryOptions } from "@tanstack/react-query"
 import { api, unwrap, type Schemas } from "@/lib/api/client"
 
 export type ShoppingList = Schemas["ShoppingList"]
+export type List = Schemas["List"]
 export type ListItem = Schemas["ListItem"]
 export type ListItemSnapshot = Schemas["ListItemSnapshot"]
 export type Aisle = ShoppingList["aisles"][number]

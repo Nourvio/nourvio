@@ -11,6 +11,7 @@ import { migrate, openDatabase, type Database } from "./database/orm.ts"
 import { MODULES } from "./modules/index.ts"
 import { startModules } from "./modules/module.ts"
 import { createPublicFetcher } from "./services/fetch/public-fetch.ts"
+import { createEventBus } from "./services/events/events.ts"
 import { JOB_HANDLERS, JOB_SCHEDULES } from "./services/jobs/handlers.ts"
 import { JobRunner } from "./services/jobs/runner.ts"
 import { createSettings } from "./services/settings/settings.ts"
@@ -79,6 +80,7 @@ const jobs = new JobRunner({
   schedules: JOB_SCHEDULES,
 })
 
+const events = createEventBus()
 const app = createApp({
   config,
   logger,
@@ -90,6 +92,7 @@ const app = createApp({
   files,
   fetcher,
   jobs,
+  events,
 })
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
@@ -99,6 +102,8 @@ await jobs.start()
 
 function shutDown(signal: NodeJS.Signals) {
   logger.info(`${signal}: shutting down`)
+  // Live pages reconnect to the next server.
+  events.closeAll()
   server.close(() => {
     // Jobs stopped now run again at the next start.
     void jobs

@@ -11,9 +11,9 @@ const route = createRoute({
   path: "/list",
   operationId: "getList",
   tags: ["List"],
-  summary: "The shopping list",
+  summary: "The shopping lists",
   description:
-    "Everything to buy, by aisle in a walk through the store, with what's checked off. Each item says how much, and which planned meals it's for.",
+    "The household's lists (one for each store it shops at, the main one first), and everything to buy, by aisle in a walk through the store, with what's checked off. Each item says which list it's on, how much, and which planned meals it's for.",
   ...openToKeys("list", "read"),
   responses: {
     200: jsonResponse(ShoppingListSchema, "The list."),

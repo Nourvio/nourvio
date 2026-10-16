@@ -1105,7 +1105,10 @@
       "weekly_one": "{{count}} thing is bought every week now.",
       "weekly_other": "{{count}} things are bought every week now.",
       "removed_one": "Took {{count}} thing off the list.",
-      "removed_other": "Took {{count}} things off the list."
+      "removed_other": "Took {{count}} things off the list.",
+      "list": "List",
+      "movedTo_one": "Moved {{count}} thing to {{list}}.",
+      "movedTo_other": "Moved {{count}} things to {{list}}."
     },
     "editItem": {
       "title": "Change {{name}}",
@@ -1115,7 +1118,9 @@
       "aisle": "Aisle",
       "aisleHint": "It goes here next time too.",
       "save": "Save",
-      "remove": "Remove"
+      "remove": "Remove",
+      "list": "List",
+      "listHint": "It goes on that list next time too."
     },
     "aisleDialog": {
       "title_one": "Move {{count}} thing to",
@@ -1163,6 +1168,53 @@
       "label": "Something you always have",
       "remove": "Remove {{name}}",
       "saved": "Saved."
-    }
+    },
+    "toGetAcross": "{{things}} across {{lists}}",
+    "listCount_one": "{{count}} list",
+    "listCount_other": "{{count}} lists",
+    "addTo": "Add to {{list}}, like “2 lb ground beef” or “paper towels”",
+    "addToLabel": "Add to {{list}}",
+    "editLists": "Edit lists",
+    "splitByStore": "Split the list",
+    "emptyHere": "Nothing on {{list}}. Move things here from another list, or choose the aisles that go here in Edit lists.",
+    "together_one": "<b>{{names}}</b> is on the list too. Changes show up as you go.",
+    "together_other": "<b>{{names}}</b> are on the list too. Changes show up as you go.",
+    "andMore": "{{count}} more",
+    "cards": {
+      "label": "Lists",
+      "left_one": "{{count}} left",
+      "left_other": "{{count}} left",
+      "nothingLeft": "Nothing left",
+      "inCart": "{{count}} in the cart",
+      "progress": "{{got}} of {{total}} in the cart",
+      "split": "Split the list",
+      "splitHint": "Keep a list for each place you shop.",
+      "another": "Another list",
+      "anotherHint": "Another place you shop, with the aisles that go there."
+    },
+    "listDialog": {
+      "title_one": "Move {{count}} thing to",
+      "title_other": "Move {{count}} things to",
+      "hint": "They go on that list next time too."
+    },
+    "lists": {
+      "title": "Shopping lists",
+      "description": "A list for each store you shop at. Things go on the main list unless their aisle goes on another, or you’ve moved them there before.",
+      "name": "List name",
+      "namePlaceholder": "Store name",
+      "mainPlaceholder": "Groceries",
+      "aisles": "Aisles that go on this list",
+      "mainHint": "The main list: everything goes here unless an aisle or a move says otherwise.",
+      "takenBy": "On {{name}}",
+      "anotherList": "another list",
+      "remove": "Remove {{name}}",
+      "thisList": "this list",
+      "add": "Add a list",
+      "movesHint": "Moving something to another list teaches Merran where that food goes from then on. Things on a removed list go to the main one.",
+      "save": "Save",
+      "saved": "Lists saved."
+    },
+    "clearListNamed": "Clear {{list}}",
+    "clearCheckedOn": "Clear checked on {{list}}"
   }
 }

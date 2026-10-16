@@ -88,7 +88,9 @@ describe("the routes folder", () => {
 // it, and examples that are right.
 
 const described = describedRoutes()
-const PERMISSION = new RegExp(`^(${API_AREAS.join("|")}):(read|write)$`)
+const PERMISSION = new RegExp(
+  `^((${API_AREAS.join("|")}):(read|write)|any:read)$`
+)
 
 describe("the API reference", () => {
   test("every route has a summary, and an operationId of its own", () => {
@@ -114,7 +116,10 @@ describe("the API reference", () => {
           undefined
         )
       } else if (schemes.includes("session")) {
-        expect(permission, "Use openToKeys(area, access)").toMatch(PERMISSION)
+        expect(
+          permission,
+          "Use openToKeys(area, access), or OPEN_TO_READERS"
+        ).toMatch(PERMISSION)
       } else {
         expect(permission, "A route only for keys is OPEN_TO_ANY_KEY").toBe(
           "any"

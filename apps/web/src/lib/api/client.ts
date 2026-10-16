@@ -7,6 +7,19 @@ import type { components, paths } from "./schema"
  */
 export const api = createClient<paths>({ baseUrl: "/" })
 
+/**
+ * This tab, as the server knows it: sent with every change, so live
+ * updates tell the person's other devices and tabs, not this one.
+ */
+export const CLIENT_ID = crypto.randomUUID()
+
+api.use({
+  onRequest({ request }) {
+    request.headers.set("X-Merran-Client", CLIENT_ID)
+    return request
+  },
+})
+
 export type Schemas = components["schemas"]
 
 /** An error from the API, with its stable code and a message to show. */

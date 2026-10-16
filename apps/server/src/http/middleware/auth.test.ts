@@ -72,14 +72,15 @@ describe("routes open to API keys", () => {
         json ? example(json) : undefined
       )
 
+      const permission = String(route[KEY_PERMISSION])
       expect(res.status).toBe(403)
       expect(await res.json()).toMatchObject({
         error: {
           code: "missing_permission",
-          message: `This API key can't ${String(route[KEY_PERMISSION]).replace(
-            /^(\w+):(\w+)$/,
-            "$2 $1"
-          )}.`,
+          message:
+            permission === "any:read"
+              ? "This API key can't read anything."
+              : `This API key can't ${permission.replace(/^(\w+):(\w+)$/, "$2 $1")}.`,
         },
       })
     }
