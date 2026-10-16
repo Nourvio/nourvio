@@ -63,6 +63,18 @@ export function ServingsStepper({ servings }: { servings: Servings }) {
     : t("recipes.times", { factor: formatServings(servings.amount) })
   return (
     <div className="flex items-center gap-2">
+      {/* Always laid out, on the far side from the +, so showing it never
+          moves the stepper out from under a second tap. */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={servings.reset}
+        disabled={!servings.changed}
+        aria-hidden={!servings.changed}
+        className={cn(!servings.changed && "invisible")}
+      >
+        {t("recipes.reset")}
+      </Button>
       <Button
         variant="outline"
         size="icon-sm"
@@ -72,7 +84,7 @@ export function ServingsStepper({ servings }: { servings: Servings }) {
         <HugeiconsIcon icon={MinusSignIcon} strokeWidth={2} />
       </Button>
       <span
-        className="min-w-20 text-center text-sm font-medium tabular-nums"
+        className="min-w-24 text-center text-sm font-medium tabular-nums"
         aria-live="polite"
       >
         {label}
@@ -85,11 +97,6 @@ export function ServingsStepper({ servings }: { servings: Servings }) {
       >
         <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
       </Button>
-      {servings.changed && (
-        <Button variant="ghost" size="sm" onClick={servings.reset}>
-          {t("recipes.reset")}
-        </Button>
-      )}
     </div>
   )
 }
