@@ -9,11 +9,14 @@ export const CLIENT_HEADER = "x-merran-client"
 const CHANGES: [RegExp, LiveArea[]][] = [
   // Asking for ideas changes nothing.
   [/^\/api\/plan\/suggest$/, []],
-  // The list follows the plan.
-  [/^\/api\/plan(\/|$)/, ["plan", "list"]],
+  // The list follows the plan, and cooking uses up the pantry.
+  [/^\/api\/plan(\/|$)/, ["plan", "list", "pantry"]],
+  // Shopping put away goes in the pantry; listing meals sets food aside.
+  [/^\/api\/list\/(put-away|from-plan)$/, ["list", "pantry"]],
   [/^\/api\/list(\/|$)/, ["list"]],
+  [/^\/api\/pantry(\/|$)/, ["pantry"]],
   // Made it cooks the meal; Recently deleted takes meals off the plan.
-  [/^\/api\/recipes(\/|$)/, ["recipes", "plan", "list"]],
+  [/^\/api\/recipes(\/|$)/, ["recipes", "plan", "list", "pantry"]],
   [/^\/api\/households\/current\/(tastes|themes|on-hand)$/, ["household"]],
   [/^\/api\/households\/current$/, ["household"]],
 ]

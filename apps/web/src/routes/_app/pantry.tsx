@@ -1,20 +1,10 @@
-import { FridgeIcon } from "@hugeicons/core-free-icons"
 import { createFileRoute } from "@tanstack/react-router"
-import { useTranslation } from "react-i18next"
 
-import { ComingSoon } from "@/components/layout/coming-soon"
+import { PantryPage } from "@/features/pantry/pantry-page"
+import { pantryQuery } from "@/features/pantry/queries"
 
 export const Route = createFileRoute("/_app/pantry")({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(pantryQuery),
   component: PantryPage,
 })
-
-function PantryPage() {
-  const { t } = useTranslation()
-  return (
-    <ComingSoon
-      title={t("nav.pantry")}
-      description={t("comingSoon.pantry")}
-      icon={FridgeIcon}
-    />
-  )
-}

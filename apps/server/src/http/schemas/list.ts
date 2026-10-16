@@ -359,6 +359,9 @@ export const FromPlanResultSchema = z
     onHand: z.array(z.string()).openapi({
       description: "Left off: always on hand.",
     }),
+    inPantry: z.array(z.string()).openapi({
+      description: "Left off: at home already, and now set aside for them.",
+    }),
   })
   .openapi("FromPlanResult", {
     example: {
@@ -367,6 +370,7 @@ export const FromPlanResultSchema = z
       merged: 2,
       everyWeek: 2,
       onHand: ["salt", "black pepper"],
+      inPantry: ["rice"],
     },
   })
 

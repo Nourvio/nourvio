@@ -17,6 +17,7 @@ const MOST_WAIT_MS = 30_000
 const REFRESH: Record<string, QueryKey[]> = {
   plan: [["plan"]],
   list: [["list"]],
+  pantry: [["pantry"]],
   recipes: [["recipes"], ["tags"]],
   household: [["household"]],
 }

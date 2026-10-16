@@ -42,6 +42,11 @@ const TAGS = [
       "The shopping list, by aisle: from the plan (added up, and following the plan when meals change), typed in, or every week. Changes say what things were before, for Undo.",
   },
   {
+    name: "Pantry",
+    description:
+      "What's at home, in the fridge, the freezer and the cupboard: what to use soon, and what's set aside for planned meals. Shopping put away goes in, and cooking a planned meal uses it up.",
+  },
+  {
     name: "Live",
     description:
       "What changes in the household, as it happens: the live updates the app uses, and who has the list open.",

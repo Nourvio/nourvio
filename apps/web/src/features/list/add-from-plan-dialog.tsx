@@ -92,9 +92,14 @@ function AddFromPlan({
         what ? t("list.plan.added", { what }) : t("list.plan.nothingNew"),
         {
           description:
-            done.onHand.length > 0
-              ? t("list.plan.leftOff", { names: done.onHand.join(", ") })
-              : undefined,
+            [
+              done.inPantry.length > 0 &&
+                t("list.plan.inPantry", { names: done.inPantry.join(", ") }),
+              done.onHand.length > 0 &&
+                t("list.plan.leftOff", { names: done.onHand.join(", ") }),
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined,
         }
       )
       onDone()

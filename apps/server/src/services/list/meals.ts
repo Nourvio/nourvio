@@ -6,9 +6,7 @@ import {
   foodKey,
   isDay,
   onHandTest,
-  pairingFactor,
   subtractAmounts,
-  type ListLine,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
@@ -19,6 +17,8 @@ import {
   WeeklyItem,
 } from "../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
+import { coverFromPantry, releasePantry } from "../pantry/stock.ts"
+import { hasRecipe, loadMealLines, mealLines } from "../plan/meal-lines.ts"
 import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
 import { aislesOf } from "./aisles.ts"
 import { listsOf } from "./lists.ts"
@@ -30,56 +30,12 @@ import { listsOf } from "./lists.ts"
 /** The most days added from the plan at once. */
 const MAX_DAYS = 62
 
-/** What it takes to work out a meal's lines: its recipes and their lines. */
-const POPULATE = ["recipe.ingredients", "withRecipe.ingredients"] as const
-
 /**
  * What's shopped for: a meal with a recipe, unless it's skipped. A cooked
  * one was bought for. Recipes in Recently deleted aren't.
  */
-const shopped = (entry: PlanEntry) => {
-  const recipe = entry.recipe?.getEntity()
-  return Boolean(recipe && !recipe.deletedAt) && entry.status !== "skipped"
-}
-
-/**
- * A planned meal's ingredient lines, scaled to its servings, and its side's,
- * scaled to match as on the recipe page. Its recipes are loaded.
- */
-function mealLines(entry: PlanEntry): ListLine[] {
-  const recipe = entry.recipe!.getEntity()
-  const servings = toNumber(recipe.servings)
-  const planned = toNumber(entry.servings)
-  const factor = planned && servings ? planned / servings : 1
-  const lines: ListLine[] = recipe.ingredients
-    .getItems()
-    .sort((a, b) => a.position - b.position)
-    .map((line) => ({
-      text: line.rawText,
-      factor,
-      source: recipe.name,
-      meal: entry.id,
-    }))
-  const side = entry.withRecipe?.getEntity()
-  if (side && !side.deletedAt) {
-    const sideFactor = pairingFactor(
-      { servings },
-      { servings: toNumber(side.servings) },
-      factor
-    )
-    for (const line of side.ingredients
-      .getItems()
-      .sort((a, b) => a.position - b.position)) {
-      lines.push({
-        text: line.rawText,
-        factor: sideFactor,
-        source: side.name,
-        meal: entry.id,
-      })
-    }
-  }
-  return lines
-}
+const shopped = (entry: PlanEntry) =>
+  hasRecipe(entry) && entry.status !== "skipped"
 
 /** What the household always has, which lists made from the plan leave off. */
 async function onHandOf(em: EntityManager, householdId: string) {
@@ -88,26 +44,30 @@ async function onHandOf(em: EntityManager, householdId: string) {
 }
 
 /**
- * Planned meals' ingredients onto the list: added up across meals, merged
- * into what's waiting there already, leaving off what's always on hand.
- * The meals are marked listed.
+ * Planned meals' ingredients onto the list: added up across meals, less
+ * what's at home and free (set aside for them now), merged into what's
+ * waiting there already, leaving off what's always on hand. The meals are
+ * marked listed.
  */
 export async function listMeals(
   em: EntityManager,
   householdId: string,
   entries: readonly PlanEntry[]
 ) {
-  await em.populate([...entries], POPULATE, {
-    filters: { [NOT_DELETED_FILTER]: false },
-  })
+  await loadMealLines(em, entries)
   const meals = entries.filter(shopped)
   const isOnHand = await onHandOf(em, householdId)
   const onHand = new Set<string>()
-  const combined = combineLines(meals.flatMap(mealLines)).filter((item) => {
+  const needed = combineLines(meals.flatMap(mealLines)).filter((item) => {
     if (!isOnHand(item.name)) return true
     onHand.add(item.name.toLowerCase())
     return false
   })
+  const { items: combined, inPantry } = await coverFromPantry(
+    em,
+    householdId,
+    needed
+  )
 
   let added = 0
   let merged = 0
@@ -163,18 +123,33 @@ export async function listMeals(
   const now = new Date()
   for (const entry of meals) entry.listedAt = now
   await em.flush()
-  return { meals: meals.length, added, merged, onHand: [...onHand] }
+  return {
+    meals: meals.length,
+    added,
+    merged,
+    onHand: [...onHand],
+    inPantry,
+  }
 }
 
 /**
  * Takes meals' shares back off the list, and marks them not listed. What's
  * checked off is bought, so it stays. An item only there for those meals
- * goes; one with more on it keeps the rest.
+ * goes; one with more on it keeps the rest. What's at home set aside for
+ * them is free again, unless they were skipped: that's a leftover to use.
  */
 async function unlistMeals(em: EntityManager, entries: readonly PlanEntry[]) {
   const ids = new Set(entries.map((entry) => entry.id))
   for (const entry of entries) entry.listedAt = null
   if (ids.size === 0) return
+  await releasePantry(
+    em,
+    new Set(
+      entries
+        .filter((entry) => entry.status !== "skipped")
+        .map((entry) => entry.id)
+    )
+  )
   const items = await em.find(ShoppingItem, { checked: false })
   for (const item of items) {
     const shares = item.forMeals ?? []

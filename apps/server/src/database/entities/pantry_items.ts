@@ -1,10 +1,11 @@
+import { STORAGE_PLACES, type MealShare } from "@merran/shared"
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
 import { householdFilter } from "../scope.ts"
 import { aisleRef } from "./aisles.ts"
 import { amount, createdAt, day, foodKey, id, updatedAt } from "./base.ts"
 import { householdRef } from "./households.ts"
 
-export const STORAGE_PLACES = ["fridge", "freezer", "cupboard"] as const
+export { STORAGE_PLACES }
 
 export const PantryItem = defineEntity({
   name: "PantryItem",
@@ -19,8 +20,12 @@ export const PantryItem = defineEntity({
     aisle: () => aisleRef(),
     storedIn: p.enum(STORAGE_PLACES).nullable(),
     useBy: day().nullable(),
-    /** Ids of the planned meals it was bought for. */
-    forMeals: p.json<string[]>().nullable(),
+    /**
+     * The planned meals it's set aside for, and how much is each one's:
+     * bought for them, or counted on when they went on the list. Cooking
+     * one uses its share.
+     */
+    forMeals: p.json<MealShare[]>().nullable(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

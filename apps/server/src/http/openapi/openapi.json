@@ -47,6 +47,10 @@
       "description": "The shopping list, by aisle: from the plan (added up, and following the plan when meals change), typed in, or every week. Changes say what things were before, for Undo."
     },
     {
+      "name": "Pantry",
+      "description": "What's at home, in the fridge, the freezer and the cupboard: what to use soon, and what's set aside for planned meals. Shopping put away goes in, and cooking a planned meal uses it up."
+    },
+    {
       "name": "Live",
       "description": "What changes in the household, as it happens: the live updates the app uses, and who has the list open."
     },
@@ -2259,6 +2263,13 @@
               "type": "string"
             },
             "description": "Left off: always on hand."
+          },
+          "inPantry": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Left off: at home already, and now set aside for them."
           }
         },
         "required": [
@@ -2266,7 +2277,8 @@
           "added",
           "merged",
           "everyWeek",
-          "onHand"
+          "onHand",
+          "inPantry"
         ],
         "example": {
           "meals": 3,
@@ -2276,6 +2288,9 @@
           "onHand": [
             "salt",
             "black pepper"
+          ],
+          "inPantry": [
+            "rice"
           ]
         }
       },
@@ -2554,6 +2569,40 @@
           ]
         }
       },
+      "PutAwayResult": {
+        "type": "object",
+        "properties": {
+          "stored": {
+            "type": "integer",
+            "description": "Things now at home."
+          },
+          "cleared": {
+            "type": "integer",
+            "description": "Things cleared without going in: household things and what's always on hand."
+          }
+        },
+        "required": [
+          "stored",
+          "cleared"
+        ],
+        "example": {
+          "stored": 12,
+          "cleared": 2
+        }
+      },
+      "PutAway": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A list's id: only what's checked off on it. Every list when left out."
+          }
+        },
+        "example": {}
+      },
       "ListItems": {
         "type": "object",
         "properties": {
@@ -2623,6 +2672,659 @@
                 {
                   "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
                   "quantity": 3,
+                  "unit": "pound"
+                }
+              ],
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "Pantry": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantryItem"
+            },
+            "description": "The fridge, the freezer, then the cupboard; by aisle in each."
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "example": {
+          "items": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+              "name": "chicken thighs",
+              "amount": "2 lb",
+              "quantity": 2,
+              "unit": "pound",
+              "amountText": null,
+              "storedIn": "fridge",
+              "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+              "useBy": "2026-10-18",
+              "meals": [
+                {
+                  "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                  "name": "Lemon Chicken",
+                  "date": "2026-10-17",
+                  "status": "planned"
+                }
+              ],
+              "useSoon": {
+                "kind": "soon",
+                "date": "2026-10-18"
+              },
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000027",
+              "name": "rice",
+              "amount": "",
+              "quantity": null,
+              "unit": null,
+              "amountText": null,
+              "storedIn": "cupboard",
+              "aisle": "0199e8b0-5a10-7a01-8b00-000000000022",
+              "useBy": null,
+              "meals": [],
+              "useSoon": null,
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "PantryItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string",
+            "description": "How much, as it shows: \"2 lb\", \"half a bag\", or empty for just \"have it\"."
+          },
+          "quantity": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "amountText": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "storedIn": {
+            "$ref": "#/components/schemas/StoredIn"
+          },
+          "aisle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "useBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-20"
+          },
+          "meals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-20"
+                },
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "planned",
+                    "cooked",
+                    "skipped"
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "date",
+                "status"
+              ]
+            },
+            "description": "The planned meals it's set aside for."
+          },
+          "useSoon": {
+            "$ref": "#/components/schemas/UseSoon"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "amount",
+          "quantity",
+          "unit",
+          "amountText",
+          "storedIn",
+          "aisle",
+          "useBy",
+          "meals",
+          "useSoon",
+          "createdAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+          "name": "chicken thighs",
+          "amount": "2 lb",
+          "quantity": 2,
+          "unit": "pound",
+          "amountText": null,
+          "storedIn": "fridge",
+          "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+          "useBy": "2026-10-18",
+          "meals": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+              "name": "Lemon Chicken",
+              "date": "2026-10-17",
+              "status": "planned"
+            }
+          ],
+          "useSoon": {
+            "kind": "soon",
+            "date": "2026-10-18"
+          },
+          "createdAt": "2026-10-15T18:30:00.000Z"
+        }
+      },
+      "StoredIn": {
+        "type": [
+          "string",
+          "null"
+        ],
+        "enum": [
+          "fridge",
+          "freezer",
+          "cupboard",
+          null
+        ],
+        "description": "Where it's kept."
+      },
+      "UseSoon": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "past"
+                ]
+              },
+              "date": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "example": "2026-10-20"
+              }
+            },
+            "required": [
+              "kind",
+              "date"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "soon"
+                ]
+              },
+              "date": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "example": "2026-10-20"
+              }
+            },
+            "required": [
+              "kind",
+              "date"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "leftover"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "description": "Why to use it soon: its use-by date has gone (`past`) or is close (`soon`), or it's fresh food bought for meals that were skipped or went by uncooked (`leftover`)."
+      },
+      "PantryBefore": {
+        "type": "object",
+        "properties": {
+          "before": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantrySnapshot"
+            }
+          }
+        },
+        "required": [
+          "before"
+        ],
+        "description": "What was there before, for Undo with /pantry/restore.",
+        "example": {
+          "before": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+              "name": "chicken thighs",
+              "foodKey": "chicken thigh",
+              "quantity": 2,
+              "unit": "pound",
+              "amountText": null,
+              "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+              "storedIn": "fridge",
+              "useBy": "2026-10-18",
+              "forMeals": [
+                {
+                  "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                  "quantity": 2,
+                  "unit": "pound"
+                }
+              ],
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "PantrySnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "foodKey": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "quantity": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 40
+          },
+          "amountText": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 60
+          },
+          "aisle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "storedIn": {
+            "$ref": "#/components/schemas/StoredIn"
+          },
+          "useBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-20"
+          },
+          "forMeals": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "type": "object",
+              "properties": {
+                "meal": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "unit": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "meal",
+                "quantity",
+                "unit"
+              ]
+            },
+            "maxItems": 100
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "foodKey",
+          "quantity",
+          "unit",
+          "amountText",
+          "aisle",
+          "storedIn",
+          "useBy",
+          "forMeals",
+          "createdAt"
+        ],
+        "description": "Something at home as it was, to put it back (Undo).",
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+          "name": "chicken thighs",
+          "foodKey": "chicken thigh",
+          "quantity": 2,
+          "unit": "pound",
+          "amountText": null,
+          "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+          "storedIn": "fridge",
+          "useBy": "2026-10-18",
+          "forMeals": [
+            {
+              "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+              "quantity": 2,
+              "unit": "pound"
+            }
+          ],
+          "createdAt": "2026-10-15T18:30:00.000Z"
+        }
+      },
+      "NewPantryItem": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "\"2 cans black beans\", or just \"rice\"."
+          },
+          "storedIn": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "fridge",
+              "freezer",
+              "cupboard",
+              null
+            ],
+            "description": "Where it's kept; a guess from the food when left out."
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "example": {
+          "text": "2 cans black beans"
+        }
+      },
+      "PantryBulkResult": {
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "integer"
+          },
+          "before": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantrySnapshot"
+            }
+          }
+        },
+        "required": [
+          "changed",
+          "before"
+        ],
+        "example": {
+          "changed": 1,
+          "before": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+              "name": "chicken thighs",
+              "foodKey": "chicken thigh",
+              "quantity": 2,
+              "unit": "pound",
+              "amountText": null,
+              "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+              "storedIn": "fridge",
+              "useBy": "2026-10-18",
+              "forMeals": [
+                {
+                  "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                  "quantity": 2,
+                  "unit": "pound"
+                }
+              ],
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "PantryBulk": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 500
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "remove",
+              "storedIn",
+              "useBy"
+            ]
+          },
+          "storedIn": {
+            "$ref": "#/components/schemas/StoredIn"
+          },
+          "useBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-20"
+          }
+        },
+        "required": [
+          "ids",
+          "action"
+        ],
+        "example": {
+          "ids": [
+            "0199e8b0-5a10-7a01-8b00-000000000026"
+          ],
+          "action": "storedIn",
+          "storedIn": "freezer"
+        }
+      },
+      "PantryChanges": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "amount": {
+            "type": "string",
+            "maxLength": 60,
+            "description": "\"2 lb\", \"half a bag\", or empty for just \"have it\"."
+          },
+          "storedIn": {
+            "$ref": "#/components/schemas/StoredIn"
+          },
+          "useBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-20"
+          },
+          "aisle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "example": {
+          "storedIn": "freezer"
+        }
+      },
+      "PantryItems": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantryItem"
+            }
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "example": {
+          "items": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+              "name": "chicken thighs",
+              "amount": "2 lb",
+              "quantity": 2,
+              "unit": "pound",
+              "amountText": null,
+              "storedIn": "fridge",
+              "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+              "useBy": "2026-10-18",
+              "meals": [
+                {
+                  "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                  "name": "Lemon Chicken",
+                  "date": "2026-10-17",
+                  "status": "planned"
+                }
+              ],
+              "useSoon": {
+                "kind": "soon",
+                "date": "2026-10-18"
+              },
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "PantryRestore": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PantrySnapshot"
+            },
+            "minItems": 1,
+            "maxItems": 500
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "example": {
+          "items": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+              "name": "chicken thighs",
+              "foodKey": "chicken thigh",
+              "quantity": 2,
+              "unit": "pound",
+              "amountText": null,
+              "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+              "storedIn": "fridge",
+              "useBy": "2026-10-18",
+              "forMeals": [
+                {
+                  "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+                  "quantity": 2,
                   "unit": "pound"
                 }
               ],
@@ -2907,6 +3609,29 @@
               "kind": {
                 "type": "string",
                 "enum": [
+                  "usesUp"
+                ]
+              },
+              "foods": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 60
+                },
+                "maxItems": 5
+              }
+            },
+            "required": [
+              "kind",
+              "foods"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
                   "new"
                 ]
               }
@@ -2974,7 +3699,7 @@
             ]
           }
         ],
-        "description": "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.",
+        "description": "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.",
         "example": {
           "kind": "notLately",
           "weeks": 5
@@ -6616,7 +7341,7 @@
           "Live"
         ],
         "summary": "What changes, as it happens",
-        "description": "Server-sent events for the household, for as long as the connection stays open:\n\n- `ready` when it's open, with the areas it hears about.\n- `plan`, `list`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.\n- `presence` with who has `page` open, when someone opens or leaves it.\n- `ping` now and then, to keep the connection open.\n\nA device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.",
+        "description": "Server-sent events for the household, for as long as the connection stays open:\n\n- `ready` when it's open, with the areas it hears about.\n- `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.\n- `presence` with who has `page` open, when someone opens or leaves it.\n- `ping` now and then, to keep the connection open.\n\nA device that sends the same `client` with its own changes (in the `X-Merran-Client` header) isn't told about them; your other devices are. An API key hears about the areas it can read. With an API key, it needs the `any: read` permission.",
         "security": [
           {
             "session": []
@@ -9200,6 +9925,77 @@
         }
       }
     },
+    "/api/list/put-away": {
+      "post": {
+        "operationId": "putAway",
+        "tags": [
+          "List"
+        ],
+        "summary": "Put the shopping away",
+        "description": "What's checked off (on a list, or all of them) goes in the pantry: set aside for the meals it was bought for, in the fridge, freezer or cupboard, with a use-by guess for fresh food. Household things and what's always on hand are cleared without going in. Everything bought goes in the purchase history. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PutAway"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Put away.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PutAwayResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/list/restore": {
       "post": {
         "operationId": "restoreListItems",
@@ -9234,6 +10030,443 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ListItems"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry": {
+      "get": {
+        "operationId": "getPantry",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "What's at home",
+        "description": "The fridge, the freezer and the cupboard: how much of each thing, its use-by date, the planned meals it's set aside for, and why to use it soon when it should be. With an API key, it needs the `pantry: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:read",
+        "responses": {
+          "200": {
+            "description": "What's at home.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Pantry"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/clear": {
+      "post": {
+        "operationId": "clearPantry",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Empty the pantry",
+        "description": "Everything out. The answer says what was there, for Undo with /pantry/restore. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "responses": {
+          "200": {
+            "description": "Empty.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PantryBefore"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/items": {
+      "post": {
+        "operationId": "addPantryItem",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Put something in the pantry",
+        "description": "As typed: \"2 lb chicken thighs\" or just \"rice\". It goes in the fridge, freezer or cupboard as the food suggests, with a use-by guess for fresh food, and joins the same food already there when the amounts add up. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPantryItem"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "At home.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PantryItem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/items/bulk": {
+      "post": {
+        "operationId": "changePantryItems",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Change several things at home at once",
+        "description": "Used up, moved to the fridge, freezer or cupboard, or given a use-by date (null for none): all or none. The answer says what they were before, for Undo with /pantry/restore. Ids not in the pantry are passed over. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PantryBulk"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PantryBulkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/items/{itemId}": {
+      "delete": {
+        "operationId": "removePantryItem",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Used up, or thrown out",
+        "description": "The answer is what it was, for Undo with /pantry/restore. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000026"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Gone.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PantrySnapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not in the pantry.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updatePantryItem",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Change something at home",
+        "description": "Rename it, change how much, where it's kept, its use-by date or its aisle. Moving it to the freezer takes its use-by date off, unless one's given. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000026"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PantryChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PantryItem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not in the pantry, or no such aisle.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/pantry/restore": {
+      "post": {
+        "operationId": "restorePantryItems",
+        "tags": [
+          "Pantry"
+        ],
+        "summary": "Put things at home back as they were",
+        "description": "Undo: things as using them up or changing them said they were. One used up comes back with its id. An aisle that's gone is left empty. With an API key, it needs the `pantry: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "pantry:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PantryRestore"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Back as they were.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PantryItems"
                 }
               }
             }

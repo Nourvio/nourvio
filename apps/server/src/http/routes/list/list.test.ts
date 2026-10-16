@@ -310,6 +310,7 @@ describe("adding from the plan", () => {
       merged: 0,
       everyWeek: 0,
       onHand: ["salt"],
+      inPantry: [],
     })
     const items = await list()
     const of = (name: string) => items.find((item) => item.name === name)

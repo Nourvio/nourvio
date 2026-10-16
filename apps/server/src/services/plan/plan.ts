@@ -21,6 +21,7 @@ import {
 } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { followPlan, shoppingFor } from "../list/meals.ts"
+import { followCooking } from "../pantry/cooking.ts"
 import { photoUrls } from "../recipes/photos.ts"
 import {
   inHouseholdTransaction,
@@ -30,7 +31,9 @@ import {
 
 // The week plan: meals on days, and the week's pool of meals for any day.
 // "Today" is always the household's, in its own time zone. The shopping
-// list follows it: changing a meal on the list changes the list too.
+// list follows it: changing a meal on the list changes the list too. And
+// the pantry follows cooking: a cooked meal uses what it takes, and puts
+// it back if it turns out it wasn't cooked.
 
 export type PlanStatus = (typeof PLAN_STATUSES)[number]
 
@@ -434,16 +437,23 @@ export async function updateEntry(
   const entry = await findEntry(em, entryId)
   const made = madeBy(entry)
   const was = shoppingFor(entry)
+  const wasCooked = entry.status === "cooked"
   await change(em, householdId, entry, changes)
   await em.flush()
   await remade(em, [...made, ...madeBy(entry)])
   await followPlan(em, householdId, [
     { entry, was, now: was ? shoppingFor(entry) : null },
   ])
+  await followCooking(em, householdId, [
+    { entry, was: wasCooked, now: entry.status === "cooked" },
+  ])
   return describeEntry(await findEntry(em.fork(), entry.id))
 }
 
-/** Takes a meal off the plan, and the list; says what it was, to put it back. */
+/**
+ * Takes a meal off the plan, and the list; a cooked one puts back what it
+ * used. Says what it was, to put it back.
+ */
 export async function removeEntry(
   em: EntityManager,
   householdId: string,
@@ -454,6 +464,9 @@ export async function removeEntry(
   const made = madeBy(entry)
   await followPlan(em, householdId, [
     { entry, was: shoppingFor(entry), now: null },
+  ])
+  await followCooking(em, householdId, [
+    { entry, was: entry.status === "cooked", now: false },
   ])
   em.remove(entry)
   await em.flush()
@@ -486,11 +499,23 @@ export async function bulkPlan(
     const before = entries.map(snapshotOf)
     const made = entries.flatMap(madeBy)
     const was = new Map(entries.map((entry) => [entry, shoppingFor(entry)]))
+    const wasCooked = new Set(
+      entries.filter((entry) => entry.status === "cooked")
+    )
     if (action.action === "remove") {
       await followPlan(
         tx,
         householdId,
         entries.map((entry) => ({ entry, was: was.get(entry)!, now: null }))
+      )
+      await followCooking(
+        tx,
+        householdId,
+        entries.map((entry) => ({
+          entry,
+          was: wasCooked.has(entry),
+          now: false,
+        }))
       )
     }
     for (const entry of entries) {
@@ -516,6 +541,15 @@ export async function bulkPlan(
           entry,
           was: was.get(entry)!,
           now: was.get(entry) ? shoppingFor(entry) : null,
+        }))
+      )
+      await followCooking(
+        tx,
+        householdId,
+        entries.map((entry) => ({
+          entry,
+          was: wasCooked.has(entry),
+          now: entry.status === "cooked",
         }))
       )
     }
@@ -567,6 +601,7 @@ export async function restoreEntries(
       was: string | null
       now: string | null
     }[] = []
+    const cooking: { entry: PlanEntry; was: boolean; now: boolean }[] = []
     const now = new Date()
     for (const snapshot of snapshots) {
       if (!UUID.test(snapshot.id) || !isDay(snapshot.date)) continue
@@ -574,6 +609,7 @@ export async function restoreEntries(
       if (snapshot.recipe && !recipe) continue
       let entry = await tx.findOne(PlanEntry, { id: snapshot.id })
       const was = entry ? shoppingFor(entry) : null
+      const wasCooked = entry?.status === "cooked"
       if (entry) made.push(...madeBy(entry))
       else {
         // An id another household has can't come back here.
@@ -608,11 +644,13 @@ export async function restoreEntries(
       })
       made.push(...madeBy(entry))
       listing.push({ entry, was, now: shoppingFor(entry) })
+      cooking.push({ entry, was: wasCooked, now: entry.status === "cooked" })
       restored.push(entry)
     }
     await tx.flush()
     await remade(tx, made)
     await followPlan(tx, householdId, listing)
+    await followCooking(tx, householdId, cooking)
     return sortEntries(restored).map(describeEntry)
   })
 }
@@ -786,5 +824,10 @@ export async function cookedToday(
   for (const entry of entries) setStatus(entry, "cooked")
   await em.flush()
   await remade(em, entries.flatMap(madeBy))
+  await followCooking(
+    em,
+    householdId,
+    entries.map((entry) => ({ entry, was: false, now: true }))
+  )
   return entries.length
 }

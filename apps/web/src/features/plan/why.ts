@@ -7,7 +7,8 @@ export type Reason = Schemas["Reason"]
 
 /** Says why a meal was picked: "Taco night · Rated 5 stars". */
 export function useWhyText() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const list = new Intl.ListFormat(i18n.language, { type: "conjunction" })
   return (why: readonly Reason[]) =>
     why
       .map((reason) => {
@@ -16,6 +17,8 @@ export function useWhyText() {
             return t("plan.why.theme", { label: reason.label })
           case "themeMissed":
             return t("plan.why.themeMissed", { label: reason.label })
+          case "usesUp":
+            return t("plan.why.usesUp", { foods: list.format(reason.foods) })
           case "new":
             return t("plan.why.new")
           case "notLately":

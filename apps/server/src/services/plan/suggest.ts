@@ -4,9 +4,11 @@ import {
   clockIn,
   dayOfWeek,
   fitsTheme,
+  lineFood,
   missingDiets,
   NO_TASTES,
   NO_THEMES,
+  pantryKey,
   reasonsFor,
   themeLabel,
   WEEKNIGHTS,
@@ -23,6 +25,7 @@ import {
   RecipeIngredient,
   RecipePairing,
 } from "../../database/entities/index.ts"
+import { getPantry } from "../pantry/pantry.ts"
 import { decodeDiets } from "../recipes/diet-labels.ts"
 import { photoUrls } from "../recipes/photos.ts"
 import { toNumber, totalMinutes } from "../recipes/recipes.ts"
@@ -30,8 +33,9 @@ import { tagKey, tagsOf } from "../recipes/tags.ts"
 
 // Fill the week, without AI: a recipe for each empty meal, by the
 // household's tastes and theme nights, not repeating a dish within two
-// weeks, picked at random with a lean towards well-rated recipes, ones
-// tagged for the meal and quick ones on weeknights. Each says why.
+// weeks, picked at random with a lean towards recipes that use up what's
+// at home and needs using, well-rated ones, ones tagged for the meal and
+// quick ones on weeknights. Each says why.
 
 /** Don't suggest what was planned (and not skipped) or made this many days around. */
 const NO_REPEAT_DAYS = 14
@@ -108,9 +112,13 @@ function fitsMeal(recipe: Candidate, meal: Meal) {
 const isWeeknightDinner = (slot: Slot) =>
   slot.meal === "dinner" && WEEKNIGHTS.includes(dayOfWeek(slot.date))
 
-/** Higher is likelier: well rated, tagged for the meal, quick on weeknights. */
-function weight(recipe: Candidate, slot: Slot) {
+/**
+ * Higher is likelier: uses up what needs using, well rated, tagged for the
+ * meal, quick on weeknights.
+ */
+function weight(recipe: Candidate, slot: Slot, usesUp: number) {
   let score = 1
+  if (usesUp > 0) score += 2 + (usesUp - 1) * 0.5
   if (recipe.rating) {
     score += recipe.rating >= 4 ? 2 : recipe.rating <= 2 ? -0.75 : 0.5
   } else if (!recipe.lastMadeAt) score += 0.5 // something new to try
@@ -213,6 +221,25 @@ export async function suggestMeals(
 
   const recipes = await candidates(em)
   const byId = new Map(recipes.map((recipe) => [recipe.id, recipe]))
+
+  // What's at home and needs using soon, and the recipes that use it.
+  const soon = (await getPantry(em, householdId)).items.filter(
+    (item) => item.useSoon
+  )
+  const usesUp = new Map(
+    recipes.map((recipe) => {
+      const keys = new Set(
+        recipe.lines.flatMap((line) => {
+          const food = lineFood(line)
+          return food ? [pantryKey(food.name)] : []
+        })
+      )
+      const foods = soon
+        .filter((item) => keys.has(pantryKey(item.name)))
+        .map((item) => item.name.toLowerCase())
+      return [recipe.id, [...new Set(foods)]] as const
+    })
+  )
   const dates = slots.map((slot) => slot.date).sort()
   const nearby = await em.find(PlanEntry, {
     date: {
@@ -301,7 +328,11 @@ export async function suggestMeals(
   )
   const chosen = new Map<number, Candidate>()
   for (const [index, slot] of order) {
-    const recipe = pick(candidatesFor(slot), (r) => weight(r, slot), random)
+    const recipe = pick(
+      candidatesFor(slot),
+      (r) => weight(r, slot, usesUp.get(r.id)?.length ?? 0),
+      random
+    )
     if (!recipe) continue
     chosen.set(index, recipe)
     used.add(dish(recipe.name))
@@ -349,6 +380,7 @@ export async function suggestMeals(
             ? { label: themeLabel(theme), fits: fitsTheme(recipe, theme) }
             : null,
           weeknightDinner: isWeeknightDinner(slot),
+          usesUp: (usesUp.get(recipe.id) ?? []).slice(0, 2),
         }),
       },
     ]

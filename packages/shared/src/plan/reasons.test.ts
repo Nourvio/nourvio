@@ -66,6 +66,22 @@ describe("reasons", () => {
     ).toEqual([{ kind: "themeMissed", label: "Fish night" }])
   })
 
+  test("say what food at home it uses up, after the theme", () => {
+    expect(
+      reasonsFor(
+        { ...plain, rating: 5 },
+        {
+          ...noTheme,
+          theme: { label: "Taco night", fits: true },
+          usesUp: ["spinach"],
+        }
+      )
+    ).toEqual([
+      { kind: "theme", label: "Taco night" },
+      { kind: "usesUp", foods: ["spinach"] },
+    ])
+  })
+
   test("give two at most, strongest first", () => {
     expect(
       reasonsFor(

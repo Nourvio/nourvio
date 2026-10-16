@@ -102,6 +102,24 @@ export function useListActions() {
       return true
     },
 
+    /** What's checked off (on a list, or all of them) into the pantry. */
+    async putAway(list?: string) {
+      const done = await run(() =>
+        unwrap(
+          api.POST("/api/list/put-away", {
+            body: list ? { list } : {},
+          })
+        )
+      )
+      await queryClient.invalidateQueries({ queryKey: ["pantry"] })
+      if (!done) return
+      toast.success(
+        done.stored > 0
+          ? t("list.putAwayDone", { count: done.stored })
+          : t("list.putAwayCleared")
+      )
+    },
+
     async clear(which: "checked" | "all") {
       const done = await run(() =>
         unwrap(api.POST("/api/list/clear", { body: { which } }))

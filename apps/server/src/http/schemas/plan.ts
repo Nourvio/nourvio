@@ -20,6 +20,10 @@ export const ReasonSchema = z
   .discriminatedUnion("kind", [
     z.object({ kind: z.literal("theme"), label }),
     z.object({ kind: z.literal("themeMissed"), label }),
+    z.object({
+      kind: z.literal("usesUp"),
+      foods: z.array(z.string().max(60)).max(5),
+    }),
     z.object({ kind: z.literal("new") }),
     z.object({ kind: z.literal("notLately"), weeks: z.number().int().min(0) }),
     z.object({
@@ -30,7 +34,7 @@ export const ReasonSchema = z
   ])
   .openapi("Reason", {
     description:
-      'Why a meal was picked: the night\'s theme ("Taco night"), or one nothing fitted; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.',
+      'Why a meal was picked: the night\'s theme ("Taco night"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.',
     example: { kind: "notLately", weeks: 5 },
   })
 

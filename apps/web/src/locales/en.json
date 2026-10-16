@@ -65,8 +65,7 @@
   "comingSoon": {
     "title": "Coming soon",
     "today": "What's cooking today, and what needs using up.",
-    "plan": "Plan the week's meals together.",
-    "pantry": "What's in the cupboards, and what's running low."
+    "plan": "Plan the week's meals together."
   },
   "auth": {
     "fields": {
@@ -604,6 +603,7 @@
     "why": {
       "theme": "{{label}}",
       "themeMissed": "{{label}}: nothing fits yet",
+      "usesUp": "Uses up your {{foods}}",
       "new": "Never made",
       "notLately_one": "Not had in {{count}} week",
       "notLately_other": "Not had in {{count}} weeks",
@@ -1147,7 +1147,8 @@
       "everyWeekItems_other": "{{count}} every-week items",
       "and": "{{first}} and {{second}}",
       "nothingNew": "Nothing new to add.",
-      "leftOff": "Left off {{names}}: always on hand."
+      "leftOff": "Left off {{names}}: always on hand.",
+      "inPantry": "At home already: {{names}}."
     },
     "weekly": {
       "title": "Every week",
@@ -1215,6 +1216,113 @@
       "saved": "Lists saved."
     },
     "clearListNamed": "Clear {{list}}",
-    "clearCheckedOn": "Clear checked on {{list}}"
+    "clearCheckedOn": "Clear checked on {{list}}",
+    "putAway": "Put away",
+    "putAwayAll": "Put it all away",
+    "putAwayDone_one": "Put {{count}} thing in the pantry.",
+    "putAwayDone_other": "Put {{count}} things in the pantry.",
+    "putAwayCleared": "Cleared the cart."
+  },
+  "pantry": {
+    "title": "Pantry",
+    "atHome_one": "{{count}} thing at home",
+    "atHome_other": "{{count}} things at home",
+    "atHomeSoon": "{{things}}, {{soon}} to use soon",
+    "empty": "What's at home, and what to use soon.",
+    "more": "More for the pantry",
+    "select": "Select",
+    "onHand": "Always on hand",
+    "clear": "Clear the pantry",
+    "cleared_one": "Cleared {{count}} thing.",
+    "cleared_other": "Cleared {{count}} things.",
+    "clearedNone": "Nothing to clear.",
+    "undo": "Undo",
+    "add": "Add something, like “2 cans black beans” or “rice”",
+    "addLabel": "Add to the pantry",
+    "addButton": "Add",
+    "nothing": "Nothing at home yet",
+    "nothingHint": "Put the shopping away from the List and everything you bought lands here, set aside for the meals it's for. Or type what you have already above.",
+    "places": {
+      "fridge": "Fridge",
+      "freezer": "Freezer",
+      "cupboard": "Cupboard",
+      "none": "Somewhere"
+    },
+    "soon": {
+      "title": "Use soon",
+      "count_one": "One thing to cook before it turns.",
+      "count_other": "{{count}} things to cook before they turn.",
+      "toss_one": "Toss the one past its date",
+      "toss_other": "Toss the {{count}} past their date",
+      "tossed_one": "Tossed {{count}} thing past its date.",
+      "tossed_other": "Tossed {{count}} things past their date.",
+      "pastWhen": "Past its date",
+      "today": "Today",
+      "tomorrow": "Tomorrow",
+      "todayInline": "today",
+      "tomorrowInline": "tomorrow",
+      "leftoverWhen": "Not made",
+      "boughtFor": "Bought for {{name}}"
+    },
+    "tags": {
+      "for": "For {{name}} · {{day}}",
+      "useBy": "Use by {{day}}",
+      "past": "Past its use-by date",
+      "leftover": "{{name}} wasn't made",
+      "leftoverSkipped": "{{name}} was skipped"
+    },
+    "usedUp": "Used up",
+    "usedUpName": "Used up {{name}}",
+    "removed": "Used up {{name}}.",
+    "toList": "List",
+    "toListName": "Add {{name}} to the list",
+    "addedToList": "Added {{name}} to the list.",
+    "addedSomeToList_one": "Added {{count}} thing to the list.",
+    "addedSomeToList_other": "Added {{count}} things to the list.",
+    "options": "More for {{name}}",
+    "edit": "Change",
+    "moveTo": "Move to the {{place}}",
+    "lowOnHand": "Running low? Tap one to add it to the list.",
+    "lowName": "Running low on {{name}}: add it to the list",
+    "onHandHint": "Left off lists made from the plan.",
+    "onHandEdit": "Change",
+    "bulk": {
+      "usedUp": "Used up",
+      "toList": "Add to list",
+      "storedIn": "Kept in",
+      "useBy": "Use by",
+      "usedUpDone_one": "Used up {{count}} thing.",
+      "usedUpDone_other": "Used up {{count}} things.",
+      "moved_one": "Moved {{count}} thing to the {{place}}.",
+      "moved_other": "Moved {{count}} things to the {{place}}.",
+      "dated_one": "{{count}} thing to use by {{day}}.",
+      "dated_other": "{{count}} things to use by {{day}}.",
+      "undated_one": "Took the date off {{count}} thing.",
+      "undated_other": "Took the date off {{count}} things."
+    },
+    "editItem": {
+      "title": "Change {{name}}",
+      "name": "Name",
+      "amount": "How much",
+      "amountHint": "Like “2 lb” or “half a bag”. Leave it empty if you just have some.",
+      "storedIn": "Kept in",
+      "useBy": "Use by",
+      "noDate": "No date",
+      "save": "Save"
+    },
+    "placeDialog": {
+      "title_one": "Where's {{count}} thing kept?",
+      "title_other": "Where are {{count}} things kept?"
+    },
+    "useByDialog": {
+      "title_one": "Use {{count}} thing by",
+      "title_other": "Use {{count}} things by",
+      "tomorrow": "Tomorrow",
+      "inDays": "In {{count}} days",
+      "inAWeek": "In a week",
+      "date": "A date",
+      "none": "No date",
+      "set": "Set"
+    }
   }
 }

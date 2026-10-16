@@ -4,6 +4,7 @@ import {
   Calendar03Icon,
   Cancel01Icon,
   Delete02Icon,
+  FridgeIcon,
   MoreHorizontalIcon,
   RepeatIcon,
   ShoppingBasket01Icon,
@@ -135,6 +136,8 @@ export function ListPage() {
   useSelectionKeepOnly(selection, selectable)
   const picked = selectable.filter((id) => selection.isPicked(id))
   const elsewhere = lists.filter((option) => option.id !== current?.id)
+  /** The list showing, when there's more than one. */
+  const listShowing = split ? current?.id : undefined
 
   const bulk = async (
     action: Parameters<typeof actions.bulk>[1],
@@ -316,9 +319,19 @@ export function ListPage() {
             ))}
 
             {toGet.length === 0 && (
-              <p className="py-4 text-center text-muted-foreground">
-                {t("list.allDone")}
-              </p>
+              <div className="grid justify-items-center gap-3 py-4 text-center">
+                <p className="text-muted-foreground">{t("list.allDone")}</p>
+                {got.length > 0 && (
+                  <Button onClick={() => void actions.putAway(listShowing)}>
+                    <HugeiconsIcon
+                      icon={FridgeIcon}
+                      strokeWidth={2}
+                      data-icon="inline-start"
+                    />
+                    {t("list.putAwayAll")}
+                  </Button>
+                )}
+              </div>
             )}
 
             {got.length > 0 && (
@@ -352,9 +365,14 @@ export function ListPage() {
                       variant="outline"
                       size="sm"
                       className="rounded-full bg-card"
-                      onClick={() => clear("checked")}
+                      onClick={() => void actions.putAway(listShowing)}
                     >
-                      {t("list.clearChecked")}
+                      <HugeiconsIcon
+                        icon={FridgeIcon}
+                        strokeWidth={2}
+                        data-icon="inline-start"
+                      />
+                      {t("list.putAway")}
                     </Button>
                   </div>
                 </div>

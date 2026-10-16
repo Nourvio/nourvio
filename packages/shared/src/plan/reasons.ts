@@ -1,13 +1,15 @@
 // Saying why: one reason builder for every suggestion, from Fill the week
 // now, and later the autoplan, Today and the assistant. Each reason is data,
-// so the app says it in the reader's language; later slices add what's on
-// hand, what needs using, usual buys and sales.
+// so the app says it in the reader's language; later slices add usual buys
+// and sales.
 
 export type Reason =
   /** The night's theme, which it fits: "Taco night". */
   | { kind: "theme"; label: string }
   /** Nothing fitted the night's theme, so it's something else. */
   | { kind: "themeMissed"; label: string }
+  /** It uses up food at home that needs using soon: "spinach". */
+  | { kind: "usesUp"; foods: string[] }
   /** Never made yet. */
   | { kind: "new" }
   /** Not had in a while. */
@@ -30,8 +32,8 @@ const MOST = 2
 
 /**
  * Why a recipe was picked for a meal, strongest first: the night's theme,
- * then something new or not had lately, then a good rating, then quick on
- * a weeknight.
+ * then food at home it uses up, then something new or not had lately, then
+ * a good rating, then quick on a weeknight.
  */
 export function reasonsFor(
   recipe: ReasonRecipe,
@@ -39,11 +41,14 @@ export function reasonsFor(
     today,
     theme,
     weeknightDinner,
+    usesUp = [],
   }: {
     /** The household's today, "2026-10-15". */
     today: string
     theme: { label: string; fits: boolean } | null
     weeknightDinner: boolean
+    /** Food at home to use soon that it uses. */
+    usesUp?: readonly string[]
   }
 ): Reason[] {
   const reasons: Reason[] = []
@@ -54,6 +59,7 @@ export function reasonsFor(
         : { kind: "themeMissed", label: theme.label }
     )
   }
+  if (usesUp.length > 0) reasons.push({ kind: "usesUp", foods: [...usesUp] })
   if (recipe.lastMadeAt === null) reasons.push({ kind: "new" })
   else {
     const made = new Date(recipe.lastMadeAt).getTime()

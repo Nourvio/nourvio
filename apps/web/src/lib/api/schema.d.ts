@@ -185,7 +185,7 @@ export interface paths {
          * @description Server-sent events for the household, for as long as the connection stays open:
          *
          *     - `ready` when it's open, with the areas it hears about.
-         *     - `plan`, `list`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.
+         *     - `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.
          *     - `presence` with who has `page` open, when someone opens or leaves it.
          *     - `ping` now and then, to keep the connection open.
          *
@@ -820,6 +820,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/list/put-away": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put the shopping away
+         * @description What's checked off (on a list, or all of them) goes in the pantry: set aside for the meals it was bought for, in the fridge, freezer or cupboard, with a use-by guess for fresh food. Household things and what's always on hand are cleared without going in. Everything bought goes in the purchase history. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["putAway"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/list/restore": {
         parameters: {
             query?: never;
@@ -834,6 +854,130 @@ export interface paths {
          * @description Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. With an API key, it needs the `list: write` permission.
          */
         post: operations["restoreListItems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pantry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What's at home
+         * @description The fridge, the freezer and the cupboard: how much of each thing, its use-by date, the planned meals it's set aside for, and why to use it soon when it should be. With an API key, it needs the `pantry: read` permission.
+         */
+        get: operations["getPantry"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pantry/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Empty the pantry
+         * @description Everything out. The answer says what was there, for Undo with /pantry/restore. With an API key, it needs the `pantry: write` permission.
+         */
+        post: operations["clearPantry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pantry/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put something in the pantry
+         * @description As typed: "2 lb chicken thighs" or just "rice". It goes in the fridge, freezer or cupboard as the food suggests, with a use-by guess for fresh food, and joins the same food already there when the amounts add up. With an API key, it needs the `pantry: write` permission.
+         */
+        post: operations["addPantryItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pantry/items/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change several things at home at once
+         * @description Used up, moved to the fridge, freezer or cupboard, or given a use-by date (null for none): all or none. The answer says what they were before, for Undo with /pantry/restore. Ids not in the pantry are passed over. With an API key, it needs the `pantry: write` permission.
+         */
+        post: operations["changePantryItems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pantry/items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Used up, or thrown out
+         * @description The answer is what it was, for Undo with /pantry/restore. With an API key, it needs the `pantry: write` permission.
+         */
+        delete: operations["removePantryItem"];
+        options?: never;
+        head?: never;
+        /**
+         * Change something at home
+         * @description Rename it, change how much, where it's kept, its use-by date or its aisle. Moving it to the freezer takes its use-by date off, unless one's given. With an API key, it needs the `pantry: write` permission.
+         */
+        patch: operations["updatePantryItem"];
+        trace?: never;
+    };
+    "/api/pantry/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put things at home back as they were
+         * @description Undo: things as using them up or changing them said they were. One used up comes back with its id. An aisle that's gone is left empty. With an API key, it needs the `pantry: write` permission.
+         */
+        post: operations["restorePantryItems"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2979,6 +3123,9 @@ export interface components {
          *       "onHand": [
          *         "salt",
          *         "black pepper"
+         *       ],
+         *       "inPantry": [
+         *         "rice"
          *       ]
          *     }
          */
@@ -2993,6 +3140,8 @@ export interface components {
             everyWeek: number;
             /** @description Left off: always on hand. */
             onHand: string[];
+            /** @description Left off: at home already, and now set aside for them. */
+            inPantry: string[];
         };
         /**
          * @example {
@@ -3138,6 +3287,23 @@ export interface components {
         };
         /**
          * @example {
+         *       "stored": 12,
+         *       "cleared": 2
+         *     }
+         */
+        PutAwayResult: {
+            /** @description Things now at home. */
+            stored: number;
+            /** @description Things cleared without going in: household things and what's always on hand. */
+            cleared: number;
+        };
+        /** @example {} */
+        PutAway: {
+            /** @description A list's id: only what's checked off on it. Every list when left out. */
+            list?: string | null;
+        };
+        /**
+         * @example {
          *       "items": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
@@ -3192,6 +3358,331 @@ export interface components {
          */
         ListRestore: {
             items: components["schemas"]["ListItemSnapshot"][];
+        };
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *           "name": "chicken thighs",
+         *           "amount": "2 lb",
+         *           "quantity": 2,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "storedIn": "fridge",
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "useBy": "2026-10-18",
+         *           "meals": [
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "name": "Lemon Chicken",
+         *               "date": "2026-10-17",
+         *               "status": "planned"
+         *             }
+         *           ],
+         *           "useSoon": {
+         *             "kind": "soon",
+         *             "date": "2026-10-18"
+         *           },
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000027",
+         *           "name": "rice",
+         *           "amount": "",
+         *           "quantity": null,
+         *           "unit": null,
+         *           "amountText": null,
+         *           "storedIn": "cupboard",
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000022",
+         *           "useBy": null,
+         *           "meals": [],
+         *           "useSoon": null,
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        Pantry: {
+            /** @description The fridge, the freezer, then the cupboard; by aisle in each. */
+            items: components["schemas"]["PantryItem"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *       "name": "chicken thighs",
+         *       "amount": "2 lb",
+         *       "quantity": 2,
+         *       "unit": "pound",
+         *       "amountText": null,
+         *       "storedIn": "fridge",
+         *       "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *       "useBy": "2026-10-18",
+         *       "meals": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "name": "Lemon Chicken",
+         *           "date": "2026-10-17",
+         *           "status": "planned"
+         *         }
+         *       ],
+         *       "useSoon": {
+         *         "kind": "soon",
+         *         "date": "2026-10-18"
+         *       },
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
+        PantryItem: {
+            id: string;
+            name: string;
+            /** @description How much, as it shows: "2 lb", "half a bag", or empty for just "have it". */
+            amount: string;
+            quantity: number | null;
+            unit: string | null;
+            amountText: string | null;
+            storedIn: components["schemas"]["StoredIn"];
+            aisle: string | null;
+            /** @example 2026-10-20 */
+            useBy: string | null;
+            /** @description The planned meals it's set aside for. */
+            meals: {
+                id: string;
+                name: string;
+                /** @example 2026-10-20 */
+                date: string;
+                /** @enum {string} */
+                status: "planned" | "cooked" | "skipped";
+            }[];
+            useSoon: components["schemas"]["UseSoon"];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @description Where it's kept.
+         * @enum {string|null}
+         */
+        StoredIn: "fridge" | "freezer" | "cupboard" | null;
+        /** @description Why to use it soon: its use-by date has gone (`past`) or is close (`soon`), or it's fresh food bought for meals that were skipped or went by uncooked (`leftover`). */
+        UseSoon: {
+            /** @enum {string} */
+            kind: "past";
+            /** @example 2026-10-20 */
+            date: string;
+        } | {
+            /** @enum {string} */
+            kind: "soon";
+            /** @example 2026-10-20 */
+            date: string;
+        } | {
+            /** @enum {string} */
+            kind: "leftover";
+        } | null;
+        /**
+         * @description What was there before, for Undo with /pantry/restore.
+         * @example {
+         *       "before": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *           "name": "chicken thighs",
+         *           "foodKey": "chicken thigh",
+         *           "quantity": 2,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "storedIn": "fridge",
+         *           "useBy": "2026-10-18",
+         *           "forMeals": [
+         *             {
+         *               "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "quantity": 2,
+         *               "unit": "pound"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        PantryBefore: {
+            before: components["schemas"]["PantrySnapshot"][];
+        };
+        /**
+         * @description Something at home as it was, to put it back (Undo).
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *       "name": "chicken thighs",
+         *       "foodKey": "chicken thigh",
+         *       "quantity": 2,
+         *       "unit": "pound",
+         *       "amountText": null,
+         *       "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *       "storedIn": "fridge",
+         *       "useBy": "2026-10-18",
+         *       "forMeals": [
+         *         {
+         *           "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "quantity": 2,
+         *           "unit": "pound"
+         *         }
+         *       ],
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
+        PantrySnapshot: {
+            id: string;
+            name: string;
+            foodKey: string;
+            quantity: number | null;
+            unit: string | null;
+            amountText: string | null;
+            aisle: string | null;
+            storedIn: components["schemas"]["StoredIn"];
+            /** @example 2026-10-20 */
+            useBy: string | null;
+            forMeals: {
+                meal: string;
+                quantity: number | null;
+                unit: string | null;
+            }[] | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "text": "2 cans black beans"
+         *     }
+         */
+        NewPantryItem: {
+            /** @description "2 cans black beans", or just "rice". */
+            text: string;
+            /**
+             * @description Where it's kept; a guess from the food when left out.
+             * @enum {string|null}
+             */
+            storedIn?: "fridge" | "freezer" | "cupboard" | null;
+        };
+        /**
+         * @example {
+         *       "changed": 1,
+         *       "before": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *           "name": "chicken thighs",
+         *           "foodKey": "chicken thigh",
+         *           "quantity": 2,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "storedIn": "fridge",
+         *           "useBy": "2026-10-18",
+         *           "forMeals": [
+         *             {
+         *               "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "quantity": 2,
+         *               "unit": "pound"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        PantryBulkResult: {
+            changed: number;
+            before: components["schemas"]["PantrySnapshot"][];
+        };
+        /**
+         * @example {
+         *       "ids": [
+         *         "0199e8b0-5a10-7a01-8b00-000000000026"
+         *       ],
+         *       "action": "storedIn",
+         *       "storedIn": "freezer"
+         *     }
+         */
+        PantryBulk: {
+            ids: string[];
+            /** @enum {string} */
+            action: "remove" | "storedIn" | "useBy";
+            storedIn?: components["schemas"]["StoredIn"];
+            /** @example 2026-10-20 */
+            useBy?: string | null;
+        };
+        /**
+         * @example {
+         *       "storedIn": "freezer"
+         *     }
+         */
+        PantryChanges: {
+            name?: string;
+            /** @description "2 lb", "half a bag", or empty for just "have it". */
+            amount?: string;
+            storedIn?: components["schemas"]["StoredIn"];
+            /** @example 2026-10-20 */
+            useBy?: string | null;
+            aisle?: string | null;
+        };
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *           "name": "chicken thighs",
+         *           "amount": "2 lb",
+         *           "quantity": 2,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "storedIn": "fridge",
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "useBy": "2026-10-18",
+         *           "meals": [
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "name": "Lemon Chicken",
+         *               "date": "2026-10-17",
+         *               "status": "planned"
+         *             }
+         *           ],
+         *           "useSoon": {
+         *             "kind": "soon",
+         *             "date": "2026-10-18"
+         *           },
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        PantryItems: {
+            items: components["schemas"]["PantryItem"][];
+        };
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
+         *           "name": "chicken thighs",
+         *           "foodKey": "chicken thigh",
+         *           "quantity": 2,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "storedIn": "fridge",
+         *           "useBy": "2026-10-18",
+         *           "forMeals": [
+         *             {
+         *               "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "quantity": 2,
+         *               "unit": "pound"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        PantryRestore: {
+            items: components["schemas"]["PantrySnapshot"][];
         };
         /**
          * @example {
@@ -3306,7 +3797,7 @@ export interface components {
         /** @enum {string} */
         PlanStatus: "planned" | "cooked" | "skipped";
         /**
-         * @description Why a meal was picked: the night's theme ("Taco night"), or one nothing fitted; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.
+         * @description Why a meal was picked: the night's theme ("Taco night"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.
          * @example {
          *       "kind": "notLately",
          *       "weeks": 5
@@ -3320,6 +3811,10 @@ export interface components {
             /** @enum {string} */
             kind: "themeMissed";
             label: string;
+        } | {
+            /** @enum {string} */
+            kind: "usesUp";
+            foods: string[];
         } | {
             /** @enum {string} */
             kind: "new";
@@ -7182,6 +7677,57 @@ export interface operations {
             };
         };
     };
+    putAway: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutAway"];
+            };
+        };
+        responses: {
+            /** @description Put away. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PutAwayResult"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such list. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     restoreListItems: {
         parameters: {
             query?: never;
@@ -7202,6 +7748,310 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ListItems"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPantry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What's at home. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Pantry"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    clearPantry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Empty. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PantryBefore"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addPantryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPantryItem"];
+            };
+        };
+        responses: {
+            /** @description At home. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PantryItem"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    changePantryItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PantryBulk"];
+            };
+        };
+        responses: {
+            /** @description Done. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PantryBulkResult"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removePantryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Gone. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PantrySnapshot"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not in the pantry. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updatePantryItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PantryChanges"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PantryItem"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not in the pantry, or no such aisle. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    restorePantryItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PantryRestore"];
+            };
+        };
+        responses: {
+            /** @description Back as they were. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PantryItems"];
                 };
             };
             /** @description Not signed in. */

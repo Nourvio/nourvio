@@ -1,4 +1,4 @@
-import { MEALS, type Reason } from "@merran/shared"
+import { MEALS, type MealShare, type Reason } from "@merran/shared"
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
 import { householdFilter } from "../scope.ts"
 import { createdAt, day, id, updatedAt } from "./base.ts"
@@ -9,12 +9,27 @@ import { Recipe } from "./recipes.ts"
 export { MEALS }
 export const PLAN_STATUSES = ["planned", "cooked", "skipped"] as const
 
-/** Pantry rows as they were before a meal was cooked, to put back if it wasn't. */
+/**
+ * What cooking a meal took from the pantry, to put back if it wasn't
+ * cooked: how much of each thing (all of it, when it was used up), and
+ * what was set aside for the meal.
+ */
 export type PantrySnapshot = {
   id: string
+  foodKey: string
+  name: string
+  /** How much was taken. */
   quantity: number | null
   unit: string | null
   amountText: string | null
+  aisle: string | null
+  storedIn: "fridge" | "freezer" | "cupboard" | null
+  useBy: string | null
+  /** What was set aside for the meal, set aside again when it's put back. */
+  share: MealShare | null
+  /** Used up, so it went from the pantry. */
+  removed: boolean
+  createdAt: string
 }[]
 
 /**

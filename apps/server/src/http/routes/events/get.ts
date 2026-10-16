@@ -23,7 +23,7 @@ const route = createRoute({
     "Server-sent events for the household, for as long as the connection stays open:",
     "",
     "- `ready` when it's open, with the areas it hears about.",
-    "- `plan`, `list`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.",
+    "- `plan`, `list`, `pantry`, `recipes` or `household` when something there changes, with who changed it (`by`). Fetch the area again to see what.",
     "- `presence` with who has `page` open, when someone opens or leaves it.",
     "- `ping` now and then, to keep the connection open.",
     "",

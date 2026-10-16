@@ -6,6 +6,7 @@ import everyWeekRoutes from "./every-week/index.ts"
 import fromPlanRoutes from "./from-plan/index.ts"
 import itemsRoutes from "./items/index.ts"
 import listsRoutes from "./lists/index.ts"
+import putAwayRoutes from "./put-away/index.ts"
 import restoreRoutes from "./restore/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
@@ -15,5 +16,6 @@ export default (router: Router, deps: AppDeps) => {
   fromPlanRoutes(router, deps)
   itemsRoutes(router, deps)
   listsRoutes(router, deps)
+  putAwayRoutes(router, deps)
   restoreRoutes(router, deps)
 }

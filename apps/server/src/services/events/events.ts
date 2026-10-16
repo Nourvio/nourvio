@@ -3,7 +3,13 @@
 // It's in memory, for this server process.
 
 /** What can change, as the areas API keys are given: the plan, the list... */
-export const LIVE_AREAS = ["plan", "list", "recipes", "household"] as const
+export const LIVE_AREAS = [
+  "plan",
+  "list",
+  "pantry",
+  "recipes",
+  "household",
+] as const
 export type LiveArea = (typeof LIVE_AREAS)[number]
 
 /** Pages that say who has them open: "Jamie is on the list too". */
