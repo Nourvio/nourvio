@@ -1,0 +1,35 @@
+// Merran's commands, for the people running a server:
+//
+//   pnpm merran <command>                       from a checkout
+//   docker exec -it merran merran <command>     in the Docker image
+
+import { rotateSecret } from "./rotate-secret.ts"
+
+const COMMANDS: Record<
+  string,
+  { description: string; run: () => Promise<number> }
+> = {
+  "rotate-secret": {
+    description:
+      "Change the server's secret, sealing every saved key again with the new one.",
+    run: () => rotateSecret(),
+  },
+}
+
+const [name] = process.argv.slice(2)
+const command = name ? COMMANDS[name] : undefined
+
+if (!command) {
+  console.log("Usage: merran <command>\n\nCommands:")
+  for (const [commandName, { description }] of Object.entries(COMMANDS)) {
+    console.log(`  ${commandName.padEnd(16)}${description}`)
+  }
+  process.exit(name ? 1 : 0)
+}
+
+try {
+  process.exit(await command.run())
+} catch (err) {
+  console.error(err instanceof Error ? err.message : err)
+  process.exit(1)
+}

@@ -23,7 +23,8 @@ Two different needs, handled separately.
 - Set `MERRAN_SENTRY_DSN` and both the server and the web app report errors there. It works with Sentry, and with the self-hosted, Sentry-compatible **GlitchTip** and **Bugsink**, so errors can stay on the operator's own hardware.
 - The browser gets its DSN from the server at start, so the image doesn't need rebuilding.
 - **Scrubbed before sending:** cookies, headers, keys, request and response bodies, and anything that looks like a key. People are identified only by a random id, never a name or email.
-- Settings: environment name, sample rates, and whether to include performance traces.
+- Settings: the environment name (`MERRAN_SENTRY_ENVIRONMENT`) and the share of errors sent (`MERRAN_SENTRY_SAMPLE_RATE`), in Settings → This server too. Performance traces come later.
+- The SDK is loaded only when there's a DSN, on the server and in the browser, and sends errors only: no breadcrumbs, no tracing.
 
 **2. A built-in Problems page** (always on, nothing sent anywhere)
 - The server keeps the last few hundred errors in the database (message, where, when, request id, how often), with no personal data.

@@ -2,18 +2,32 @@ import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 
 import { PageHeader } from "@/components/layout/page-header"
+import { useMe } from "@/features/auth/use-me"
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsLayout,
 })
 
 const SECTIONS = [
-  { to: "/settings/you", labelKey: "settings.you.tab" },
-  { to: "/settings/household", labelKey: "settings.household.tab" },
+  { to: "/settings/you", labelKey: "settings.you.tab", serverAdmin: false },
+  {
+    to: "/settings/household",
+    labelKey: "settings.household.tab",
+    serverAdmin: false,
+  },
+  {
+    to: "/settings/server",
+    labelKey: "settings.server.tab",
+    serverAdmin: true,
+  },
 ] as const
 
 function SettingsLayout() {
   const { t } = useTranslation()
+  const me = useMe()
+  const sections = SECTIONS.filter(
+    (section) => !section.serverAdmin || me.serverAdmin
+  )
   return (
     <>
       <PageHeader title={t("nav.settings")} />
@@ -21,7 +35,7 @@ function SettingsLayout() {
         aria-label={t("settings.sections")}
         className="mb-6 flex w-fit gap-1 rounded-4xl bg-muted p-1"
       >
-        {SECTIONS.map((section) => (
+        {sections.map((section) => (
           <Link
             key={section.to}
             to={section.to}

@@ -46,6 +46,7 @@ Settings live at three levels, and each one says which level it's at:
 | **Household** | Household admins (some, like tastes, anyone in the household) | The household's AI keys and models, meals planned, lists and stores, tastes and rules, region and currency |
 | **Person** | Each person, the same in every household they're in | Appearance, language, units, notifications (and from which households), their API keys |
 
+- **Built (October 2026):** server and household levels, the settings schema (`apps/server/src/core/settings.ts`), environment locking, secrets sealed in their own table, `GET /api/capabilities`, and Settings → This server with error tracking and telemetry. The person level arrives with its first setting.
 - **Environment variables set server settings and lock them.** A setting from the environment shows in Settings as "Set on the server" and can't be changed there. Everything else can be changed in the app, so most people never edit `.env`.
 - **One schema** describes every setting: its environment variable, type, default, level and help text. Startup checks it and stops with one clear list of what's wrong. The configuration reference in the docs is generated from it, so it can't drift.
 - **Names:** environment variables start with `MERRAN_` (`MERRAN_SECRET`, `MERRAN_PUBLIC_URL`), except well-known ones like `DATABASE_URL`, `TZ` and provider keys (`ANTHROPIC_API_KEY`).
@@ -188,7 +189,7 @@ This is the big change from the REFERENCE app, where every household used the se
 ### Keeping keys safe
 
 - **Encrypted at rest** with AES-256-GCM. Each secret gets its own data key, encrypted by the server's master key (`MERRAN_SECRET`, or a random key made on first start in the data folder). A database dump alone reveals nothing.
-- **Rotating the master key:** `merran rotate-secret` re-encrypts every data key. Each stored secret records which master key it used.
+- **Rotating the master key:** `merran rotate-secret` (`docker exec -it merran merran rotate-secret` in Docker) seals every data key again with a new master key, in one transaction, and is safe to run twice. With the secret in the data folder it makes the new one itself; with `MERRAN_SECRET` set, it takes the new one from `MERRAN_NEW_SECRET`, and `MERRAN_SECRET` is changed to it afterwards. Each stored secret records which master key sealed it, so one sealed with a lost key shows in Settings as needing to be entered again. Changing the secret signs everyone out.
 - **Never sent to the browser,** never logged (the logger redacts them), never in error reports.
 - **Tested before saving** against the provider.
 - **Households' own addresses are a risk.** An OpenAI-compatible address chosen by a household admin makes the server call an address someone else picked, which could be inside the server's network. So it's off by default; when the server admin allows it, private-network addresses are still refused. For a local Ollama, the server admin adds it once as a **shared endpoint** that chosen households can use.

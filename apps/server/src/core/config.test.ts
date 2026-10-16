@@ -34,6 +34,24 @@ describe("settings", () => {
     ).toThrow(/PORT[\s\S]*MERRAN_LOG_LEVEL/)
   })
 
+  test("module settings set in the environment are kept, to lock them", () => {
+    const config = loadConfig({
+      MERRAN_SENTRY_ENVIRONMENT: "nas",
+      MERRAN_TELEMETRY: "off",
+    })
+
+    expect(Object.fromEntries(config.fromEnv)).toEqual({
+      "errorTracking.environment": "nas",
+      "telemetry.enabled": false,
+    })
+  })
+
+  test("module settings are checked at startup too", () => {
+    expect(() =>
+      loadConfig({ PORT: "eighty", MERRAN_SENTRY_SAMPLE_RATE: "2" })
+    ).toThrow(/PORT[\s\S]*MERRAN_SENTRY_SAMPLE_RATE: Use a number from 0 to 1/)
+  })
+
   test("trusted proxies are a list of addresses and ranges", () => {
     expect(
       loadConfig({ MERRAN_TRUSTED_PROXIES: "172.16.0.0/12, 127.0.0.1" })

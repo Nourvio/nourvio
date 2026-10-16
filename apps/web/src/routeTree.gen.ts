@@ -21,6 +21,7 @@ import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as JoinTokenRouteImport } from './routes/join/$token'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsHouseholdRouteImport } from './routes/_app/settings/household'
+import { Route as AppSettingsServerRouteImport } from './routes/_app/settings/server'
 import { Route as AppSettingsYouRouteImport } from './routes/_app/settings/you'
 
 const AppRoute = AppRouteImport.update({
@@ -82,6 +83,11 @@ const AppSettingsHouseholdRoute = AppSettingsHouseholdRouteImport.update({
   path: '/household',
   getParentRoute: () => AppSettingsRoute,
 } as any)
+const AppSettingsServerRoute = AppSettingsServerRouteImport.update({
+  id: '/server',
+  path: '/server',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 const AppSettingsYouRoute = AppSettingsYouRouteImport.update({
   id: '/you',
   path: '/you',
@@ -99,6 +105,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRouteWithChildren
   '/join/$token': typeof JoinTokenRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
+  '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/settings/': typeof AppSettingsIndexRoute
 }
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/join/$token': typeof JoinTokenRoute
   '/': typeof AppIndexRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
+  '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/settings': typeof AppSettingsIndexRoute
 }
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/join/$token': typeof JoinTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/settings/household': typeof AppSettingsHouseholdRoute
+  '/_app/settings/server': typeof AppSettingsServerRoute
   '/_app/settings/you': typeof AppSettingsYouRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
 }
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/join/$token'
     | '/settings/household'
+    | '/settings/server'
     | '/settings/you'
     | '/settings/'
   fileRoutesByTo: FileRoutesByTo
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/'
     | '/settings/household'
+    | '/settings/server'
     | '/settings/you'
     | '/settings'
   id:
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/_app/'
     | '/_app/settings/household'
+    | '/_app/settings/server'
     | '/_app/settings/you'
     | '/_app/settings/'
   fileRoutesById: FileRoutesById
@@ -269,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsHouseholdRouteImport
       parentRoute: typeof AppSettingsRoute
     }
+    '/_app/settings/server': {
+      id: '/_app/settings/server'
+      path: '/server'
+      fullPath: '/settings/server'
+      preLoaderRoute: typeof AppSettingsServerRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_app/settings/you': {
       id: '/_app/settings/you'
       path: '/you'
@@ -281,12 +300,14 @@ declare module '@tanstack/react-router' {
 
 interface AppSettingsRouteChildren {
   AppSettingsHouseholdRoute: typeof AppSettingsHouseholdRoute
+  AppSettingsServerRoute: typeof AppSettingsServerRoute
   AppSettingsYouRoute: typeof AppSettingsYouRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
 }
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsHouseholdRoute: AppSettingsHouseholdRoute,
+  AppSettingsServerRoute: AppSettingsServerRoute,
   AppSettingsYouRoute: AppSettingsYouRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,
 }

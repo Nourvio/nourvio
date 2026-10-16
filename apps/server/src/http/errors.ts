@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import type { ZodError } from "zod"
 import type { AppEnv } from "../core/context.ts"
+import { reportError } from "../modules/error-tracking/reporter.ts"
 
 /** The one shape every error response has. */
 export const ErrorSchema = z
@@ -87,6 +88,7 @@ export const handleError: ErrorHandler<AppEnv> = (err, c) => {
     )
   }
   c.var.logger.error({ err }, "Unhandled error")
+  reportError(err, { requestId: c.var.requestId })
   return c.json(
     errorBody("internal", "Something went wrong on the server."),
     500

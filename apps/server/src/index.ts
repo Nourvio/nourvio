@@ -7,6 +7,9 @@ import { createLogger } from "./core/logger.ts"
 import { loadSecret } from "./core/secret.ts"
 import { User } from "./database/entities/index.ts"
 import { migrate, openDatabase, type Database } from "./database/orm.ts"
+import { MODULES } from "./modules/index.ts"
+import { startModules } from "./modules/module.ts"
+import { createSettings } from "./services/settings/settings.ts"
 
 let config: Config
 try {
@@ -35,12 +38,16 @@ logger.info(
     : "Using Postgres"
 )
 
-const auth = createAuth({
-  config,
+const secret = loadSecret(config)
+const auth = createAuth({ config, database, secret, logger })
+const settings = createSettings({
   database,
-  secret: loadSecret(config),
   logger,
+  secret,
+  definitions: MODULES.flatMap((module) => module.settings),
+  fromEnv: config.fromEnv,
 })
+await startModules(MODULES, { config, logger, database, settings })
 
 // A fresh server is claimed with a code from this log, so a stranger who
 // finds the page first can't take it.
@@ -51,7 +58,15 @@ if ((await database.em.fork().count(User)) === 0) {
   )
 }
 
-const app = createApp({ config, logger, database, auth, setupCode })
+const app = createApp({
+  config,
+  logger,
+  database,
+  auth,
+  setupCode,
+  settings,
+  modules: MODULES,
+})
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   logger.info(`Merran ${config.version} is listening on port ${info.port}`)

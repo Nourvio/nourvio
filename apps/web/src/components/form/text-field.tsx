@@ -17,7 +17,7 @@ export function TextField({
   ...props
 }: React.ComponentProps<typeof Input> & {
   label: string
-  description?: string
+  description?: React.ReactNode
   error?: string
 }) {
   const fallbackId = React.useId()

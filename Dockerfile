@@ -33,7 +33,8 @@ RUN pnpm --filter @merran/web build
 FROM node:24-slim
 ENV NODE_ENV=production \
     PORT=3000 \
-    MERRAN_DATA_DIR=/data
+    MERRAN_DATA_DIR=/data \
+    MERRAN_INSTALL_METHOD=docker
 
 # setpriv (from util-linux) lets the entrypoint drop root after setting up
 # the data folder.
@@ -49,6 +50,7 @@ COPY apps/server/package.json apps/server/
 COPY apps/server/src apps/server/src
 COPY --from=web /app/apps/web/dist apps/web/dist
 COPY --chmod=755 docker/entrypoint.sh /usr/local/bin/merran-entrypoint
+COPY --chmod=755 docker/merran.sh /usr/local/bin/merran
 RUN mkdir -p /data
 
 EXPOSE 3000

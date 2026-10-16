@@ -12,7 +12,8 @@
     "db:migration": "node src/database/make-migration.ts",
     "db:test-postgres": "docker run -d --rm --name merran-test-postgres -e POSTGRES_PASSWORD=merran -p 5433:5432 --tmpfs /var/lib/postgresql postgres:18",
     "test:all": "vitest run",
-    "openapi": "node src/http/openapi/export.ts"
+    "openapi": "node src/http/openapi/export.ts",
+    "merran": "node src/cli/index.ts"
   },
   "dependencies": {
     "@hono/node-server": "^2.1.5",
@@ -23,6 +24,7 @@
     "@mikro-orm/sql": "^7.2.5",
     "@mikro-orm/sqlite": "^7.2.5",
     "@scalar/hono-api-reference": "^0.12.12",
+    "@sentry/node": "11.7.0",
     "better-auth": "^1.7.8",
     "hono": "^4.13.13",
     "pino": "^10.4.0",

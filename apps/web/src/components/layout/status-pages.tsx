@@ -1,5 +1,6 @@
 import type { ErrorComponentProps } from "@tanstack/react-router"
 import { Link } from "@tanstack/react-router"
+import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 
 import { Logo } from "@/components/brand/logo"
@@ -11,6 +12,7 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty"
+import { reportError } from "@/features/error-tracking/start"
 
 function StatusPage({
   title,
@@ -46,8 +48,9 @@ export function NotFound() {
   )
 }
 
-export function RouteError({ reset }: ErrorComponentProps) {
+export function RouteError({ error, reset }: ErrorComponentProps) {
   const { t } = useTranslation()
+  useEffect(() => reportError(error), [error])
   return (
     <StatusPage
       title={t("status.error.title")}

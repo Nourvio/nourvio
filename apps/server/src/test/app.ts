@@ -1,5 +1,8 @@
 import { pino } from "pino"
 import { createApp, type App } from "../app.ts"
+import { MODULES } from "../modules/index.ts"
+import { startModules, type Module } from "../modules/module.ts"
+import { createSettings } from "../services/settings/settings.ts"
 import { createAuth } from "../services/auth/auth.ts"
 import { SetupCode } from "../services/auth/setup-code.ts"
 import { loadConfig } from "../core/config.ts"
@@ -8,27 +11,50 @@ import { createTestDatabase } from "./database.ts"
 export const TEST_ORIGIN = "http://merran.test"
 export const TEST_PASSWORD = "correct horse battery"
 
-/** The whole app on a fresh test database. Close it when the tests are done. */
-export async function createTestApp() {
+export const TEST_SECRET = "a test secret that is long enough to use"
+
+/**
+ * The whole app on a fresh test database. Close it when the tests are done.
+ * Tests can add modules of their own, and set module settings as if from
+ * the environment.
+ */
+export async function createTestApp(
+  options: {
+    modules?: readonly Module[]
+    env?: Record<string, string>
+  } = {}
+) {
   const { database, config: databaseConfig, close } = await createTestDatabase()
-  const secret = "a test secret that is long enough to use"
+  const modules = [...MODULES, ...(options.modules ?? [])]
+  const definitions = modules.flatMap((module) => module.settings)
   const config = {
-    ...loadConfig({}),
+    ...loadConfig(options.env ?? {}, definitions),
     database: databaseConfig,
-    secret,
+    secret: TEST_SECRET,
     publicUrl: TEST_ORIGIN,
     webDir: null,
   }
-  const auth = createAuth({ config, database, secret })
+  const logger = pino({ level: "silent" })
+  const auth = createAuth({ config, database, secret: TEST_SECRET })
+  const settings = createSettings({
+    database,
+    logger,
+    secret: TEST_SECRET,
+    definitions,
+    fromEnv: config.fromEnv,
+  })
+  await startModules(modules, { config, logger, database, settings })
   const setupCode = new SetupCode()
   const app = createApp({
     config,
-    logger: pino({ level: "silent" }),
+    logger,
     database,
     auth,
     setupCode,
+    settings,
+    modules,
   })
-  return { app, database, auth, setupCode, close }
+  return { app, database, auth, setupCode, settings, close }
 }
 
 /** A response whose JSON tests can read without declaring its type. */

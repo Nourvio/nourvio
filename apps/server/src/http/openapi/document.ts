@@ -26,8 +26,14 @@ const TAGS = [
       "The household in use: its settings, its people and their roles, and invite links.",
   },
   {
+    name: "Settings",
+    description:
+      "Settings for the server (its admin only) and the household in use. A setting from an environment variable is locked, and a secret is never sent back: only whether it's set, and its last four characters.",
+  },
+  {
     name: "Server",
-    description: "Whether the server is up and ready. No sign-in needed.",
+    description:
+      "Whether the server is up and ready, and which of Merran's optional parts are on. No sign-in needed.",
   },
 ]
 

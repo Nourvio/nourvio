@@ -1,9 +1,11 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import type { Logger } from "pino"
 import type { Database } from "../database/orm.ts"
+import type { Module } from "../modules/module.ts"
 import type { Auth } from "../services/auth/auth.ts"
 import type { Authenticated } from "../services/auth/session.ts"
 import type { SetupCode } from "../services/auth/setup-code.ts"
+import type { Settings } from "../services/settings/settings.ts"
 import type { Config } from "./config.ts"
 
 /** What the app is built from. Tests pass their own. */
@@ -13,6 +15,10 @@ export type AppDeps = {
   database: Database
   auth: Auth
   setupCode: SetupCode
+  /** Every setting's value, and saving them. */
+  settings: Settings
+  /** Merran's optional parts (modules/index.ts). Tests can pass their own. */
+  modules: readonly Module[]
 }
 
 /** Variables set on every request. `requestId` comes from Hono's middleware. */

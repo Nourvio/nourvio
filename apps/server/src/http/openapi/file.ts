@@ -2,8 +2,10 @@ import { pino } from "pino"
 import { createApp } from "../../app.ts"
 import { loadConfig } from "../../core/config.ts"
 import { migrate, openDatabase } from "../../database/orm.ts"
+import { MODULES } from "../../modules/index.ts"
 import { createAuth } from "../../services/auth/auth.ts"
 import { SetupCode } from "../../services/auth/setup-code.ts"
+import { createSettings } from "../../services/settings/settings.ts"
 import { buildOpenApiDocument, DEFAULT_SERVER_URL } from "./document.ts"
 
 /**
@@ -20,13 +22,22 @@ export async function createOpenApiFile(): Promise<string> {
   try {
     await migrate(database)
     const secret = "only used to describe the API, never to sign anything"
+    const logger = pino({ level: "silent" })
     const auth = createAuth({ config, database, secret })
     const app = createApp({
       config,
-      logger: pino({ level: "silent" }),
+      logger,
       database,
       auth,
       setupCode: new SetupCode(),
+      settings: createSettings({
+        database,
+        logger,
+        secret,
+        definitions: MODULES.flatMap((module) => module.settings),
+        fromEnv: config.fromEnv,
+      }),
+      modules: MODULES,
     })
     const document = await buildOpenApiDocument(app, auth, {
       version: config.version,

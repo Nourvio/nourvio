@@ -16,7 +16,9 @@
     "copy": "Copy",
     "copied": "Copied",
     "done": "Done",
-    "save": "Save"
+    "save": "Save",
+    "on": "On",
+    "off": "Off"
   },
   "theme": {
     "change": "Change appearance",
@@ -247,6 +249,50 @@
         "description": "As a server admin, you can start more households. You'll own it and switch to it.",
         "submit": "Start household",
         "started": "Started {{name}}."
+      }
+    },
+    "lockedBy": "Set on the server, by {{env}}",
+    "server": {
+      "tab": "This server",
+      "about": {
+        "title": "This server",
+        "description": "What's running, and where.",
+        "version": "Version",
+        "installed": "Installed",
+        "install": {
+          "docker": "With the Docker image",
+          "source": "From the source code"
+        },
+        "database": "Database",
+        "databases": {
+          "sqlite": "SQLite, in the data folder",
+          "postgres": "Postgres"
+        },
+        "address": "Address",
+        "noAddress": "Not set, so links use the address in the browser"
+      },
+      "errorTracking": {
+        "title": "Error tracking",
+        "description": "Send errors from the server and from browsers to your own Sentry, GlitchTip or Bugsink. Reports leave out cookies, keys and who was signed in.",
+        "dsn": "DSN",
+        "dsnHint": "From your error tracker's project settings. Leave it empty to keep errors in the server's log only.",
+        "environment": "Environment",
+        "environmentHint": "To tell this server's errors apart from others'.",
+        "sampleRate": "Share of errors sent",
+        "sampleRateHint": "From 0 (none) to 1 (every one).",
+        "saved": "Saved. Browsers pick it up when they next open Merran."
+      },
+      "telemetry": {
+        "title": "Telemetry",
+        "description": "An anonymous summary once a day helps the Merran project see how many servers run it, on which versions, and which parts get used.",
+        "send": "Send an anonymous summary once a day",
+        "never": "Never names, recipes, keys, or anything anyone typed.",
+        "turnedOn": "Thank you. Telemetry is on.",
+        "turnedOff": "Telemetry is off.",
+        "show": "See exactly what's sent",
+        "installIdHint": "The install id is random. A new one means later summaries can't be linked to earlier ones.",
+        "newId": "Make a new id",
+        "newIdMade": "Made a new install id."
       }
     }
   }

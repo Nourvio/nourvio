@@ -91,6 +91,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What's on
+         * @description Which of Merran's optional parts are on, what they make possible, and what the web app needs from them. Needs no sign-in: the web app reads it before anyone signs in.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description What's on. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Capabilities"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households": {
         parameters: {
             query?: never;
@@ -1126,6 +1165,342 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings/server": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The server's settings
+         * @description Server admins only. Every server setting that can be seen here, with where its value comes from, and a little about the server.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The settings. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ServerSettings"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change the server's settings
+         * @description Server admins only. Send only what changes. Nothing is saved if anything is wrong, and settings from environment variables can't be changed.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SettingChanges"];
+                };
+            };
+            responses: {
+                /** @description Saved. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ServerSettings"];
+                    };
+                };
+                /** @description Something isn't right, field by field. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/settings/household": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's settings
+         * @description The settings of the household in use, like its own AI keys. Anyone in the household can see them; secrets show only whether they're set.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The settings. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["HouseholdSettings"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * Change the household's settings
+         * @description Household admins only. Send only what changes. Nothing is saved if anything is wrong.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SettingChanges"];
+                };
+            };
+            responses: {
+                /** @description Saved. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["HouseholdSettings"];
+                    };
+                };
+                /** @description Something isn't right, field by field. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/telemetry/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The next telemetry summary
+         * @description Server admins only. Exactly what the daily summary would send, whether or not it's on.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The summary. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TelemetryReport"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/telemetry/install-id": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make a new install id
+         * @description Server admins only. Summaries from now on can't be linked to earlier ones. Answers with the next summary.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The next summary, with the new id. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["TelemetryReport"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/auth/sign-in/username": {
         parameters: {
             query?: never;
@@ -1741,6 +2116,27 @@ export interface components {
             /** @enum {string} */
             database: "sqlite" | "postgres";
         };
+        Capabilities: {
+            version: string;
+            modules: {
+                /** @example errorTracking */
+                id: string;
+                on: boolean;
+                /**
+                 * @description When it's off, what it needs, as a stable code.
+                 * @example dsn
+                 */
+                needs?: string;
+            }[];
+            /** @description What the modules that are on make possible. */
+            capabilities: string[];
+            /** @description What the web app needs from each module that's on, by module id. */
+            client: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+        };
         Household: {
             id: string;
             name: string;
@@ -1863,6 +2259,69 @@ export interface components {
             permissions: components["schemas"]["ApiKeyPermissions"];
             /** @default 90 */
             expiresInDays: 30 | 90 | 365 | null;
+        };
+        ServerSettings: {
+            about: {
+                version: string;
+                /** @enum {string} */
+                installMethod: "source" | "docker";
+                /** @enum {string} */
+                database: "sqlite" | "postgres";
+                publicUrl: string | null;
+            };
+            settings: components["schemas"]["SettingState"][];
+        };
+        SettingState: {
+            /** @example errorTracking.environment */
+            key: string;
+            /** @enum {string} */
+            kind: "text" | "number" | "switch" | "choice" | "list" | "secret";
+            /** @description Its value, or null for a secret or a setting that isn't set. */
+            value?: unknown;
+            default?: unknown;
+            /** @enum {string} */
+            source: "default" | "saved" | "environment";
+            /**
+             * @description The environment variable that sets it, which means it can't be changed here.
+             * @example MERRAN_SENTRY_ENVIRONMENT
+             */
+            lockedBy: string | null;
+            secret?: {
+                set: boolean;
+                /** @description Its last four characters, when it's long enough. */
+                hint: string | null;
+                /** @description Sealed with another master key, so it needs entering again. */
+                unreadable: boolean;
+            };
+            choices?: string[];
+        };
+        /**
+         * @description New values by key. Null puts a setting back to its default, and deletes a secret.
+         * @example {
+         *       "errorTracking.environment": "home",
+         *       "errorTracking.dsn": null
+         *     }
+         */
+        SettingChanges: {
+            [key: string]: unknown;
+        };
+        HouseholdSettings: {
+            settings: components["schemas"]["SettingState"][];
+        };
+        TelemetryReport: {
+            installId: string;
+            version: string;
+            install: string;
+            arch: string;
+            /** @example postgres 18 */
+            database: string;
+            modules: {
+                [key: string]: boolean;
+            };
+            /** @example 2-5 */
+            households: string;
+            people: string;
+            recipes: string;
         };
         User: {
             readonly id: string;

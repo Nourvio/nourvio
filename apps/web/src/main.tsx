@@ -9,6 +9,7 @@ import { createRoot } from "react-dom/client"
 import { ThemeProvider } from "@/components/theme/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { startErrorTracking } from "@/features/error-tracking/start"
 import { queryClient } from "@/lib/query-client"
 
 import { routeTree } from "./routeTree.gen"
@@ -25,6 +26,8 @@ declare module "@tanstack/react-router" {
     router: typeof router
   }
 }
+
+void startErrorTracking(queryClient)
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

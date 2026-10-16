@@ -35,8 +35,12 @@
       "description": "The household in use: its settings, its people and their roles, and invite links."
     },
     {
+      "name": "Settings",
+      "description": "Settings for the server (its admin only) and the household in use. A setting from an environment variable is locked, and a secret is never sent back: only whether it's set, and its last four characters."
+    },
+    {
       "name": "Server",
-      "description": "Whether the server is up and ready. No sign-in needed."
+      "description": "Whether the server is up and ready, and which of Merran's optional parts are on. No sign-in needed."
     }
   ],
   "components": {
@@ -128,6 +132,59 @@
         "required": [
           "status",
           "database"
+        ]
+      },
+      "Capabilities": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string"
+          },
+          "modules": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "example": "errorTracking"
+                },
+                "on": {
+                  "type": "boolean"
+                },
+                "needs": {
+                  "type": "string",
+                  "description": "When it's off, what it needs, as a stable code.",
+                  "example": "dsn"
+                }
+              },
+              "required": [
+                "id",
+                "on"
+              ]
+            }
+          },
+          "capabilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "What the modules that are on make possible."
+          },
+          "client": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "additionalProperties": {}
+            },
+            "description": "What the web app needs from each module that's on, by module id."
+          }
+        },
+        "required": [
+          "version",
+          "modules",
+          "capabilities",
+          "client"
         ]
       },
       "Household": {
@@ -645,6 +702,202 @@
           "permissions"
         ]
       },
+      "ServerSettings": {
+        "type": "object",
+        "properties": {
+          "about": {
+            "type": "object",
+            "properties": {
+              "version": {
+                "type": "string"
+              },
+              "installMethod": {
+                "type": "string",
+                "enum": [
+                  "source",
+                  "docker"
+                ]
+              },
+              "database": {
+                "type": "string",
+                "enum": [
+                  "sqlite",
+                  "postgres"
+                ]
+              },
+              "publicUrl": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "version",
+              "installMethod",
+              "database",
+              "publicUrl"
+            ]
+          },
+          "settings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingState"
+            }
+          }
+        },
+        "required": [
+          "about",
+          "settings"
+        ]
+      },
+      "SettingState": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "example": "errorTracking.environment"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "text",
+              "number",
+              "switch",
+              "choice",
+              "list",
+              "secret"
+            ]
+          },
+          "value": {
+            "description": "Its value, or null for a secret or a setting that isn't set."
+          },
+          "default": {},
+          "source": {
+            "type": "string",
+            "enum": [
+              "default",
+              "saved",
+              "environment"
+            ]
+          },
+          "lockedBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The environment variable that sets it, which means it can't be changed here.",
+            "example": "MERRAN_SENTRY_ENVIRONMENT"
+          },
+          "secret": {
+            "type": "object",
+            "properties": {
+              "set": {
+                "type": "boolean"
+              },
+              "hint": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Its last four characters, when it's long enough."
+              },
+              "unreadable": {
+                "type": "boolean",
+                "description": "Sealed with another master key, so it needs entering again."
+              }
+            },
+            "required": [
+              "set",
+              "hint",
+              "unreadable"
+            ]
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "key",
+          "kind",
+          "source",
+          "lockedBy"
+        ]
+      },
+      "SettingChanges": {
+        "type": "object",
+        "additionalProperties": {},
+        "description": "New values by key. Null puts a setting back to its default, and deletes a secret.",
+        "example": {
+          "errorTracking.environment": "home",
+          "errorTracking.dsn": null
+        }
+      },
+      "HouseholdSettings": {
+        "type": "object",
+        "properties": {
+          "settings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SettingState"
+            }
+          }
+        },
+        "required": [
+          "settings"
+        ]
+      },
+      "TelemetryReport": {
+        "type": "object",
+        "properties": {
+          "installId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "install": {
+            "type": "string"
+          },
+          "arch": {
+            "type": "string"
+          },
+          "database": {
+            "type": "string",
+            "example": "postgres 18"
+          },
+          "modules": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "households": {
+            "type": "string",
+            "example": "2-5"
+          },
+          "people": {
+            "type": "string"
+          },
+          "recipes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "installId",
+          "version",
+          "install",
+          "arch",
+          "database",
+          "modules",
+          "households",
+          "people",
+          "recipes"
+        ]
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -837,6 +1090,27 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/capabilities": {
+      "get": {
+        "tags": [
+          "Server"
+        ],
+        "summary": "What's on",
+        "description": "Which of Merran's optional parts are on, what they make possible, and what the web app needs from them. Needs no sign-in: the web app reads it before anyone signs in.",
+        "responses": {
+          "200": {
+            "description": "What's on.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
                 }
               }
             }
@@ -1855,6 +2129,318 @@
           },
           "404": {
             "description": "You have no such key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "The server's settings",
+        "description": "Server admins only. Every server setting that can be seen here, with where its value comes from, and a little about the server.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Change the server's settings",
+        "description": "Server admins only. Send only what changes. Nothing is saved if anything is wrong, and settings from environment variables can't be changed.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ServerSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Something isn't right, field by field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/household": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "The household's settings",
+        "description": "The settings of the household in use, like its own AI keys. Anyone in the household can see them; secrets show only whether they're set.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The settings.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Change the household's settings",
+        "description": "Household admins only. Send only what changes. Nothing is saved if anything is wrong.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdSettings"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Something isn't right, field by field.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/telemetry/report": {
+      "get": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "The next telemetry summary",
+        "description": "Server admins only. Exactly what the daily summary would send, whether or not it's on.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The summary.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/telemetry/install-id": {
+      "post": {
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Make a new install id",
+        "description": "Server admins only. Summaries from now on can't be linked to earlier ones. Answers with the next summary.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The next summary, with the new id.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelemetryReport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
             "content": {
               "application/json": {
                 "schema": {

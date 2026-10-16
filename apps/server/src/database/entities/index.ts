@@ -7,6 +7,7 @@ import { CookNote } from "./cook_notes.ts"
 import { EmailInvitation } from "./email_invitations.ts"
 import { FoodPlacement } from "./food_placements.ts"
 import { HouseholdMember } from "./household_members.ts"
+import { HouseholdSetting } from "./household_settings.ts"
 import { Household } from "./households.ts"
 import { InviteLink } from "./invite_links.ts"
 import { PantryItem } from "./pantry_items.ts"
@@ -19,6 +20,8 @@ import { RecipeStep } from "./recipe_steps.ts"
 import { RecipeTag } from "./recipe_tags.ts"
 import { RecipeVersion } from "./recipe_versions.ts"
 import { Recipe } from "./recipes.ts"
+import { Secret } from "./secrets.ts"
+import { ServerSetting } from "./server_settings.ts"
 import { Session } from "./sessions.ts"
 import { ShoppingItem } from "./shopping_items.ts"
 import { ShoppingList } from "./shopping_lists.ts"
@@ -34,6 +37,7 @@ export * from "./cook_notes.ts"
 export * from "./email_invitations.ts"
 export * from "./food_placements.ts"
 export * from "./household_members.ts"
+export * from "./household_settings.ts"
 export * from "./households.ts"
 export * from "./invite_links.ts"
 export * from "./pantry_items.ts"
@@ -46,6 +50,8 @@ export * from "./recipe_steps.ts"
 export * from "./recipe_tags.ts"
 export * from "./recipe_versions.ts"
 export * from "./recipes.ts"
+export * from "./secrets.ts"
+export * from "./server_settings.ts"
 export * from "./sessions.ts"
 export * from "./shopping_items.ts"
 export * from "./shopping_lists.ts"
@@ -64,6 +70,7 @@ export const entities = [
   FoodPlacement,
   Household,
   HouseholdMember,
+  HouseholdSetting,
   InviteLink,
   PantryItem,
   PlanEntry,
@@ -75,6 +82,8 @@ export const entities = [
   RecipeStep,
   RecipeTag,
   RecipeVersion,
+  Secret,
+  ServerSetting,
   Session,
   ShoppingItem,
   ShoppingList,
@@ -92,6 +101,9 @@ export const SHARED_TABLES = [
   "accounts",
   "households",
   "rate_limits",
+  // Reached only through the settings that point at them.
+  "secrets",
+  "server_settings",
   "sessions",
   "users",
   "verifications",
