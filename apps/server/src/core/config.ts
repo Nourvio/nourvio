@@ -28,6 +28,30 @@ const envSchema = z.object({
       "Use a postgres:// address, or leave it unset to use SQLite"
     )
     .optional(),
+  /** Signs sessions and encrypts saved keys. Unset: made once and kept in the data folder. */
+  MERRAN_SECRET: z.string().min(32, "Use at least 32 characters").optional(),
+  /** The address people use to reach Merran, like https://merran.example.com. */
+  MERRAN_PUBLIC_URL: z.url({ protocol: /^https?$/ }).optional(),
+  /**
+   * Proxies in front of Merran whose X-Forwarded-For is believed: addresses
+   * or ranges, separated by commas ("172.16.0.0/12, 127.0.0.1").
+   */
+  MERRAN_TRUSTED_PROXIES: z
+    .string()
+    .transform((value) =>
+      value
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean)
+    )
+    .pipe(
+      z.array(
+        z.union([z.ipv4(), z.ipv6(), z.cidrv4(), z.cidrv6()], {
+          error: "Use IP addresses or ranges, like 172.16.0.0/12",
+        })
+      )
+    )
+    .default([]),
 })
 
 export type LogLevel = (typeof LOG_LEVELS)[number]
@@ -42,6 +66,10 @@ export type Config = {
   logFormat: "pretty" | "json"
   dataDir: string
   database: DatabaseConfig
+  /** From MERRAN_SECRET; when unset, the server keeps one in the data folder. */
+  secret: string | undefined
+  publicUrl: string | undefined
+  trustedProxies: string[]
 }
 
 const packageJson = JSON.parse(
@@ -86,5 +114,8 @@ export function loadConfig(
           kind: "sqlite",
           file: resolve(settings.MERRAN_DATA_DIR, "merran.db"),
         },
+    secret: settings.MERRAN_SECRET,
+    publicUrl: settings.MERRAN_PUBLIC_URL?.replace(/\/$/, ""),
+    trustedProxies: settings.MERRAN_TRUSTED_PROXIES,
   }
 }

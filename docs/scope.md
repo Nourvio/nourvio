@@ -136,7 +136,7 @@ Each phase ends with something that runs and can be tried, on `edge` images. 0.1
 
 - The repo: pnpm workspace (`apps/server`, `apps/web`, `apps/extension`, `apps/docs`, `apps/telemetry`, `packages/shared`), with REFERENCE kept aside, read-only
 - CI with every check in [open-source.md](open-source.md#keeping-the-code-healthy), Renovate, release-please, and `edge` images published to GHCR
-- The settings schema and the module registry, with `GET /api/v1/capabilities`
+- The settings schema and the module registry, with `GET /api/capabilities`
 - Hono with OpenAPI routes, the generated client, `/api/docs`
 - MikroORM entities with migrations generated for SQLite and Postgres, every test on both, and `merran db copy`; the job runner; the storage interface; the one fetch helper; the internal event stream
 - pino logs, request ids, health checks, the Problems page, Sentry when a DSN is set

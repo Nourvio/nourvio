@@ -32,7 +32,7 @@ Merran's core needs nothing but Merran itself: it runs on SQLite out of the box,
 - its routes, jobs and the outside addresses it may call
 - where it shows up in the web app
 
-The web app asks `GET /api/v1/capabilities` once at start and on changes, and draws only what's on. A household sees, say, "Photo import needs an AI key that can read images: add one in Settings → Household → AI" rather than an error.
+The web app asks `GET /api/capabilities` once at start and on changes, and draws only what's on. A household sees, say, "Photo import needs an AI key that can read images: add one in Settings → Household → AI" rather than an error.
 
 Store connections, importers, AI providers and voices are **adapters behind interfaces**, so a contributor can add Tesco, a Paprika importer or a new voice without touching the core.
 
@@ -58,7 +58,8 @@ Built on Better Auth (see [stack.md](stack.md#better-auth-instead-of-our-own-sig
 - **Households are Better Auth organizations.** A household has members with a role: **owner**, **admin** or **member**. There's always at least one owner.
 - **The server admin** is whoever set the server up (Better Auth's admin plugin). They manage the server's settings, households, sign-up and the server's AI keys. Being server admin doesn't let them read another household's recipes.
 - **First run:** a one-time setup code printed in the log, as in the REFERENCE app, so a stranger can't claim a fresh install.
-- **Joining:** invite links (single use, a week long), or added directly by a household admin. With email set up, invites can also be emailed.
+- **Joining:** Merran's own invite links (single use, a week long, kept as a hash), or added directly by a household admin. Better Auth's email invitations, which only the invited address can accept, are kept for when email is set up.
+- **Everyone has an email address** (decided October 15, 2026): Better Auth needs one for every account, and a made-up placeholder wasn't worth the confusion. People sign in with their username or their email.
 - **Open sign-up** (off by default) starts a new household for each sign-up. The server admin can also require a verified email, require their approval before a new household can do anything, and cap the number of households.
 - **Signing in:**
   - a username or email and a password (always available, unless the server admin turns it off in favour of SSO)
@@ -98,13 +99,15 @@ People make their own keys for scripts, Home Assistant, the browser extension an
 
 ## The public API
 
-- **One API for everyone.** The web app, the extension and anyone's scripts use the same REST API under `/api/v1`, so it's always complete and always tested.
+- **One API for everyone.** The web app, the extension and anyone's scripts use the same REST API under `/api`, so it's always complete and always tested.
+- **No version in the address** (decided October 15, 2026): routes are `/api/households`, not `/api/v1/households`. Stability comes from the rule below and the spec check in CI.
+- **Sign-in lives under `/api/auth`.** Better Auth's own endpoints are there (signing in and out, sessions, switching households), next to Merran's (`/api/auth/setup`, `/api/auth/me`, `/api/auth/join/{token}`). Better Auth's endpoints answer in its own error shape, and aren't in the spec yet; its OpenAPI plugin can add them.
 - **The OpenAPI spec is generated** from the route definitions (`@hono/zod-openapi`), and the server shows a reference page at `/api/docs` (Scalar) with a Try it button. The docs site publishes the same.
 - **Sign-in for the API:** a session cookie (the web app) or `Authorization: Bearer mrn_…` (everything else).
 - **Stable within a major version.** Changes are added, not broken; anything removed is marked deprecated for at least one minor release first. CI compares the spec with the last release's and fails on an unannounced breaking change.
 - **Errors** have one shape: `{ error: { code, message, fields? } }`, with stable `code`s and messages safe to show.
 - **Lists are paged** with cursors, and big imports and runs return a job to follow.
-- **Live updates** stay as server-sent events (`/api/v1/events`), also open to API keys with read access.
+- **Live updates** stay as server-sent events (`/api/events`), also open to API keys with read access.
 
 ### Webhooks
 

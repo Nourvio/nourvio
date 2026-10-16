@@ -33,4 +33,14 @@ describe("settings", () => {
       loadConfig({ PORT: "eighty", MERRAN_LOG_LEVEL: "loud" })
     ).toThrow(/PORT[\s\S]*MERRAN_LOG_LEVEL/)
   })
+
+  test("trusted proxies are a list of addresses and ranges", () => {
+    expect(
+      loadConfig({ MERRAN_TRUSTED_PROXIES: "172.16.0.0/12, 127.0.0.1" })
+        .trustedProxies
+    ).toEqual(["172.16.0.0/12", "127.0.0.1"])
+    expect(() => loadConfig({ MERRAN_TRUSTED_PROXIES: "my-proxy" })).toThrow(
+      /MERRAN_TRUSTED_PROXIES/
+    )
+  })
 })

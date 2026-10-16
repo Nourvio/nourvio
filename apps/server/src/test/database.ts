@@ -1,3 +1,4 @@
+import type { DatabaseConfig } from "../core/config.ts"
 import { migrate, openDatabase, type Database } from "../database/orm.ts"
 import {
   DEFAULT_TEST_POSTGRES_URL,
@@ -14,16 +15,19 @@ export const testDatabaseKind =
  */
 export async function createTestDatabase(): Promise<{
   database: Database
+  config: DatabaseConfig
   close: () => Promise<void>
 }> {
   if (testDatabaseKind === "postgres") {
     const temp = await tempPostgresDatabase(
       process.env.MERRAN_TEST_POSTGRES_URL ?? DEFAULT_TEST_POSTGRES_URL
     )
-    const database = await openDatabase({ kind: "postgres", url: temp.url })
+    const config = { kind: "postgres" as const, url: temp.url }
+    const database = await openDatabase(config)
     await migrate(database)
     return {
       database,
+      config,
       close: async () => {
         await database.close()
         await temp.drop()
@@ -31,7 +35,8 @@ export async function createTestDatabase(): Promise<{
     }
   }
 
-  const database = await openDatabase({ kind: "sqlite", file: ":memory:" })
+  const config = { kind: "sqlite" as const, file: ":memory:" }
+  const database = await openDatabase(config)
   await migrate(database)
-  return { database, close: () => database.close() }
+  return { database, config, close: () => database.close() }
 }

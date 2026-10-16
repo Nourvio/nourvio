@@ -5,37 +5,62 @@ import type { AppDeps } from "./core/context.ts"
 import { ErrorSchema, handleError, handleNotFound } from "./http/errors.ts"
 import { entityManager } from "./http/middleware/entity-manager.ts"
 import { requestLogger } from "./http/middleware/request-logger.ts"
+import { authenticateRequests } from "./http/middleware/auth.ts"
+import {
+  clientAddress,
+  trustedProxies,
+} from "./http/middleware/client-address.ts"
+import {
+  buildOpenApiDocument,
+  DEFAULT_SERVER_URL,
+} from "./http/openapi/document.ts"
 import { createRouter } from "./http/router.ts"
-import { healthRoutes } from "./http/routes/health.ts"
+import routes from "./http/routes/index.ts"
 
-export const API_BASE = "/api/v1"
+export const API_BASE = "/api"
 const SPEC_PATH = `${API_BASE}/openapi.json`
 
 export function createApp(deps: AppDeps) {
   const app = createRouter()
 
   app.use(requestId())
+  app.use(clientAddress(trustedProxies(deps.config.trustedProxies)))
   app.use(secureHeaders())
   app.use(requestLogger(deps.logger))
   app.use(entityManager(deps.database))
+  app.use(authenticateRequests(deps.auth))
 
-  app.route(API_BASE, healthRoutes(deps))
+  const api = createRouter()
+  routes(api, deps)
+  app.route(API_BASE, api)
 
   app.openAPIRegistry.register("Error", ErrorSchema)
-  app.doc31(SPEC_PATH, {
-    openapi: "3.1.0",
-    info: {
-      title: "Merran API",
-      version: deps.config.version,
-      description:
-        "Everything the Merran app does, it does through this API. Sign in with a session cookie, or send `Authorization: Bearer mrn_…` with an API key.",
-      license: {
-        name: "AGPL-3.0-or-later",
-        url: "https://www.gnu.org/licenses/agpl-3.0.html",
-      },
-    },
+  app.openAPIRegistry.registerComponent("securitySchemes", "session", {
+    type: "apiKey",
+    in: "cookie",
+    name: "merran.session_token",
+    description: "The cookie that signing in sets.",
   })
-  app.get("/api/docs", Scalar({ url: SPEC_PATH, pageTitle: "Merran API" }))
+  // Built once, on first request, since the routes don't change while running.
+  let spec: ReturnType<typeof buildOpenApiDocument> | undefined
+  app.get(SPEC_PATH, async (c) => {
+    spec ??= buildOpenApiDocument(app, deps.auth, {
+      version: deps.config.version,
+      serverUrl: deps.config.publicUrl ?? DEFAULT_SERVER_URL,
+    })
+    return c.json(await spec)
+  })
+  app.get(
+    `${API_BASE}/docs`,
+    Scalar({
+      url: SPEC_PATH,
+      pageTitle: "Merran API",
+      // Scalar reports usage to its makers unless told not to.
+      telemetry: false,
+      showDeveloperTools: "never",
+      withDefaultFonts: false,
+    })
+  )
 
   app.notFound(handleNotFound)
   app.onError(handleError)

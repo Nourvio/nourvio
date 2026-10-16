@@ -1,7 +1,11 @@
 import { serve } from "@hono/node-server"
 import { createApp } from "./app.ts"
+import { createAuth } from "./services/auth/auth.ts"
+import { SetupCode } from "./services/auth/setup-code.ts"
 import { loadConfig, type Config } from "./core/config.ts"
 import { createLogger } from "./core/logger.ts"
+import { loadSecret } from "./core/secret.ts"
+import { User } from "./database/entities/index.ts"
 import { migrate, openDatabase, type Database } from "./database/orm.ts"
 
 let config: Config
@@ -31,7 +35,18 @@ logger.info(
     : "Using Postgres"
 )
 
-const app = createApp({ config, logger, database })
+const auth = createAuth({ config, database, secret: loadSecret(config) })
+
+// A fresh server is claimed with a code from this log, so a stranger who
+// finds the page first can't take it.
+const setupCode = new SetupCode()
+if ((await database.em.fork().count(User)) === 0) {
+  logger.info(
+    `Set up Merran in the browser with this code: ${setupCode.issue()}`
+  )
+}
+
+const app = createApp({ config, logger, database, auth, setupCode })
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   logger.info(`Merran ${config.version} is listening on port ${info.port}`)

@@ -3,12 +3,15 @@
 import { Account } from "./accounts.ts"
 import { Aisle } from "./aisles.ts"
 import { CookNote } from "./cook_notes.ts"
+import { EmailInvitation } from "./email_invitations.ts"
 import { FoodPlacement } from "./food_placements.ts"
 import { HouseholdMember } from "./household_members.ts"
 import { Household } from "./households.ts"
+import { InviteLink } from "./invite_links.ts"
 import { PantryItem } from "./pantry_items.ts"
 import { PlanEntry } from "./plan_entries.ts"
 import { Purchase } from "./purchases.ts"
+import { RateLimit } from "./rate_limits.ts"
 import { RecipeIngredient } from "./recipe_ingredients.ts"
 import { RecipePairing } from "./recipe_pairings.ts"
 import { RecipeStep } from "./recipe_steps.ts"
@@ -26,12 +29,15 @@ import { WeeklyItem } from "./weekly_items.ts"
 export * from "./accounts.ts"
 export * from "./aisles.ts"
 export * from "./cook_notes.ts"
+export * from "./email_invitations.ts"
 export * from "./food_placements.ts"
 export * from "./household_members.ts"
 export * from "./households.ts"
+export * from "./invite_links.ts"
 export * from "./pantry_items.ts"
 export * from "./plan_entries.ts"
 export * from "./purchases.ts"
+export * from "./rate_limits.ts"
 export * from "./recipe_ingredients.ts"
 export * from "./recipe_pairings.ts"
 export * from "./recipe_steps.ts"
@@ -51,12 +57,15 @@ export const entities = [
   Account,
   Aisle,
   CookNote,
+  EmailInvitation,
   FoodPlacement,
   Household,
   HouseholdMember,
+  InviteLink,
   PantryItem,
   PlanEntry,
   Purchase,
+  RateLimit,
   Recipe,
   RecipeIngredient,
   RecipePairing,
@@ -79,6 +88,7 @@ export const entities = [
 export const SHARED_TABLES = [
   "accounts",
   "households",
+  "rate_limits",
   "sessions",
   "users",
   "verifications",

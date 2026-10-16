@@ -6,3 +6,4 @@ dist/
 docs/
 apps/REFERENCE/
 apps/server/src/database/migrations/
+apps/server/src/http/openapi/openapi.json
