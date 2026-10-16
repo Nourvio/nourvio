@@ -76,16 +76,66 @@ CI runs on every pull request:
 
 ## Docs
 
-- **A docs site** at `merran.app`, built with Starlight, that is also the landing page (the REFERENCE roadmap's "site that shows it off"):
-  - **Home:** what it does, screenshots, a short video, and the demo
-  - **Install:** Docker Compose, Unraid, behind each kind of proxy, updating, backups
-  - **Configure:** every setting, generated from the config schema
-  - **Use:** a guide per area (recipes, planning, the list, the pantry, the assistant, stores)
-  - **AI:** getting keys, costs, the server and household key rules, which local models work
-  - **API:** the reference, generated from the OpenAPI spec, plus examples (Home Assistant, a shell script)
-  - **Contribute:** architecture, conventions, adding a store, importer, provider or language
-- **Docs change with the code:** a pull request that changes behavior updates the docs in the same pull request, and the configuration and API pages can't drift because they're generated.
-- The repo's `docs/` keeps the decision records (like this plan), and the site is for people using and running Merran.
+The repo's `docs/` keeps the decision records (like this plan). The docs site is for people using Merran, running it and building on it, and it's where most of them will meet Merran first.
+
+### The site
+
+- **One site at `merran.app`, built with Starlight** (Astro). The landing page (the REFERENCE roadmap's "site that shows it off") is at `/` and the docs are under `/docs`. The landing page is a custom Astro page, not Starlight's splash template, built from the landing page mock-up: live demos of each screen, the three palettes, light and dark, and install in one command.
+- **In the monorepo, as `apps/docs`,** so a pull request that changes behavior changes the docs in the same pull request. The pull request template asks whether it did.
+- **Reference pages are generated, never written by hand:** settings, the CLI, the API, webhook events, MCP tools and the glossary all come from the code, so they can't drift from it.
+- **A static site,** on Cloudflare Pages or GitHub Pages, with page counts and no cookies (see [operations.md](operations.md#3-the-projects-own-websites)).
+- **CC BY 4.0,** said in the footer, with an **Edit this page** link on every page.
+- **When:** the skeleton in phase 0, each phase adding the pages for what it built, and the complete site with 0.1 (see [scope.md](scope.md#build-order)).
+
+### Sections
+
+| Section | What's in it | Where it comes from |
+|---|---|---|
+| **Get started** | What Merran is and what it needs; installing it (Compose, `docker run`, Dockge or Portainer, Unraid); the setup code on first run; inviting people | Written |
+| **Run it** | SQLite or Postgres, and moving between them; reaching it from outside (Cloudflare Tunnel, Tailscale, Caddy, Traefik, Nginx Proxy Manager); updating; backups and restore; what leaves the server; error tracking; the Problems page and troubleshooting | Written, from [operations.md](operations.md) |
+| **Configure** | Every setting: its key, its env var, its default, what it does, and whether setting it in `.env` locks it in the app | Generated from `BOOT_SETTINGS` in `apps/server/src/core/config.ts` and each module's settings |
+| **CLI** | `merran rotate-secret`, `merran db copy` and the rest, with how to run them in Docker | Generated from the command list in `apps/server/src/cli/index.ts` |
+| **Use** | A guide per area: recipes, the plan, the list, the pantry, cooking, the assistant, stores, households | Written, with screenshots |
+| **AI** | Getting keys, whose key pays and monthly limits, what things cost, which local models work | Written, from [platform.md](platform.md#ai) |
+| **API and integrations** | Below | Mostly generated |
+| **Contribute** | Architecture; the conventions (route folders, one route per file); adding a store, importer, AI provider or language; the DCO | Written |
+| **Reference** | The glossary, the changelog, the threat model, privacy | The glossary from the ⓘ explanations (see [platform.md](platform.md#help-and-guided-tours)); the changelog from release-please |
+
+### The API section
+
+For anyone building on Merran: scripts, Home Assistant, n8n, the iPhone Shortcut and AI apps. The API itself is in [platform.md](platform.md#the-public-api).
+
+1. **Start here:** one page from nothing to a working call. Make a key (Settings → You → API keys), send it as `Authorization: Bearer mrn_…`, and check it with `GET /api/auth/api-keys/current`. Then what holds everywhere:
+   - permissions by area, read or read and write
+   - a key works in one household
+   - 300 requests a minute per key
+   - every error is `{ error: { code, message, fields? } }`
+   - lists are paged with cursors, and long work returns a job to follow
+   - the promise: no version in the address, changes allowed during 0.x, and from 1.0 nothing is removed without a deprecation first
+2. **Reference:** generated from `apps/server/src/http/openapi/openapi.json` by the `starlight-openapi` plugin, so it matches the site and shows up in its search. It's grouped by the spec's tags, and each route shows the key permission it needs. The **Try it** button stays on each server's own `/api/docs` (Scalar), since the docs site has no Merran to call; the reference links there, and to the demo's.
+3. **Webhooks:** every event with a sample payload; checking a delivery's signature in the Standard Webhooks format, with short JavaScript and Python examples; retries, pausing and **Send a test**; and why private addresses need the server admin's OK. The events go in the spec's `webhooks` section (OpenAPI 3.1), so their pages are generated like the routes'.
+4. **Live events:** `/api/events`: what arrives, reconnecting, and the permission it needs.
+5. **MCP:** connecting Claude Desktop, Claude Code and other clients with a key (the **Use with an AI app** setup); what proposals and the Review queue mean for changes an outside AI makes; and the list of tools, generated from the MCP server's tool definitions.
+6. **Examples to copy:** Home Assistant (a sensor for tonight's dinner, adding to the list from an automation, reacting to a webhook), curl from a shell, an n8n flow, and the iPhone Shortcut. If a typed client is published on npm under `@merran`, it gets a page here too.
+
+### Fixing the spec first
+
+The generated reference is only as good as the spec. On October 15, 2026 it had 76 operations under 6 tags, with these gaps. They're cheapest to fix now, while the routes are few, and each fix comes with a check in `apps/server/src/http/routes.test.ts` so new routes can't skip it.
+
+| Gap | Today | Fix |
+|---|---|---|
+| Operation ids | 7 of 76, all Better Auth's; none of Merran's own routes has one | An `operationId` on every route (`listRecipes`, `createApiKey`), unique, for stable links in the reference and method names in a generated client |
+| Examples | 17 of 76 operations | A request and response example wherever a route takes or returns a body, set on the shared schemas in `http/schemas/` so most routes get them for free |
+| Key permissions | Only in prose ("With an API key, it needs the `recipes: read` permission"), and checked separately in the handler (`inHousehold(c, { area, access })`) | Declared once on the route, as `x-merran-permission` (`recipes:read`, or none for routes that refuse keys), with the handler's check reading the same value. The reference shows it as a badge and builds a table of every permission's routes, and the sentence in the description goes. |
+| Better Auth's routes | 11 sign-in and session routes have no summary, and keep Better Auth's names (`setActiveOrganization` switches households) | Summaries, descriptions and ids in Merran's words, set in `BETTER_AUTH_ENDPOINTS` (`http/routes/auth/better-auth.ts`) over what Better Auth describes |
+| Webhook events | The spec's `webhooks` section is empty | Each event added to it as webhooks are built |
+
+### Across the site
+
+- **Search** with Pagefind, which comes with Starlight.
+- **Screenshots** taken by a Playwright script from the demo household (see [operations.md](operations.md#a-public-demo)), in light and dark, and taken again each release, so no page shows an old screen.
+- **One version** of the docs until 1.0, following the latest release; anything only on `edge` says so. Versioned docs can come with 1.0, if old majors need them.
+- **CI** builds the site on every pull request, checks every link, and fails when a generated page is out of date, as it already does for `openapi.json`.
 
 ## Funding
 
