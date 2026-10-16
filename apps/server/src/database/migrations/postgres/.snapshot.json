@@ -4569,6 +4569,23 @@
           "enumItems": [],
           "mappedType": "boolean"
         },
+        "imported_from": {
+          "name": "imported_from",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
         "last_made_at": {
           "name": "last_made_at",
           "type": "timestamptz(6)",
@@ -4809,6 +4826,17 @@
           "composite": false,
           "constraint": false,
           "keyName": "recipes_deleted_at_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "household_id",
+            "imported_from"
+          ],
+          "composite": true,
+          "constraint": false,
+          "keyName": "recipes_household_id_imported_from_index",
           "primary": false,
           "unique": false
         },

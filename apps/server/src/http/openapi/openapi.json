@@ -895,6 +895,122 @@
           "createdAt"
         ]
       },
+      "ImportFile": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Start its import at /households/current/import/files/{fileId}/start."
+          },
+          "app": {
+            "type": "string",
+            "enum": [
+              "mealie"
+            ]
+          },
+          "what": {
+            "type": "string",
+            "enum": [
+              "backup",
+              "recipes"
+            ],
+            "description": "A whole backup, or recipes exported from the app."
+          },
+          "recipes": {
+            "type": "integer"
+          },
+          "alreadyHere": {
+            "type": "integer",
+            "description": "Of those, how many an earlier import brought in. They're skipped."
+          },
+          "groups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "recipes": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "recipes"
+              ]
+            },
+            "description": "A Mealie backup's groups, when there's more than one to choose from."
+          }
+        },
+        "required": [
+          "id",
+          "app",
+          "what",
+          "recipes",
+          "alreadyHere",
+          "groups"
+        ]
+      },
+      "StartImportFile": {
+        "type": "object",
+        "properties": {
+          "group": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Which of a Mealie backup's groups to import. All of them if left out."
+          }
+        }
+      },
+      "MealieCheck": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "example": "v3.28.0"
+          },
+          "recipes": {
+            "type": "integer"
+          },
+          "alreadyHere": {
+            "type": "integer",
+            "description": "Recipes an earlier Mealie import brought in. They're skipped."
+          }
+        },
+        "required": [
+          "version",
+          "recipes",
+          "alreadyHere"
+        ]
+      },
+      "MealieConnection": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2000,
+            "format": "uri"
+          },
+          "token": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "url",
+          "token"
+        ]
+      },
       "InviteLink": {
         "type": "object",
         "properties": {
@@ -3203,6 +3319,318 @@
           },
           "413": {
             "description": "The file is too big.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/import/files": {
+      "post": {
+        "tags": [
+          "Households"
+        ],
+        "summary": "Check a file from another app",
+        "description": "Household admins only. The body is the file: a Mealie backup, or recipes exported from Mealie. It's kept, and what's in it is said, so its import can be started at /households/current/import/files/{fileId}/start. A file not started is cleared away after a week.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/zip": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            },
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What's in it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportFile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Merran can't read that file.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The file is too big.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/import/files/{fileId}/start": {
+      "post": {
+        "tags": [
+          "Households"
+        ],
+        "summary": "Import a checked file from another app",
+        "description": "Household admins only. Imports a file checked at /households/current/import/files, in the background: follow the job at /households/current/jobs/{jobId}. Recipes an earlier import brought in are skipped.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "fileId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartImportFile"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Importing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The file isn't here any more.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/import/mealie/check": {
+      "post": {
+        "tags": [
+          "Households"
+        ],
+        "summary": "Connect to a Mealie",
+        "description": "The server admin only, since Mealie is usually on the home network and this reaches the address given. Says which Mealie it is and how many recipes it has. The token isn't kept.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MealieConnection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Connected.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealieCheck"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Mealie didn't take the token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Couldn't reach Mealie, or it isn't Mealie.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/import/mealie": {
+      "post": {
+        "tags": [
+          "Households"
+        ],
+        "summary": "Import from a Mealie",
+        "description": "The server admin only. Imports every recipe in the Mealie, in the background: follow the job at /households/current/jobs/{jobId}. Recipes an earlier import brought in are skipped. The token is sealed while the import runs, and forgotten once it's finished.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MealieConnection"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Importing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Mealie didn't take the token.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Couldn't reach Mealie, or it isn't Mealie.",
             "content": {
               "application/json": {
                 "schema": {

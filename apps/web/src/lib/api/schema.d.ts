@@ -984,6 +984,316 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/households/current/import/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check a file from another app
+         * @description Household admins only. The body is the file: a Mealie backup, or recipes exported from Mealie. It's kept, and what's in it is said, so its import can be started at /households/current/import/files/{fileId}/start. A file not started is cleared away after a week.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/zip": string;
+                    "application/octet-stream": string;
+                };
+            };
+            responses: {
+                /** @description What's in it. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportFile"];
+                    };
+                };
+                /** @description Merran can't read that file. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The file is too big. */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/import/files/{fileId}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import a checked file from another app
+         * @description Household admins only. Imports a file checked at /households/current/import/files, in the background: follow the job at /households/current/jobs/{jobId}. Recipes an earlier import brought in are skipped.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    fileId: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["StartImportFile"];
+                };
+            };
+            responses: {
+                /** @description Importing. */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Job"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The file isn't here any more. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/import/mealie/check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Connect to a Mealie
+         * @description The server admin only, since Mealie is usually on the home network and this reaches the address given. Says which Mealie it is and how many recipes it has. The token isn't kept.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MealieConnection"];
+                };
+            };
+            responses: {
+                /** @description Connected. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["MealieCheck"];
+                    };
+                };
+                /** @description Mealie didn't take the token. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Couldn't reach Mealie, or it isn't Mealie. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/import/mealie": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import from a Mealie
+         * @description The server admin only. Imports every recipe in the Mealie, in the background: follow the job at /households/current/jobs/{jobId}. Recipes an earlier import brought in are skipped. The token is sealed while the import runs, and forgotten once it's finished.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["MealieConnection"];
+                };
+            };
+            responses: {
+                /** @description Importing. */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Job"];
+                    };
+                };
+                /** @description Mealie didn't take the token. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Couldn't reach Mealie, or it isn't Mealie. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households/current/invites": {
         parameters: {
             query?: never;
@@ -4891,6 +5201,42 @@ export interface components {
             finishedAt: string | null;
             /** Format: date-time */
             createdAt: string;
+        };
+        ImportFile: {
+            /** @description Start its import at /households/current/import/files/{fileId}/start. */
+            id: string;
+            /** @enum {string} */
+            app: "mealie";
+            /**
+             * @description A whole backup, or recipes exported from the app.
+             * @enum {string}
+             */
+            what: "backup" | "recipes";
+            recipes: number;
+            /** @description Of those, how many an earlier import brought in. They're skipped. */
+            alreadyHere: number;
+            /** @description A Mealie backup's groups, when there's more than one to choose from. */
+            groups: {
+                id: string;
+                name: string;
+                recipes: number;
+            }[];
+        };
+        StartImportFile: {
+            /** @description Which of a Mealie backup's groups to import. All of them if left out. */
+            group?: string | null;
+        };
+        MealieCheck: {
+            /** @example v3.28.0 */
+            version: string | null;
+            recipes: number;
+            /** @description Recipes an earlier Mealie import brought in. They're skipped. */
+            alreadyHere: number;
+        };
+        MealieConnection: {
+            /** Format: uri */
+            url: string;
+            token: string;
         };
         InviteLink: {
             id: string;

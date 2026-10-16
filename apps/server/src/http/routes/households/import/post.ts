@@ -54,7 +54,7 @@ const route = createRoute({
 export default (router: Router, { config }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { user, session } = serverAdmin(c)
-    const file = await saveUpload(config.dataDir, c.req.raw.body)
+    const { path: file } = await saveUpload(config.dataDir, c.req.raw.body)
     const manifest = await checkUpload(file)
     const household = await createHousehold(c.var.em, {
       name: manifest.household.name,

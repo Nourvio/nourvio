@@ -64,6 +64,11 @@ export const Recipe = defineEntity({
      */
     diets: p.string().default(""),
     origin: p.enum(RECIPE_ORIGINS),
+    /**
+     * Where an import from another app brought it from, like "mealie:<id>",
+     * so importing the same thing again skips it.
+     */
+    importedFrom: p.string().nullable(),
     lastMadeAt: p.datetime().nullable(),
     /** Set while the recipe is in Recently deleted. */
     deletedAt: p.datetime().nullable().index(),
@@ -85,7 +90,10 @@ export const Recipe = defineEntity({
         .orphanRemoval(),
   },
   uniques: [{ properties: ["household", "slug"] }],
-  indexes: [{ properties: ["household", "sourceUrl"] }],
+  indexes: [
+    { properties: ["household", "sourceUrl"] },
+    { properties: ["household", "importedFrom"] },
+  ],
   filters: { ...householdFilter, ...notDeletedFilter },
 })
 export type Recipe = InferEntity<typeof Recipe>

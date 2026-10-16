@@ -41,6 +41,7 @@ const fetcher: Fetcher = async (url) => {
   }
   return {
     url: page.finalUrl ?? url,
+    status: 200,
     contentType: page.contentType,
     body: page.body,
   }

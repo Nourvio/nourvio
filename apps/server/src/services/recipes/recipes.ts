@@ -264,6 +264,8 @@ export async function importRecipe(
     slug: string
     input: RecipeInput
     origin: RecipeOrigin
+    /** Where another app's import brought it from (see the entity). */
+    importedFrom?: string | null
     photoId: string | null
     createdBy: string | null
     lastMadeAt: Date | null
@@ -292,6 +294,7 @@ export async function importRecipe(
       slug: await uniqueSlug(tx, options.slug),
       name: options.input.name,
       origin: options.origin,
+      importedFrom: options.importedFrom ?? null,
       image: options.photoId,
       createdBy: options.createdBy,
       lastMadeAt: options.lastMadeAt,

@@ -34,6 +34,7 @@ const isDue = (job: ServerJob) =>
 /** What each kind of job is, said plainly. */
 const KINDS = {
   "household.import": "settings.server.jobs.kinds.import",
+  "recipes.importFromApp": "settings.server.jobs.kinds.importFromApp",
   "recipes.purgeDeleted": "settings.server.jobs.kinds.purgeDeleted",
   "jobs.cleanUp": "settings.server.jobs.kinds.cleanUp",
   "telemetry.send": "settings.server.jobs.kinds.telemetry",

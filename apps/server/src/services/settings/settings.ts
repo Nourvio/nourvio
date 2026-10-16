@@ -84,6 +84,19 @@ export class Settings {
     this.#fromEnv = options.fromEnv
   }
 
+  /**
+   * Seals a secret that isn't a setting, like a token a job needs while it
+   * runs, so it can't be read from the database alone.
+   */
+  seal(value: string): Sealed {
+    return this.#box.seal(value)
+  }
+
+  /** Opens what `seal` sealed. */
+  open(sealed: Sealed): string {
+    return this.#box.open(sealed)
+  }
+
   /** Every setting at a level that Settings shows. */
   definitions(level: SettingLevel): AnySetting[] {
     return [...this.#byKey.values()].filter(

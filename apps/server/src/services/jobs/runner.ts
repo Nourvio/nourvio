@@ -55,9 +55,13 @@ export type JobSchedule = { kind: string; cron: string }
 
 /** Thrown into a job that's stopped, so it can tell. */
 export class JobStopped extends Error {
-  constructor() {
+  /** Someone stopped it, or Merran is shutting down (it runs again next start). */
+  readonly why: "cancelled" | "shutdown" | null
+
+  constructor(why: "cancelled" | "shutdown" | null = null) {
     super("Stopped")
     this.name = "JobStopped"
+    this.why = why
   }
 }
 
@@ -133,7 +137,7 @@ export class JobRunner {
     if (this.#timer) clearTimeout(this.#timer)
     for (const running of this.#running.values()) {
       running.stopped = "shutdown"
-      running.controller.abort(new JobStopped())
+      running.controller.abort(new JobStopped("shutdown"))
     }
     await Promise.all([...this.#running.values()].map((r) => r.done))
     await this.#ticking
@@ -175,7 +179,7 @@ export class JobRunner {
     const running = this.#running.get(jobId)
     if (!running) return
     running.stopped = "cancelled"
-    running.controller.abort(new JobStopped())
+    running.controller.abort(new JobStopped("cancelled"))
   }
 
   /** For tests: works until nothing's due or running. */

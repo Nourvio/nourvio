@@ -19,7 +19,12 @@ beforeAll(async () => {
   const test = await createTestApp({
     fetcher: async (url, options) => {
       sent.push({ url, options })
-      return { url, contentType: "application/json", body: Buffer.from("{}") }
+      return {
+        url,
+        status: 200,
+        contentType: "application/json",
+        body: Buffer.from("{}"),
+      }
     },
   })
   ;({ app, close, database, jobs } = test)

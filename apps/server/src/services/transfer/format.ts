@@ -67,6 +67,8 @@ export const RecipeFileSchema = z.object({
   nutrition: z.record(z.string(), z.unknown()).nullable(),
   dietOverrides: z.record(z.string(), z.boolean()),
   origin: z.string(),
+  /** Added after version 1 came out, so older exports don't have it. */
+  importedFrom: z.string().max(200).nullable().optional(),
   lastMadeAt: when.nullable(),
   createdAt: when,
   updatedAt: when,

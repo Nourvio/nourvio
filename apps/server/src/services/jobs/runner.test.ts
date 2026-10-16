@@ -111,9 +111,26 @@ describe("the job runner", () => {
     await runner([slow]).drain()
     expect(most).toBe(1)
 
+    // Each waits for the other two to start, rather than for a time that a
+    // busy database can outlast. Not for long, if they never do.
     most = 0
+    let started!: () => void
+    const allStarted = new Promise<void>((resolve) => (started = resolve))
+    const together: JobHandler = {
+      kind: "slow",
+      concurrency: 3,
+      run: async () => {
+        most = Math.max(most, ++now)
+        if (now === 3) started()
+        await Promise.race([
+          allStarted,
+          new Promise((resolve) => setTimeout(resolve, 1000)),
+        ])
+        now--
+      },
+    }
     for (let i = 0; i < 3; i++) await enqueue(em(), { kind: "slow" })
-    await runner([{ ...slow, concurrency: 3 }]).drain()
+    await runner([together]).drain()
     expect(most).toBe(3)
   })
 

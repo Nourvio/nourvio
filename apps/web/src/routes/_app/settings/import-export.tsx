@@ -2,6 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router"
 
 import { meQuery } from "@/features/auth/queries"
 import { isAdminRole } from "@/features/household/queries"
+import { AppImportCard } from "@/features/transfer/app-import-card"
 import { ExportCard } from "@/features/transfer/export-card"
 import { ImportCard } from "@/features/transfer/import-card"
 
@@ -20,6 +21,7 @@ function ImportExportSettings() {
     <>
       <ExportCard />
       <ImportCard />
+      <AppImportCard />
     </>
   )
 }

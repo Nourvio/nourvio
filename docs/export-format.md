@@ -59,6 +59,7 @@ An array of recipes. Recipes in Recently deleted aren't exported.
 | `nutrition` | Per serving, or null |
 | `dietOverrides` | The household's corrections to the diet labels worked out from the ingredients: `{ "gluten-free": false }`. The labels themselves are worked out again on import |
 | `origin` | Where it first came from: `link`, `manual`, `mealie`... |
+| `importedFrom` | What it was in the app it was imported from, like `mealie:<id>`, so importing from that app again skips it. Null, or missing in exports from before it was added |
 | `lastMadeAt`, `createdAt`, `updatedAt` | Times, as ISO 8601 |
 | `createdBy` | The email of who added it, or null |
 | `tags` | Tag names |
