@@ -117,13 +117,15 @@ function tagsFrom(values: string[]) {
 }
 
 /** What a source with no recipe in it is called. */
-export type Source = "text" | "photos" | "page"
+export type Source = "text" | "photos" | "page" | "video"
 
 const NOT_FOUND: Record<Source, string> = {
   text: "There's no recipe in that text that Merran could find. Check it has the ingredients or the steps.",
   photos:
     "There's no recipe in those photos that Merran could read. Try photos that are closer, flatter or better lit.",
   page: "There's no recipe on that page that Merran could find. Paste the recipe's text instead, or type it in.",
+  video:
+    "There's no recipe in that video that Merran could find: its caption, captions and pictures don't say one.",
 }
 
 /** The model's answer as the editor's input, or why it isn't a recipe. */

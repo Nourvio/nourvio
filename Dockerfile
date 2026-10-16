@@ -36,17 +36,43 @@ RUN pnpm --filter @merran/web build
 
 # ---- Runtime ----
 FROM node:24-slim
+ARG TARGETARCH
 ENV NODE_ENV=production \
     PORT=3000 \
     MERRAN_DATA_DIR=/data \
-    MERRAN_INSTALL_METHOD=docker
+    MERRAN_INSTALL_METHOD=docker \
+    MERRAN_YTDLP_PATH=/opt/yt-dlp/yt-dlp
 
-# setpriv (from util-linux) lets the entrypoint drop root after setting up
-# the data folder.
+# Tools, before the app so this layer stays cached between app updates:
+# - setpriv (from util-linux), for the entrypoint to drop root after
+#   setting up the data folder.
+# - ffmpeg, for frames and sound from recipe videos: a static build from
+#   BtbN/FFmpeg-Builds (linked from ffmpeg.org), since Debian's package and
+#   its libraries would add about 900 MB.
+# - yt-dlp, which reads TikTok, YouTube, Instagram and Facebook: the
+#   standalone nightly build, which keeps up with site changes fastest.
+#   Merran keeps it updated (modules/video), so the entrypoint hands
+#   /opt/yt-dlp to the app's user.
+# Both downloads are checked against their releases' checksums.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends util-linux \
+    && apt-get install -y --no-install-recommends util-linux ca-certificates curl xz-utils \
+    && case "$TARGETARCH" in \
+         arm64) ytdlp=yt-dlp_linux_aarch64; ffmpeg=ffmpeg-master-latest-linuxarm64-gpl ;; \
+         *) ytdlp=yt-dlp_linux; ffmpeg=ffmpeg-master-latest-linux64-gpl ;; \
+       esac \
+    && mkdir -p /tmp/tools /opt/yt-dlp && cd /tmp/tools \
+    && curl -fsSLO "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/$ffmpeg.tar.xz" \
+    && curl -fsSLO "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/checksums.sha256" \
+    && grep " $ffmpeg.tar.xz\$" checksums.sha256 | sha256sum -c - \
+    && tar -xJf "$ffmpeg.tar.xz" --strip-components=2 -C /usr/local/bin "$ffmpeg/bin/ffmpeg" \
+    && curl -fsSLO "https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/$ytdlp" \
+    && curl -fsSLO "https://github.com/yt-dlp/yt-dlp-nightly-builds/releases/latest/download/SHA2-256SUMS" \
+    && grep " $ytdlp\$" SHA2-256SUMS | sha256sum -c - \
+    && install -m 755 "$ytdlp" /opt/yt-dlp/yt-dlp \
+    && cd / && rm -rf /tmp/tools \
+    && apt-get purge -y curl xz-utils && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/* \
-    && command -v setpriv
+    && command -v setpriv && ffmpeg -version | head -n 1 && /opt/yt-dlp/yt-dlp --version
 
 WORKDIR /app
 COPY --from=deps /app/node_modules node_modules

@@ -36,9 +36,13 @@ type Form = { url: string }
 /** What the dialog shows: one link, several, pasted text, or photos. */
 type View = "link" | "several" | "text" | "photos"
 
+/** TikTok, YouTube, Instagram and Facebook: read as videos, which takes longer. */
+const VIDEO_LINK =
+  /^\s*(https?:\/\/)?([\w-]+\.)*(tiktok\.com|youtube\.com|youtu\.be|instagram\.com|instagr\.am|facebook\.com|fb\.watch)\b/i
+
 /**
- * Adding a recipe: from a link, which reads the recipe off the page; from
- * text or photos, which AI reads; or by typing it in.
+ * Adding a recipe: from a link, which reads the recipe off the page or the
+ * video; from text or photos, which AI reads; or by typing it in.
  */
 export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
   const { t } = useTranslation()
@@ -48,6 +52,7 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
   const [view, setView] = React.useState<View>("link")
   // Text and photos are read by AI, offered once there's AI on the server.
   const aiOn = useCapability("ai")
+  const videoOn = useCapability("video")
   // Still open when AI has finished reading, which can take a while.
   const stillOpen = React.useRef(open)
   stillOpen.current = open
@@ -188,7 +193,9 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
             <DialogHeader>
               <DialogTitle>{t("recipes.add")}</DialogTitle>
               <DialogDescription>
-                {t("recipes.import.description")}
+                {videoOn
+                  ? t("recipes.import.descriptionVideo")
+                  : t("recipes.import.description")}
               </DialogDescription>
             </DialogHeader>
             <TextField
@@ -203,6 +210,14 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
                   value.trim() !== "" || t("recipes.import.linkNeeded"),
               })}
             />
+            {isSubmitting && VIDEO_LINK.test(form.getValues("url")) && (
+              <p
+                className="-mt-3 text-sm text-muted-foreground"
+                aria-live="polite"
+              >
+                {t("recipes.import.readingVideo")}
+              </p>
+            )}
             <Button
               type="button"
               variant="link"
@@ -261,7 +276,9 @@ export function AddRecipeDialog({ trigger }: { trigger?: React.ReactElement }) {
                   <HugeiconsIcon icon={Link01Icon} strokeWidth={2} />
                 )}
                 {isSubmitting
-                  ? t("recipes.import.reading")
+                  ? VIDEO_LINK.test(form.getValues("url"))
+                    ? t("recipes.import.readingVideoShort")
+                    : t("recipes.import.reading")
                   : t("recipes.import.submit")}
               </Button>
             </DialogFooter>

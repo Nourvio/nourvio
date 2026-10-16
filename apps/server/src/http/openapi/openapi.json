@@ -9852,11 +9852,38 @@
             "items": {
               "$ref": "#/components/schemas/SettingState"
             }
+          },
+          "video": {
+            "type": "object",
+            "properties": {
+              "ytDlp": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ffmpeg": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "cookies": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "ytDlp",
+              "ffmpeg",
+              "cookies"
+            ],
+            "description": "Video import's tools, by their versions, or null when they aren't there; and whether there's a cookies.txt for sites that want a signed-in session."
           }
         },
         "required": [
           "about",
-          "settings"
+          "settings",
+          "video"
         ],
         "example": {
           "about": {
@@ -9887,7 +9914,12 @@
                 "unreadable": false
               }
             }
-          ]
+          ],
+          "video": {
+            "ytDlp": "2026.08.19",
+            "ffmpeg": "8.0",
+            "cookies": false
+          }
         }
       },
       "ServerAi": {

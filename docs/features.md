@@ -99,7 +99,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Merran export and import of a whole household | Key | Built | |
 | Share to Merran from Android's share sheet or an iPhone Shortcut | Key | Built | |
 | Tidy up: AI fixes a recipe, you review each change | Key | Built | AI; also marks which ingredients a recipe can do without |
-| Video links (TikTok, YouTube, Instagram) | Headline | Planned | Module |
+| Video links (TikTok, YouTube, Instagram, Facebook) | Headline | Built | Module, on by default: yt-dlp and ffmpeg (in the image) and AI; listens to videos without captions on an OpenAI key |
 | Follow recipe sites and see their newest recipes | Key | Planned | Module; respects `robots.txt` |
 | Starter collections | Detail | Planned | Module; data files per language |
 | Discover: find recipes for any theme with AI | Key | Built | AI, with web search; each page is opened first, so they all import |

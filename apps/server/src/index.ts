@@ -11,12 +11,13 @@ import { migrate, openDatabase, type Database } from "./database/orm.ts"
 import { MODULES } from "./modules/index.ts"
 import { startModules } from "./modules/module.ts"
 import { createPublicFetcher } from "./services/fetch/public-fetch.ts"
-import { createAiModels } from "./services/ai/providers.ts"
+import { createAiModels, createTranscriber } from "./services/ai/providers.ts"
 import { createEventBus } from "./services/events/events.ts"
 import { JOB_HANDLERS, JOB_SCHEDULES } from "./services/jobs/handlers.ts"
 import { JobRunner } from "./services/jobs/runner.ts"
 import { createSettings } from "./services/settings/settings.ts"
 import { LocalFileStore } from "./services/storage/files.ts"
+import { createVideoTools } from "./services/video/tools.ts"
 
 let config: Config
 try {
@@ -54,7 +55,8 @@ const settings = createSettings({
   definitions: MODULES.flatMap((module) => module.settings),
   fromEnv: config.fromEnv,
 })
-await startModules(MODULES, { config, logger, database, settings })
+const video = createVideoTools({ dataDir: config.dataDir, settings, logger })
+await startModules(MODULES, { config, logger, database, settings, video })
 
 // A fresh server is claimed with a code from this log, so a stranger who
 // finds the page first can't take it.
@@ -68,6 +70,7 @@ if ((await database.em.fork().count(User)) === 0) {
 const files = new LocalFileStore(join(config.dataDir, "files"))
 const fetcher = createPublicFetcher({ version: config.version })
 const ai = createAiModels()
+const transcribe = createTranscriber()
 const events = createEventBus()
 const jobs = new JobRunner({
   deps: {
@@ -79,6 +82,8 @@ const jobs = new JobRunner({
     files,
     fetcher,
     ai,
+    transcribe,
+    video,
     events,
   },
   handlers: JOB_HANDLERS,
@@ -96,6 +101,8 @@ const app = createApp({
   files,
   fetcher,
   ai,
+  transcribe,
+  video,
   jobs,
   events,
 })

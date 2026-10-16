@@ -15,6 +15,7 @@ import {
   telemetryReportQuery,
 } from "@/features/server/queries"
 import { TelemetryCard } from "@/features/server/telemetry-card"
+import { VideoCard } from "@/features/server/video-card"
 
 export const Route = createFileRoute("/_app/settings/server")({
   beforeLoad: async ({ context }) => {
@@ -38,6 +39,7 @@ function ServerSettings() {
       <ServerAiKeysCard />
       <ServerAiPolicyCard />
       <ServerAiSpendCard />
+      <VideoCard />
       <ErrorTrackingCard />
       <TelemetryCard />
       <JobsCard />

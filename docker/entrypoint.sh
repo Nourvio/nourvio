@@ -10,6 +10,10 @@ if [ "$(id -u)" = "0" ]; then
   mkdir -p "$MERRAN_DATA_DIR"
   find "$MERRAN_DATA_DIR" \( ! -user "$PUID" -o ! -group "$PGID" \) \
     -exec chown "$PUID:$PGID" {} +
+  # yt-dlp updates itself, as the app's user.
+  if [ -d /opt/yt-dlp ]; then
+    chown -R "$PUID:$PGID" /opt/yt-dlp
+  fi
   exec setpriv --reuid="$PUID" --regid="$PGID" --clear-groups "$@"
 fi
 

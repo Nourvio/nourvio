@@ -5,12 +5,13 @@ import { pino } from "pino"
 import { createApp, type App } from "../app.ts"
 import { MODULES } from "../modules/index.ts"
 import { startModules, type Module } from "../modules/module.ts"
-import type { AiModels } from "../services/ai/providers.ts"
+import type { AiModels, Transcriber } from "../services/ai/providers.ts"
 import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import { JOB_HANDLERS } from "../services/jobs/handlers.ts"
 import { JobRunner, type JobHandler } from "../services/jobs/runner.ts"
 import { createSettings } from "../services/settings/settings.ts"
 import { LocalFileStore } from "../services/storage/files.ts"
+import { NO_VIDEO_TOOLS, type VideoTools } from "../services/video/tools.ts"
 import { createAuth } from "../services/auth/auth.ts"
 import { SetupCode } from "../services/auth/setup-code.ts"
 import { createEventBus } from "../services/events/events.ts"
@@ -35,6 +36,10 @@ export async function createTestApp(
     fetcher?: Fetcher
     /** The AI models to call. Tests never reach a provider. */
     ai?: AiModels
+    /** Speech to text. Tests never reach a provider. */
+    transcribe?: Transcriber
+    /** yt-dlp and ffmpeg. By default they aren't there. */
+    video?: VideoTools
     /** Kinds of job beyond Merran's own, for tests of the runner. */
     jobHandlers?: readonly JobHandler[]
   } = {}
@@ -69,7 +74,11 @@ export async function createTestApp(
     definitions,
     fromEnv: config.fromEnv,
   })
-  await startModules(modules, { config, logger, database, settings })
+  const video = options.video ?? NO_VIDEO_TOOLS
+  const transcribe: Transcriber =
+    options.transcribe ??
+    (() => Promise.reject(new Error("Tests don't reach AI providers.")))
+  await startModules(modules, { config, logger, database, settings, video })
   const setupCode = new SetupCode()
   const files = new LocalFileStore(filesDir)
   const fetcher: Fetcher =
@@ -92,6 +101,8 @@ export async function createTestApp(
       files,
       fetcher,
       ai,
+      transcribe,
+      video,
       events,
     },
     handlers: [...JOB_HANDLERS, ...(options.jobHandlers ?? [])],
@@ -107,6 +118,8 @@ export async function createTestApp(
     files,
     fetcher,
     ai,
+    transcribe,
+    video,
     jobs,
     events,
   })

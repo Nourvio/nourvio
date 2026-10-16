@@ -405,6 +405,22 @@
           "cleanUp": "Clearing out old jobs",
           "telemetry": "Sending the daily summary"
         }
+      },
+      "video": {
+        "title": "Video import",
+        "description": "Recipes from TikTok, YouTube, Instagram and Facebook links. yt-dlp reads the caption, captions and pictures, and AI writes the recipe up.",
+        "ytDlp": "yt-dlp {{version}}",
+        "ytDlpMissing": "yt-dlp isn't here.",
+        "ffmpeg": "ffmpeg {{version}}",
+        "ffmpegMissing": "ffmpeg isn't here.",
+        "install": "Both come with the Docker image. Elsewhere, install them, or put them in the data folder's tools folder.",
+        "cookies": "A cookies.txt is set, for sites that want a signed-in session.",
+        "noCookies": "No cookies.txt. Instagram and some YouTube videos may want one: put one from your browser in the data folder.",
+        "enabled": "Import videos",
+        "enabledHint": "Paste or share a video link like any other.",
+        "autoUpdate": "Keep yt-dlp up to date",
+        "autoUpdateHint": "Weekly. It stops working when sites change, and is fixed within days.",
+        "saved": "Saved."
       }
     },
     "transfer": {
@@ -861,7 +877,10 @@
         "slow": "This can take up to a minute.",
         "added": "Added {{name}}. AI read it, so check it over.",
         "back": "Back"
-      }
+      },
+      "readingVideo": "Reading the video. This can take a minute.",
+      "descriptionVideo": "Paste a link to a recipe or a video (TikTok, YouTube, Instagram), and Merran reads it, photo and all.",
+      "readingVideoShort": "Reading the video…"
     },
     "links": {
       "title": "Add several recipes",

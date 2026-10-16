@@ -61,6 +61,27 @@ async function contextFor(deps: Deps, em: EntityManager, householdId: string) {
   return { policy, ai, spent, own, server, covers }
 }
 
+/**
+ * An OpenAI key that can turn a video's speech into text for a household:
+ * from whoever pays for its importing, or null.
+ */
+export async function canTranscribe(
+  deps: Deps,
+  em: EntityManager,
+  householdId: string
+) {
+  const importing = await resolveTask(deps, em, householdId, "import")
+  if (!importing.ok) return null
+  const context = await contextFor(deps, em, householdId)
+  const pool =
+    importing.key.source === "household"
+      ? context.own
+      : context.covers
+        ? context.server
+        : []
+  return pool.find((key) => key.provider === "openai") ?? null
+}
+
 /** Whose key pays for one of a household's AI tasks, or why nobody's can. */
 export async function resolveTask(
   deps: Deps,

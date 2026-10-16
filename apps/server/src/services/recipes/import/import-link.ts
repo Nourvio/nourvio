@@ -9,6 +9,7 @@ import { tidyAfterImport } from "../review/tidy-run.ts"
 import { readPage, type AiDeps } from "./ai-reader.ts"
 import { findBySourceUrl, isVideoLink, normalizeLink } from "./links.ts"
 import { readRecipeData } from "./recipe-data.ts"
+import { importVideo, type VideoDeps } from "./import-video.ts"
 
 /** Photos smaller than this on their short side are icons or thumbnails. */
 const MIN_PHOTO_SIDE = 200
@@ -29,7 +30,7 @@ export function decodeHtml(body: Buffer, contentType: string) {
  * The first of these photos that loads and is big enough to show well, or
  * else the biggest that will do. A missing photo isn't worth failing over.
  */
-async function downloadPhoto(
+export async function downloadPhoto(
   fetcher: Fetcher,
   urls: string[],
   referer: string
@@ -69,7 +70,7 @@ export type ImportResult = {
  */
 export async function importLink(
   em: EntityManager,
-  deps: AiDeps & { files: FileStore },
+  deps: AiDeps & VideoDeps & { files: FileStore },
   options: {
     householdId: string
     userId: string | null
@@ -90,11 +91,7 @@ export async function importLink(
   const known = await already([url])
   if (known) return known
   if (isVideoLink(url)) {
-    throw new AppError(
-      "unprocessable",
-      "video_link",
-      "Video links can't be imported yet. Type the recipe in instead."
-    )
+    return importVideo(em, deps, { ...options, url, already })
   }
 
   const page = await fetcher(url)

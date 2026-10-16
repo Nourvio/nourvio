@@ -140,7 +140,8 @@ describe("importing a link", () => {
     const cases = [
       ["https://cooking.example/tips", 422, "no_recipe_data"],
       ["https://cooking.example/menu.pdf", 422, "not_a_page"],
-      ["https://www.youtube.com/watch?v=abc", 422, "video_link"],
+      // A video, without yt-dlp and ffmpeg here.
+      ["https://www.youtube.com/watch?v=abc", 422, "video_tools_missing"],
       ["https://cooking.example/gone", 502, "site_unreachable"],
       ["http://192.168.1.20/recipes/soup", 400, "private_address"],
       ["soup", 400, "not_a_link"],

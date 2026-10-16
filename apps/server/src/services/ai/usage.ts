@@ -48,6 +48,8 @@ export async function recordUsage(
     keyId: string
     inputTokens: number
     outputTokens: number
+    /** What it cost, for a call not priced by tokens, like speech to text. */
+    cost?: number
   }
 ) {
   em.create(AiUsage, {
@@ -61,12 +63,9 @@ export async function recordUsage(
     month: await monthFor(em, call.householdId),
     inputTokens: call.inputTokens,
     outputTokens: call.outputTokens,
-    cost: costOf(
-      call.provider,
-      call.model,
-      call.inputTokens,
-      call.outputTokens
-    ),
+    cost:
+      call.cost ??
+      costOf(call.provider, call.model, call.inputTokens, call.outputTokens),
   })
   await em.flush()
 }

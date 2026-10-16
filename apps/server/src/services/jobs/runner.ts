@@ -7,10 +7,11 @@ import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
 import type { Module } from "../../modules/module.ts"
 import type { EventBus } from "../events/events.ts"
-import type { AiModels } from "../ai/providers.ts"
+import type { AiModels, Transcriber } from "../ai/providers.ts"
 import type { Fetcher } from "../fetch/public-fetch.ts"
 import type { Settings } from "../settings/settings.ts"
 import type { FileStore } from "../storage/files.ts"
+import type { VideoTools } from "../video/tools.ts"
 import { enqueue, onJobAdded } from "./jobs.ts"
 
 // Merran's job runner (docs/stack.md, "A job runner of our own"): one
@@ -31,6 +32,10 @@ export type JobDeps = {
   fetcher: Fetcher
   /** The AI models to call. */
   ai: AiModels
+  /** Speech to text, for videos without captions. */
+  transcribe: Transcriber
+  /** yt-dlp and ffmpeg, for video import. */
+  video: VideoTools
   /** What changed in each household, so open pages see what a job did. */
   events: EventBus
 }

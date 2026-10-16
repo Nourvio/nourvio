@@ -60,6 +60,16 @@ export const ServerSettingsSchema = z
       publicUrl: z.string().nullable(),
     }),
     settings: z.array(SettingStateSchema),
+    video: z
+      .object({
+        ytDlp: z.string().nullable(),
+        ffmpeg: z.string().nullable(),
+        cookies: z.boolean(),
+      })
+      .openapi({
+        description:
+          "Video import's tools, by their versions, or null when they aren't there; and whether there's a cookies.txt for sites that want a signed-in session.",
+      }),
   })
   .openapi("ServerSettings", {
     example: {
@@ -70,6 +80,7 @@ export const ServerSettingsSchema = z
         publicUrl: "https://merran.example.com",
       },
       settings: [SETTING, SECRET_SETTING],
+      video: { ytDlp: "2026.08.19", ffmpeg: "8.0", cookies: false },
     },
   })
 

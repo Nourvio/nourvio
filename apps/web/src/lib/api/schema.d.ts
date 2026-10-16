@@ -7681,7 +7681,12 @@ export interface components {
          *             "unreadable": false
          *           }
          *         }
-         *       ]
+         *       ],
+         *       "video": {
+         *         "ytDlp": "2026.08.19",
+         *         "ffmpeg": "8.0",
+         *         "cookies": false
+         *       }
          *     }
          */
         ServerSettings: {
@@ -7694,6 +7699,12 @@ export interface components {
                 publicUrl: string | null;
             };
             settings: components["schemas"]["SettingState"][];
+            /** @description Video import's tools, by their versions, or null when they aren't there; and whether there's a cookies.txt for sites that want a signed-in session. */
+            video: {
+                ytDlp: string | null;
+                ffmpeg: string | null;
+                cookies: boolean;
+            };
         };
         /**
          * @example {

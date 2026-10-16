@@ -8,11 +8,15 @@ import { MODULES } from "../../modules/index.ts"
 import { createAuth } from "../../services/auth/auth.ts"
 import { SetupCode } from "../../services/auth/setup-code.ts"
 import { createPublicFetcher } from "../../services/fetch/public-fetch.ts"
-import { createAiModels } from "../../services/ai/providers.ts"
+import {
+  createAiModels,
+  createTranscriber,
+} from "../../services/ai/providers.ts"
 import { JobRunner } from "../../services/jobs/runner.ts"
 import { createEventBus } from "../../services/events/events.ts"
 import { createSettings } from "../../services/settings/settings.ts"
 import { LocalFileStore } from "../../services/storage/files.ts"
+import { NO_VIDEO_TOOLS } from "../../services/video/tools.ts"
 import { buildOpenApiDocument, DEFAULT_SERVER_URL } from "./document.ts"
 
 /**
@@ -42,6 +46,8 @@ export async function createOpenApiFile(): Promise<string> {
     const files = new LocalFileStore(join(tmpdir(), "merran-openapi"))
     const fetcher = createPublicFetcher({ version: config.version })
     const ai = createAiModels()
+    const transcribe = createTranscriber()
+    const video = NO_VIDEO_TOOLS
     const events = createEventBus()
     const app = createApp({
       config,
@@ -54,6 +60,8 @@ export async function createOpenApiFile(): Promise<string> {
       files,
       fetcher,
       ai,
+      transcribe,
+      video,
       jobs: new JobRunner({
         deps: {
           config,
@@ -64,6 +72,8 @@ export async function createOpenApiFile(): Promise<string> {
           files,
           fetcher,
           ai,
+          transcribe,
+          video,
           events,
         },
         handlers: [],

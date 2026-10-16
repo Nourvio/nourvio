@@ -15,6 +15,7 @@ import { addTyped } from "../../list/list.ts"
 import { addEntries } from "../../plan/plan.ts"
 import { getTastes, saveTastes } from "../../plan/preferences.ts"
 import type { FileStore } from "../../storage/files.ts"
+import type { VideoDeps } from "../import/import-video.ts"
 import { importLink } from "../import/import-link.ts"
 import { createRecipe, findRecipe, updateRecipe } from "../recipes.ts"
 import { saveSwap } from "../swaps.ts"
@@ -199,7 +200,7 @@ function resolve(
  */
 export async function applyProposal(
   em: EntityManager,
-  deps: AiDeps & { files: FileStore },
+  deps: AiDeps & VideoDeps & { files: FileStore },
   options: {
     householdId: string
     userId: string | null
@@ -217,7 +218,7 @@ export async function applyProposal(
 /** What applying each kind of suggestion does; the recipe it made or changed. */
 async function applyKind(
   em: EntityManager,
-  deps: AiDeps & { files: FileStore },
+  deps: AiDeps & VideoDeps & { files: FileStore },
   proposal: Proposal,
   options: {
     householdId: string

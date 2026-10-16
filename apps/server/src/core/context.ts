@@ -7,11 +7,12 @@ import type { Auth } from "../services/auth/auth.ts"
 import type { Authenticated } from "../services/auth/session.ts"
 import type { SetupCode } from "../services/auth/setup-code.ts"
 import type { EventBus } from "../services/events/events.ts"
-import type { AiModels } from "../services/ai/providers.ts"
+import type { AiModels, Transcriber } from "../services/ai/providers.ts"
 import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import type { JobRunner } from "../services/jobs/runner.ts"
 import type { Settings } from "../services/settings/settings.ts"
 import type { FileStore } from "../services/storage/files.ts"
+import type { VideoTools } from "../services/video/tools.ts"
 import type { Config } from "./config.ts"
 
 /** What the app is built from. Tests pass their own. */
@@ -31,6 +32,10 @@ export type AppDeps = {
   fetcher: Fetcher
   /** The AI models to call, through AI SDK. Tests pass mock ones. */
   ai: AiModels
+  /** Speech to text, for videos without captions. Tests pass a fake. */
+  transcribe: Transcriber
+  /** yt-dlp and ffmpeg, for video import. Tests pass a fake. */
+  video: VideoTools
   /** Runs background work; routes stop jobs through it. */
   jobs: JobRunner
   /** What changed in each household, for live updates. */

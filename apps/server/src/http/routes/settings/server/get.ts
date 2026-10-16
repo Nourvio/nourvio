@@ -1,5 +1,8 @@
 import { createRoute } from "@hono/zod-openapi"
+import { existsSync } from "node:fs"
+import { join } from "node:path"
 import type { AppDeps } from "../../../../core/context.ts"
+import { VIDEO } from "../../../../modules/video/settings.ts"
 import { serverAdmin } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import {
@@ -25,7 +28,15 @@ const route = createRoute({
 })
 
 /** The server's settings, as GET and PATCH /api/settings/server answer. */
-export async function describeServerSettings({ config, settings }: AppDeps) {
+export async function describeServerSettings({
+  config,
+  settings,
+  video,
+}: AppDeps) {
+  const tools = await video.check()
+  const cookies =
+    (await settings.server(VIDEO.cookiesFile)) ??
+    join(config.dataDir, "cookies.txt")
   return {
     about: {
       version: config.version,
@@ -34,6 +45,7 @@ export async function describeServerSettings({ config, settings }: AppDeps) {
       publicUrl: config.publicUrl ?? null,
     },
     settings: await settings.describeServer(),
+    video: { ...tools, cookies: existsSync(cookies) },
   }
 }
 

@@ -3,7 +3,11 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { createOpenAI } from "@ai-sdk/openai"
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible"
 import { PROVIDER_NAMES, type AiProvider } from "@merran/shared"
-import type { LanguageModel, ToolSet } from "ai"
+import {
+  experimental_transcribe as transcribe,
+  type LanguageModel,
+  type ToolSet,
+} from "ai"
 import { AppError } from "../../core/errors.ts"
 import { addressFetch, type Fetcher } from "../fetch/public-fetch.ts"
 
@@ -24,6 +28,40 @@ export type AiTarget = {
 
 /** Makes the model to call for a target. Tests pass mock models. */
 export type AiModels = (target: AiTarget) => LanguageModel
+
+/** What speech to text answers: the words, and how long it was. */
+export type Transcript = { text: string; seconds: number | null }
+
+/** Turns speech into text, on a provider that can. Tests pass a fake. */
+export type Transcriber = (
+  target: AiTarget,
+  audio: Buffer
+) => Promise<Transcript>
+
+/** The speech-to-text model: cheap, and good with kitchen words. */
+export const TRANSCRIPTION_MODEL = "gpt-4o-mini-transcribe"
+
+/** OpenAI's price for it, per minute of sound, in US dollars. */
+export const TRANSCRIPTION_PER_MINUTE = 0.003
+
+export function createTranscriber(): Transcriber {
+  return async (target, audio) => {
+    if (target.provider !== "openai") {
+      throw new AppError(
+        "unprocessable",
+        "ai_model_cant",
+        "Only OpenAI keys can turn speech into text."
+      )
+    }
+    const result = await transcribe({
+      model: createOpenAI({ apiKey: target.apiKey ?? undefined }).transcription(
+        target.model
+      ),
+      audio,
+    })
+    return { text: result.text, seconds: result.durationInSeconds ?? null }
+  }
+}
 
 export function createAiModels(): AiModels {
   return (target) => {

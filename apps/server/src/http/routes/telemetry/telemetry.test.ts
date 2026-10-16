@@ -38,7 +38,13 @@ test("the next summary can be seen before saying yes to it", async () => {
       testDatabaseKind === "sqlite"
         ? "sqlite"
         : expect.stringMatching(/^postgres \d+$/),
-    modules: { ai: false, errorTracking: false, telemetry: false },
+    // Tests have no yt-dlp or ffmpeg, so video import's off.
+    modules: {
+      ai: false,
+      video: false,
+      errorTracking: false,
+      telemetry: false,
+    },
     households: "1",
     people: "2-5",
     recipes: "0",
