@@ -71,6 +71,7 @@ const SNAPSHOT = {
   servings: null,
   listedAt: null,
   why: null,
+  cookedAt: null,
 }
 
 export const PlanEntrySchema = z
@@ -131,6 +132,14 @@ export const PlanEntrySnapshotSchema = z
     servings: z.number().positive().max(1000).nullable(),
     listedAt: z.iso.datetime().nullable(),
     why: why.nullish().transform((value) => value ?? null),
+    cookedAt: z.iso
+      .datetime()
+      .nullish()
+      .openapi({
+        description:
+          "When it was marked cooked: put back cooked, its recipe and side were made then.",
+      })
+      .transform((value) => value ?? null),
   })
   .openapi("PlanEntrySnapshot", {
     description:

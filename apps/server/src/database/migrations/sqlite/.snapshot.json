@@ -2868,6 +2868,23 @@
           "enumItems": [],
           "mappedType": "integer"
         },
+        "cooked_at": {
+          "name": "cooked_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
         "created_at": {
           "name": "created_at",
           "type": "datetime",
@@ -4731,6 +4748,23 @@
         },
         "last_made_at": {
           "name": "last_made_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
+        "made_off_plan_at": {
+          "name": "made_off_plan_at",
           "type": "datetime",
           "unsigned": false,
           "autoincrement": false,

@@ -40,6 +40,8 @@ export const PlanEntry = defineEntity({
     /** None means the recipe's own servings. */
     servings: p.double().nullable(),
     status: p.enum(PLAN_STATUSES).default("planned"),
+    /** When it was marked cooked: its recipe and side were made then. */
+    cookedAt: p.datetime().nullable(),
     /** When its ingredients went on the list. */
     listedAt: p.datetime().nullable(),
     pantryUsed: p.json<PantrySnapshot>().nullable(),

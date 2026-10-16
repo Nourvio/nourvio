@@ -69,7 +69,17 @@ export const Recipe = defineEntity({
      * so importing the same thing again skips it.
      */
     importedFrom: p.string().nullable(),
+    /**
+     * When it was last made: the latest of its cooked meals on the plan
+     * (as the recipe or the side) and `madeOffPlanAt`. Worked out again
+     * whenever a meal of it is cooked, or stops being cooked.
+     */
     lastMadeAt: p.datetime().nullable(),
+    /**
+     * When it was last made with no meal of it on the plan to mark cooked:
+     * "I made this" with none planned, or another app's date on import.
+     */
+    madeOffPlanAt: p.datetime().nullable(),
     /** Set while the recipe is in Recently deleted. */
     deletedAt: p.datetime().nullable().index(),
     createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),

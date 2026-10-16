@@ -2202,7 +2202,8 @@
               "note": null,
               "servings": null,
               "listedAt": null,
-              "why": null
+              "why": null,
+              "cookedAt": null
             }
           ]
         }
@@ -2275,6 +2276,14 @@
               "$ref": "#/components/schemas/Reason"
             },
             "maxItems": 5
+          },
+          "cookedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When it was marked cooked: put back cooked, its recipe and side were made then."
           }
         },
         "required": [
@@ -2303,7 +2312,8 @@
           "note": null,
           "servings": null,
           "listedAt": null,
-          "why": null
+          "why": null,
+          "cookedAt": null
         }
       },
       "PlanBulk": {
@@ -2470,7 +2480,8 @@
               "note": null,
               "servings": null,
               "listedAt": null,
-              "why": null
+              "why": null,
+              "cookedAt": null
             }
           ]
         }
@@ -2504,7 +2515,8 @@
               "note": null,
               "servings": null,
               "listedAt": null,
-              "why": null
+              "why": null,
+              "cookedAt": null
             }
           ]
         }
@@ -9618,7 +9630,7 @@
           "Recipes"
         ],
         "summary": "Mark a recipe made",
-        "description": "The recipe was made now: its `lastMadeAt` is set, and today's meal of it on the plan is marked cooked (or, failing that, one in this week's pool becomes today's, cooked). It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
+        "description": "The recipe was made now: today's meal of it on the plan is marked cooked (or, failing that, one in this week's pool becomes today's, cooked), and its `lastMadeAt` is set. Marking that meal not cooked again puts `lastMadeAt` back. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []

@@ -110,6 +110,7 @@ export function snapshotOf(entry: PlanEntry) {
     servings: toNumber(entry.servings),
     listedAt: entry.listedAt?.toISOString() ?? null,
     why: entry.why ?? null,
+    cookedAt: entry.cookedAt?.toISOString() ?? null,
   }
 }
 
@@ -207,17 +208,50 @@ async function nextPosition(
   return last ? last.position + 1 : 0
 }
 
-/** Cooked now: the recipe and its side were made now. */
+/**
+ * Cooked now: the recipe and its side were made now. Once it's saved,
+ * `remade()` puts that on them, and takes it off if it stops being cooked.
+ */
 function setStatus(entry: PlanEntry, status: PlanStatus) {
   if (status === entry.status) return
-  if (status === "cooked") {
-    const now = new Date()
-    const recipe = entry.recipe?.getEntity()
-    const side = entry.withRecipe?.getEntity()
-    if (recipe) recipe.lastMadeAt = now
-    if (side) side.lastMadeAt = now
-  }
   entry.status = status
+  entry.cookedAt = status === "cooked" ? new Date() : null
+}
+
+/** The recipes a meal says were made: its recipe and side, once it's cooked. */
+function madeBy(entry: PlanEntry) {
+  if (entry.status !== "cooked") return []
+  return [entry.recipe?.id, entry.withRecipe?.id].filter(
+    (id): id is string => id !== undefined
+  )
+}
+
+/**
+ * Works out again when recipes were last made, once meals are saved: the
+ * latest of their cooked meals and when they were made off the plan. A
+ * meal marked cooked by mistake, then not, leaves them as they were.
+ */
+async function remade(em: EntityManager, recipeIds: readonly string[]) {
+  const ids = [...new Set(recipeIds)]
+  if (ids.length === 0) return
+  const recipes = await em.find(Recipe, { id: { $in: ids } }, WITH_DELETED)
+  const cooked = await em.find(
+    PlanEntry,
+    {
+      status: "cooked",
+      $or: [{ recipe: { $in: ids } }, { withRecipe: { $in: ids } }],
+    },
+    WITH_DELETED
+  )
+  for (const recipe of recipes) {
+    let latest = recipe.madeOffPlanAt ?? null
+    for (const entry of cooked) {
+      if (!entry.cookedAt || (latest && entry.cookedAt <= latest)) continue
+      if (madeBy(entry).includes(recipe.id)) latest = entry.cookedAt
+    }
+    recipe.lastMadeAt = latest
+  }
+  await em.flush()
 }
 
 /** A meal must be a recipe or a note, and a side goes with a recipe. */
@@ -361,7 +395,7 @@ async function change(
       entry.recipe = em.getReference(Recipe, recipe.id, { wrapped: true })
       entry.note = null
       entry.listedAt = null
-      entry.status = "planned"
+      setStatus(entry, "planned")
       entry.why = changes.why?.length ? changes.why : null
     } else if (!recipe) {
       entry.recipe = null
@@ -397,8 +431,10 @@ export async function updateEntry(
   changes: EntryChanges
 ) {
   const entry = await findEntry(em, entryId)
+  const made = madeBy(entry)
   await change(em, householdId, entry, changes)
   await em.flush()
+  await remade(em, [...made, ...madeBy(entry)])
   return describeEntry(await findEntry(em.fork(), entry.id))
 }
 
@@ -406,8 +442,10 @@ export async function updateEntry(
 export async function removeEntry(em: EntityManager, entryId: string) {
   const entry = await findEntry(em, entryId)
   const before = snapshotOf(entry)
+  const made = madeBy(entry)
   em.remove(entry)
   await em.flush()
+  await remade(em, made)
   return before
 }
 
@@ -434,6 +472,7 @@ export async function bulkPlan(
     )
     const entries = sortEntries(found.filter(shown))
     const before = entries.map(snapshotOf)
+    const made = entries.flatMap(madeBy)
     for (const entry of entries) {
       if (action.action === "remove") tx.remove(entry)
       else if (action.action === "move") {
@@ -447,6 +486,8 @@ export async function bulkPlan(
       } else await change(tx, householdId, entry, { status: action.status })
     }
     await tx.flush()
+    if (action.action !== "remove") made.push(...entries.flatMap(madeBy))
+    await remade(tx, made)
     return {
       entries:
         action.action === "remove"
@@ -455,6 +496,13 @@ export async function bulkPlan(
       before,
     }
   })
+}
+
+/** When a meal put back cooked was cooked: as it says, never after now. */
+function cookedWhen(snapshot: EntrySnapshot, entry: PlanEntry, now: Date) {
+  if (snapshot.status !== "cooked") return null
+  const said = snapshot.cookedAt ? new Date(snapshot.cookedAt) : entry.cookedAt
+  return said && said < now ? said : now
 }
 
 /**
@@ -482,12 +530,15 @@ export async function restoreEntries(
       )
     )
     const restored: PlanEntry[] = []
+    const made: string[] = []
+    const now = new Date()
     for (const snapshot of snapshots) {
       if (!UUID.test(snapshot.id) || !isDay(snapshot.date)) continue
       const recipe = snapshot.recipe ? recipes.get(snapshot.recipe) : null
       if (snapshot.recipe && !recipe) continue
       let entry = await tx.findOne(PlanEntry, { id: snapshot.id })
-      if (!entry) {
+      if (entry) made.push(...madeBy(entry))
+      else {
         // An id another household has can't come back here.
         const elsewhere = await tx.count(
           PlanEntry,
@@ -516,10 +567,13 @@ export async function restoreEntries(
         servings: snapshot.servings,
         listedAt: snapshot.listedAt ? new Date(snapshot.listedAt) : null,
         why: snapshot.why ?? null,
+        cookedAt: cookedWhen(snapshot, entry, now),
       })
+      made.push(...madeBy(entry))
       restored.push(entry)
     }
     await tx.flush()
+    await remade(tx, made)
     return sortEntries(restored).map(describeEntry)
   })
 }
@@ -645,6 +699,7 @@ export async function whatsNext(em: EntityManager, householdId: string) {
 /**
  * Made it, from the recipe or the cook view: today's planned meal of it is
  * cooked. Failing that, one in this week's pool becomes today's, cooked.
+ * Says how many were; with none, it was made off the plan (`markMade`).
  */
 export async function cookedToday(
   em: EntityManager,
@@ -686,5 +741,6 @@ export async function cookedToday(
   }
   for (const entry of entries) setStatus(entry, "cooked")
   await em.flush()
+  await remade(em, entries.flatMap(madeBy))
   return entries.length
 }

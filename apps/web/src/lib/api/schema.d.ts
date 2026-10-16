@@ -1156,7 +1156,7 @@ export interface paths {
         put?: never;
         /**
          * Mark a recipe made
-         * @description The recipe was made now: its `lastMadeAt` is set, and today's meal of it on the plan is marked cooked (or, failing that, one in this week's pool becomes today's, cooked). It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
+         * @description The recipe was made now: today's meal of it on the plan is marked cooked (or, failing that, one in this week's pool becomes today's, cooked), and its `lastMadeAt` is set. Marking that meal not cooked again puts `lastMadeAt` back. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["markRecipeMade"];
         delete?: never;
@@ -2694,7 +2694,8 @@ export interface components {
          *           "note": null,
          *           "servings": null,
          *           "listedAt": null,
-         *           "why": null
+         *           "why": null,
+         *           "cookedAt": null
          *         }
          *       ]
          *     }
@@ -2719,7 +2720,8 @@ export interface components {
          *       "note": null,
          *       "servings": null,
          *       "listedAt": null,
-         *       "why": null
+         *       "why": null,
+         *       "cookedAt": null
          *     }
          */
         PlanEntrySnapshot: {
@@ -2738,6 +2740,11 @@ export interface components {
             /** Format: date-time */
             listedAt: string | null;
             why?: components["schemas"]["Reason"][] | null;
+            /**
+             * Format: date-time
+             * @description When it was marked cooked: put back cooked, its recipe and side were made then.
+             */
+            cookedAt?: string | null;
         };
         /**
          * @example {
@@ -2809,7 +2816,8 @@ export interface components {
          *           "note": null,
          *           "servings": null,
          *           "listedAt": null,
-         *           "why": null
+         *           "why": null,
+         *           "cookedAt": null
          *         }
          *       ]
          *     }
@@ -2833,7 +2841,8 @@ export interface components {
          *           "note": null,
          *           "servings": null,
          *           "listedAt": null,
-         *           "why": null
+         *           "why": null,
+         *           "cookedAt": null
          *         }
          *       ]
          *     }

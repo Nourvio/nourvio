@@ -297,7 +297,9 @@ export async function importRecipe(
       importedFrom: options.importedFrom ?? null,
       image: options.photoId,
       createdBy: options.createdBy,
+      // Made before it came here, so off this plan.
       lastMadeAt: options.lastMadeAt,
+      madeOffPlanAt: options.lastMadeAt,
       nutrition: options.nutrition,
       dietOverrides:
         Object.keys(options.dietOverrides).length > 0
@@ -527,10 +529,15 @@ export async function clearPhoto(
   return loadRecipe(em, recipe.id)
 }
 
-/** "I made this": the recipe was made now. Not an edit, so no version is kept. */
+/**
+ * "I made this", with no meal of it on the plan to mark cooked: the recipe
+ * was made now, off the plan. Not an edit, so no version is kept.
+ */
 export async function markMade(em: EntityManager, options: { recipe: string }) {
   const recipe = await findRecipe(em, options.recipe)
-  recipe.lastMadeAt = new Date()
+  const now = new Date()
+  recipe.lastMadeAt = now
+  recipe.madeOffPlanAt = now
   await em.flush()
   return loadRecipe(em, recipe.id)
 }

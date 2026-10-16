@@ -390,6 +390,155 @@ describe("making a recipe", () => {
   })
 })
 
+describe("when a recipe was last made", () => {
+  // Recipes of their own, never made before.
+  const fresh = async (name: string) => {
+    const recipe = await (await kyle.post("/api/recipes", { name })).json()
+    ids[recipe.slug] = recipe.id
+    return recipe.slug as string
+  }
+  const madeAt = async (slug: string) =>
+    (await (await kyle.get(`/api/recipes/${slug}`)).json()).lastMadeAt as
+      string | null
+  const madeAll = (slugs: string[]) => Promise.all(slugs.map(madeAt))
+  const cook = (id: string, status = "cooked") =>
+    kyle.patch(`/api/plan/entries/${id}`, { status })
+  const bulk = async (ids: string[], body: Record<string, unknown>) =>
+    (await kyle.post("/api/plan/entries/bulk", { ids, ...body })).json()
+  const restore = (entries: unknown[]) =>
+    kyle.post("/api/plan/restore", { entries })
+
+  test("goes back when a meal stops being cooked", async () => {
+    await clearAll()
+    const [stew, salad] = [
+      await fresh("Lentil Stew"),
+      await fresh("Green Salad"),
+    ]
+    const meal = await add({
+      date: today,
+      meal: "dinner",
+      recipe: stew,
+      withRecipe: salad,
+    })
+    await cook(meal.id)
+    expect((await madeAll([stew, salad])).every(Boolean)).toBe(true)
+
+    // Not cooked yet, after all.
+    await cook(meal.id, "planned")
+    expect(await madeAll([stew, salad])).toEqual([null, null])
+
+    await cook(meal.id)
+    await cook(meal.id, "skipped")
+    expect(await madeAll([stew, salad])).toEqual([null, null])
+  })
+
+  test("is the latest meal still cooked, or when it was made off the plan", async () => {
+    await clearAll()
+    const pie = await fresh("Apple Pie")
+    // Made with no meal of it planned.
+    await kyle.post(`/api/recipes/${pie}/made`)
+    const offPlan = await madeAt(pie)
+    expect(offPlan).not.toBeNull()
+
+    const monday = await add({ date: week, meal: "dinner", recipe: pie })
+    await cook(monday.id)
+    const first = await madeAt(pie)
+    expect(first! >= offPlan!).toBe(true)
+    const tonight = await add({ date: today, meal: "dinner", recipe: pie })
+    await cook(tonight.id)
+    await cook(tonight.id, "planned")
+    expect(await madeAt(pie)).toBe(first)
+    await cook(monday.id, "planned")
+    expect(await madeAt(pie)).toBe(offPlan)
+  })
+
+  test("from making it, goes back with its meal", async () => {
+    await clearAll()
+    const curry = await fresh("Pea Curry")
+    const tonight = await add({ date: today, meal: "dinner", recipe: curry })
+    const made = await (await kyle.post(`/api/recipes/${curry}/made`)).json()
+    expect(made.lastMadeAt).not.toBeNull()
+    // Today's meal of it said it was made, so taking that back undoes it.
+    await cook(tonight.id, "planned")
+    expect(await madeAt(curry)).toBeNull()
+  })
+
+  test("goes back when its cooked meal is swapped or taken off, and Undo brings it back", async () => {
+    await clearAll()
+    const [tacos, slaw, soup] = [
+      await fresh("Fish Tacos"),
+      await fresh("Lime Slaw"),
+      await fresh("Corn Soup"),
+    ]
+    const meal = await add({
+      date: today,
+      meal: "dinner",
+      recipe: tacos,
+      withRecipe: slaw,
+    })
+    await cook(meal.id)
+    const cooked = await madeAll([tacos, slaw])
+
+    const removed = await (
+      await kyle.delete(`/api/plan/entries/${meal.id}`)
+    ).json()
+    expect(await madeAll([tacos, slaw])).toEqual([null, null])
+    await restore([removed])
+    // When it was cooked, not when it came back.
+    expect(await madeAll([tacos, slaw])).toEqual(cooked)
+
+    // Something else: a new meal to cook, so the tacos weren't made.
+    await kyle.patch(`/api/plan/entries/${meal.id}`, { recipe: soup })
+    expect(await madeAll([tacos, slaw, soup])).toEqual([null, null, null])
+  })
+
+  test("goes back for several meals at once, and Undo brings it back", async () => {
+    await clearAll()
+    const [chili, bread, rice] = [
+      await fresh("Bean Chili"),
+      await fresh("Corn Bread"),
+      await fresh("Brown Rice"),
+    ]
+    const a = await add({
+      date: today,
+      meal: "dinner",
+      recipe: chili,
+      withRecipe: rice,
+    })
+    const b = await add({
+      date: addDays(today, 1),
+      meal: "dinner",
+      recipe: bread,
+    })
+    const slugs = [chili, bread, rice]
+
+    const marked = await bulk([a.id, b.id], {
+      action: "status",
+      status: "cooked",
+    })
+    const cooked = await madeAll(slugs)
+    expect(cooked.every(Boolean)).toBe(true)
+    // Undo: they weren't cooked.
+    await restore(marked.before)
+    expect(await madeAll(slugs)).toEqual([null, null, null])
+
+    await bulk([a.id, b.id], { action: "status", status: "cooked" })
+    const again = await madeAll(slugs)
+    const unmarked = await bulk([a.id, b.id], {
+      action: "status",
+      status: "planned",
+    })
+    expect(await madeAll(slugs)).toEqual([null, null, null])
+    await restore(unmarked.before)
+    expect(await madeAll(slugs)).toEqual(again)
+
+    const removed = await bulk([a.id, b.id], { action: "remove" })
+    expect(await madeAll(slugs)).toEqual([null, null, null])
+    await restore(removed.before)
+    expect(await madeAll(slugs)).toEqual(again)
+  })
+})
+
 describe("a recipe in Recently deleted", () => {
   test("takes its meals off the plan until it's back", async () => {
     await clearAll()
