@@ -173,7 +173,8 @@ export async function suggestSwaps(
     .filter(
       (swap) =>
         swap.lines.length > 0 &&
-        // Whatever the model says: nothing avoided, nothing off the diets.
+        // Whatever the model says: nothing avoided, nothing off the diets,
+        // and nothing in words Merran can't read to check for allergies.
         avoidedIn(swap.lines, tastes.avoid).length === 0 &&
         missingDiets(dietsFor(swap.lines), tastes.diets).length === 0
     )

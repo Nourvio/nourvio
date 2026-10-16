@@ -1,4 +1,4 @@
-import { dietsFor, type Diet } from "../diets/diets.ts"
+import { canRead, dietsFor, type Diet } from "../diets/diets.ts"
 import { isMarked, type IngredientMark } from "../recipes/marks.ts"
 
 // What a household eats and doesn't: foods to avoid (allergies among them),
@@ -100,6 +100,13 @@ function foodPattern(food: string) {
  * The household's avoided foods a recipe's ingredients have. `diets` are
  * the recipe's labels as shown (corrections and all); without them they're
  * worked out from the lines.
+ *
+ * Allergies are never left to chance: lines Merran can't read (a recipe
+ * kept in Arabic, say) may have any of them. Foods someone just doesn't eat
+ * only count where they're found, as counting them everywhere would take
+ * every recipe it can't read off the plan for one disliked food, and a
+ * dish with it gets picked around. Those the diet labels check (nuts,
+ * dairy, meat...) still count, as a recipe it can't read has no labels.
  */
 export function avoidedIn(
   lines: readonly string[],
@@ -108,8 +115,10 @@ export function avoidedIn(
 ): AvoidedFood[] {
   if (avoid.length === 0 || lines.length === 0) return []
   const text = lines.join("\n")
+  const unread = !canRead(lines)
   let labels = diets
   return avoid.filter((item) => {
+    if (unread && item.level === "allergy") return true
     const diet = FOOD_DIETS[foodKey(item.food)]
     if (diet) {
       labels ??= dietsFor(lines)
@@ -153,6 +162,11 @@ export type TasteCheck = {
   leaveOut: LeftOut[]
   /** The dislikes among `ruledOut` it can't do without, and why. */
   needed: Needed[]
+  /**
+   * The foods among `ruledOut` it couldn't be checked for, as Merran can't
+   * read its ingredients: allergies, and the foods the diet labels check.
+   */
+  unchecked: AvoidedFood[]
 }
 
 /**
@@ -175,13 +189,23 @@ export function checkTastes(
   },
   avoid: readonly AvoidedFood[]
 ): TasteCheck {
-  const check: TasteCheck = { ruledOut: [], leaveOut: [], needed: [] }
+  const check: TasteCheck = {
+    ruledOut: [],
+    leaveOut: [],
+    needed: [],
+    unchecked: [],
+  }
   if (avoid.length === 0 || recipe.lines.length === 0) return check
   check.ruledOut = avoidedIn(
     recipe.lines,
     avoid.filter((item) => levelOf(item) !== "leave-out"),
     recipe.diets
   )
+  if (!canRead(recipe.lines)) {
+    check.unchecked = check.ruledOut.filter(
+      (item) => item.level === "allergy" || !canLeaveOut(item.food)
+    )
+  }
   for (const item of avoid) {
     if (levelOf(item) !== "leave-out") continue
     const pattern = foodPattern(item.food)

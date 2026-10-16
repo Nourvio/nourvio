@@ -21,9 +21,13 @@ export function TastesNote({
   /** Offers stand-ins for a line left out, by its place in the lines. */
   onStandIn?: (line: number) => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const needs = useSetNeeds(recipe)
   if (tastes.leaveOut.length === 0 && tastes.ruledOut.length === 0) return null
+  // Foods it can't be checked for, as Merran can't read its ingredients
+  // (a recipe kept in Arabic, say): said once, not as foods it has.
+  const unchecked = new Set(tastes.unchecked.map((item) => item.food))
+  const allergy = tastes.unchecked.some((item) => item.level === "allergy")
 
   return (
     <ul className="grid gap-1.5" aria-label={t("recipes.tastes.label")}>
@@ -52,8 +56,23 @@ export function TastesNote({
           }
         />
       ))}
+      {unchecked.size > 0 && (
+        <Note
+          text={
+            allergy
+              ? t("recipes.tastes.unreadAllergy")
+              : t("recipes.tastes.unread", {
+                  foods: new Intl.ListFormat(i18n.language, {
+                    type: "disjunction",
+                  }).format(unchecked),
+                })
+          }
+          tone={allergy ? "warning" : "muted"}
+        />
+      )}
       {tastes.ruledOut.map((item) => {
         const { food, who } = item
+        if (unchecked.has(food)) return null
         const level = levelOf(item)
         // A dislike that's usually left out, but not from this one: the
         // household said so, or tidy up marked it. One it's named for has
@@ -101,8 +120,8 @@ function Note({
   text: string
   tone?: "muted" | "warning"
   action?: string
-  disabled: boolean
-  onAction: () => void
+  disabled?: boolean
+  onAction?: () => void
   /** Another way out, like finding a stand-in. */
   other?: { label: string; onClick: () => void }
 }) {

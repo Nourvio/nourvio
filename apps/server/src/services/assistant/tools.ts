@@ -2,6 +2,7 @@ import {
   addDays,
   avoidedIn,
   AVOID_LEVELS,
+  canRead,
   checkTastes,
   DIETS,
   dietsFor,
@@ -9,18 +10,21 @@ import {
   MEALS,
   missingDiets,
   parseIngredient,
+  type HouseholdTastes,
   type TidyValues,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { tool, type ToolSet } from "ai"
 import { z } from "zod"
 import { AppError } from "../../core/errors.ts"
+import type { Recipe } from "../../database/entities/index.ts"
 import { RecipeInputSchema } from "../../http/schemas/recipes.ts"
 import type { AiDeps } from "../ai/run.ts"
 import { getList } from "../list/list.ts"
 import { getPantry, householdToday } from "../pantry/pantry.ts"
 import { listPlan } from "../plan/plan.ts"
 import { getTastes } from "../plan/preferences.ts"
+import { decodeDiets } from "../recipes/diet-labels.ts"
 import { decodeHtml } from "../recipes/import/import-link.ts"
 import {
   findBySourceUrl,
@@ -79,6 +83,26 @@ async function lookupRecipe(em: EntityManager, ref: string) {
     "recipe_not_found",
     `There's no recipe like "${ref}" in the library. Search for it first.`
   )
+}
+
+/**
+ * Why a recipe can't go on the plan, for the model: it has one of the
+ * household's allergies, or may, as Merran can't read its ingredients.
+ * Allergies are never left to chance. Foods someone just doesn't eat are
+ * theirs to ask for anyway, so the model, which knows them, keeps to them.
+ */
+function allergyIn(recipe: Recipe, tastes: HouseholdTastes) {
+  const lines = recipe.ingredients.getItems().map((line) => line.rawText)
+  const found = avoidedIn(
+    lines,
+    tastes.avoid.filter((item) => item.level === "allergy"),
+    decodeDiets(recipe.diets)
+  )
+  if (found.length === 0) return null
+  const foods = found.map((item) => item.food).join(", ")
+  return canRead(lines)
+    ? `${recipe.name} has ${foods}, an allergy in the household. Offer something else.`
+    : `Merran can't read the ingredients of ${recipe.name}, so it can't check them for the household's allergies (${foods}). Offer something else.`
 }
 
 const Day = z
@@ -205,6 +229,12 @@ export function assistantTools(
           rating: recipe.rating ?? null,
           lastMade: recipe.lastMadeAt?.toISOString().slice(0, 10) ?? null,
           doesntSuit: check.ruledOut.map((item) => item.food),
+          ...(check.unchecked.length > 0
+            ? {
+                cantRead:
+                  "Merran can't read its ingredients to check them, so it may have anything in doesntSuit.",
+              }
+            : {}),
           leftOut: check.leaveOut.map((item) => ({
             food: item.food,
             for: item.who ?? "the household",
@@ -431,9 +461,12 @@ export function assistantTools(
       }),
       execute: async ({ summary, meals }) => {
         const em = fork()
+        const tastes = await getTastes(em, context.householdId)
         const ref = async (name: string | null) => {
           if (!name) return null
           const recipe = await lookupRecipe(em, name)
+          const allergy = allergyIn(recipe, tastes)
+          if (allergy) throw new AppError("invalid", "allergy", allergy)
           return { id: recipe.id, slug: recipe.slug, name: recipe.name }
         }
         const planned = []
@@ -565,6 +598,15 @@ export function assistantTools(
         const standIn = cleanLines(lines, 5, 500)
         const tastes = await getTastes(em, context.householdId)
         const avoided = avoidedIn(standIn, tastes.avoid)
+        const offDiet = missingDiets(dietsFor(standIn), tastes.diets).length > 0
+        // Lines it can't read may have anything, so they fail the checks.
+        if ((avoided.length > 0 || offDiet) && !canRead(standIn)) {
+          throw new AppError(
+            "invalid",
+            "unreadable",
+            "Merran can't read those lines to check them against the household's tastes. Write them in English."
+          )
+        }
         if (avoided.length > 0) {
           throw new AppError(
             "invalid",
@@ -572,7 +614,7 @@ export function assistantTools(
             `The household doesn't eat ${avoided.map((item) => item.food).join(", ")}. Offer something else.`
           )
         }
-        if (missingDiets(dietsFor(standIn), tastes.diets).length > 0) {
+        if (offDiet) {
           throw new AppError(
             "invalid",
             "against_diet",

@@ -26,6 +26,7 @@ const NONE: RecipeTastes = {
   ruledOut: [],
   leaveOut: [],
   needed: [],
+  unchecked: [],
   lines: new Map(),
 }
 

@@ -1120,6 +1120,8 @@
       "allergyAll": "Has {{food}}, an allergy in your household. It isn't suggested.",
       "never": "Has {{food}}, which {{who}} doesn't eat. It isn't suggested.",
       "neverAll": "Has {{food}}, which your household doesn't eat. It isn't suggested.",
+      "unreadAllergy": "Merran can't read this recipe's ingredients, so it can't check them for allergies. It isn't suggested.",
+      "unread": "Merran can't read this recipe's ingredients, so it can't check them for {{foods}}. It isn't suggested.",
       "line": "left out",
       "lineFor": "left out for {{who}}"
     },

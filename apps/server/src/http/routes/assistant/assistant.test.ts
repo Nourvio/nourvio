@@ -541,6 +541,110 @@ describe("the assistant", () => {
     ])
   })
 
+  test("never plans what may have an allergy, even a recipe it can't read", async () => {
+    const before = await (
+      await kyle.get("/api/households/current/tastes")
+    ).json()
+    const tastes = await kyle.put("/api/households/current/tastes", {
+      ...before,
+      avoid: [
+        ...before.avoid,
+        { food: "peanuts", level: "allergy", who: "Emma" },
+      ],
+    })
+    expect(tastes.status, await tastes.clone().text()).toBe(200)
+    // Peanut baklava, kept in Arabic: its peanuts can't be seen.
+    const baklava = await (
+      await kyle.post("/api/recipes", {
+        name: "بقلاوة بالفول السوداني",
+        ingredients: ["250 غرام فول سوداني مطحون", "200 غرام زبدة مذابة"],
+        steps: ["اخبزها حتى تصبح ذهبية."],
+      })
+    ).json()
+    const noodles = await (
+      await kyle.post("/api/recipes", {
+        name: "Peanut Noodles",
+        ingredients: ["8 oz rice noodles", "1/4 cup peanut butter"],
+        steps: ["Toss together."],
+      })
+    ).json()
+    const tomorrow = addDays(new Date().toISOString().slice(0, 10), 1)
+    const dinnerOf = (recipe: string) => ({
+      toolCalls: [
+        {
+          toolName: "propose_meals",
+          input: {
+            summary: "Dinner tomorrow.",
+            meals: [
+              {
+                date: tomorrow,
+                meal: "dinner",
+                recipe,
+                with: null,
+                note: null,
+                servings: null,
+              },
+            ],
+          },
+        },
+      ],
+    })
+    const chatId = await startChat()
+    script = [
+      {
+        toolCalls: [{ toolName: "get_recipe", input: { recipe: baklava.id } }],
+      },
+      dinnerOf(baklava.id),
+      dinnerOf(noodles.id),
+      {
+        toolCalls: [
+          {
+            toolName: "propose_swap",
+            input: {
+              recipe: chickenId,
+              ingredient: "2 lemons",
+              lines: ["عصير ليمونتين"],
+              note: "The same.",
+              steps: [],
+            },
+          },
+        ],
+      },
+      dinnerOf(chickenId),
+      "Lemon Chicken, then.",
+    ]
+    const parts = await chunks(await send(chatId, "What's for dinner?"))
+    const outputs = parts.filter(
+      (part) => part.type === "tool-output-available"
+    )
+    expect(outputs[0]?.output).toMatchObject({
+      doesntSuit: ["peanuts"],
+      cantRead: expect.stringContaining("can't read its ingredients"),
+    })
+    const errors = parts
+      .filter((part) => part.type === "tool-output-error")
+      .map((part) => part.errorText)
+    expect(errors).toEqual([
+      expect.stringContaining(
+        "can't check them for the household's allergies (peanuts)"
+      ),
+      expect.stringContaining("Peanut Noodles has peanuts"),
+      expect.stringContaining("Write them in English"),
+    ])
+    // One it can read, with no peanuts, is planned as ever.
+    const cards = proposed(parts)
+    expect(cards).toHaveLength(1)
+    expect(cards[0]).toMatchObject({
+      kind: "meals",
+      payload: { meals: [{ recipe: { id: chickenId } }] },
+    })
+
+    await kyle.put("/api/households/current/tastes", before)
+    await kyle.delete(`/api/recipes/${baklava.id}`)
+    await kyle.delete(`/api/recipes/${noodles.id}`)
+    await kyle.delete(`/api/assistant/chats/${chatId}`)
+  })
+
   test("sees photos sent with a message, which are each person's own", async () => {
     const png = await sharp({
       create: { width: 40, height: 30, channels: 3, background: "#c84" },

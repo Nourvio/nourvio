@@ -52,6 +52,51 @@ describe("avoided foods", () => {
   })
 })
 
+describe("a recipe Merran can't read", () => {
+  // Pistachio baklava, kept in Arabic: nuts, butter and sugar, which it
+  // can't see.
+  const baklava = {
+    name: "بقلاوة بالفستق",
+    lines: ["250 غرام فستق حلبي مطحون", "200 غرام زبدة مذابة", "1 كوب سكر"],
+  }
+  const peanuts = avoided("peanuts", "allergy", "Emma")
+  const dairy = avoided("dairy")
+
+  test("may have any allergy, even with labels that say otherwise", () => {
+    expect(avoidedIn(baklava.lines, [nuts, peanuts])).toEqual([nuts, peanuts])
+    expect(avoidedIn(baklava.lines, [nuts], ["nut-free"])).toEqual([nuts])
+    expect(checkTastes(baklava, [nuts, peanuts])).toEqual({
+      ruledOut: [nuts, peanuts],
+      leaveOut: [],
+      needed: [],
+      unchecked: [nuts, peanuts],
+    })
+  })
+
+  test("counts dislikes only where they're found, and by its labels", () => {
+    // It has no labels, so it may have dairy; mushrooms it would have to find.
+    expect(avoidedIn(baklava.lines, [mushroom, dairy])).toEqual([dairy])
+    expect(checkTastes(baklava, [mushroom, dairy])).toMatchObject({
+      ruledOut: [dairy],
+      unchecked: [dairy],
+    })
+    const emma = avoided("mushroom", "leave-out", "Emma")
+    expect(checkTastes(baklava, [emma]).leaveOut).toEqual([])
+  })
+
+  test("is only one mostly in another script", () => {
+    // A word or two in another script is fine.
+    const rice = ["2 cups rice", "1 tbsp 味醂 (mirin)", "salt"]
+    expect(avoidedIn(rice, [nuts, peanuts])).toEqual([])
+    expect(checkTastes({ name: "Rice", lines: rice }, [nuts])).toEqual({
+      ruledOut: [],
+      leaveOut: [],
+      needed: [],
+      unchecked: [],
+    })
+  })
+})
+
 describe("leaving a food out", () => {
   const stirFry = {
     name: "Chicken Stir Fry",
@@ -69,6 +114,7 @@ describe("leaving a food out", () => {
       ruledOut: [],
       leaveOut: [{ food: "mushroom", who: "Emma", lines: [1, 3], swap: false }],
       needed: [],
+      unchecked: [],
     })
     expect(leftOutLines(stirFry, [emma])).toEqual(new Set([1, 3]))
   })
@@ -82,6 +128,7 @@ describe("leaving a food out", () => {
       ruledOut: [emma],
       leaveOut: [],
       needed: [{ food: "mushroom", who: "Emma", by: "name" }],
+      unchecked: [],
     })
     expect(leftOutLines(risotto, [emma])).toEqual(new Set())
   })
@@ -106,6 +153,7 @@ describe("leaving a food out", () => {
       ruledOut: [allergy],
       leaveOut: [],
       needed: [],
+      unchecked: [],
     })
     expect(checkTastes(stirFry, [mushroom]).ruledOut).toEqual([mushroom])
   })
@@ -120,7 +168,7 @@ describe("leaving a food out", () => {
       checkTastes({ name: "Mac and Cheese", lines: ["2 cups cheddar"] }, [
         dairy,
       ])
-    ).toEqual({ ruledOut: [dairy], leaveOut: [], needed: [] })
+    ).toEqual({ ruledOut: [dairy], leaveOut: [], needed: [], unchecked: [] })
   })
 
   test("takes each food on its own", () => {
@@ -136,6 +184,7 @@ describe("leaving a food out", () => {
         { food: "olive", who: null, lines: [1], swap: false },
       ],
       needed: [],
+      unchecked: [],
     })
   })
 })

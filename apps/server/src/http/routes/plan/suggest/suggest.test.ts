@@ -274,6 +274,36 @@ describe("tastes", () => {
     await setTastes({})
   })
 
+  test("keep a recipe Merran can't read from a household with allergies", async () => {
+    // Pistachio baklava, kept in Arabic: its nuts can't be seen.
+    const res = await kyle.post("/api/recipes", {
+      name: "بقلاوة بالفستق",
+      servings: 12,
+      ingredients: [
+        "250 غرام فستق حلبي مطحون",
+        "200 غرام زبدة مذابة",
+        "1 كوب سكر",
+      ],
+      steps: ["اخبزها حتى تصبح ذهبية."],
+    })
+    expect(res.status, await res.clone().text()).toBe(201)
+    const baklava = await res.json()
+    const week = dinners(0, 1, 2, 3, 4, 5, 6)
+    expect(names(await suggest(week))).toContain(baklava.name)
+
+    await setTastes({
+      avoid: [{ food: "peanuts", level: "allergy", who: "Emma" }],
+    })
+    // Every other dinner can be read, and has no peanuts.
+    expect(names(await suggest(week)).sort()).toEqual([...DINNERS].sort())
+    // A dislike only counts where it's found.
+    await setTastes({ avoid: [{ food: "olives", level: "never", who: null }] })
+    expect(names(await suggest(week))).toContain(baklava.name)
+
+    await setTastes({})
+    await kyle.delete(`/api/recipes/${baklava.id}`)
+  })
+
   test("are checked", async () => {
     const put = (body: unknown) =>
       kyle.put("/api/households/current/tastes", body)

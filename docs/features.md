@@ -116,7 +116,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | What's next: tonight's dinner, this afternoon's lunch | Key | Built | |
 | Fill the week, re-roll, Something else | Headline | Built | No AI needed |
 | Saying why for each pick: on hand, needs using, not had lately... | Headline | Built | Sales join the reasons with the stores module |
-| Tastes and rules | Key | Built | |
+| Tastes and rules | Key | Built | A recipe Merran can't read, like one kept in Arabic, isn't suggested to a household with allergies, and says why |
 | Leave it out: dislikes crossed off a recipe instead of ruling it out | Headline | Built | Allergies are never left to chance |
 | Theme nights: tacos on Tuesday, eat out on Friday | Key | Built | |
 | A week that plans itself on a schedule | Headline | Built | |
