@@ -17,7 +17,7 @@ export function createApp(deps: AppDeps) {
   app.use(requestId())
   app.use(secureHeaders())
   app.use(requestLogger(deps.logger))
-  app.use(entityManager(deps.db))
+  app.use(entityManager(deps.database))
 
   app.route(API_BASE, healthRoutes(deps))
 

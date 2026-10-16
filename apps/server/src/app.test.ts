@@ -2,14 +2,14 @@ import { pino } from "pino"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import { createApp } from "./app.ts"
 import { loadConfig } from "./core/config.ts"
-import type { Database } from "./db/orm.ts"
+import type { Database } from "./database/orm.ts"
 import { createTestDatabase, testDatabaseKind } from "./test/database.ts"
 
-let db: Database
+let database: Database
 let close: () => Promise<void>
 
 beforeAll(async () => {
-  ;({ db, close } = await createTestDatabase())
+  ;({ database, close } = await createTestDatabase())
 })
 
 afterAll(() => close())
@@ -25,7 +25,7 @@ function testApp() {
           : config.database,
     },
     logger: pino({ level: "silent" }),
-    db,
+    database,
   })
 }
 

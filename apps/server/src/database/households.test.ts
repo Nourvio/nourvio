@@ -9,15 +9,15 @@ import {
   forHousehold,
 } from "./scope.ts"
 
-let db: Database
+let database: Database
 let close: () => Promise<void>
 let home: string
 let nextDoor: string
 
 beforeAll(async () => {
-  ;({ db, close } = await createTestDatabase())
+  ;({ database, close } = await createTestDatabase())
 
-  const em = db.em.fork()
+  const em = database.em.fork()
   const homeHousehold = em.create(Household, { name: "Home", slug: "home" })
   const nextDoorHousehold = em.create(Household, {
     name: "Next Door",
@@ -44,7 +44,7 @@ afterAll(() => close())
 
 describe("households can't reach each other's data", () => {
   test("every table belongs to a household, or is on the shared list", () => {
-    for (const meta of Object.values(db.getMetadata().getAll())) {
+    for (const meta of Object.values(database.getMetadata().getAll())) {
       const table = meta.tableName
       const owned = "household" in meta.properties
       if (SHARED_TABLES.includes(table)) {
@@ -60,7 +60,7 @@ describe("households can't reach each other's data", () => {
   })
 
   test("a query or delete without a household is refused", async () => {
-    const em = db.em.fork()
+    const em = database.em.fork()
 
     await expect(em.find(Recipe, {})).rejects.toThrow(/filter 'household'/)
     await expect(em.nativeDelete(Recipe, {})).rejects.toThrow(
@@ -69,29 +69,35 @@ describe("households can't reach each other's data", () => {
   })
 
   test("a household sees only its own rows", async () => {
-    const recipes = await forHousehold(db.em, home).find(Recipe, {})
+    const recipes = await forHousehold(database.em, home).find(Recipe, {})
 
     expect(recipes.map((recipe) => recipe.name)).toEqual(["Soup"])
   })
 
   test("asking for another household's row by id finds nothing", async () => {
-    const stew = await db.em
+    const stew = await database.em
       .fork()
       .findOneOrFail(Recipe, { slug: "stew" }, ACROSS_HOUSEHOLDS)
 
-    expect(await forHousehold(db.em, home).findOne(Recipe, stew.id)).toBeNull()
+    expect(
+      await forHousehold(database.em, home).findOne(Recipe, stew.id)
+    ).toBeNull()
   })
 
   test("updates stay in the household", async () => {
-    await forHousehold(db.em, home).nativeUpdate(Recipe, {}, { rating: 5 })
+    await forHousehold(database.em, home).nativeUpdate(
+      Recipe,
+      {},
+      { rating: 5 }
+    )
 
-    const all = await db.em.fork().find(Recipe, {}, ACROSS_HOUSEHOLDS)
+    const all = await database.em.fork().find(Recipe, {}, ACROSS_HOUSEHOLDS)
     const ratings = Object.fromEntries(all.map((r) => [r.name, r.rating]))
     expect(ratings).toEqual({ Soup: 5, Stew: null })
   })
 
   test("server-wide work sees every household, when it asks to", async () => {
-    const all = await db.em.fork().find(Recipe, {}, ACROSS_HOUSEHOLDS)
+    const all = await database.em.fork().find(Recipe, {}, ACROSS_HOUSEHOLDS)
 
     expect(all.map((recipe) => recipe.name).sort()).toEqual(["Soup", "Stew"])
   })
@@ -99,7 +105,7 @@ describe("households can't reach each other's data", () => {
 
 describe("recently deleted recipes", () => {
   test("are left out unless asked for", async () => {
-    const em = forHousehold(db.em, nextDoor)
+    const em = forHousehold(database.em, nextDoor)
     await em.nativeUpdate(Recipe, { slug: "stew" }, { deletedAt: new Date() })
 
     expect(await em.find(Recipe, {})).toEqual([])
@@ -114,9 +120,9 @@ describe("recently deleted recipes", () => {
 
 describe("deleting a household", () => {
   test("deletes everything in it, and nothing else", async () => {
-    await db.em.fork().nativeDelete(Household, { id: nextDoor })
+    await database.em.fork().nativeDelete(Household, { id: nextDoor })
 
-    const left = await db.em
+    const left = await database.em
       .fork()
       .find(
         Recipe,

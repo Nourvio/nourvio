@@ -9,7 +9,7 @@
     "start": "node src/index.ts",
     "test": "vitest run --project sqlite",
     "typecheck": "tsc",
-    "db:migration": "node src/db/make-migration.ts",
+    "db:migration": "node src/database/make-migration.ts",
     "db:test-postgres": "docker run -d --rm --name merran-test-postgres -e POSTGRES_PASSWORD=merran -p 5433:5432 --tmpfs /var/lib/postgresql postgres:18",
     "test:all": "vitest run"
   },

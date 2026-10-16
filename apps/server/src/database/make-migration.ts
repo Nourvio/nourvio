@@ -16,17 +16,17 @@ const name = process.argv[2]
 const serverUrl =
   process.env.MERRAN_TEST_POSTGRES_URL ?? DEFAULT_TEST_POSTGRES_URL
 
-async function makeMigration(kind: string, db: Database) {
+async function makeMigration(kind: string, database: Database) {
   try {
-    await migrate(db)
-    const result = await db.migrator.create(undefined, false, false, name)
+    await migrate(database)
+    const result = await database.migrator.create(undefined, false, false, name)
     console.log(
       result.diff.up.length > 0
         ? `${kind}: wrote ${result.fileName}`
         : `${kind}: no changes`
     )
   } finally {
-    await db.close()
+    await database.close()
   }
 }
 

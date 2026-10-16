@@ -1,13 +1,13 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import type { Logger } from "pino"
-import type { Database } from "../db/orm.ts"
+import type { Database } from "../database/orm.ts"
 import type { Config } from "./config.ts"
 
 /** What the app is built from. Tests pass their own. */
 export type AppDeps = {
   config: Config
   logger: Logger
-  db: Database
+  database: Database
 }
 
 /** Variables set on every request. `requestId` comes from Hono's middleware. */

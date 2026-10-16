@@ -55,7 +55,7 @@ export async function openDatabase(config: DatabaseConfig): Promise<Database> {
 }
 
 /** Applies any migrations not yet run. Returns their names. */
-export async function migrate(db: Database): Promise<string[]> {
-  const applied = await db.migrator.up()
+export async function migrate(database: Database): Promise<string[]> {
+  const applied = await database.migrator.up()
   return applied.map((migration) => migration.name)
 }

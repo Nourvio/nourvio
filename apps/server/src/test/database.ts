@@ -1,8 +1,8 @@
-import { migrate, openDatabase, type Database } from "../db/orm.ts"
+import { migrate, openDatabase, type Database } from "../database/orm.ts"
 import {
   DEFAULT_TEST_POSTGRES_URL,
   tempPostgresDatabase,
-} from "../db/temp-postgres.ts"
+} from "../database/temp-postgres.ts"
 
 /** Which database this test run uses: set per Vitest project. */
 export const testDatabaseKind =
@@ -13,25 +13,25 @@ export const testDatabaseKind =
  * test Postgres server. Close it when the tests are done.
  */
 export async function createTestDatabase(): Promise<{
-  db: Database
+  database: Database
   close: () => Promise<void>
 }> {
   if (testDatabaseKind === "postgres") {
     const temp = await tempPostgresDatabase(
       process.env.MERRAN_TEST_POSTGRES_URL ?? DEFAULT_TEST_POSTGRES_URL
     )
-    const db = await openDatabase({ kind: "postgres", url: temp.url })
-    await migrate(db)
+    const database = await openDatabase({ kind: "postgres", url: temp.url })
+    await migrate(database)
     return {
-      db,
+      database,
       close: async () => {
-        await db.close()
+        await database.close()
         await temp.drop()
       },
     }
   }
 
-  const db = await openDatabase({ kind: "sqlite", file: ":memory:" })
-  await migrate(db)
-  return { db, close: () => db.close() }
+  const database = await openDatabase({ kind: "sqlite", file: ":memory:" })
+  await migrate(database)
+  return { database, close: () => database.close() }
 }

@@ -51,7 +51,7 @@ const ready = createRoute({
   },
 })
 
-export function healthRoutes({ config, db }: AppDeps) {
+export function healthRoutes({ config, database }: AppDeps) {
   return createRouter()
     .openapi(health, (c) =>
       c.json({ status: "ok" as const, version: config.version }, 200)
@@ -59,7 +59,7 @@ export function healthRoutes({ config, db }: AppDeps) {
     .openapi(ready, async (c) => {
       try {
         await c.var.em.getConnection().execute("select 1")
-        const pending = await db.migrator.getPending()
+        const pending = await database.migrator.getPending()
         if (pending.length > 0) {
           return c.json(
             errorBody("not_ready", "The database needs updating."),

@@ -2,7 +2,7 @@ import { serve } from "@hono/node-server"
 import { createApp } from "./app.ts"
 import { loadConfig, type Config } from "./core/config.ts"
 import { createLogger } from "./core/logger.ts"
-import { migrate, openDatabase, type Database } from "./db/orm.ts"
+import { migrate, openDatabase, type Database } from "./database/orm.ts"
 
 let config: Config
 try {
@@ -14,10 +14,10 @@ try {
 
 const logger = createLogger(config)
 
-let db: Database
+let database: Database
 try {
-  db = await openDatabase(config.database)
-  const applied = await migrate(db)
+  database = await openDatabase(config.database)
+  const applied = await migrate(database)
   if (applied.length > 0) {
     logger.info({ migrations: applied }, "Updated the database")
   }
@@ -31,7 +31,7 @@ logger.info(
     : "Using Postgres"
 )
 
-const app = createApp({ config, logger, db })
+const app = createApp({ config, logger, database })
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   logger.info(`Merran ${config.version} is listening on port ${info.port}`)
@@ -40,7 +40,7 @@ const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
 function shutDown(signal: NodeJS.Signals) {
   logger.info(`${signal}: shutting down`)
   server.close(() => {
-    void db.close().finally(() => process.exit(0))
+    void database.close().finally(() => process.exit(0))
   })
   // Don't wait forever on open connections.
   setTimeout(() => process.exit(0), 5_000).unref()
