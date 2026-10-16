@@ -1150,7 +1150,26 @@
           "recipes",
           "alreadyHere",
           "groups"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000018",
+          "app": "mealie",
+          "what": "backup",
+          "recipes": 312,
+          "alreadyHere": 0,
+          "groups": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000019",
+              "name": "Home",
+              "recipes": 298
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001a",
+              "name": "Grandma",
+              "recipes": 14
+            }
+          ]
+        }
       },
       "StartImportFile": {
         "type": "object",
@@ -1162,6 +1181,9 @@
             ],
             "description": "Which of a Mealie backup's groups to import. All of them if left out."
           }
+        },
+        "example": {
+          "group": "0199e8b0-5a10-7a01-8b00-000000000019"
         }
       },
       "MealieCheck": {
@@ -1186,7 +1208,12 @@
           "version",
           "recipes",
           "alreadyHere"
-        ]
+        ],
+        "example": {
+          "version": "v3.28.0",
+          "recipes": 312,
+          "alreadyHere": 0
+        }
       },
       "MealieConnection": {
         "type": "object",
@@ -1205,7 +1232,11 @@
         "required": [
           "url",
           "token"
-        ]
+        ],
+        "example": {
+          "url": "http://192.168.1.20:9000",
+          "token": "sample-mealie-api-token"
+        }
       },
       "InviteLink": {
         "type": "object",
@@ -4121,6 +4152,7 @@
     },
     "/api/households/current/import/files": {
       "post": {
+        "operationId": "checkImportFile",
         "tags": [
           "Households"
         ],
@@ -4204,6 +4236,7 @@
     },
     "/api/households/current/import/files/{fileId}/start": {
       "post": {
+        "operationId": "startFileImport",
         "tags": [
           "Households"
         ],
@@ -4281,6 +4314,7 @@
     },
     "/api/households/current/import/mealie/check": {
       "post": {
+        "operationId": "checkMealie",
         "tags": [
           "Households"
         ],
@@ -4357,6 +4391,7 @@
     },
     "/api/households/current/import/mealie": {
       "post": {
+        "operationId": "importFromMealie",
         "tags": [
           "Households"
         ],

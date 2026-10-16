@@ -21,6 +21,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/households/current/import/mealie/check",
+  operationId: "checkMealie",
   tags: ["Households"],
   summary: "Connect to a Mealie",
   description:

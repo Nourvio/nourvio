@@ -20,6 +20,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/households/current/import/mealie",
+  operationId: "importFromMealie",
   tags: ["Households"],
   summary: "Import from a Mealie",
   description:

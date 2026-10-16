@@ -25,6 +25,9 @@ export const IDS = {
   session: id(16),
   ingredients: [id(17), id(18), id(19), id(20)],
   steps: [id(21), id(22), id(23)],
+  importFile: id(24),
+  mealieGroup: id(25),
+  otherMealieGroup: id(26),
 }
 
 export const TIMES = {

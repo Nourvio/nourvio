@@ -18,6 +18,7 @@ const binary = { schema: z.string().openapi({ format: "binary" }) }
 const route = createRoute({
   method: "post",
   path: "/households/current/import/files",
+  operationId: "checkImportFile",
   tags: ["Households"],
   summary: "Check a file from another app",
   description:

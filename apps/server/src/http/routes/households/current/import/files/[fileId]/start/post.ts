@@ -22,6 +22,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/households/current/import/files/{fileId}/start",
+  operationId: "startFileImport",
   tags: ["Households"],
   summary: "Import a checked file from another app",
   description:

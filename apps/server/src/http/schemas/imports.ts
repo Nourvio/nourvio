@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi"
+import { IDS } from "./examples.ts"
 
 // Importing from other apps: what a file is before its import starts, and
 // connecting to a Mealie.
@@ -31,7 +32,19 @@ export const ImportFileSchema = z
           "A Mealie backup's groups, when there's more than one to choose from.",
       }),
   })
-  .openapi("ImportFile")
+  .openapi("ImportFile", {
+    example: {
+      id: IDS.importFile,
+      app: "mealie",
+      what: "backup",
+      recipes: 312,
+      alreadyHere: 0,
+      groups: [
+        { id: IDS.mealieGroup, name: "Home", recipes: 298 },
+        { id: IDS.otherMealieGroup, name: "Grandma", recipes: 14 },
+      ],
+    },
+  })
 
 export const ImportFileParam = z.object({
   fileId: z.uuid().openapi({ param: { name: "fileId", in: "path" } }),
@@ -44,7 +57,7 @@ export const StartImportFileSchema = z
         "Which of a Mealie backup's groups to import. All of them if left out.",
     }),
   })
-  .openapi("StartImportFile")
+  .openapi("StartImportFile", { example: { group: IDS.mealieGroup } })
 
 export const MealieConnectionSchema = z
   .object({
@@ -60,7 +73,12 @@ export const MealieConnectionSchema = z
       .min(10, "Paste the whole API token.")
       .max(4000, "That's too long for a Mealie token."),
   })
-  .openapi("MealieConnection")
+  .openapi("MealieConnection", {
+    example: {
+      url: "http://192.168.1.20:9000",
+      token: "sample-mealie-api-token",
+    },
+  })
 
 export const MealieCheckSchema = z
   .object({
@@ -71,4 +89,6 @@ export const MealieCheckSchema = z
         "Recipes an earlier Mealie import brought in. They're skipped.",
     }),
   })
-  .openapi("MealieCheck")
+  .openapi("MealieCheck", {
+    example: { version: "v3.28.0", recipes: 312, alreadyHere: 0 },
+  })
