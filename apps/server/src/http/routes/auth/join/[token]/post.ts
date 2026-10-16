@@ -18,11 +18,13 @@ import {
   NewAccountSchema,
   type NewAccount,
 } from "../../../../schemas/auth.ts"
+import { NEW_ACCOUNT } from "../../../../schemas/examples.ts"
 import { errorResponse, jsonResponse } from "../../../../schemas/responses.ts"
 
 const route = createRoute({
   method: "post",
   path: "/auth/join/{token}",
+  operationId: "joinHousehold",
   tags: ["Sign-in"],
   summary: "Join a household",
   description:
@@ -35,7 +37,7 @@ const route = createRoute({
         "application/json": {
           schema: z
             .object({ account: NewAccountSchema.optional() })
-            .openapi("JoinRequest"),
+            .openapi("JoinRequest", { example: { account: NEW_ACCOUNT } }),
         },
       },
     },

@@ -13,6 +13,7 @@ import {
 const route = createRoute({
   method: "get",
   path: "/settings/server/jobs",
+  operationId: "listServerJobs",
   tags: ["Settings"],
   summary: "The server's jobs",
   description:

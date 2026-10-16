@@ -7,6 +7,7 @@ import {
   type InviteLink,
 } from "../../database/entities/index.ts"
 import type { HouseholdRole } from "../../services/households.ts"
+import { HOUSEHOLD, INVITE_LINK, MEMBER } from "./examples.ts"
 
 function isTimeZone(zone: string) {
   try {
@@ -28,7 +29,7 @@ export const HouseholdSchema = z
     /** Your role in it. */
     role: z.enum(HOUSEHOLD_ROLES),
   })
-  .openapi("Household")
+  .openapi("Household", { example: HOUSEHOLD })
 
 export const HouseholdNameSchema = z
   .string()
@@ -51,7 +52,9 @@ export const HouseholdChangesSchema = z
     weekStartsOn: z.number().int().min(0).max(6),
   })
   .partial()
-  .openapi("HouseholdChanges")
+  .openapi("HouseholdChanges", {
+    example: { name: "The Rivera-Parks", weekStartsOn: 1 },
+  })
 
 export const MemberSchema = z
   .object({
@@ -62,7 +65,7 @@ export const MemberSchema = z
     role: z.enum(HOUSEHOLD_ROLES),
     joinedAt: z.iso.datetime(),
   })
-  .openapi("Member")
+  .openapi("Member", { example: MEMBER })
 
 export const InviteLinkSchema = z
   .object({
@@ -71,12 +74,17 @@ export const InviteLinkSchema = z
     expiresAt: z.iso.datetime(),
     createdAt: z.iso.datetime(),
   })
-  .openapi("InviteLink")
+  .openapi("InviteLink", { example: INVITE_LINK })
 
 export const NewInviteLinkSchema = InviteLinkSchema.extend({
   /** The link to send. Shown only now. */
   link: z.url(),
-}).openapi("NewInviteLink")
+}).openapi("NewInviteLink", {
+  example: {
+    ...INVITE_LINK,
+    link: "https://merran.example.com/join/sample-invite-token",
+  },
+})
 
 export const MemberParam = z.object({
   memberId: z.string().openapi({ param: { name: "memberId", in: "path" } }),

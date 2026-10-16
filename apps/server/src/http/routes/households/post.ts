@@ -18,6 +18,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/households",
+  operationId: "createHousehold",
   tags: ["Households"],
   summary: "Start another household",
   description:
@@ -28,7 +29,9 @@ const route = createRoute({
       required: true,
       content: {
         "application/json": {
-          schema: z.object({ name: HouseholdNameSchema }),
+          schema: z
+            .object({ name: HouseholdNameSchema })
+            .openapi({ example: { name: "Grandma's kitchen" } }),
         },
       },
     },

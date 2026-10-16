@@ -98,13 +98,13 @@ People make their own keys for scripts, Home Assistant, the browser extension an
   - **The iPhone Shortcut:** a key with only the share permission, made by the Share to Merran guide. Shares made with it open through a one-time sign-in link, as in the REFERENCE app.
 - **The server admin** can turn API keys off, cap how long they last, and limit which permissions can be given.
 - **Rate limits** per key (300 requests a minute), so a runaway script can't take the server down.
-- **Routes refuse keys unless they say otherwise:** each route that a key may use names the permission it needs, and the API reference shows it. `GET /api/auth/api-keys/current` lets a tool check its key works.
+- **Routes refuse keys unless they say otherwise:** each route that a key may use names the permission it needs with `openToKeys(area, access)`, which both checks it and shows it in the API reference (as `x-merran-permission`). `GET /api/auth/api-keys/current` lets a tool check its key works.
 
 ## The public API
 
 - **One API for everyone.** The web app, the extension and anyone's scripts use the same REST API under `/api`, so it's always complete and always tested.
 - **No version in the address** (decided October 15, 2026): routes are `/api/households`, not `/api/v1/households`. Stability comes from the rule below and the spec check in CI.
-- **Sign-in lives under `/api/auth`.** Better Auth's own endpoints are there (signing in and out, sessions, switching households), next to Merran's (`/api/auth/setup`, `/api/auth/me`, `/api/auth/join/{token}`). Better Auth's endpoints answer in its own error shape, and aren't in the spec yet; its OpenAPI plugin can add them.
+- **Sign-in lives under `/api/auth`.** Better Auth's own endpoints are there (signing in and out, sessions, switching households), next to Merran's (`/api/auth/setup`, `/api/auth/me`, `/api/auth/join/{token}`). Better Auth's endpoints answer in its own error shape. The ones Merran uses are in the spec, described by Better Auth's OpenAPI plugin and then in Merran's words (`BETTER_AUTH_ENDPOINTS`).
 - **The OpenAPI spec is generated** from the route definitions (`@hono/zod-openapi`), and the server shows a reference page at `/api/docs` (Scalar) with a Try it button. The docs site publishes the same.
 - **Sign-in for the API:** a session cookie (the web app) or `Authorization: Bearer mrn_…` (everything else).
 - **Stable within a major version.** Changes are added, not broken; anything removed is marked deprecated for at least one minor release first. CI compares the spec with the last release's and fails on an unannounced breaking change.

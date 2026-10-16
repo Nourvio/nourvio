@@ -14,6 +14,7 @@ import {
 const route = createRoute({
   method: "delete",
   path: "/households/current/invites/{inviteId}",
+  operationId: "cancelInvite",
   tags: ["Households"],
   summary: "Cancel an invite link",
   description: "Household admins only.",

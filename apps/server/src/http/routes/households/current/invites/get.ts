@@ -16,6 +16,7 @@ import {
 const route = createRoute({
   method: "get",
   path: "/households/current/invites",
+  operationId: "listInvites",
   tags: ["Households"],
   summary: "Invite links that can still be used",
   description:

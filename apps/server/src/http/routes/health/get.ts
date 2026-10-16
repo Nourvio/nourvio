@@ -7,6 +7,7 @@ import { jsonResponse } from "../../schemas/responses.ts"
 const route = createRoute({
   method: "get",
   path: "/health",
+  operationId: "checkHealth",
   tags: ["Server"],
   summary: "Check the server is up",
   description:

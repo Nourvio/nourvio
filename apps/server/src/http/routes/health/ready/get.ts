@@ -8,6 +8,7 @@ import { errorResponse, jsonResponse } from "../../../schemas/responses.ts"
 const route = createRoute({
   method: "get",
   path: "/health/ready",
+  operationId: "checkReady",
   tags: ["Server"],
   summary: "Check the server can do its work",
   description:

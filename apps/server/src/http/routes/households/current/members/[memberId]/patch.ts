@@ -23,6 +23,7 @@ import {
 const route = createRoute({
   method: "patch",
   path: "/households/current/members/{memberId}",
+  operationId: "updateMember",
   tags: ["Households"],
   summary: "Change someone's role",
   description:
@@ -34,7 +35,9 @@ const route = createRoute({
       required: true,
       content: {
         "application/json": {
-          schema: z.object({ role: z.enum(HOUSEHOLD_ROLES) }),
+          schema: z
+            .object({ role: z.enum(HOUSEHOLD_ROLES) })
+            .openapi({ example: { role: "admin" } }),
         },
       },
     },

@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { setRating } from "../../../../../services/recipes/recipes.ts"
-import { inHousehold } from "../../../../middleware/auth.ts"
+import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import {
   RatingInputSchema,
@@ -11,18 +11,18 @@ import {
 import {
   errorResponse,
   jsonResponse,
-  SESSION_OR_API_KEY_SECURITY,
   SIGNED_IN_ERRORS,
 } from "../../../../schemas/responses.ts"
 
 const route = createRoute({
   method: "put",
   path: "/recipes/{recipe}/rating",
+  operationId: "rateRecipe",
   tags: ["Recipes"],
   summary: "Rate a recipe",
   description:
-    "Sets the recipe's stars, or clears them. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
-  security: SESSION_OR_API_KEY_SECURITY,
+    "Sets the recipe's stars, or clears them. It isn't an edit, so no version is kept.",
+  ...openToKeys("recipes", "write"),
   request: {
     params: RecipeParam,
     body: {
@@ -40,7 +40,7 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em } = inHousehold(c, { area: "recipes", access: "write" })
+    const { em } = inHousehold(c)
     const recipe = await setRating(em, {
       recipe: c.req.valid("param").recipe,
       rating: c.req.valid("json").rating,

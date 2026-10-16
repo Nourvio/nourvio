@@ -14,6 +14,7 @@ import {
 const route = createRoute({
   method: "get",
   path: "/households/current/jobs/{jobId}",
+  operationId: "getHouseholdJob",
   tags: ["Households"],
   summary: "One of the household's jobs",
   description:

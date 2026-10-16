@@ -17,6 +17,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/households/current/invites",
+  operationId: "createInvite",
   tags: ["Households"],
   summary: "Make an invite link",
   description:
@@ -27,7 +28,9 @@ const route = createRoute({
       required: true,
       content: {
         "application/json": {
-          schema: z.object({ role: z.enum(INVITE_ROLES).default("member") }),
+          schema: z
+            .object({ role: z.enum(INVITE_ROLES).default("member") })
+            .openapi({ example: { role: "member" } }),
         },
       },
     },

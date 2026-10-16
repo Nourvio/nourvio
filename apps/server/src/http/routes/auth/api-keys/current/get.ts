@@ -3,22 +3,20 @@ import type { AppDeps } from "../../../../../core/context.ts"
 import { ApiKey } from "../../../../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../../../../database/scope.ts"
 import { AppError } from "../../../../../core/errors.ts"
+import { OPEN_TO_ANY_KEY } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import { ApiKeySchema, describeApiKey } from "../../../../schemas/api-keys.ts"
-import {
-  API_KEY_SECURITY,
-  errorResponse,
-  jsonResponse,
-} from "../../../../schemas/responses.ts"
+import { errorResponse, jsonResponse } from "../../../../schemas/responses.ts"
 
 const route = createRoute({
   method: "get",
   path: "/auth/api-keys/current",
+  operationId: "checkApiKey",
   tags: ["API keys"],
   summary: "Check an API key",
   description:
     "The key this request was sent with: its household and what it may do. A quick way for a tool like Home Assistant to check its key works.",
-  security: API_KEY_SECURITY,
+  ...OPEN_TO_ANY_KEY,
   responses: {
     200: jsonResponse(ApiKeySchema, "The key works."),
     400: errorResponse("No API key was sent."),

@@ -14,6 +14,7 @@ import {
   describeHousehold,
   HouseholdSchema,
 } from "../../../schemas/households.ts"
+import { HOUSEHOLD, JOB } from "../../../schemas/examples.ts"
 import { JobSchema } from "../../../schemas/jobs.ts"
 import {
   errorResponse,
@@ -25,6 +26,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/households/import",
+  operationId: "importHousehold",
   tags: ["Households"],
   summary: "Import a Merran export as a new household",
   description:
@@ -42,7 +44,18 @@ const route = createRoute({
     202: jsonResponse(
       z
         .object({ household: HouseholdSchema, job: JobSchema })
-        .openapi("HouseholdImport"),
+        .openapi("HouseholdImport", {
+          example: {
+            household: HOUSEHOLD,
+            job: {
+              ...JOB,
+              status: "queued",
+              progress: null,
+              attempts: 0,
+              startedAt: null,
+            },
+          },
+        }),
       "Made, and importing."
     ),
     400: errorResponse("That isn't a Merran export this Merran can read."),

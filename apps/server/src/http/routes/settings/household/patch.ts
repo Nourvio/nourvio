@@ -16,6 +16,7 @@ import {
 const route = createRoute({
   method: "patch",
   path: "/settings/household",
+  operationId: "updateHouseholdSettings",
   tags: ["Settings"],
   summary: "Change the household's settings",
   description:

@@ -3,23 +3,23 @@ import { AppError } from "../../../../../core/errors.ts"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { readPhoto } from "../../../../../services/recipes/photos.ts"
 import { findRecipe } from "../../../../../services/recipes/recipes.ts"
-import { inHousehold } from "../../../../middleware/auth.ts"
+import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import { RecipeParam } from "../../../../schemas/recipes.ts"
 import {
   errorResponse,
-  SESSION_OR_API_KEY_SECURITY,
   SIGNED_IN_ERRORS,
 } from "../../../../schemas/responses.ts"
 
 const route = createRoute({
   method: "get",
   path: "/recipes/{recipe}/photo",
+  operationId: "getRecipePhoto",
   tags: ["Recipes"],
   summary: "A recipe's photo",
   description:
-    "As WebP: `full` for the recipe page, or `card`, cropped for recipe cards. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.",
-  security: SESSION_OR_API_KEY_SECURITY,
+    "As WebP: `full` for the recipe page, or `card`, cropped for recipe cards. Use the links in the recipe's `photo`, which can be kept for good.",
+  ...openToKeys("recipes", "read"),
   request: {
     params: RecipeParam,
     query: z.object({
@@ -46,10 +46,7 @@ const noPhoto = () =>
 
 export default (router: Router, { files }: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em, householdId } = inHousehold(c, {
-      area: "recipes",
-      access: "read",
-    })
+    const { em, householdId } = inHousehold(c)
     const { size, v } = c.req.valid("query")
     const recipe = await findRecipe(em, c.req.valid("param").recipe)
     if (!recipe.image) throw noPhoto()

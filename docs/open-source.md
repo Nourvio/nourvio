@@ -118,17 +118,17 @@ For anyone building on Merran: scripts, Home Assistant, n8n, the iPhone Shortcut
 5. **MCP:** connecting Claude Desktop, Claude Code and other clients with a key (the **Use with an AI app** setup); what proposals and the Review queue mean for changes an outside AI makes; and the list of tools, generated from the MCP server's tool definitions.
 6. **Examples to copy:** Home Assistant (a sensor for tonight's dinner, adding to the list from an automation, reacting to a webhook), curl from a shell, an n8n flow, and the iPhone Shortcut. If a typed client is published on npm under `@merran`, it gets a page here too.
 
-### Fixing the spec first
+### Keeping the spec complete
 
-The generated reference is only as good as the spec. On October 15, 2026 it had 76 operations under 6 tags, with these gaps. They're cheapest to fix now, while the routes are few, and each fix comes with a check in `apps/server/src/http/routes.test.ts` so new routes can't skip it.
+The generated reference is only as good as the spec. A check on October 15, 2026 found 76 operations with gaps: 7 had an operation id (all Better Auth's), 17 had examples, key permissions were only written in prose and checked separately in each handler, and Better Auth's 11 routes kept its own wording. They were fixed the same day, and tests keep them fixed, so a new route can't skip any of it.
 
-| Gap | Today | Fix |
+| Rule | How | Checked by |
 |---|---|---|
-| Operation ids | 7 of 76, all Better Auth's; none of Merran's own routes has one | An `operationId` on every route (`listRecipes`, `createApiKey`), unique, for stable links in the reference and method names in a generated client |
-| Examples | 17 of 76 operations | A request and response example wherever a route takes or returns a body, set on the shared schemas in `http/schemas/` so most routes get them for free |
-| Key permissions | Only in prose ("With an API key, it needs the `recipes: read` permission"), and checked separately in the handler (`inHousehold(c, { area, access })`) | Declared once on the route, as `x-merran-permission` (`recipes:read`, or none for routes that refuse keys), with the handler's check reading the same value. The reference shows it as a badge and builds a table of every permission's routes, and the sentence in the description goes. |
-| Better Auth's routes | 11 sign-in and session routes have no summary, and keep Better Auth's names (`setActiveOrganization` switches households) | Summaries, descriptions and ids in Merran's words, set in `BETTER_AUTH_ENDPOINTS` (`http/routes/auth/better-auth.ts`) over what Better Auth describes |
-| Webhook events | The spec's `webhooks` section is empty | Each event added to it as webhooks are built |
+| Every route has a summary, and an `operationId` of its own (`listRecipes`, `createApiKey`), for stable links in the reference and method names in a generated client | Set on each route | `apps/server/src/http/routes.test.ts`, and `apps/server/src/http/openapi/document.test.ts` for the whole published file |
+| Every JSON body and success answer has an example | Set on the shared schemas, from one sample household in `apps/server/src/http/schemas/examples.ts` (the Riveras: Sam, Lemon Chicken, a Home Assistant key) | `routes.test.ts` checks each example against the route's own schema; the compiler checks them too |
+| A route open to API keys says which permission they need | `...openToKeys("recipes", "read")` on the route sets its `security`, puts `x-merran-permission: recipes:read` in the spec, and hands the same permission to `inHousehold()`, so the two can't disagree. The sentence in each description is written from it, for reference pages that don't show extensions. Routes without it refuse keys; `GET /api/auth/api-keys/current` is the one open to any key. | `routes.test.ts`; and `apps/server/src/http/middleware/auth.test.ts` sends a key with no permissions to every such route, which must refuse it by name |
+| Better Auth's routes are described in Merran's words (`setActiveOrganization` is `switchHousehold`) | `BETTER_AUTH_ENDPOINTS` in `apps/server/src/http/routes/auth/better-auth.ts`, over what Better Auth says | `document.test.ts` |
+| Webhook events are in the spec's `webhooks` section | Added as webhooks are built | Not yet: the section is empty until then |
 
 ### Across the site
 

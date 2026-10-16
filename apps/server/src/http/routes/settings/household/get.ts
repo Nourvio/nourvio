@@ -12,6 +12,7 @@ import { HouseholdSettingsSchema } from "../../../schemas/settings.ts"
 const route = createRoute({
   method: "get",
   path: "/settings/household",
+  operationId: "getHouseholdSettings",
   tags: ["Settings"],
   summary: "The household's settings",
   description:

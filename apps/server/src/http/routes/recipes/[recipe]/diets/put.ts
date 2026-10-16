@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { setDiets } from "../../../../../services/recipes/recipes.ts"
-import { inHousehold } from "../../../../middleware/auth.ts"
+import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import {
   DietsInputSchema,
@@ -11,18 +11,18 @@ import {
 import {
   errorResponse,
   jsonResponse,
-  SESSION_OR_API_KEY_SECURITY,
   SIGNED_IN_ERRORS,
 } from "../../../../schemas/responses.ts"
 
 const route = createRoute({
   method: "put",
   path: "/recipes/{recipe}/diets",
+  operationId: "setRecipeDiets",
   tags: ["Recipes"],
   summary: "Correct a recipe's diet labels",
   description:
-    "The labels are worked out from the ingredients. Corrections that differ from them are kept, and stick when the recipe is edited. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
-  security: SESSION_OR_API_KEY_SECURITY,
+    "The labels are worked out from the ingredients. Corrections that differ from them are kept, and stick when the recipe is edited. It isn't an edit, so no version is kept.",
+  ...openToKeys("recipes", "write"),
   request: {
     params: RecipeParam,
     body: {
@@ -40,7 +40,7 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em } = inHousehold(c, { area: "recipes", access: "write" })
+    const { em } = inHousehold(c)
     const recipe = await setDiets(em, {
       recipe: c.req.valid("param").recipe,
       overrides: c.req.valid("json").overrides,

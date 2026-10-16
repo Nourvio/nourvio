@@ -17,6 +17,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/auth/api-keys",
+  operationId: "createApiKey",
   tags: ["API keys"],
   summary: "Make an API key",
   description:

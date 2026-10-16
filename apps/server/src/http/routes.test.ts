@@ -1,8 +1,12 @@
 import { readdirSync } from "node:fs"
 import { join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
+import { z } from "@hono/zod-openapi"
 import { describe, expect, test } from "vitest"
 import type { AppDeps } from "../core/context.ts"
+import { API_AREAS } from "../services/auth/api-keys.ts"
+import { describedRoutes, type Media } from "../test/api-reference.ts"
+import { KEY_PERMISSION } from "./middleware/auth.ts"
 import { createRouter, type RegisterRoutes } from "./router.ts"
 import registerAllRoutes from "./routes/index.ts"
 
@@ -76,4 +80,80 @@ describe("the routes folder", () => {
 
     expect(registered).toEqual(routeFiles().sort())
   })
+})
+
+// The docs site's API reference is generated from these routes, so each
+// route says enough to make a good page: a summary, an operationId (its
+// link, and its method name in a generated client), which API keys may use
+// it, and examples that are right.
+
+const described = describedRoutes()
+const PERMISSION = new RegExp(`^(${API_AREAS.join("|")}):(read|write)$`)
+
+describe("the API reference", () => {
+  test("every route has a summary, and an operationId of its own", () => {
+    for (const { name, route } of described) {
+      expect(route.summary, `${name} needs a summary`).toBeTruthy()
+      expect(
+        route.operationId,
+        `${name} needs an id, like listRecipes`
+      ).toMatch(/^[a-z][a-zA-Z]+$/)
+    }
+    const ids = described.map(({ route }) => route.operationId)
+    const twice = ids.filter((id, i) => ids.indexOf(id) !== i)
+    expect(twice, "operationIds used twice").toEqual([])
+  })
+
+  test.each(described.map((d) => [d.name, d] as const))(
+    "%s says which API keys may use it",
+    (_, { route }) => {
+      const schemes = (route.security ?? []).flatMap(Object.keys)
+      const permission = route[KEY_PERMISSION]
+      if (!schemes.includes("apiKey")) {
+        expect(permission, "Only a route open to keys names one").toBe(
+          undefined
+        )
+      } else if (schemes.includes("session")) {
+        expect(permission, "Use openToKeys(area, access)").toMatch(PERMISSION)
+      } else {
+        expect(permission, "A route only for keys is OPEN_TO_ANY_KEY").toBe(
+          "any"
+        )
+      }
+    }
+  )
+
+  test.each(described.map((d) => [d.name, d] as const))(
+    "%s has an example of each JSON body and answer, and they fit",
+    (_, { route, operation, example }) => {
+      type Content = Record<string, { schema?: unknown }> | undefined
+      const shown: [string, Content, Record<string, Media> | undefined][] = [
+        [
+          "The request body",
+          route.request?.body?.content as Content,
+          operation.requestBody?.content,
+        ],
+        ...Object.entries(route.responses)
+          .filter(([code]) => code.startsWith("2"))
+          .map(
+            ([code, response]) =>
+              [
+                `The ${code} answer`,
+                ("content" in response ? response.content : {}) as Content,
+                operation.responses?.[code]?.content,
+              ] as [string, Content, Record<string, Media> | undefined]
+          ),
+      ]
+      for (const [what, defined, inReference] of shown) {
+        const schema = defined?.["application/json"]?.schema
+        if (!(schema instanceof z.ZodType)) continue
+        const value = example(inReference?.["application/json"])
+        expect(value, `${what} needs an example`).not.toBe(undefined)
+        expect(
+          schema.safeParse(value).error?.issues,
+          `${what}'s example doesn't fit its schema`
+        ).toBe(undefined)
+      }
+    }
+  )
 })

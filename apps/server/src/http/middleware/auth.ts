@@ -1,4 +1,5 @@
 import type { Context, MiddlewareHandler } from "hono"
+import { createMiddleware } from "hono/factory"
 import type { AppEnv } from "../../core/context.ts"
 import { forHousehold } from "../../database/scope.ts"
 import {
@@ -11,6 +12,45 @@ import { KeyRateLimit } from "../../services/auth/key-rate-limit.ts"
 import { authenticate } from "../../services/auth/session.ts"
 import { isAdminRole } from "../../services/households.ts"
 import { AppError } from "../../core/errors.ts"
+import {
+  API_KEY_SECURITY,
+  SESSION_OR_API_KEY_SECURITY,
+} from "../schemas/responses.ts"
+
+/**
+ * The OpenAPI extension that says which permission an API key needs for a
+ * route, like `recipes:read`. Routes that refuse keys don't have it.
+ */
+export const KEY_PERMISSION = "x-merran-permission"
+
+/**
+ * For a route an API key may use, spread into its `createRoute()`. It puts
+ * the permission in the API reference and hands the same one to
+ * `inHousehold()`, so what the reference says and what's checked agree.
+ * A route with middleware of its own keeps this one first:
+ * `middleware: [...keys.middleware, bodyLimit(...)]`.
+ */
+export function openToKeys(area: ApiArea, access: ApiAccess) {
+  return {
+    security: SESSION_OR_API_KEY_SECURITY,
+    [KEY_PERMISSION]: `${area}:${access}` as const,
+    middleware: [
+      createMiddleware<AppEnv>(async (c, next) => {
+        c.set("keyPermission", { area, access })
+        await next()
+      }),
+    ],
+  }
+}
+
+/**
+ * For a route only API keys use, with no permission needed: any working
+ * key will do.
+ */
+export const OPEN_TO_ANY_KEY = {
+  security: API_KEY_SECURITY,
+  [KEY_PERMISSION]: "any",
+} as const
 
 /**
  * Reads who sent each request (the auth service does the checking) and puts
@@ -78,13 +118,11 @@ export function serverAdmin(c: Context<AppEnv>) {
 /**
  * The household in use, with an entity manager that only sees it: the one
  * on this device for someone signed in, or the key's own household. An API
- * key gets in only when the route names a permission and the key has it.
+ * key gets in only when the route is `openToKeys()` and the key has that
+ * permission.
  */
-export function inHousehold(
-  c: Context<AppEnv>,
-  permission?: { area: ApiArea; access: ApiAccess }
-) {
-  const { user, apiKey } = c.var
+export function inHousehold(c: Context<AppEnv>) {
+  const { user, apiKey, keyPermission: permission } = c.var
   if (apiKey) {
     if (!permission) {
       throw new AppError(

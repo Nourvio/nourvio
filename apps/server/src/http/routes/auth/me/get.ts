@@ -12,6 +12,7 @@ import {
 const route = createRoute({
   method: "get",
   path: "/auth/me",
+  operationId: "getMe",
   tags: ["Sign-in"],
   summary: "Who's signed in",
   description:

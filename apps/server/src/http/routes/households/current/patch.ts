@@ -17,6 +17,7 @@ import {
 const route = createRoute({
   method: "patch",
   path: "/households/current",
+  operationId: "updateHousehold",
   tags: ["Households"],
   summary: "Change the household",
   description: "Household admins only.",

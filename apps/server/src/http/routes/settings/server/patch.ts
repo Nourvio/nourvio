@@ -17,6 +17,7 @@ import { describeServerSettings } from "./get.ts"
 const route = createRoute({
   method: "patch",
   path: "/settings/server",
+  operationId: "updateServerSettings",
   tags: ["Settings"],
   summary: "Change the server's settings",
   description:

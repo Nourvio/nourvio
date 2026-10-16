@@ -5,7 +5,7 @@ import {
   updateRecipe,
 } from "../../../../../../../services/recipes/recipes.ts"
 import { versionSnapshot } from "../../../../../../../services/recipes/versions.ts"
-import { inHousehold } from "../../../../../../middleware/auth.ts"
+import { inHousehold, openToKeys } from "../../../../../../middleware/auth.ts"
 import type { Router } from "../../../../../../router.ts"
 import {
   RecipeSchema,
@@ -14,18 +14,18 @@ import {
 import {
   errorResponse,
   jsonResponse,
-  SESSION_OR_API_KEY_SECURITY,
   SIGNED_IN_ERRORS,
 } from "../../../../../../schemas/responses.ts"
 
 const route = createRoute({
   method: "post",
   path: "/recipes/{recipe}/versions/{versionId}/restore",
+  operationId: "restoreRecipeVersion",
   tags: ["Recipes"],
   summary: "Go back to a version",
   description:
-    "Makes the recipe what it was in that version. How it is now is kept as a version too, so this can be undone as well. With an API key, it needs the `recipes: write` permission.",
-  security: SESSION_OR_API_KEY_SECURITY,
+    "Makes the recipe what it was in that version. How it is now is kept as a version too, so this can be undone as well.",
+  ...openToKeys("recipes", "write"),
   request: { params: VersionParam },
   responses: {
     200: jsonResponse(RecipeSchema, "The recipe, as it was."),
@@ -36,10 +36,7 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em, householdId, userId } = inHousehold(c, {
-      area: "recipes",
-      access: "write",
-    })
+    const { em, householdId, userId } = inHousehold(c)
     const params = c.req.valid("param")
     const recipe = await findRecipe(em, params.recipe)
     const snapshot = await versionSnapshot(em, recipe.id, params.versionId)

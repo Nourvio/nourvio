@@ -2,6 +2,7 @@ import { z } from "@hono/zod-openapi"
 import type { EntityManager } from "@mikro-orm/sql"
 import { HOUSEHOLD_ROLES, INVITE_ROLES } from "../../database/entities/index.ts"
 import { membershipsOf } from "../../services/households.ts"
+import { ME, NEW_ACCOUNT, TIMES } from "./examples.ts"
 
 /** A new account's details. The same rules as Better Auth's username plugin. */
 export const NewAccountSchema = z
@@ -19,7 +20,7 @@ export const NewAccountSchema = z
       .min(10, "Use at least 10 characters.")
       .max(128, "Use at most 128 characters."),
   })
-  .openapi("NewAccount")
+  .openapi("NewAccount", { example: NEW_ACCOUNT })
 
 export type NewAccount = z.infer<typeof NewAccountSchema>
 
@@ -40,7 +41,7 @@ export const MeSchema = z
     /** The household in use on this device. */
     activeHouseholdId: z.string().nullable(),
   })
-  .openapi("Me")
+  .openapi("Me", { example: ME })
 
 export type Me = z.infer<typeof MeSchema>
 
@@ -84,4 +85,10 @@ export const InviteSchema = z
     role: z.enum(INVITE_ROLES),
     expiresAt: z.iso.datetime(),
   })
-  .openapi("Invite")
+  .openapi("Invite", {
+    example: {
+      household: { name: "The Riveras" },
+      role: "member",
+      expiresAt: TIMES.inAWeek,
+    },
+  })

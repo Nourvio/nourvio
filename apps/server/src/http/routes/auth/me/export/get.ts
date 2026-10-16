@@ -3,6 +3,7 @@ import type { AppDeps } from "../../../../../core/context.ts"
 import { exportMyData } from "../../../../../services/transfer/my-data.ts"
 import { signedIn } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
+import { KEY_PERMISSIONS, TIMES } from "../../../../schemas/examples.ts"
 import {
   jsonResponse,
   SESSION_SECURITY,
@@ -48,11 +49,47 @@ const MyDataSchema = z
       })
     ),
   })
-  .openapi("MyData")
+  .openapi("MyData", {
+    example: {
+      format: "merran.person",
+      version: 1,
+      exportedAt: TIMES.now,
+      account: {
+        name: "Sam Rivera",
+        email: "sam@example.com",
+        username: "sam",
+        createdAt: TIMES.created,
+        preferences: {},
+      },
+      households: [
+        { name: "The Riveras", role: "owner", joinedAt: TIMES.created },
+      ],
+      cookingNotes: [
+        {
+          household: "The Riveras",
+          recipe: "Lemon Chicken",
+          rating: 5,
+          note: "More lemon next time.",
+          createdAt: TIMES.lastMade,
+        },
+      ],
+      apiKeys: [
+        {
+          name: "Home Assistant",
+          household: "The Riveras",
+          permissions: KEY_PERMISSIONS,
+          createdAt: TIMES.created,
+          lastUsedAt: TIMES.now,
+          expiresAt: TIMES.inThreeMonths,
+        },
+      ],
+    },
+  })
 
 const route = createRoute({
   method: "get",
   path: "/auth/me/export",
+  operationId: "exportMyData",
   tags: ["Auth"],
   summary: "Export your data",
   description:

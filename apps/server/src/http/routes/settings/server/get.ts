@@ -12,6 +12,7 @@ import { ServerSettingsSchema } from "../../../schemas/settings.ts"
 const route = createRoute({
   method: "get",
   path: "/settings/server",
+  operationId: "getServerSettings",
   tags: ["Settings"],
   summary: "The server's settings",
   description:

@@ -14,6 +14,7 @@ import {
 const route = createRoute({
   method: "delete",
   path: "/auth/api-keys/{keyId}",
+  operationId: "revokeApiKey",
   tags: ["API keys"],
   summary: "Revoke an API key",
   description: "It stops working straight away.",

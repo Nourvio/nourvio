@@ -8,6 +8,7 @@ import { CapabilitiesSchema } from "../../schemas/settings.ts"
 const route = createRoute({
   method: "get",
   path: "/capabilities",
+  operationId: "getCapabilities",
   tags: ["Server"],
   summary: "What's on",
   description:

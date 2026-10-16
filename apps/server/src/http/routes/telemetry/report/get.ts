@@ -13,6 +13,7 @@ import { TelemetryReportSchema } from "../../../schemas/settings.ts"
 const route = createRoute({
   method: "get",
   path: "/telemetry/report",
+  operationId: "getTelemetryReport",
   tags: ["Settings"],
   summary: "The next telemetry summary",
   description:

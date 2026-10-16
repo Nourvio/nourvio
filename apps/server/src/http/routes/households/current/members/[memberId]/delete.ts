@@ -19,6 +19,7 @@ import {
 const route = createRoute({
   method: "delete",
   path: "/households/current/members/{memberId}",
+  operationId: "removeMember",
   tags: ["Households"],
   summary: "Remove someone, or leave",
   description:

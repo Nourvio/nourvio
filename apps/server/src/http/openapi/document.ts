@@ -1,6 +1,7 @@
 import type { OpenAPIHono } from "@hono/zod-openapi"
 import type { AppEnv } from "../../core/context.ts"
 import { AUTH_BASE, type Auth } from "../../services/auth/auth.ts"
+import { KEY_PERMISSION } from "../middleware/auth.ts"
 import { BETTER_AUTH_ENDPOINTS } from "../routes/auth/better-auth.ts"
 
 type Document = ReturnType<OpenAPIHono<AppEnv>["getOpenAPI31Document"]>
@@ -59,7 +60,7 @@ export async function buildOpenApiDocument(
       title: "Merran API",
       version,
       description:
-        "Everything the Merran app does, it does through this API: the same routes are open to scripts and to tools like Home Assistant. Tools use an API key: make one at `POST /api/auth/api-keys` while signed in, then send it as `Authorization: Bearer mrn_…`. Each route says whether a key can use it, and with which permission. Browsers sign in with `POST /api/auth/sign-in/username` and send the session cookie it sets.",
+        "Everything the Merran app does, it does through this API: the same routes are open to scripts and to tools like Home Assistant. Tools use an API key: make one at `POST /api/auth/api-keys` while signed in, then send it as `Authorization: Bearer mrn_…`. Each route a key can use says which permission it needs, in `x-merran-permission` (like `recipes:read`); routes without it refuse keys. Browsers sign in with `POST /api/auth/sign-in/username` and send the session cookie it sets.",
       license: {
         name: "AGPL-3.0-or-later",
         url: "https://www.gnu.org/licenses/agpl-3.0.html",
@@ -86,14 +87,18 @@ export async function buildOpenApiDocument(
   }
   document.paths ??= {}
   const added: Operation[] = []
-  for (const { method, path, signedIn } of BETTER_AUTH_ENDPOINTS) {
+  for (const endpoint of BETTER_AUTH_ENDPOINTS) {
+    const { method, path, signedIn } = endpoint
     const verb = method.toLowerCase()
     const operation = betterAuth.paths[path]?.[verb]
     if (!operation) {
       throw new Error(`Better Auth doesn't describe ${method} ${path}`)
     }
     const described = {
-      ...operation,
+      ...withExamples(operation, endpoint),
+      operationId: endpoint.operationId,
+      summary: endpoint.summary,
+      description: endpoint.description,
       tags: ["Sign-in"],
       ...(signedIn ? { security: [{ session: [] }] } : {}),
     }
@@ -118,5 +123,73 @@ export async function buildOpenApiDocument(
     document.components.schemas[name] = schema as never
   }
 
+  sayWhichKeys(document)
   return document
+}
+
+/** Better Auth's operation, with Merran's examples on its JSON request and answer. */
+function withExamples(
+  operation: Operation,
+  examples: { requestExample?: unknown; responseExample: unknown }
+): Operation {
+  type Media = Record<string, Record<string, unknown>>
+  const body = operation.requestBody as { content?: Media } | undefined
+  const responses = operation.responses as Record<string, { content?: Media }>
+  const ok = responses["200"]
+  return {
+    ...operation,
+    ...(body?.content?.["application/json"] && "requestExample" in examples
+      ? {
+          requestBody: {
+            ...body,
+            content: {
+              ...body.content,
+              "application/json": {
+                ...body.content["application/json"],
+                example: examples.requestExample,
+              },
+            },
+          },
+        }
+      : {}),
+    responses: {
+      ...responses,
+      ...(ok?.content?.["application/json"]
+        ? {
+            200: {
+              ...ok,
+              content: {
+                ...ok.content,
+                "application/json": {
+                  ...ok.content["application/json"],
+                  example: examples.responseExample,
+                },
+              },
+            },
+          }
+        : {}),
+    },
+  }
+}
+
+/**
+ * Writes each route's API key permission into its description too, from
+ * `x-merran-permission`, for readers of reference pages that don't show
+ * extensions. It's never written by hand.
+ */
+function sayWhichKeys(document: Document) {
+  for (const methods of Object.values(document.paths ?? {})) {
+    for (const operation of Object.values(methods ?? {})) {
+      const permission = (operation as Operation | undefined)?.[KEY_PERMISSION]
+      if (typeof permission !== "string") continue
+      const sentence =
+        permission === "any"
+          ? "Any API key that works will do: it needs no permission."
+          : `With an API key, it needs the \`${permission.replace(":", ": ")}\` permission.`
+      const op = operation as { description?: string }
+      op.description = op.description
+        ? `${op.description} ${sentence}`
+        : sentence
+    }
+  }
 }

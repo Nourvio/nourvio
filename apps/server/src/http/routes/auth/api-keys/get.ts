@@ -13,6 +13,7 @@ import {
 const route = createRoute({
   method: "get",
   path: "/auth/api-keys",
+  operationId: "listApiKeys",
   tags: ["API keys"],
   summary: "Your API keys",
   description:

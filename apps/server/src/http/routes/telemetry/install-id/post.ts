@@ -16,6 +16,7 @@ import { TelemetryReportSchema } from "../../../schemas/settings.ts"
 const route = createRoute({
   method: "post",
   path: "/telemetry/install-id",
+  operationId: "renewInstallId",
   tags: ["Settings"],
   summary: "Make a new install id",
   description:

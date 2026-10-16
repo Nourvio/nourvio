@@ -18,6 +18,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/households/current/jobs/{jobId}/cancel",
+  operationId: "cancelHouseholdJob",
   tags: ["Households"],
   summary: "Stop one of the household's jobs",
   description:

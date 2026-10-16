@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi"
 import type { ApiKey } from "../../database/entities/index.ts"
+import { API_KEY, KEY_PERMISSIONS } from "./examples.ts"
 
 const Access = z.enum(["read", "write"])
 
@@ -15,7 +16,7 @@ export const ApiKeyPermissionsSchema = z
     assistant: Access.optional(),
   })
   .strict()
-  .openapi("ApiKeyPermissions")
+  .openapi("ApiKeyPermissions", { example: KEY_PERMISSIONS })
 
 export const ApiKeySchema = z
   .object({
@@ -29,7 +30,7 @@ export const ApiKeySchema = z
     lastUsedAt: z.iso.datetime().nullable(),
     createdAt: z.iso.datetime(),
   })
-  .openapi("ApiKey")
+  .openapi("ApiKey", { example: API_KEY })
 
 export const NewApiKeyRequestSchema = z
   .object({
@@ -41,12 +42,20 @@ export const NewApiKeyRequestSchema = z
       .nullable()
       .default(90),
   })
-  .openapi("NewApiKeyRequest")
+  .openapi("NewApiKeyRequest", {
+    example: {
+      name: "Home Assistant",
+      permissions: KEY_PERMISSIONS,
+      expiresInDays: 90,
+    },
+  })
 
 export const NewApiKeySchema = ApiKeySchema.extend({
   /** The key. Shown only now: keep it somewhere safe. */
   key: z.string().openapi({ example: "mrn_3fK9aQ…" }),
-}).openapi("NewApiKey")
+}).openapi("NewApiKey", {
+  example: { ...API_KEY, lastUsedAt: null, key: "mrn_3fK9aQ…" },
+})
 
 export const ApiKeyParam = z.object({
   keyId: z.string().openapi({ param: { name: "keyId", in: "path" } }),

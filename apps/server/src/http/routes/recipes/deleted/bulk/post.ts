@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { bulkDeleted } from "../../../../../services/recipes/deleted.ts"
-import { inHousehold } from "../../../../middleware/auth.ts"
+import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import {
   BulkResultSchema,
@@ -10,18 +10,18 @@ import {
 import {
   errorResponse,
   jsonResponse,
-  SESSION_OR_API_KEY_SECURITY,
   SIGNED_IN_ERRORS,
 } from "../../../../schemas/responses.ts"
 
 const route = createRoute({
   method: "post",
   path: "/recipes/deleted/bulk",
+  operationId: "bulkChangeDeletedRecipes",
   tags: ["Recipes"],
   summary: "Put back, or delete for good, several recipes at once",
   description:
-    "For recipes in Recently deleted, up to 500 at a time. Ones that aren't there are skipped. With an API key, it needs the `recipes: write` permission.",
-  security: SESSION_OR_API_KEY_SECURITY,
+    "For recipes in Recently deleted, up to 500 at a time. Ones that aren't there are skipped.",
+  ...openToKeys("recipes", "write"),
   request: {
     body: {
       required: true,
@@ -37,7 +37,7 @@ const route = createRoute({
 
 export default (router: Router, { files }: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em } = inHousehold(c, { area: "recipes", access: "write" })
+    const { em } = inHousehold(c)
     return c.json(await bulkDeleted(em, files, c.req.valid("json")), 200)
   })
 }

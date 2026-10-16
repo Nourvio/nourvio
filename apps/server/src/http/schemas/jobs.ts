@@ -1,5 +1,6 @@
 import { z } from "@hono/zod-openapi"
 import { JOB_STATUSES } from "../../database/entities/index.ts"
+import { JOB } from "./examples.ts"
 
 export const JobSchema = z
   .object({
@@ -33,15 +34,17 @@ export const JobSchema = z
     finishedAt: z.iso.datetime().nullable(),
     createdAt: z.iso.datetime(),
   })
-  .openapi("Job")
+  .openapi("Job", { example: JOB })
+
+const JOB_LIST_ITEM = { ...JOB, householdName: "The Riveras" }
 
 export const JobListItemSchema = JobSchema.extend({
   householdName: z.string().nullable(),
-}).openapi("JobListItem")
+}).openapi("JobListItem", { example: JOB_LIST_ITEM })
 
 export const JobListSchema = z
   .object({ jobs: z.array(JobListItemSchema) })
-  .openapi("JobList")
+  .openapi("JobList", { example: { jobs: [JOB_LIST_ITEM] } })
 
 export const JobListQuerySchema = z.object({
   status: z.enum(JOB_STATUSES).optional().openapi({

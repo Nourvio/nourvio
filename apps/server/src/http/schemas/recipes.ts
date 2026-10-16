@@ -1,6 +1,15 @@
 import { z } from "@hono/zod-openapi"
 import { DIETS } from "@merran/shared"
 import { RECIPE_ORIGINS } from "../../database/entities/index.ts"
+import {
+  COOK_NOTE,
+  IDS,
+  PAIR_OPTION,
+  RECIPE,
+  RECIPE_INPUT,
+  RECIPE_SUMMARY,
+  TIMES,
+} from "./examples.ts"
 
 const minutes = z.number().int().min(0).max(100_000).nullish()
 
@@ -74,7 +83,7 @@ export const RecipeInputSchema = z
       .max(200, "Use 200 steps or fewer.")
       .default([]),
   })
-  .openapi("RecipeInput")
+  .openapi("RecipeInput", { example: RECIPE_INPUT })
 
 export type RecipeInput = z.output<typeof RecipeInputSchema>
 
@@ -108,7 +117,7 @@ export const RecipeSummarySchema = z
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
   })
-  .openapi("RecipeSummary")
+  .openapi("RecipeSummary", { example: RECIPE_SUMMARY })
 
 export const IngredientSchema = z
   .object({
@@ -121,7 +130,7 @@ export const IngredientSchema = z
     food: z.string().nullable(),
     note: z.string().nullable(),
   })
-  .openapi("Ingredient")
+  .openapi("Ingredient", { example: RECIPE.ingredients[1] })
 
 export const StepSchema = z
   .object({
@@ -129,7 +138,7 @@ export const StepSchema = z
     section: z.string().nullable(),
     text: z.string(),
   })
-  .openapi("Step")
+  .openapi("Step", { example: RECIPE.steps[0] })
 
 export const RecipeSchema = RecipeSummarySchema.extend({
   origin: z.enum(RECIPE_ORIGINS),
@@ -144,7 +153,7 @@ export const RecipeSchema = RecipeSummarySchema.extend({
   }),
   ingredients: z.array(IngredientSchema),
   steps: z.array(StepSchema),
-}).openapi("Recipe")
+}).openapi("Recipe", { example: RECIPE })
 
 export const RECIPE_SORTS = [
   "newest",
@@ -195,7 +204,7 @@ export const RecipeListSchema = z
     recipes: z.array(RecipeSummarySchema),
     total: z.number().openapi({ description: "How many match, in all." }),
   })
-  .openapi("RecipeList")
+  .openapi("RecipeList", { example: { recipes: [RECIPE_SUMMARY], total: 1 } })
 
 export const RecipeParam = z.object({
   recipe: z.string().openapi({
@@ -216,7 +225,7 @@ export const CookNoteSchema = z
       .openapi({ description: "Who cooked it, if they're still here." }),
     createdAt: z.iso.datetime(),
   })
-  .openapi("CookNote")
+  .openapi("CookNote", { example: COOK_NOTE })
 
 export const CookNoteInputSchema = z
   .object({
@@ -241,7 +250,9 @@ export const CookNoteInputSchema = z
   .refine((input) => input.rating !== null || input.note !== null, {
     message: "Give it stars, a note, or both.",
   })
-  .openapi("CookNoteInput")
+  .openapi("CookNoteInput", {
+    example: { rating: 5, note: "More lemon next time." },
+  })
 export type CookNoteInput = z.infer<typeof CookNoteInputSchema>
 
 export const CookNoteParam = RecipeParam.extend({
@@ -255,7 +266,11 @@ export const DietsInputSchema = z
         "The labels as they should be, where they differ from the ingredients. An empty object goes back to what the ingredients say.",
     }),
   })
-  .openapi("DietsInput")
+  .openapi("DietsInput", {
+    description:
+      "For example, not gluten-free after all, because the household's stock has wheat in it.",
+    example: { overrides: { "gluten-free": false } },
+  })
 
 export const PairOptionSchema = z
   .object({
@@ -269,7 +284,13 @@ export const PairOptionSchema = z
     servings: z.number().nullable(),
     totalMinutes: z.number().nullable(),
   })
-  .openapi("PairOption")
+  .openapi("PairOption", { example: PAIR_OPTION })
+
+const RECIPE_PAIRING = {
+  id: IDS.pairing,
+  kind: "recipe" as const,
+  recipe: PAIR_OPTION,
+}
 
 export const PairingSchema = z
   .discriminatedUnion("kind", [
@@ -284,7 +305,7 @@ export const PairingSchema = z
       tag: z.string().openapi({ description: "Every recipe with this tag." }),
     }),
   ])
-  .openapi("Pairing")
+  .openapi("Pairing", { example: RECIPE_PAIRING })
 
 export const RecipePairingsSchema = z
   .object({
@@ -299,7 +320,16 @@ export const RecipePairingsSchema = z
       description: "Recipes it's offered with: the other way round.",
     }),
   })
-  .openapi("RecipePairings")
+  .openapi("RecipePairings", {
+    example: {
+      pairings: [
+        RECIPE_PAIRING,
+        { id: IDS.tagPairing, kind: "tag", tag: "salad" },
+      ],
+      options: [PAIR_OPTION],
+      pairsWith: [],
+    },
+  })
 
 export const PairingsInputSchema = z
   .object({
@@ -315,7 +345,7 @@ export const PairingsInputSchema = z
   .refine((input) => (input.recipes?.length ?? 0) > 0 || input.tag, {
     message: "Pick a recipe or a tag.",
   })
-  .openapi("PairingsInput")
+  .openapi("PairingsInput", { example: { recipes: ["garlic-rice"] } })
 export type PairingsInput = z.infer<typeof PairingsInputSchema>
 
 export const PairingParam = RecipeParam.extend({
@@ -345,7 +375,13 @@ export const RecipeBulkInputSchema = z
       tags: BulkTags,
     }),
   ])
-  .openapi("RecipeBulkInput")
+  .openapi("RecipeBulkInput", {
+    example: {
+      action: "addTags",
+      ids: [IDS.lemonChicken, IDS.garlicRice],
+      tags: ["weeknight"],
+    },
+  })
 export type RecipeBulkInput = z.infer<typeof RecipeBulkInputSchema>
 
 export const DeletedBulkInputSchema = z
@@ -357,7 +393,9 @@ export const DeletedBulkInputSchema = z
       description: "Gone for good, photos and all.",
     }),
   ])
-  .openapi("DeletedBulkInput")
+  .openapi("DeletedBulkInput", {
+    example: { action: "restore", ids: [IDS.lemonChicken] },
+  })
 export type DeletedBulkInput = z.infer<typeof DeletedBulkInputSchema>
 
 export const BulkResultSchema = z
@@ -367,7 +405,7 @@ export const BulkResultSchema = z
         "How many it changed. Ones not there, or already that way, are skipped.",
     }),
   })
-  .openapi("BulkResult")
+  .openapi("BulkResult", { example: { changed: 2 } })
 
 export const RatingInputSchema = z
   .object({
@@ -375,7 +413,7 @@ export const RatingInputSchema = z
       description: "From 1 to 5 stars, or null to clear it.",
     }),
   })
-  .openapi("RecipeRatingInput")
+  .openapi("RecipeRatingInput", { example: { rating: 4 } })
 
 export const VersionSchema = z
   .object({
@@ -385,7 +423,15 @@ export const VersionSchema = z
     createdBy: z.string().nullable(),
     createdAt: z.iso.datetime(),
   })
-  .openapi("RecipeVersion")
+  .openapi("RecipeVersion", {
+    example: {
+      id: IDS.version,
+      source: "edit",
+      name: "Lemon Chicken",
+      createdBy: "Sam Rivera",
+      createdAt: TIMES.created,
+    },
+  })
 
 export const VersionParam = RecipeParam.extend({
   versionId: z.string().openapi({ param: { name: "versionId", in: "path" } }),
@@ -396,7 +442,13 @@ export const DeletedRecipeSchema = RecipeSummarySchema.extend({
   goneAt: z.iso
     .datetime()
     .openapi({ description: "When it's deleted for good." }),
-}).openapi("DeletedRecipe")
+}).openapi("DeletedRecipe", {
+  example: {
+    ...RECIPE_SUMMARY,
+    deletedAt: TIMES.now,
+    goneAt: "2026-11-14T18:30:00.000Z",
+  },
+})
 
 export const DeletedRecipeParam = z.object({
   recipeId: z.string().openapi({ param: { name: "recipeId", in: "path" } }),
@@ -408,7 +460,7 @@ export const TagSchema = z
     name: z.string(),
     recipes: z.number().openapi({ description: "How many recipes have it." }),
   })
-  .openapi("Tag")
+  .openapi("Tag", { example: { id: IDS.tag, name: "weeknight", recipes: 12 } })
 
 export const TagParam = z.object({
   tagId: z.string().openapi({ param: { name: "tagId", in: "path" } }),
@@ -425,4 +477,4 @@ export const TagChangesSchema = z
         description: "A name another tag already has merges the two.",
       }),
   })
-  .openapi("TagChanges")
+  .openapi("TagChanges", { example: { name: "Weeknight" } })

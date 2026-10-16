@@ -3,7 +3,7 @@
   "info": {
     "title": "Merran API",
     "version": "0.0.0",
-    "description": "Everything the Merran app does, it does through this API: the same routes are open to scripts and to tools like Home Assistant. Tools use an API key: make one at `POST /api/auth/api-keys` while signed in, then send it as `Authorization: Bearer mrn_…`. Each route says whether a key can use it, and with which permission. Browsers sign in with `POST /api/auth/sign-in/username` and send the session cookie it sets.",
+    "description": "Everything the Merran app does, it does through this API: the same routes are open to scripts and to tools like Home Assistant. Tools use an API key: make one at `POST /api/auth/api-keys` while signed in, then send it as `Authorization: Bearer mrn_…`. Each route a key can use says which permission it needs, in `x-merran-permission` (like `recipes:read`); routes without it refuse keys. Browsers sign in with `POST /api/auth/sign-in/username` and send the session cookie it sets.",
     "license": {
       "name": "AGPL-3.0-or-later",
       "url": "https://www.gnu.org/licenses/agpl-3.0.html"
@@ -156,7 +156,23 @@
           "expiresAt",
           "lastUsedAt",
           "createdAt"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+          "name": "Home Assistant",
+          "start": "mrn_3fK9aQ",
+          "household": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+            "name": "The Riveras"
+          },
+          "permissions": {
+            "recipes": "read",
+            "list": "write"
+          },
+          "expiresAt": "2027-01-13T18:30:00.000Z",
+          "lastUsedAt": "2026-10-15T18:30:00.000Z",
+          "createdAt": "2026-10-01T17:30:00.000Z"
+        }
       },
       "ApiKeyPermissions": {
         "type": "object",
@@ -210,7 +226,11 @@
             ]
           }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "example": {
+          "recipes": "read",
+          "list": "write"
+        }
       },
       "NewApiKey": {
         "allOf": [
@@ -229,7 +249,24 @@
               "key"
             ]
           }
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+          "name": "Home Assistant",
+          "start": "mrn_3fK9aQ",
+          "household": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+            "name": "The Riveras"
+          },
+          "permissions": {
+            "recipes": "read",
+            "list": "write"
+          },
+          "expiresAt": "2027-01-13T18:30:00.000Z",
+          "lastUsedAt": null,
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "key": "mrn_3fK9aQ…"
+        }
       },
       "NewApiKeyRequest": {
         "type": "object",
@@ -272,7 +309,15 @@
         "required": [
           "name",
           "permissions"
-        ]
+        ],
+        "example": {
+          "name": "Home Assistant",
+          "permissions": {
+            "recipes": "read",
+            "list": "write"
+          },
+          "expiresInDays": 90
+        }
       },
       "Invite": {
         "type": "object",
@@ -304,7 +349,14 @@
           "household",
           "role",
           "expiresAt"
-        ]
+        ],
+        "example": {
+          "household": {
+            "name": "The Riveras"
+          },
+          "role": "member",
+          "expiresAt": "2026-10-22T18:30:00.000Z"
+        }
       },
       "Me": {
         "type": "object",
@@ -369,13 +421,36 @@
           "serverAdmin",
           "households",
           "activeHouseholdId"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+          "name": "Sam Rivera",
+          "email": "sam@example.com",
+          "username": "sam",
+          "serverAdmin": true,
+          "households": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+              "name": "The Riveras",
+              "role": "owner"
+            }
+          ],
+          "activeHouseholdId": "0199e8b0-5a10-7a01-8b00-000000000003"
+        }
       },
       "JoinRequest": {
         "type": "object",
         "properties": {
           "account": {
             "$ref": "#/components/schemas/NewAccount"
+          }
+        },
+        "example": {
+          "account": {
+            "name": "Jamie Rivera",
+            "email": "jamie@example.com",
+            "username": "jamie",
+            "password": "correct horse battery staple"
           }
         }
       },
@@ -408,7 +483,13 @@
           "email",
           "username",
           "password"
-        ]
+        ],
+        "example": {
+          "name": "Jamie Rivera",
+          "email": "jamie@example.com",
+          "username": "jamie",
+          "password": "correct horse battery staple"
+        }
       },
       "MyData": {
         "type": "object",
@@ -573,7 +654,48 @@
           "households",
           "cookingNotes",
           "apiKeys"
-        ]
+        ],
+        "example": {
+          "format": "merran.person",
+          "version": 1,
+          "exportedAt": "2026-10-15T18:30:00.000Z",
+          "account": {
+            "name": "Sam Rivera",
+            "email": "sam@example.com",
+            "username": "sam",
+            "createdAt": "2026-10-01T17:30:00.000Z",
+            "preferences": {}
+          },
+          "households": [
+            {
+              "name": "The Riveras",
+              "role": "owner",
+              "joinedAt": "2026-10-01T17:30:00.000Z"
+            }
+          ],
+          "cookingNotes": [
+            {
+              "household": "The Riveras",
+              "recipe": "Lemon Chicken",
+              "rating": 5,
+              "note": "More lemon next time.",
+              "createdAt": "2026-10-09T01:15:00.000Z"
+            }
+          ],
+          "apiKeys": [
+            {
+              "name": "Home Assistant",
+              "household": "The Riveras",
+              "permissions": {
+                "recipes": "read",
+                "list": "write"
+              },
+              "createdAt": "2026-10-01T17:30:00.000Z",
+              "lastUsedAt": "2026-10-15T18:30:00.000Z",
+              "expiresAt": "2027-01-13T18:30:00.000Z"
+            }
+          ]
+        }
       },
       "SetupStatus": {
         "type": "object",
@@ -584,7 +706,10 @@
         },
         "required": [
           "needed"
-        ]
+        ],
+        "example": {
+          "needed": true
+        }
       },
       "SetupRequest": {
         "allOf": [
@@ -609,7 +734,15 @@
               "household"
             ]
           }
-        ]
+        ],
+        "example": {
+          "name": "Sam Rivera",
+          "email": "sam@example.com",
+          "username": "sam",
+          "password": "correct horse battery staple",
+          "code": "ABCD-EFGH-JKMN",
+          "household": "The Riveras"
+        }
       },
       "Capabilities": {
         "type": "object",
@@ -662,7 +795,29 @@
           "modules",
           "capabilities",
           "client"
-        ]
+        ],
+        "example": {
+          "version": "0.1.0",
+          "modules": [
+            {
+              "id": "errorTracking",
+              "on": true
+            },
+            {
+              "id": "telemetry",
+              "on": true
+            }
+          ],
+          "capabilities": [],
+          "client": {
+            "errorTracking": {
+              "dsn": "https://public-key@errors.example.com/1",
+              "environment": "home",
+              "sampleRate": 1,
+              "release": "0.1.0"
+            }
+          }
+        }
       },
       "Health": {
         "type": "object",
@@ -681,7 +836,11 @@
         "required": [
           "status",
           "version"
-        ]
+        ],
+        "example": {
+          "status": "ok",
+          "version": "0.1.0"
+        }
       },
       "Ready": {
         "type": "object",
@@ -703,7 +862,11 @@
         "required": [
           "status",
           "database"
-        ]
+        ],
+        "example": {
+          "status": "ready",
+          "database": "sqlite"
+        }
       },
       "Household": {
         "type": "object",
@@ -749,7 +912,16 @@
           "timeZone",
           "weekStartsOn",
           "role"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+          "name": "The Riveras",
+          "country": "US",
+          "currency": "USD",
+          "timeZone": "America/Phoenix",
+          "weekStartsOn": 0,
+          "role": "owner"
+        }
       },
       "HouseholdChanges": {
         "type": "object",
@@ -781,6 +953,10 @@
             "minimum": 0,
             "maximum": 6
           }
+        },
+        "example": {
+          "name": "The Rivera-Parks",
+          "weekStartsOn": 1
         }
       },
       "Job": {
@@ -893,7 +1069,26 @@
           "startedAt",
           "finishedAt",
           "createdAt"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+          "kind": "household.import",
+          "status": "running",
+          "scheduled": false,
+          "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+          "progress": {
+            "done": 42,
+            "total": 128
+          },
+          "result": null,
+          "error": null,
+          "attempts": 1,
+          "maxAttempts": 3,
+          "runAt": "2026-10-15T18:30:00.000Z",
+          "startedAt": "2026-10-15T18:30:00.000Z",
+          "finishedAt": null,
+          "createdAt": "2026-10-15T18:30:00.000Z"
+        }
       },
       "InviteLink": {
         "type": "object",
@@ -922,7 +1117,13 @@
           "role",
           "expiresAt",
           "createdAt"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+          "role": "member",
+          "expiresAt": "2026-10-22T18:30:00.000Z",
+          "createdAt": "2026-10-15T18:30:00.000Z"
+        }
       },
       "NewInviteLink": {
         "allOf": [
@@ -941,7 +1142,14 @@
               "link"
             ]
           }
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+          "role": "member",
+          "expiresAt": "2026-10-22T18:30:00.000Z",
+          "createdAt": "2026-10-15T18:30:00.000Z",
+          "link": "https://merran.example.com/join/sample-invite-token"
+        }
       },
       "Member": {
         "type": "object",
@@ -981,7 +1189,15 @@
           "username",
           "role",
           "joinedAt"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000005",
+          "userId": "0199e8b0-5a10-7a01-8b00-000000000002",
+          "name": "Jamie Rivera",
+          "username": "jamie",
+          "role": "admin",
+          "joinedAt": "2026-10-01T17:30:00.000Z"
+        }
       },
       "HouseholdImport": {
         "type": "object",
@@ -996,7 +1212,34 @@
         "required": [
           "household",
           "job"
-        ]
+        ],
+        "example": {
+          "household": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+            "name": "The Riveras",
+            "country": "US",
+            "currency": "USD",
+            "timeZone": "America/Phoenix",
+            "weekStartsOn": 0,
+            "role": "owner"
+          },
+          "job": {
+            "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+            "kind": "household.import",
+            "status": "queued",
+            "scheduled": false,
+            "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+            "progress": null,
+            "result": null,
+            "error": null,
+            "attempts": 0,
+            "maxAttempts": 3,
+            "runAt": "2026-10-15T18:30:00.000Z",
+            "startedAt": null,
+            "finishedAt": null,
+            "createdAt": "2026-10-15T18:30:00.000Z"
+          }
+        }
       },
       "RecipeList": {
         "type": "object",
@@ -1015,7 +1258,38 @@
         "required": [
           "recipes",
           "total"
-        ]
+        ],
+        "example": {
+          "recipes": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "name": "Lemon Chicken",
+              "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+              "servings": 4,
+              "totalMinutes": 50,
+              "rating": 5,
+              "tags": [
+                "chicken",
+                "dinner"
+              ],
+              "diets": [
+                "gluten-free",
+                "dairy-free",
+                "egg-free",
+                "nut-free"
+              ],
+              "photo": {
+                "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+                "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+              },
+              "lastMadeAt": "2026-10-09T01:15:00.000Z",
+              "createdAt": "2026-10-01T17:30:00.000Z",
+              "updatedAt": "2026-10-15T18:30:00.000Z"
+            }
+          ],
+          "total": 1
+        }
       },
       "RecipeSummary": {
         "type": "object",
@@ -1119,7 +1393,33 @@
           "lastMadeAt",
           "createdAt",
           "updatedAt"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+          "slug": "lemon-chicken",
+          "name": "Lemon Chicken",
+          "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+          "servings": 4,
+          "totalMinutes": 50,
+          "rating": 5,
+          "tags": [
+            "chicken",
+            "dinner"
+          ],
+          "diets": [
+            "gluten-free",
+            "dairy-free",
+            "egg-free",
+            "nut-free"
+          ],
+          "photo": {
+            "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+          },
+          "lastMadeAt": "2026-10-09T01:15:00.000Z",
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "updatedAt": "2026-10-15T18:30:00.000Z"
+        }
       },
       "Diet": {
         "type": "string",
@@ -1212,7 +1512,99 @@
               "steps"
             ]
           }
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+          "slug": "lemon-chicken",
+          "name": "Lemon Chicken",
+          "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+          "servings": 4,
+          "totalMinutes": 50,
+          "rating": 5,
+          "tags": [
+            "chicken",
+            "dinner"
+          ],
+          "diets": [
+            "gluten-free",
+            "dairy-free",
+            "egg-free",
+            "nut-free"
+          ],
+          "photo": {
+            "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+          },
+          "lastMadeAt": "2026-10-09T01:15:00.000Z",
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "updatedAt": "2026-10-15T18:30:00.000Z",
+          "origin": "link",
+          "sourceUrl": "https://example.com/lemon-chicken",
+          "yieldText": null,
+          "prepMinutes": 10,
+          "cookMinutes": 40,
+          "notes": "Bone-in thighs work too: give them 10 minutes more.",
+          "dietOverrides": {},
+          "ingredients": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+              "section": null,
+              "text": "2 lb chicken thighs",
+              "quantity": 2,
+              "quantityMax": null,
+              "unit": "pound",
+              "food": "chicken thighs",
+              "note": null
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+              "section": null,
+              "text": "1 tbsp olive oil",
+              "quantity": 1,
+              "quantityMax": null,
+              "unit": "tablespoon",
+              "food": "olive oil",
+              "note": null
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+              "section": null,
+              "text": "2 lemons, juiced",
+              "quantity": 2,
+              "quantityMax": null,
+              "unit": null,
+              "food": "lemons",
+              "note": "juiced"
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+              "section": null,
+              "text": "4 cloves garlic, smashed",
+              "quantity": 4,
+              "quantityMax": null,
+              "unit": "clove",
+              "food": "garlic",
+              "note": "smashed"
+            }
+          ],
+          "steps": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+              "section": null,
+              "text": "Heat the oven to 425°F."
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+              "section": null,
+              "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+              "section": null,
+              "text": "Roast skin side up for 40 minutes, until crisp."
+            }
+          ]
+        }
       },
       "DietOverrides": {
         "type": "object",
@@ -1295,7 +1687,17 @@
           "unit",
           "food",
           "note"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+          "section": null,
+          "text": "1 tbsp olive oil",
+          "quantity": 1,
+          "quantityMax": null,
+          "unit": "tablespoon",
+          "food": "olive oil",
+          "note": null
+        }
       },
       "Step": {
         "type": "object",
@@ -1317,7 +1719,12 @@
           "id",
           "section",
           "text"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+          "section": null,
+          "text": "Heat the oven to 425°F."
+        }
       },
       "RecipeInput": {
         "type": "object",
@@ -1442,7 +1849,30 @@
         },
         "required": [
           "name"
-        ]
+        ],
+        "example": {
+          "name": "Lemon Chicken",
+          "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+          "servings": 4,
+          "prepMinutes": 10,
+          "cookMinutes": 40,
+          "sourceUrl": "https://example.com/lemon-chicken",
+          "tags": [
+            "chicken",
+            "dinner"
+          ],
+          "ingredients": [
+            "2 lb chicken thighs",
+            "1 tbsp olive oil",
+            "2 lemons, juiced",
+            "4 cloves garlic, smashed"
+          ],
+          "steps": [
+            "Heat the oven to 425°F.",
+            "Toss the chicken with the oil, lemon juice, garlic, salt and pepper.",
+            "Roast skin side up for 40 minutes, until crisp."
+          ]
+        }
       },
       "BulkResult": {
         "type": "object",
@@ -1454,7 +1884,10 @@
         },
         "required": [
           "changed"
-        ]
+        ],
+        "example": {
+          "changed": 2
+        }
       },
       "RecipeBulkInput": {
         "oneOf": [
@@ -1553,7 +1986,17 @@
               "tags"
             ]
           }
-        ]
+        ],
+        "example": {
+          "action": "addTags",
+          "ids": [
+            "0199e8b0-5a10-7a01-8b00-000000000006",
+            "0199e8b0-5a10-7a01-8b00-000000000007"
+          ],
+          "tags": [
+            "weeknight"
+          ]
+        }
       },
       "DeletedRecipe": {
         "allOf": [
@@ -1578,7 +2021,35 @@
               "goneAt"
             ]
           }
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+          "slug": "lemon-chicken",
+          "name": "Lemon Chicken",
+          "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+          "servings": 4,
+          "totalMinutes": 50,
+          "rating": 5,
+          "tags": [
+            "chicken",
+            "dinner"
+          ],
+          "diets": [
+            "gluten-free",
+            "dairy-free",
+            "egg-free",
+            "nut-free"
+          ],
+          "photo": {
+            "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+          },
+          "lastMadeAt": "2026-10-09T01:15:00.000Z",
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "updatedAt": "2026-10-15T18:30:00.000Z",
+          "deletedAt": "2026-10-15T18:30:00.000Z",
+          "goneAt": "2026-11-14T18:30:00.000Z"
+        }
       },
       "DeletedBulkInput": {
         "oneOf": [
@@ -1632,7 +2103,13 @@
             ],
             "description": "Gone for good, photos and all."
           }
-        ]
+        ],
+        "example": {
+          "action": "restore",
+          "ids": [
+            "0199e8b0-5a10-7a01-8b00-000000000006"
+          ]
+        }
       },
       "ImportResult": {
         "type": "object",
@@ -1648,7 +2125,102 @@
         "required": [
           "recipe",
           "duplicate"
-        ]
+        ],
+        "example": {
+          "recipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+            "slug": "lemon-chicken",
+            "name": "Lemon Chicken",
+            "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+            "servings": 4,
+            "totalMinutes": 50,
+            "rating": 5,
+            "tags": [
+              "chicken",
+              "dinner"
+            ],
+            "diets": [
+              "gluten-free",
+              "dairy-free",
+              "egg-free",
+              "nut-free"
+            ],
+            "photo": {
+              "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+              "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+            },
+            "lastMadeAt": "2026-10-09T01:15:00.000Z",
+            "createdAt": "2026-10-01T17:30:00.000Z",
+            "updatedAt": "2026-10-15T18:30:00.000Z",
+            "origin": "link",
+            "sourceUrl": "https://example.com/lemon-chicken",
+            "yieldText": null,
+            "prepMinutes": 10,
+            "cookMinutes": 40,
+            "notes": "Bone-in thighs work too: give them 10 minutes more.",
+            "dietOverrides": {},
+            "ingredients": [
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+                "section": null,
+                "text": "2 lb chicken thighs",
+                "quantity": 2,
+                "quantityMax": null,
+                "unit": "pound",
+                "food": "chicken thighs",
+                "note": null
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+                "section": null,
+                "text": "1 tbsp olive oil",
+                "quantity": 1,
+                "quantityMax": null,
+                "unit": "tablespoon",
+                "food": "olive oil",
+                "note": null
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+                "section": null,
+                "text": "2 lemons, juiced",
+                "quantity": 2,
+                "quantityMax": null,
+                "unit": null,
+                "food": "lemons",
+                "note": "juiced"
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+                "section": null,
+                "text": "4 cloves garlic, smashed",
+                "quantity": 4,
+                "quantityMax": null,
+                "unit": "clove",
+                "food": "garlic",
+                "note": "smashed"
+              }
+            ],
+            "steps": [
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+                "section": null,
+                "text": "Heat the oven to 425°F."
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+                "section": null,
+                "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+                "section": null,
+                "text": "Roast skin side up for 40 minutes, until crisp."
+              }
+            ]
+          },
+          "duplicate": false
+        }
       },
       "Tag": {
         "type": "object",
@@ -1668,7 +2240,12 @@
           "id",
           "name",
           "recipes"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000008",
+          "name": "weeknight",
+          "recipes": 12
+        }
       },
       "TagChanges": {
         "type": "object",
@@ -1682,7 +2259,10 @@
         },
         "required": [
           "name"
-        ]
+        ],
+        "example": {
+          "name": "Weeknight"
+        }
       },
       "CookNote": {
         "type": "object",
@@ -1722,7 +2302,14 @@
           "note",
           "by",
           "createdAt"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000c",
+          "rating": 5,
+          "note": "More lemon next time.",
+          "by": "Sam Rivera",
+          "createdAt": "2026-10-09T01:15:00.000Z"
+        }
       },
       "CookNoteInput": {
         "type": "object",
@@ -1744,6 +2331,10 @@
             "maxLength": 1000,
             "description": "Anything to change next time."
           }
+        },
+        "example": {
+          "rating": 5,
+          "note": "More lemon next time."
         }
       },
       "DietsInput": {
@@ -1762,7 +2353,13 @@
         },
         "required": [
           "overrides"
-        ]
+        ],
+        "description": "For example, not gluten-free after all, because the household's stock has wheat in it.",
+        "example": {
+          "overrides": {
+            "gluten-free": false
+          }
+        }
       },
       "RecipePairings": {
         "type": "object",
@@ -1793,7 +2390,39 @@
           "pairings",
           "options",
           "pairsWith"
-        ]
+        ],
+        "example": {
+          "pairings": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000000e",
+              "kind": "recipe",
+              "recipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                "slug": "garlic-rice",
+                "name": "Garlic Rice",
+                "photo": null,
+                "servings": 4,
+                "totalMinutes": 25
+              }
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000000f",
+              "kind": "tag",
+              "tag": "salad"
+            }
+          ],
+          "options": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "slug": "garlic-rice",
+              "name": "Garlic Rice",
+              "photo": null,
+              "servings": 4,
+              "totalMinutes": 25
+            }
+          ],
+          "pairsWith": []
+        }
       },
       "Pairing": {
         "oneOf": [
@@ -1842,7 +2471,19 @@
               "tag"
             ]
           }
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000e",
+          "kind": "recipe",
+          "recipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+            "slug": "garlic-rice",
+            "name": "Garlic Rice",
+            "photo": null,
+            "servings": 4,
+            "totalMinutes": 25
+          }
+        }
       },
       "PairOption": {
         "type": "object",
@@ -1883,7 +2524,15 @@
           "photo",
           "servings",
           "totalMinutes"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+          "slug": "garlic-rice",
+          "name": "Garlic Rice",
+          "photo": null,
+          "servings": 4,
+          "totalMinutes": 25
+        }
       },
       "PairingsInput": {
         "type": "object",
@@ -1902,6 +2551,11 @@
             "maxLength": 40,
             "description": "Or every recipe with this tag, now and later."
           }
+        },
+        "example": {
+          "recipes": [
+            "garlic-rice"
+          ]
         }
       },
       "RecipeRatingInput": {
@@ -1919,7 +2573,10 @@
         },
         "required": [
           "rating"
-        ]
+        ],
+        "example": {
+          "rating": 4
+        }
       },
       "RecipeVersion": {
         "type": "object",
@@ -1959,7 +2616,14 @@
           "name",
           "createdBy",
           "createdAt"
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000d",
+          "source": "edit",
+          "name": "Lemon Chicken",
+          "createdBy": "Sam Rivera",
+          "createdAt": "2026-10-01T17:30:00.000Z"
+        }
       },
       "HouseholdSettings": {
         "type": "object",
@@ -1973,7 +2637,11 @@
         },
         "required": [
           "settings"
-        ]
+        ],
+        "description": "No module has household settings yet, so the list is empty.",
+        "example": {
+          "settings": []
+        }
       },
       "SettingState": {
         "type": "object",
@@ -2049,7 +2717,15 @@
           "kind",
           "source",
           "lockedBy"
-        ]
+        ],
+        "example": {
+          "key": "errorTracking.environment",
+          "kind": "text",
+          "value": "home",
+          "default": "production",
+          "source": "saved",
+          "lockedBy": null
+        }
       },
       "SettingChanges": {
         "type": "object",
@@ -2107,7 +2783,38 @@
         "required": [
           "about",
           "settings"
-        ]
+        ],
+        "example": {
+          "about": {
+            "version": "0.1.0",
+            "installMethod": "docker",
+            "database": "sqlite",
+            "publicUrl": "https://merran.example.com"
+          },
+          "settings": [
+            {
+              "key": "errorTracking.environment",
+              "kind": "text",
+              "value": "home",
+              "default": "production",
+              "source": "saved",
+              "lockedBy": null
+            },
+            {
+              "key": "errorTracking.dsn",
+              "kind": "secret",
+              "value": null,
+              "default": null,
+              "source": "environment",
+              "lockedBy": "MERRAN_SENTRY_DSN",
+              "secret": {
+                "set": true,
+                "hint": "4f2a",
+                "unreadable": false
+              }
+            }
+          ]
+        }
       },
       "JobList": {
         "type": "object",
@@ -2121,7 +2828,31 @@
         },
         "required": [
           "jobs"
-        ]
+        ],
+        "example": {
+          "jobs": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+              "kind": "household.import",
+              "status": "running",
+              "scheduled": false,
+              "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+              "progress": {
+                "done": 42,
+                "total": 128
+              },
+              "result": null,
+              "error": null,
+              "attempts": 1,
+              "maxAttempts": 3,
+              "runAt": "2026-10-15T18:30:00.000Z",
+              "startedAt": "2026-10-15T18:30:00.000Z",
+              "finishedAt": null,
+              "createdAt": "2026-10-15T18:30:00.000Z",
+              "householdName": "The Riveras"
+            }
+          ]
+        }
       },
       "JobListItem": {
         "allOf": [
@@ -2142,7 +2873,27 @@
               "householdName"
             ]
           }
-        ]
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+          "kind": "household.import",
+          "status": "running",
+          "scheduled": false,
+          "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+          "progress": {
+            "done": 42,
+            "total": 128
+          },
+          "result": null,
+          "error": null,
+          "attempts": 1,
+          "maxAttempts": 3,
+          "runAt": "2026-10-15T18:30:00.000Z",
+          "startedAt": "2026-10-15T18:30:00.000Z",
+          "finishedAt": null,
+          "createdAt": "2026-10-15T18:30:00.000Z",
+          "householdName": "The Riveras"
+        }
       },
       "TelemetryReport": {
         "type": "object",
@@ -2190,7 +2941,21 @@
           "households",
           "people",
           "recipes"
-        ]
+        ],
+        "example": {
+          "installId": "0199e8b0-5a10-7a01-8b00-0000000000ff",
+          "version": "0.1.0",
+          "install": "docker",
+          "arch": "x64",
+          "database": "sqlite",
+          "modules": {
+            "errorTracking": true,
+            "telemetry": true
+          },
+          "households": "1",
+          "people": "2-5",
+          "recipes": "100-499"
+        }
       },
       "User": {
         "type": "object",
@@ -2341,6 +3106,7 @@
   "paths": {
     "/api/auth/api-keys": {
       "get": {
+        "operationId": "listApiKeys",
         "tags": [
           "API keys"
         ],
@@ -2388,6 +3154,7 @@
         }
       },
       "post": {
+        "operationId": "createApiKey",
         "tags": [
           "API keys"
         ],
@@ -2444,16 +3211,18 @@
     },
     "/api/auth/api-keys/current": {
       "get": {
+        "operationId": "checkApiKey",
         "tags": [
           "API keys"
         ],
         "summary": "Check an API key",
-        "description": "The key this request was sent with: its household and what it may do. A quick way for a tool like Home Assistant to check its key works.",
+        "description": "The key this request was sent with: its household and what it may do. A quick way for a tool like Home Assistant to check its key works. Any API key that works will do: it needs no permission.",
         "security": [
           {
             "apiKey": []
           }
         ],
+        "x-merran-permission": "any",
         "responses": {
           "200": {
             "description": "The key works.",
@@ -2490,6 +3259,7 @@
     },
     "/api/auth/api-keys/{keyId}": {
       "delete": {
+        "operationId": "revokeApiKey",
         "tags": [
           "API keys"
         ],
@@ -2549,6 +3319,7 @@
     },
     "/api/auth/join/{token}": {
       "get": {
+        "operationId": "getInvite",
         "tags": [
           "Sign-in"
         ],
@@ -2598,6 +3369,7 @@
         }
       },
       "post": {
+        "operationId": "joinHousehold",
         "tags": [
           "Sign-in"
         ],
@@ -2689,6 +3461,7 @@
     },
     "/api/auth/me": {
       "get": {
+        "operationId": "getMe",
         "tags": [
           "Sign-in"
         ],
@@ -2725,6 +3498,7 @@
     },
     "/api/auth/me/export": {
       "get": {
+        "operationId": "exportMyData",
         "tags": [
           "Auth"
         ],
@@ -2771,6 +3545,7 @@
     },
     "/api/auth/setup": {
       "get": {
+        "operationId": "getSetupStatus",
         "tags": [
           "Sign-in"
         ],
@@ -2789,6 +3564,7 @@
         }
       },
       "post": {
+        "operationId": "setUpServer",
         "tags": [
           "Sign-in"
         ],
@@ -2850,6 +3626,7 @@
     },
     "/api/capabilities": {
       "get": {
+        "operationId": "getCapabilities",
         "tags": [
           "Server"
         ],
@@ -2871,6 +3648,7 @@
     },
     "/api/health": {
       "get": {
+        "operationId": "checkHealth",
         "tags": [
           "Server"
         ],
@@ -2892,6 +3670,7 @@
     },
     "/api/health/ready": {
       "get": {
+        "operationId": "checkReady",
         "tags": [
           "Server"
         ],
@@ -2923,6 +3702,7 @@
     },
     "/api/households": {
       "post": {
+        "operationId": "createHousehold",
         "tags": [
           "Households"
         ],
@@ -2948,7 +3728,10 @@
                 },
                 "required": [
                   "name"
-                ]
+                ],
+                "example": {
+                  "name": "Grandma's kitchen"
+                }
               }
             }
           }
@@ -2989,11 +3772,11 @@
     },
     "/api/households/current": {
       "get": {
+        "operationId": "getHousehold",
         "tags": [
           "Households"
         ],
         "summary": "The household in use",
-        "description": "With an API key, it needs the `household: read` permission.",
         "security": [
           {
             "session": []
@@ -3002,6 +3785,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "household:read",
         "responses": {
           "200": {
             "description": "The household.",
@@ -3033,9 +3817,11 @@
               }
             }
           }
-        }
+        },
+        "description": "With an API key, it needs the `household: read` permission."
       },
       "patch": {
+        "operationId": "updateHousehold",
         "tags": [
           "Households"
         ],
@@ -3092,6 +3878,7 @@
     },
     "/api/households/current/export": {
       "get": {
+        "operationId": "exportHousehold",
         "tags": [
           "Households"
         ],
@@ -3139,6 +3926,7 @@
     },
     "/api/households/current/import": {
       "post": {
+        "operationId": "importIntoHousehold",
         "tags": [
           "Households"
         ],
@@ -3216,6 +4004,7 @@
     },
     "/api/households/current/invites": {
       "get": {
+        "operationId": "listInvites",
         "tags": [
           "Households"
         ],
@@ -3263,6 +4052,7 @@
         }
       },
       "post": {
+        "operationId": "createInvite",
         "tags": [
           "Households"
         ],
@@ -3288,6 +4078,9 @@
                     ],
                     "default": "member"
                   }
+                },
+                "example": {
+                  "role": "member"
                 }
               }
             }
@@ -3329,6 +4122,7 @@
     },
     "/api/households/current/invites/{inviteId}": {
       "delete": {
+        "operationId": "cancelInvite",
         "tags": [
           "Households"
         ],
@@ -3388,6 +4182,7 @@
     },
     "/api/households/current/jobs/{jobId}": {
       "get": {
+        "operationId": "getHouseholdJob",
         "tags": [
           "Households"
         ],
@@ -3454,6 +4249,7 @@
     },
     "/api/households/current/jobs/{jobId}/cancel": {
       "post": {
+        "operationId": "cancelHouseholdJob",
         "tags": [
           "Households"
         ],
@@ -3530,11 +4326,11 @@
     },
     "/api/households/current/members": {
       "get": {
+        "operationId": "listMembers",
         "tags": [
           "Households"
         ],
         "summary": "Who's in the household",
-        "description": "With an API key, it needs the `household: read` permission.",
         "security": [
           {
             "session": []
@@ -3543,6 +4339,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "household:read",
         "responses": {
           "200": {
             "description": "Its people, longest-standing first.",
@@ -3577,11 +4374,13 @@
               }
             }
           }
-        }
+        },
+        "description": "With an API key, it needs the `household: read` permission."
       }
     },
     "/api/households/current/members/{memberId}": {
       "patch": {
+        "operationId": "updateMember",
         "tags": [
           "Households"
         ],
@@ -3620,7 +4419,10 @@
                 },
                 "required": [
                   "role"
-                ]
+                ],
+                "example": {
+                  "role": "admin"
+                }
               }
             }
           }
@@ -3679,6 +4481,7 @@
         }
       },
       "delete": {
+        "operationId": "removeMember",
         "tags": [
           "Households"
         ],
@@ -3748,6 +4551,7 @@
     },
     "/api/households/import": {
       "post": {
+        "operationId": "importHousehold",
         "tags": [
           "Households"
         ],
@@ -3825,6 +4629,7 @@
     },
     "/api/recipes": {
       "get": {
+        "operationId": "listRecipes",
         "tags": [
           "Recipes"
         ],
@@ -3838,6 +4643,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:read",
         "parameters": [
           {
             "schema": {
@@ -3989,6 +4795,7 @@
         }
       },
       "post": {
+        "operationId": "createRecipe",
         "tags": [
           "Recipes"
         ],
@@ -4002,6 +4809,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "requestBody": {
           "required": true,
           "content": {
@@ -4058,6 +4866,7 @@
     },
     "/api/recipes/bulk": {
       "post": {
+        "operationId": "bulkChangeRecipes",
         "tags": [
           "Recipes"
         ],
@@ -4071,6 +4880,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "requestBody": {
           "required": true,
           "content": {
@@ -4127,6 +4937,7 @@
     },
     "/api/recipes/deleted": {
       "get": {
+        "operationId": "listDeletedRecipes",
         "tags": [
           "Recipes"
         ],
@@ -4140,6 +4951,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:read",
         "responses": {
           "200": {
             "description": "What's there.",
@@ -4177,6 +4989,7 @@
         }
       },
       "delete": {
+        "operationId": "emptyDeletedRecipes",
         "tags": [
           "Recipes"
         ],
@@ -4190,6 +5003,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "responses": {
           "204": {
             "description": "Emptied."
@@ -4219,6 +5033,7 @@
     },
     "/api/recipes/deleted/bulk": {
       "post": {
+        "operationId": "bulkChangeDeletedRecipes",
         "tags": [
           "Recipes"
         ],
@@ -4232,6 +5047,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "requestBody": {
           "required": true,
           "content": {
@@ -4288,6 +5104,7 @@
     },
     "/api/recipes/deleted/{recipeId}": {
       "delete": {
+        "operationId": "purgeRecipe",
         "tags": [
           "Recipes"
         ],
@@ -4301,6 +5118,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -4350,6 +5168,7 @@
     },
     "/api/recipes/deleted/{recipeId}/restore": {
       "post": {
+        "operationId": "restoreRecipe",
         "tags": [
           "Recipes"
         ],
@@ -4363,6 +5182,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -4419,6 +5239,7 @@
     },
     "/api/recipes/import": {
       "post": {
+        "operationId": "importRecipe",
         "tags": [
           "Recipes"
         ],
@@ -4432,6 +5253,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "requestBody": {
           "required": true,
           "content": {
@@ -4451,7 +5273,10 @@
                 },
                 "required": [
                   "url"
-                ]
+                ],
+                "example": {
+                  "url": "https://example.com/lemon-chicken"
+                }
               }
             }
           }
@@ -4532,6 +5357,7 @@
     },
     "/api/recipes/tags": {
       "get": {
+        "operationId": "listTags",
         "tags": [
           "Recipes"
         ],
@@ -4545,6 +5371,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:read",
         "responses": {
           "200": {
             "description": "The tags.",
@@ -4584,6 +5411,7 @@
     },
     "/api/recipes/tags/{tagId}": {
       "patch": {
+        "operationId": "updateTag",
         "tags": [
           "Recipes"
         ],
@@ -4597,6 +5425,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -4664,6 +5493,7 @@
         }
       },
       "delete": {
+        "operationId": "deleteTag",
         "tags": [
           "Recipes"
         ],
@@ -4677,6 +5507,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -4726,6 +5557,7 @@
     },
     "/api/recipes/{recipe}": {
       "get": {
+        "operationId": "getRecipe",
         "tags": [
           "Recipes"
         ],
@@ -4739,6 +5571,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:read",
         "parameters": [
           {
             "schema": {
@@ -4796,6 +5629,7 @@
         }
       },
       "put": {
+        "operationId": "updateRecipe",
         "tags": [
           "Recipes"
         ],
@@ -4809,6 +5643,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -4886,6 +5721,7 @@
         }
       },
       "delete": {
+        "operationId": "deleteRecipe",
         "tags": [
           "Recipes"
         ],
@@ -4899,6 +5735,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -4951,6 +5788,7 @@
     },
     "/api/recipes/{recipe}/cook-notes": {
       "get": {
+        "operationId": "listCookNotes",
         "tags": [
           "Recipes"
         ],
@@ -4964,6 +5802,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:read",
         "parameters": [
           {
             "schema": {
@@ -5024,6 +5863,7 @@
         }
       },
       "post": {
+        "operationId": "createCookNote",
         "tags": [
           "Recipes"
         ],
@@ -5037,6 +5877,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -5116,6 +5957,7 @@
     },
     "/api/recipes/{recipe}/cook-notes/{noteId}": {
       "delete": {
+        "operationId": "deleteCookNote",
         "tags": [
           "Recipes"
         ],
@@ -5129,6 +5971,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -5189,6 +6032,7 @@
     },
     "/api/recipes/{recipe}/diets": {
       "put": {
+        "operationId": "setRecipeDiets",
         "tags": [
           "Recipes"
         ],
@@ -5202,6 +6046,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -5281,6 +6126,7 @@
     },
     "/api/recipes/{recipe}/made": {
       "post": {
+        "operationId": "markRecipeMade",
         "tags": [
           "Recipes"
         ],
@@ -5294,6 +6140,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -5353,6 +6200,7 @@
     },
     "/api/recipes/{recipe}/pairings": {
       "get": {
+        "operationId": "listPairings",
         "tags": [
           "Recipes"
         ],
@@ -5366,6 +6214,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:read",
         "parameters": [
           {
             "schema": {
@@ -5423,6 +6272,7 @@
         }
       },
       "post": {
+        "operationId": "addPairings",
         "tags": [
           "Recipes"
         ],
@@ -5436,6 +6286,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -5515,6 +6366,7 @@
     },
     "/api/recipes/{recipe}/pairings/{pairingId}": {
       "delete": {
+        "operationId": "removePairing",
         "tags": [
           "Recipes"
         ],
@@ -5528,6 +6380,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -5595,6 +6448,7 @@
     },
     "/api/recipes/{recipe}/photo": {
       "get": {
+        "operationId": "getRecipePhoto",
         "tags": [
           "Recipes"
         ],
@@ -5608,6 +6462,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:read",
         "parameters": [
           {
             "schema": {
@@ -5689,6 +6544,7 @@
         }
       },
       "put": {
+        "operationId": "setRecipePhoto",
         "tags": [
           "Recipes"
         ],
@@ -5702,6 +6558,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -5790,6 +6647,7 @@
         }
       },
       "delete": {
+        "operationId": "deleteRecipePhoto",
         "tags": [
           "Recipes"
         ],
@@ -5803,6 +6661,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -5862,6 +6721,7 @@
     },
     "/api/recipes/{recipe}/rating": {
       "put": {
+        "operationId": "rateRecipe",
         "tags": [
           "Recipes"
         ],
@@ -5875,6 +6735,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -5954,6 +6815,7 @@
     },
     "/api/recipes/{recipe}/versions": {
       "get": {
+        "operationId": "listRecipeVersions",
         "tags": [
           "Recipes"
         ],
@@ -5967,6 +6829,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:read",
         "parameters": [
           {
             "schema": {
@@ -6029,6 +6892,7 @@
     },
     "/api/recipes/{recipe}/versions/{versionId}/restore": {
       "post": {
+        "operationId": "restoreRecipeVersion",
         "tags": [
           "Recipes"
         ],
@@ -6042,6 +6906,7 @@
             "apiKey": []
           }
         ],
+        "x-merran-permission": "recipes:write",
         "parameters": [
           {
             "schema": {
@@ -6109,6 +6974,7 @@
     },
     "/api/settings/household": {
       "get": {
+        "operationId": "getHouseholdSettings",
         "tags": [
           "Settings"
         ],
@@ -6153,6 +7019,7 @@
         }
       },
       "patch": {
+        "operationId": "updateHouseholdSettings",
         "tags": [
           "Settings"
         ],
@@ -6219,6 +7086,7 @@
     },
     "/api/settings/server": {
       "get": {
+        "operationId": "getServerSettings",
         "tags": [
           "Settings"
         ],
@@ -6263,6 +7131,7 @@
         }
       },
       "patch": {
+        "operationId": "updateServerSettings",
         "tags": [
           "Settings"
         ],
@@ -6329,6 +7198,7 @@
     },
     "/api/settings/server/jobs": {
       "get": {
+        "operationId": "listServerJobs",
         "tags": [
           "Settings"
         ],
@@ -6394,6 +7264,7 @@
     },
     "/api/settings/server/jobs/{jobId}/cancel": {
       "post": {
+        "operationId": "cancelServerJob",
         "tags": [
           "Settings"
         ],
@@ -6470,6 +7341,7 @@
     },
     "/api/settings/server/jobs/{jobId}/retry": {
       "post": {
+        "operationId": "retryServerJob",
         "tags": [
           "Settings"
         ],
@@ -6546,6 +7418,7 @@
     },
     "/api/telemetry/install-id": {
       "post": {
+        "operationId": "renewInstallId",
         "tags": [
           "Settings"
         ],
@@ -6592,6 +7465,7 @@
     },
     "/api/telemetry/report": {
       "get": {
+        "operationId": "getTelemetryReport",
         "tags": [
           "Settings"
         ],
@@ -6641,7 +7515,8 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Sign in with username",
+        "description": "With a username and password. Sets the session cookie that signed-in requests send. Scripts and tools like Home Assistant use an API key instead. Answers in Better Auth's error shape.",
+        "operationId": "signIn",
         "security": [
           {
             "bearerAuth": []
@@ -6676,6 +7551,11 @@
                   "username",
                   "password"
                 ]
+              },
+              "example": {
+                "username": "sam",
+                "password": "correct horse battery staple",
+                "rememberMe": true
               }
             }
           }
@@ -6710,6 +7590,24 @@
                     "token",
                     "user"
                   ]
+                },
+                "example": {
+                  "redirect": false,
+                  "token": "sample-session-token",
+                  "url": null,
+                  "user": {
+                    "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                    "name": "Sam Rivera",
+                    "email": "sam@example.com",
+                    "emailVerified": false,
+                    "image": null,
+                    "createdAt": "2026-10-01T17:30:00.000Z",
+                    "updatedAt": "2026-10-01T17:30:00.000Z",
+                    "username": "sam",
+                    "displayUsername": "sam",
+                    "role": "admin",
+                    "banned": false
+                  }
                 }
               }
             }
@@ -6825,7 +7723,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Sign in"
       }
     },
     "/api/auth/sign-in/email": {
@@ -6833,8 +7732,8 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Sign in with email and password",
-        "operationId": "signInEmail",
+        "description": "The same as signing in with a username, with the account's email address instead.",
+        "operationId": "signInWithEmail",
         "security": [
           {
             "bearerAuth": []
@@ -6869,6 +7768,10 @@
                   "email",
                   "password"
                 ]
+              },
+              "example": {
+                "email": "sam@example.com",
+                "password": "correct horse battery staple"
               }
             }
           }
@@ -6906,6 +7809,24 @@
                     "token",
                     "user"
                   ]
+                },
+                "example": {
+                  "redirect": false,
+                  "token": "sample-session-token",
+                  "url": null,
+                  "user": {
+                    "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                    "name": "Sam Rivera",
+                    "email": "sam@example.com",
+                    "emailVerified": false,
+                    "image": null,
+                    "createdAt": "2026-10-01T17:30:00.000Z",
+                    "updatedAt": "2026-10-01T17:30:00.000Z",
+                    "username": "sam",
+                    "displayUsername": "sam",
+                    "role": "admin",
+                    "banned": false
+                  }
                 }
               }
             }
@@ -7006,7 +7927,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Sign in with an email address"
       }
     },
     "/api/auth/sign-out": {
@@ -7014,7 +7936,7 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Sign out the current user",
+        "description": "Ends this session, and clears its cookie.",
         "operationId": "signOut",
         "security": [
           {
@@ -7042,7 +7964,8 @@
                     "description": "State to pass to the provider logout endpoint"
                   }
                 }
-              }
+              },
+              "example": {}
             }
           }
         },
@@ -7066,6 +7989,9 @@
                       "description": "Whether the client should redirect to the provider logout URL"
                     }
                   }
+                },
+                "example": {
+                  "success": true
                 }
               }
             }
@@ -7166,7 +8092,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Sign out"
       }
     },
     "/api/auth/get-session": {
@@ -7174,7 +8101,7 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Get the current session",
+        "description": "Who's signed in, and their session, or null when no one is. `GET /api/auth/me` says more: their households and which one is in use.",
         "operationId": "getSession",
         "security": [
           {
@@ -7204,6 +8131,32 @@
                     "session",
                     "user"
                   ]
+                },
+                "example": {
+                  "session": {
+                    "id": "0199e8b0-5a10-7a01-8b00-000000000010",
+                    "expiresAt": "2026-10-22T18:30:00.000Z",
+                    "token": "sample-session-token",
+                    "createdAt": "2026-10-15T18:30:00.000Z",
+                    "updatedAt": "2026-10-15T18:30:00.000Z",
+                    "ipAddress": "192.168.1.20",
+                    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)",
+                    "userId": "0199e8b0-5a10-7a01-8b00-000000000001",
+                    "activeOrganizationId": "0199e8b0-5a10-7a01-8b00-000000000003"
+                  },
+                  "user": {
+                    "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                    "name": "Sam Rivera",
+                    "email": "sam@example.com",
+                    "emailVerified": false,
+                    "image": null,
+                    "createdAt": "2026-10-01T17:30:00.000Z",
+                    "updatedAt": "2026-10-01T17:30:00.000Z",
+                    "username": "sam",
+                    "displayUsername": "sam",
+                    "role": "admin",
+                    "banned": false
+                  }
                 }
               }
             }
@@ -7304,7 +8257,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "This session"
       }
     },
     "/api/auth/list-sessions": {
@@ -7312,8 +8266,8 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "List all active sessions for the user",
-        "operationId": "listUserSessions",
+        "description": "Every session you have open: one for each browser or device.",
+        "operationId": "listSessions",
         "security": [
           {
             "session": []
@@ -7330,7 +8284,20 @@
                   "items": {
                     "$ref": "#/components/schemas/Session"
                   }
-                }
+                },
+                "example": [
+                  {
+                    "id": "0199e8b0-5a10-7a01-8b00-000000000010",
+                    "expiresAt": "2026-10-22T18:30:00.000Z",
+                    "token": "sample-session-token",
+                    "createdAt": "2026-10-15T18:30:00.000Z",
+                    "updatedAt": "2026-10-15T18:30:00.000Z",
+                    "ipAddress": "192.168.1.20",
+                    "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)",
+                    "userId": "0199e8b0-5a10-7a01-8b00-000000000001",
+                    "activeOrganizationId": "0199e8b0-5a10-7a01-8b00-000000000003"
+                  }
+                ]
               }
             }
           },
@@ -7430,7 +8397,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Where you're signed in"
       }
     },
     "/api/auth/revoke-session": {
@@ -7438,7 +8406,8 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Revoke a single session",
+        "description": "Ends one of your sessions, named by its token from `GET /api/auth/list-sessions`.",
+        "operationId": "revokeSession",
         "security": [
           {
             "session": []
@@ -7459,6 +8428,9 @@
                 "required": [
                   "token"
                 ]
+              },
+              "example": {
+                "token": "sample-session-token"
               }
             }
           }
@@ -7479,6 +8451,9 @@
                   "required": [
                     "status"
                   ]
+                },
+                "example": {
+                  "status": true
                 }
               }
             }
@@ -7579,7 +8554,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Sign out somewhere"
       }
     },
     "/api/auth/revoke-other-sessions": {
@@ -7587,7 +8563,8 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Revoke all other sessions for the user except the current one",
+        "description": "Ends every session you have but this one.",
+        "operationId": "revokeOtherSessions",
         "security": [
           {
             "session": []
@@ -7600,7 +8577,8 @@
               "schema": {
                 "type": "object",
                 "properties": {}
-              }
+              },
+              "example": {}
             }
           }
         },
@@ -7620,6 +8598,9 @@
                   "required": [
                     "status"
                   ]
+                },
+                "example": {
+                  "status": true
                 }
               }
             }
@@ -7720,7 +8701,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Sign out everywhere else"
       }
     },
     "/api/auth/revoke-sessions": {
@@ -7728,7 +8710,8 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Revoke all sessions for the user",
+        "description": "Ends every session you have, this one too.",
+        "operationId": "revokeAllSessions",
         "security": [
           {
             "session": []
@@ -7741,7 +8724,8 @@
               "schema": {
                 "type": "object",
                 "properties": {}
-              }
+              },
+              "example": {}
             }
           }
         },
@@ -7761,6 +8745,9 @@
                   "required": [
                     "status"
                   ]
+                },
+                "example": {
+                  "status": true
                 }
               }
             }
@@ -7861,7 +8848,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Sign out everywhere"
       }
     },
     "/api/auth/change-password": {
@@ -7869,7 +8857,7 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Change the password of the user",
+        "description": "Needs your current password. The new one needs at least 10 characters. With `revokeOtherSessions`, everywhere else is signed out too, and a new token comes back for this session.",
         "operationId": "changePassword",
         "security": [
           {
@@ -7901,6 +8889,11 @@
                   "newPassword",
                   "currentPassword"
                 ]
+              },
+              "example": {
+                "currentPassword": "correct horse battery staple",
+                "newPassword": "a longer, newer passphrase",
+                "revokeOtherSessions": true
               }
             }
           }
@@ -7968,6 +8961,22 @@
                   "required": [
                     "user"
                   ]
+                },
+                "example": {
+                  "token": "sample-session-token",
+                  "user": {
+                    "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                    "name": "Sam Rivera",
+                    "email": "sam@example.com",
+                    "emailVerified": false,
+                    "image": null,
+                    "createdAt": "2026-10-01T17:30:00.000Z",
+                    "updatedAt": "2026-10-01T17:30:00.000Z",
+                    "username": "sam",
+                    "displayUsername": "sam",
+                    "role": "admin",
+                    "banned": false
+                  }
                 }
               }
             }
@@ -8068,7 +9077,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Change your password"
       }
     },
     "/api/auth/update-user": {
@@ -8076,8 +9086,8 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Update the current user",
-        "operationId": "updateUser",
+        "description": "Your name, username or picture.",
+        "operationId": "updateProfile",
         "security": [
           {
             "session": []
@@ -8106,6 +9116,9 @@
                     "type": "string"
                   }
                 }
+              },
+              "example": {
+                "name": "Sam R."
               }
             }
           }
@@ -8122,6 +9135,21 @@
                       "type": "object",
                       "$ref": "#/components/schemas/User"
                     }
+                  }
+                },
+                "example": {
+                  "user": {
+                    "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                    "name": "Sam R.",
+                    "email": "sam@example.com",
+                    "emailVerified": false,
+                    "image": null,
+                    "createdAt": "2026-10-01T17:30:00.000Z",
+                    "updatedAt": "2026-10-01T17:30:00.000Z",
+                    "username": "sam",
+                    "displayUsername": "sam",
+                    "role": "admin",
+                    "banned": false
                   }
                 }
               }
@@ -8223,7 +9251,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Change your name"
       }
     },
     "/api/auth/organization/set-active": {
@@ -8231,8 +9260,8 @@
         "tags": [
           "Sign-in"
         ],
-        "description": "Set the active organization",
-        "operationId": "setActiveOrganization",
+        "description": "Makes another of your households the one in use on this device. Better Auth calls households organizations, so it's named by `organizationId`. An API key always works in its own household.",
+        "operationId": "switchHousehold",
         "security": [
           {
             "session": []
@@ -8258,6 +9287,9 @@
                     "description": "The organization slug to set as active. It can be null to unset the active organization if organizationId is not provided. Eg: \"org-slug\""
                   }
                 }
+              },
+              "example": {
+                "organizationId": "0199e8b0-5a10-7a01-8b00-000000000003"
               }
             }
           }
@@ -8271,6 +9303,14 @@
                   "type": "object",
                   "description": "The organization",
                   "$ref": "#/components/schemas/Organization"
+                },
+                "example": {
+                  "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                  "name": "The Riveras",
+                  "slug": "the-riveras",
+                  "logo": null,
+                  "createdAt": "2026-10-01T17:30:00.000Z",
+                  "metadata": null
                 }
               }
             }
@@ -8371,7 +9411,8 @@
             },
             "description": "Internal Server Error. This is a problem with the server that you cannot fix."
           }
-        }
+        },
+        "summary": "Switch households"
       }
     }
   },

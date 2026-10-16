@@ -18,6 +18,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/settings/server/jobs/{jobId}/cancel",
+  operationId: "cancelServerJob",
   tags: ["Settings"],
   summary: "Stop a job",
   description:

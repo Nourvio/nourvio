@@ -18,6 +18,7 @@ import {
 const route = createRoute({
   method: "post",
   path: "/settings/server/jobs/{jobId}/retry",
+  operationId: "retryServerJob",
   tags: ["Settings"],
   summary: "Try a job again",
   description:

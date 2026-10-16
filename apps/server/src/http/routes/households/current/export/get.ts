@@ -11,6 +11,7 @@ import {
 const route = createRoute({
   method: "get",
   path: "/households/current/export",
+  operationId: "exportHousehold",
   tags: ["Households"],
   summary: "Export the household",
   description:

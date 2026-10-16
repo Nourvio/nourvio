@@ -8,6 +8,7 @@ import { errorResponse, jsonResponse } from "../../../../schemas/responses.ts"
 const route = createRoute({
   method: "get",
   path: "/auth/join/{token}",
+  operationId: "getInvite",
   tags: ["Sign-in"],
   summary: "See an invite",
   description: "Which household an invite link is for, before joining.",

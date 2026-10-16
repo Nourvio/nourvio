@@ -18,6 +18,7 @@ import { errorResponse, jsonResponse } from "../../../schemas/responses.ts"
 const route = createRoute({
   method: "post",
   path: "/auth/setup",
+  operationId: "setUpServer",
   tags: ["Sign-in"],
   summary: "Set up the server",
   description:
@@ -34,7 +35,16 @@ const route = createRoute({
               .trim()
               .min(1, "Name your household.")
               .max(100),
-          }).openapi("SetupRequest"),
+          }).openapi("SetupRequest", {
+            example: {
+              name: "Sam Rivera",
+              email: "sam@example.com",
+              username: "sam",
+              password: "correct horse battery staple",
+              code: "ABCD-EFGH-JKMN",
+              household: "The Riveras",
+            },
+          }),
         },
       },
     },

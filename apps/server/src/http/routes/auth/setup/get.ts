@@ -7,11 +7,14 @@ import { jsonResponse } from "../../../schemas/responses.ts"
 const route = createRoute({
   method: "get",
   path: "/auth/setup",
+  operationId: "getSetupStatus",
   tags: ["Sign-in"],
   summary: "Whether the server still needs setting up",
   responses: {
     200: jsonResponse(
-      z.object({ needed: z.boolean() }).openapi("SetupStatus"),
+      z
+        .object({ needed: z.boolean() })
+        .openapi("SetupStatus", { example: { needed: true } }),
       "True until the first account exists."
     ),
   },

@@ -2,6 +2,7 @@ import type { EntityManager } from "@mikro-orm/sql"
 import type { Logger } from "pino"
 import type { Database } from "../database/orm.ts"
 import type { Module } from "../modules/module.ts"
+import type { ApiAccess, ApiArea } from "../services/auth/api-keys.ts"
 import type { Auth } from "../services/auth/auth.ts"
 import type { Authenticated } from "../services/auth/session.ts"
 import type { SetupCode } from "../services/auth/setup-code.ts"
@@ -48,5 +49,7 @@ export type AppEnv = {
     household: Authenticated["household"]
     /** The API key they used, if any. */
     apiKey: Authenticated["apiKey"]
+    /** The permission that lets an API key use this route, set by `openToKeys()`. */
+    keyPermission?: { area: ApiArea; access: ApiAccess }
   }
 }
