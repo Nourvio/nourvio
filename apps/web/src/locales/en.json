@@ -62,11 +62,6 @@
     "home": "Go home",
     "tryAgain": "Try again"
   },
-  "comingSoon": {
-    "title": "Coming soon",
-    "today": "What's cooking today, and what needs using up.",
-    "plan": "Plan the week's meals together."
-  },
   "auth": {
     "fields": {
       "name": "Name",
@@ -1409,6 +1404,128 @@
       "date": "A date",
       "none": "No date",
       "set": "Set"
+    }
+  },
+  "install": {
+    "title": "Put Merran on your home screen",
+    "hint": "It opens like an app: full screen, from its own icon.",
+    "button": "Install Merran",
+    "notNow": "Not now",
+    "done": "Merran's on your home screen.",
+    "installed": "Merran's installed here: it opens from your home screen, or like an app on a computer.",
+    "card": {
+      "title": "Merran on this device"
+    },
+    "guide": {
+      "title": "Install Merran",
+      "close": "Got it",
+      "ios": {
+        "share": "Tap <b>Share</b>: the square with an arrow, at the bottom of Safari or the top of Chrome.",
+        "add": "Scroll down and tap <b>Add to Home Screen</b>.",
+        "done": "Tap <b>Add</b>. Merran's on your home screen, and opens like an app."
+      },
+      "mac": "In Safari's menu bar, choose <b>File</b>, then <b>Add to Dock</b>.",
+      "menu": {
+        "open": "Open your browser's menu: <b>⋮</b> or <b>⋯</b>.",
+        "choose": "Choose <b>Install Merran</b> or <b>Add to Home screen</b>.",
+        "none": "No such choice? This browser can't install web apps. Chrome, Edge and Safari can."
+      },
+      "insecure": "Merran's open over http here, not https, so browsers only add a shortcut rather than an app. Whoever runs Merran can set up https."
+    }
+  },
+  "today": {
+    "title": "Today",
+    "greeting": {
+      "morning": "Good morning, {{name}}",
+      "afternoon": "Good afternoon, {{name}}",
+      "evening": "Good evening, {{name}}"
+    },
+    "greetingAlone": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "also": "Also today: {{meals}}.",
+    "alsoMeal": {
+      "planned": "{{name}} for {{meal}}",
+      "cooked": "{{name}} for {{meal}}, cooked",
+      "skipped": "{{name}} for {{meal}}, skipped"
+    },
+    "onTheList": "On the list",
+    "atHome": "Already home: {{foods}}.",
+    "done": "That's today done",
+    "nothing": "Nothing planned",
+    "nothingHint": "Nothing's planned for the days ahead yet.",
+    "openPlan": "Open the plan",
+    "idea": {
+      "badge": "An idea for tonight",
+      "fromRecipes": "From your recipes",
+      "plan": "Plan it for tonight",
+      "another": "Another idea",
+      "planned": "{{name}} is on for tonight.",
+      "none": "What's for dinner?",
+      "noneHint": "No ideas right now: your recipes have all been had lately, or don't fit your tastes. Add a few more.",
+      "allSeen": "That's every idea for tonight.",
+      "startOver": "Start over"
+    },
+    "tiles": {
+      "week": "This week",
+      "planned": "{{filled}} of {{total}} planned",
+      "open": "{{day}}'s {{meal}} is open",
+      "allPlanned": "The rest of the week is planned",
+      "shopping": "Shopping",
+      "toBuy_one": "{{count}} thing to buy",
+      "toBuy_other": "{{count}} things to buy",
+      "nothingToBuy": "Nothing to buy",
+      "fromPlan": "Add the week's meals from the plan",
+      "useSoon": "Use soon",
+      "andMore_one": "{{when}}, and {{count}} more",
+      "andMore_other": "{{when}}, and {{count}} more"
+    },
+    "comingUp": {
+      "restOfWeek": "The rest of the week",
+      "next": "Coming up",
+      "tomorrow": "Tomorrow",
+      "nothing": "Nothing planned",
+      "planIt": "Plan it",
+      "and": "and {{meals}}",
+      "forMeal": "{{name}} for {{meal}}"
+    },
+    "shelves": {
+      "cookAgain": "Cook again",
+      "recent": "Recently added",
+      "all": "All recipes",
+      "made": "Made {{when}}",
+      "notMade": "Not made yet",
+      "added": "Added {{when}}"
+    },
+    "welcome": {
+      "title": "Welcome to Merran",
+      "subtitle": "Three steps to dinner.",
+      "recipes": {
+        "title": "Add your recipes",
+        "text": "Paste a link from a recipe site, write one out, or bring your library over from Mealie or another Merran."
+      },
+      "plan": {
+        "title": "Plan the week",
+        "text": "Pick meals for each day, or let Fill the week choose from your recipes."
+      },
+      "shop": {
+        "title": "Shop and cook",
+        "text": "Turn the plan into a shopping list, then cook it step by step."
+      },
+      "addRecipe": "Add from a link",
+      "writeOne": "Write one out",
+      "import": "Import recipes"
+    },
+    "autoplan": {
+      "title": "Merran planned {{week}} for you:",
+      "planned_one": "{{count}} meal.",
+      "planned_other": "{{count}} meals.",
+      "listed_one": "{{count}} thing went on the list.",
+      "listed_other": "{{count}} things went on the list.",
+      "see": "See the plan",
+      "gotIt": "Got it"
     }
   }
 }

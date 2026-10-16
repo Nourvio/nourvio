@@ -6,6 +6,7 @@ import { MyDataCard } from "@/features/account/my-data-card"
 import { PasswordCard } from "@/features/account/password-card"
 import { ProfileCard } from "@/features/account/profile-card"
 import { apiKeysQuery } from "@/features/account/queries"
+import { InstallCard } from "@/features/install/install-ui"
 import { ShareCard } from "@/features/share/share-card"
 
 export const Route = createFileRoute("/_app/settings/you")({
@@ -19,6 +20,7 @@ function YouSettings() {
       <ProfileCard />
       <PasswordCard />
       <AppearanceCard />
+      <InstallCard />
       <ShareCard />
       <ApiKeysCard />
       <MyDataCard />

@@ -11,12 +11,12 @@ import { formatMinutes } from "@/features/recipes/format"
 
 import { formatWeekday } from "./format"
 import { cookSearch, MealMenu, servingsOf } from "./meal-tile"
-import { nextMealQuery } from "./queries"
+import { nextMealQuery, type PlanEntry } from "./queries"
 import { usePlanActions } from "./use-plan-actions"
 import { useWhyText } from "./why"
 
 /** A little fact about a meal: "4 servings", "50 min". */
-function Fact({ children }: { children: React.ReactNode }) {
+export function Fact({ children }: { children: React.ReactNode }) {
   return (
     <span className="rounded-full bg-secondary px-3 py-1 text-sm font-medium">
       {children}
@@ -29,18 +29,39 @@ function Fact({ children }: { children: React.ReactNode }) {
  * and the buttons to cook it or mark it cooked.
  */
 export function NextMealCard() {
+  const { data } = useQuery(nextMealQuery)
+  if (!data?.entry) return null
+  return <MealHero entry={data.entry} today={data.today} />
+}
+
+/**
+ * A meal, big: when it is, its photo, why it was picked, its servings and
+ * time, and the buttons to cook it or mark it cooked. More facts and a
+ * note can go under it, and anything else below the buttons.
+ */
+export function MealHero({
+  entry,
+  today,
+  facts,
+  note,
+  children,
+}: {
+  entry: PlanEntry
+  /** The household's today. */
+  today: string
+  facts?: React.ReactNode
+  note?: React.ReactNode
+  children?: React.ReactNode
+}) {
   const { t, i18n } = useTranslation()
   const actions = usePlanActions()
   const whyText = useWhyText()
   const id = React.useId()
-  const { data } = useQuery(nextMealQuery)
-  const entry = data?.entry
-  if (!data || !entry) return null
 
   const when =
-    entry.date === data.today
+    entry.date === today
       ? t(`plan.next.today.${entry.meal}`)
-      : entry.date === addDays(data.today, 1)
+      : entry.date === addDays(today, 1)
         ? t(`plan.next.tomorrow.${entry.meal}`)
         : t(`plan.next.later.${entry.meal}`, {
             day: formatWeekday(entry.date, i18n.language),
@@ -103,14 +124,16 @@ export function NextMealCard() {
               {whyText(entry.why)}
             </p>
           )}
-          {(servings != null || minutes != null) && (
+          {(servings != null || minutes != null || facts) && (
             <div className="flex flex-wrap gap-1.5">
               {servings != null && (
                 <Fact>{t("plan.servings", { count: servings })}</Fact>
               )}
               {minutes != null && <Fact>{formatMinutes(t, minutes)}</Fact>}
+              {facts}
             </div>
           )}
+          {note}
         </div>
         <div className="flex flex-wrap gap-2">
           {entry.recipe && (
@@ -146,6 +169,7 @@ export function NextMealCard() {
           </Button>
           <MealMenu entry={entry} name={name} large />
         </div>
+        {children}
       </div>
     </article>
   )

@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { TimerAlarm } from "@/features/cook/timers"
 import { startErrorTracking } from "@/features/error-tracking/start"
+import { listenForInstall } from "@/features/install/install"
 import { queryClient } from "@/lib/query-client"
 
 import { routeTree } from "./routeTree.gen"
@@ -29,6 +30,7 @@ declare module "@tanstack/react-router" {
 }
 
 void startErrorTracking(queryClient)
+listenForInstall()
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

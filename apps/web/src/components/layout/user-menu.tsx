@@ -35,6 +35,7 @@ import {
   useSignOut,
   useSwitchHousehold,
 } from "@/features/auth/use-me"
+import { InstallMenuItem } from "@/features/install/install-ui"
 import { initials } from "@/lib/initials"
 
 function UserAvatar() {
@@ -90,6 +91,7 @@ function UserMenuItems() {
 
       <DropdownMenuSeparator />
       <ModeSubmenu />
+      <InstallMenuItem />
       <DropdownMenuItem render={<Link to="/settings" />}>
         <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
         {t("nav.settings")}

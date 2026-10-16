@@ -1,6 +1,7 @@
 import { Outlet } from "@tanstack/react-router"
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { InstallGuide } from "@/features/install/install-ui"
 import { LiveUpdates } from "@/features/live/live-updates"
 
 import { AppSidebar } from "./app-sidebar"
@@ -21,6 +22,7 @@ export function AppShell() {
         </main>
       </SidebarInset>
       <BottomNav />
+      <InstallGuide />
     </SidebarProvider>
   )
 }
