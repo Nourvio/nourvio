@@ -34,6 +34,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio. That app (
 |---|---|
 | [stack.md](stack.md) | Every layer reconsidered: what stays, what changes, and why |
 | [platform.md](platform.md) | Modules and settings, accounts and households, API keys and the public API, AI keys and policy, jobs, files, export, isolation, security, languages |
+| [export-format.md](export-format.md) | The household export: what's in the zip, and how an import treats what's there |
 | [operations.md](operations.md) | Logs, error tracking, analytics and telemetry, what leaves the server, images, releases, backups, the demo |
 | [open-source.md](open-source.md) | Name and license, contributing, CI, dependencies, security reports, docs site, funding, launch |
 | [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |

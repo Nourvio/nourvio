@@ -184,6 +184,11 @@
         "revokeTitle": "Revoke {{name}}?",
         "revokeDescription": "It stops working straight away. Anything using it will need a new key.",
         "revoked": "Revoked {{name}}."
+      },
+      "myData": {
+        "title": "Your data",
+        "description": "Your account, the households you're in, the cooking notes you wrote and your API keys' names and permissions (never the keys), as a file to keep. A household's recipes are in its export.",
+        "download": "Download your data"
       }
     },
     "household": {
@@ -292,6 +297,61 @@
         "installIdHint": "The install id is random. A new one means later summaries can't be linked to earlier ones.",
         "newId": "Make a new id",
         "newIdMade": "Made a new install id."
+      },
+      "jobs": {
+        "title": "Jobs",
+        "description": "Work Merran does in the background: imports, emptying Recently deleted, the daily summary. Finished jobs stay here for 30 days.",
+        "none": "No jobs yet.",
+        "server": "The server",
+        "next": "Next at {{when}}",
+        "progress": "{{done}} of {{total}}",
+        "retry": "Try again",
+        "stop": "Stop",
+        "retried": "Trying it again.",
+        "stopped": "Stopping it.",
+        "status": {
+          "queued": "Waiting",
+          "running": "Running",
+          "done": "Done",
+          "failed": "Failed",
+          "cancelled": "Stopped"
+        },
+        "kinds": {
+          "import": "Importing a Merran export",
+          "purgeDeleted": "Emptying old recipes from Recently deleted",
+          "cleanUp": "Clearing out old jobs",
+          "telemetry": "Sending the daily summary"
+        }
+      }
+    },
+    "transfer": {
+      "tab": "Import and export",
+      "export": {
+        "title": "Export this household",
+        "description": "A zip of its recipes, with their photos, versions, cooking notes and pairings, to keep or to move to another Merran. Recipes in Recently deleted, AI keys and other secrets stay behind.",
+        "download": "Download export"
+      },
+      "import": {
+        "title": "Import a Merran export",
+        "description": "Recipes from a Merran export, with their photos, versions, cooking notes and pairings. Recipes already here are skipped, so importing the same export twice is safe.",
+        "file": "Export file",
+        "into": "Import into",
+        "thisHousehold": "This household",
+        "newHousehold": "A new household",
+        "newHint": "Named and set up as in the export, with you as its owner. You'll switch to it.",
+        "start": "Import",
+        "uploading": "Uploading…",
+        "waiting": "Waiting to start…",
+        "progress": "Importing {{done}} of {{total}}",
+        "done_one": "Imported {{count}} recipe.",
+        "done_other": "Imported {{count}} recipes.",
+        "skipped_one": "{{count}} was already here.",
+        "skipped_other": "{{count}} were already here.",
+        "failed": "The import stopped: {{error}}",
+        "stopped": "Stopped. The recipes it brought in stay.",
+        "stop": "Stop",
+        "seeRecipes": "See the recipes",
+        "another": "Import another"
       }
     }
   },

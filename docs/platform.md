@@ -266,7 +266,7 @@ Merran's own job runner does everything in the background, from a `jobs` table i
 
 People own their data, and open source makes moving in and out matter more.
 
-- **Export a household** (household admins): everything as a zip of JSON plus photos, in a documented, versioned Merran format. **Export a person's data** (anyone): their account, chats, cooking notes and settings.
+- **Export a household** (household admins): everything as a zip of JSON plus photos, in a documented, versioned Merran format ([export-format.md](export-format.md)). **Export a person's data** (anyone): their account, chats, cooking notes and settings.
 - **Import a Merran export** into a new or existing household.
 - **Import from other apps:** Mealie (from its API or a Mealie backup file, so the server needn't reach Mealie), Paprika (`.paprikarecipes`), Tandoor, and any file of schema.org recipes. More importers are welcome as adapters.
 - **Deleting:** a person can delete their account; an owner can delete their household; both explain exactly what goes.

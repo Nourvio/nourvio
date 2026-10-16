@@ -2,31 +2,42 @@ import { createFileRoute, Link, Outlet } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 
 import { PageHeader } from "@/components/layout/page-header"
-import { useMe } from "@/features/auth/use-me"
+import { useActiveHousehold, useMe } from "@/features/auth/use-me"
+import { isAdminRole } from "@/features/household/queries"
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsLayout,
 })
 
+/** Each tab, and who sees it: everyone, household admins, or the server admin. */
 const SECTIONS = [
-  { to: "/settings/you", labelKey: "settings.you.tab", serverAdmin: false },
+  { to: "/settings/you", labelKey: "settings.you.tab", only: null },
   {
     to: "/settings/household",
     labelKey: "settings.household.tab",
-    serverAdmin: false,
+    only: null,
+  },
+  {
+    to: "/settings/import-export",
+    labelKey: "settings.transfer.tab",
+    only: "householdAdmin",
   },
   {
     to: "/settings/server",
     labelKey: "settings.server.tab",
-    serverAdmin: true,
+    only: "serverAdmin",
   },
 ] as const
 
 function SettingsLayout() {
   const { t } = useTranslation()
   const me = useMe()
+  const household = useActiveHousehold()
   const sections = SECTIONS.filter(
-    (section) => !section.serverAdmin || me.serverAdmin
+    (section) =>
+      section.only === null ||
+      (section.only === "serverAdmin" && me.serverAdmin) ||
+      (section.only === "householdAdmin" && isAdminRole(household?.role))
   )
   return (
     <>

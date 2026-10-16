@@ -24,6 +24,7 @@ import { Route as AppRecipesDeletedRouteImport } from './routes/_app/recipes/del
 import { Route as AppRecipesNewRouteImport } from './routes/_app/recipes/new'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsHouseholdRouteImport } from './routes/_app/settings/household'
+import { Route as AppSettingsImportExportRouteImport } from './routes/_app/settings/import-export'
 import { Route as AppSettingsServerRouteImport } from './routes/_app/settings/server'
 import { Route as AppSettingsYouRouteImport } from './routes/_app/settings/you'
 import { Route as AppRecipesSlugIndexRouteImport } from './routes/_app/recipes/$slug/index'
@@ -103,6 +104,11 @@ const AppSettingsHouseholdRoute = AppSettingsHouseholdRouteImport.update({
   path: '/household',
   getParentRoute: () => AppSettingsRoute,
 } as any)
+const AppSettingsImportExportRoute = AppSettingsImportExportRouteImport.update({
+  id: '/import-export',
+  path: '/import-export',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 const AppSettingsServerRoute = AppSettingsServerRouteImport.update({
   id: '/server',
   path: '/server',
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/recipes/deleted': typeof AppRecipesDeletedRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
+  '/settings/import-export': typeof AppSettingsImportExportRoute
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/recipes/': typeof AppRecipesIndexRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/recipes/deleted': typeof AppRecipesDeletedRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
+  '/settings/import-export': typeof AppSettingsImportExportRoute
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/recipes': typeof AppRecipesIndexRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/_app/recipes/deleted': typeof AppRecipesDeletedRoute
   '/_app/recipes/new': typeof AppRecipesNewRoute
   '/_app/settings/household': typeof AppSettingsHouseholdRoute
+  '/_app/settings/import-export': typeof AppSettingsImportExportRoute
   '/_app/settings/server': typeof AppSettingsServerRoute
   '/_app/settings/you': typeof AppSettingsYouRoute
   '/_app/recipes/': typeof AppRecipesIndexRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/recipes/deleted'
     | '/recipes/new'
     | '/settings/household'
+    | '/settings/import-export'
     | '/settings/server'
     | '/settings/you'
     | '/recipes/'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/recipes/deleted'
     | '/recipes/new'
     | '/settings/household'
+    | '/settings/import-export'
     | '/settings/server'
     | '/settings/you'
     | '/recipes'
@@ -246,6 +257,7 @@ export interface FileRouteTypes {
     | '/_app/recipes/deleted'
     | '/_app/recipes/new'
     | '/_app/settings/household'
+    | '/_app/settings/import-export'
     | '/_app/settings/server'
     | '/_app/settings/you'
     | '/_app/recipes/'
@@ -370,6 +382,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsHouseholdRouteImport
       parentRoute: typeof AppSettingsRoute
     }
+    '/_app/settings/import-export': {
+      id: '/_app/settings/import-export'
+      path: '/import-export'
+      fullPath: '/settings/import-export'
+      preLoaderRoute: typeof AppSettingsImportExportRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
     '/_app/settings/server': {
       id: '/_app/settings/server'
       path: '/server'
@@ -410,6 +429,7 @@ declare module '@tanstack/react-router' {
 
 interface AppSettingsRouteChildren {
   AppSettingsHouseholdRoute: typeof AppSettingsHouseholdRoute
+  AppSettingsImportExportRoute: typeof AppSettingsImportExportRoute
   AppSettingsServerRoute: typeof AppSettingsServerRoute
   AppSettingsYouRoute: typeof AppSettingsYouRoute
   AppSettingsIndexRoute: typeof AppSettingsIndexRoute
@@ -417,6 +437,7 @@ interface AppSettingsRouteChildren {
 
 const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsHouseholdRoute: AppSettingsHouseholdRoute,
+  AppSettingsImportExportRoute: AppSettingsImportExportRoute,
   AppSettingsServerRoute: AppSettingsServerRoute,
   AppSettingsYouRoute: AppSettingsYouRoute,
   AppSettingsIndexRoute: AppSettingsIndexRoute,

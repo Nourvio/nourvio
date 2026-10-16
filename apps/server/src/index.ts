@@ -11,6 +11,8 @@ import { migrate, openDatabase, type Database } from "./database/orm.ts"
 import { MODULES } from "./modules/index.ts"
 import { startModules } from "./modules/module.ts"
 import { createPublicFetcher } from "./services/fetch/public-fetch.ts"
+import { JOB_HANDLERS, JOB_SCHEDULES } from "./services/jobs/handlers.ts"
+import { JobRunner } from "./services/jobs/runner.ts"
 import { createSettings } from "./services/settings/settings.ts"
 import { LocalFileStore } from "./services/storage/files.ts"
 
@@ -61,6 +63,22 @@ if ((await database.em.fork().count(User)) === 0) {
   )
 }
 
+const files = new LocalFileStore(join(config.dataDir, "files"))
+const fetcher = createPublicFetcher({ version: config.version })
+const jobs = new JobRunner({
+  deps: {
+    config,
+    logger,
+    database,
+    settings,
+    modules: MODULES,
+    files,
+    fetcher,
+  },
+  handlers: JOB_HANDLERS,
+  schedules: JOB_SCHEDULES,
+})
+
 const app = createApp({
   config,
   logger,
@@ -69,18 +87,24 @@ const app = createApp({
   setupCode,
   settings,
   modules: MODULES,
-  files: new LocalFileStore(join(config.dataDir, "files")),
-  fetcher: createPublicFetcher({ version: config.version }),
+  files,
+  fetcher,
+  jobs,
 })
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   logger.info(`Merran ${config.version} is listening on port ${info.port}`)
 })
+await jobs.start()
 
 function shutDown(signal: NodeJS.Signals) {
   logger.info(`${signal}: shutting down`)
   server.close(() => {
-    void database.close().finally(() => process.exit(0))
+    // Jobs stopped now run again at the next start.
+    void jobs
+      .stop()
+      .then(() => database.close())
+      .finally(() => process.exit(0))
   })
   // Don't wait forever on open connections.
   setTimeout(() => process.exit(0), 5_000).unref()

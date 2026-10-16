@@ -2,7 +2,12 @@ import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import { Recipe } from "../../database/entities/index.ts"
 import type { DeletedBulkInput } from "../../http/schemas/recipes.ts"
-import { NOT_DELETED_FILTER } from "../../database/scope.ts"
+import {
+  forHousehold,
+  HOUSEHOLD_FILTER,
+  NOT_DELETED_FILTER,
+} from "../../database/scope.ts"
+import type { JobHandler } from "../jobs/runner.ts"
 import type { FileStore } from "../storage/files.ts"
 import { removePhoto } from "./photos.ts"
 import { summarize } from "./recipes.ts"
@@ -31,22 +36,45 @@ async function deleteRecipes(
   await pruneTags(em)
 }
 
-/**
- * Deletes for good what's been in Recently deleted long enough. Runs before
- * each listing, until the job runner does it daily.
- */
+/** When a recipe deleted before then is gone for good. */
+const expiredBefore = () => new Date(Date.now() - KEEP_DELETED_DAYS * DAY)
+
+/** Deletes for good what's been in one household's Recently deleted long enough. */
 async function purgeExpired(em: EntityManager, files: FileStore) {
   const expired = await em.find(
     Recipe,
-    { deletedAt: { $lt: new Date(Date.now() - KEEP_DELETED_DAYS * DAY) } },
+    { deletedAt: { $lt: expiredBefore() } },
     SEE_DELETED
   )
   await deleteRecipes(em, files, expired)
+  return expired.length
+}
+
+/** The daily job that empties every household's Recently deleted of old recipes. */
+export const purgeDeletedJob: JobHandler = {
+  kind: "recipes.purgeDeleted",
+  async run({ em, deps }) {
+    const expired = await em.find(
+      Recipe,
+      { deletedAt: { $lt: expiredBefore() } },
+      {
+        filters: { [HOUSEHOLD_FILTER]: false, [NOT_DELETED_FILTER]: false },
+        fields: ["household"],
+      }
+    )
+    let purged = 0
+    for (const householdId of new Set(expired.map((r) => r.household.id))) {
+      purged += await purgeExpired(
+        forHousehold(deps.database.em, householdId),
+        deps.files
+      )
+    }
+    return { purged }
+  },
 }
 
 /** What's in Recently deleted, latest first. */
-export async function listDeleted(em: EntityManager, files: FileStore) {
-  await purgeExpired(em, files)
+export async function listDeleted(em: EntityManager) {
   const recipes = await em.find(
     Recipe,
     { deletedAt: { $ne: null } },

@@ -88,6 +88,8 @@ export type FetchOptions = {
   maxBytes?: number
   /** The page asking, as a browser would say; some sites refuse photos without it. */
   referer?: string
+  /** Sends this as JSON, in a POST, rather than asking for a page. */
+  json?: unknown
 }
 
 export type Fetcher = (
@@ -137,6 +139,7 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
       maxBytes = 5_000_000,
       referer,
+      json,
     } = {}
   ) => {
     let url = checkLink(raw)
@@ -149,11 +152,17 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
           dispatcher: publicAgent,
           redirect: "manual",
           signal,
+          ...(json === undefined
+            ? {}
+            : { method: "POST", body: JSON.stringify(json) }),
           headers: {
             "user-agent": userAgent,
             "accept-language": "en-US,en;q=0.9",
             accept,
             ...(referer ? { referer } : {}),
+            ...(json === undefined
+              ? {}
+              : { "content-type": "application/json" }),
           },
         })
       } catch (error) {
@@ -176,7 +185,8 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get("location")
         await response.body?.cancel()
-        if (!location) {
+        // A POST isn't sent on to somewhere else.
+        if (!location || json !== undefined) {
           throw new AppError(
             "upstream",
             "site_error",

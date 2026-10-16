@@ -11,11 +11,14 @@ import {
 import { raw, type FilterQuery } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import {
+  CookNote,
   Recipe,
   RecipeIngredient,
   RecipeStep,
   RecipeTag,
+  RecipeVersion,
   Tag,
+  type Nutrition,
   type RECIPE_ORIGINS,
 } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER } from "../../database/scope.ts"
@@ -245,6 +248,85 @@ export async function createRecipe(
     }
   )
   return loadRecipe(em.fork(), id)
+}
+
+/**
+ * A recipe brought in whole from a Merran export, as it was: its own id
+ * when no other recipe has it, its address when that's free, when it was
+ * made, changed and rated, its diet corrections, versions and cooking notes.
+ */
+export async function importRecipe(
+  em: EntityManager,
+  options: {
+    householdId: string
+    /** Its id from the export, or null for a new one. */
+    id: string | null
+    slug: string
+    input: RecipeInput
+    origin: RecipeOrigin
+    photoId: string | null
+    createdBy: string | null
+    lastMadeAt: Date | null
+    nutrition: Nutrition | null
+    dietOverrides: Record<string, boolean>
+    createdAt: Date
+    updatedAt: Date
+    versions: {
+      source: VersionSource
+      snapshot: Record<string, unknown>
+      createdAt: Date
+      createdBy: string | null
+    }[]
+    cookNotes: {
+      rating: number | null
+      note: string | null
+      createdAt: Date
+      user: string | null
+    }[]
+  }
+) {
+  return inHouseholdTransaction(em, options.householdId, async (tx) => {
+    const recipe = tx.create(Recipe, {
+      ...(options.id ? { id: options.id } : {}),
+      household: options.householdId,
+      slug: await uniqueSlug(tx, options.slug),
+      name: options.input.name,
+      origin: options.origin,
+      image: options.photoId,
+      createdBy: options.createdBy,
+      lastMadeAt: options.lastMadeAt,
+      nutrition: options.nutrition,
+      dietOverrides:
+        Object.keys(options.dietOverrides).length > 0
+          ? options.dietOverrides
+          : null,
+      createdAt: options.createdAt,
+      updatedAt: options.updatedAt,
+    })
+    await fill(tx, options.householdId, recipe, options.input)
+    for (const version of options.versions) {
+      tx.create(RecipeVersion, {
+        household: options.householdId,
+        recipe,
+        snapshot: version.snapshot,
+        source: version.source,
+        createdBy: version.createdBy,
+        createdAt: version.createdAt,
+      })
+    }
+    for (const note of options.cookNotes) {
+      tx.create(CookNote, {
+        household: options.householdId,
+        recipe,
+        user: note.user,
+        rating: note.rating,
+        note: note.note,
+        createdAt: note.createdAt,
+      })
+    }
+    await tx.flush()
+    return recipe.id
+  })
 }
 
 /**

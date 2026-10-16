@@ -6,6 +6,8 @@ import { createApp, type App } from "../app.ts"
 import { MODULES } from "../modules/index.ts"
 import { startModules, type Module } from "../modules/module.ts"
 import type { Fetcher } from "../services/fetch/public-fetch.ts"
+import { JOB_HANDLERS } from "../services/jobs/handlers.ts"
+import { JobRunner, type JobHandler } from "../services/jobs/runner.ts"
 import { createSettings } from "../services/settings/settings.ts"
 import { LocalFileStore } from "../services/storage/files.ts"
 import { createAuth } from "../services/auth/auth.ts"
@@ -29,6 +31,8 @@ export async function createTestApp(
     env?: Record<string, string>
     /** What fetching from the internet answers with. Tests never reach it. */
     fetcher?: Fetcher
+    /** Kinds of job beyond Merran's own, for tests of the runner. */
+    jobHandlers?: readonly JobHandler[]
   } = {}
 ) {
   const {
@@ -49,6 +53,8 @@ export async function createTestApp(
     secret: TEST_SECRET,
     publicUrl: TEST_ORIGIN,
     webDir: null,
+    // Uploads and the like go in the test's own folder, never the repo's.
+    dataDir: filesDir,
   }
   const logger = pino({ level: "silent" })
   const auth = createAuth({ config, database, secret: TEST_SECRET })
@@ -61,6 +67,15 @@ export async function createTestApp(
   })
   await startModules(modules, { config, logger, database, settings })
   const setupCode = new SetupCode()
+  const files = new LocalFileStore(filesDir)
+  const fetcher: Fetcher =
+    options.fetcher ??
+    (() => Promise.reject(new Error("Tests don't reach the internet.")))
+  // Not started: tests run what's waiting with `jobs.drain()`.
+  const jobs = new JobRunner({
+    deps: { config, logger, database, settings, modules, files, fetcher },
+    handlers: [...JOB_HANDLERS, ...(options.jobHandlers ?? [])],
+  })
   const app = createApp({
     config,
     logger,
@@ -69,12 +84,11 @@ export async function createTestApp(
     setupCode,
     settings,
     modules,
-    files: new LocalFileStore(filesDir),
-    fetcher:
-      options.fetcher ??
-      (() => Promise.reject(new Error("Tests don't reach the internet."))),
+    files,
+    fetcher,
+    jobs,
   })
-  return { app, database, auth, setupCode, settings, filesDir, close }
+  return { app, database, auth, setupCode, settings, filesDir, jobs, close }
 }
 
 /** A response whose JSON tests can read without declaring its type. */
