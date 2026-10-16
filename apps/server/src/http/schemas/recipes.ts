@@ -151,6 +151,10 @@ export const RecipeSchema = RecipeSummarySchema.extend({
     description:
       "Where the household corrected the labels the ingredients suggest.",
   }),
+  needs: z.array(z.string()).openapi({
+    description:
+      "Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead.",
+  }),
   ingredients: z.array(IngredientSchema),
   steps: z.array(StepSchema),
 }).openapi("Recipe", { example: RECIPE })
@@ -258,6 +262,22 @@ export type CookNoteInput = z.infer<typeof CookNoteInputSchema>
 export const CookNoteParam = RecipeParam.extend({
   noteId: z.string().openapi({ param: { name: "noteId", in: "path" } }),
 })
+
+export const NeedsInputSchema = z
+  .object({
+    foods: z
+      .array(z.string().trim().min(1, "Name the food.").max(60))
+      .max(50)
+      .openapi({
+        description:
+          "Foods it can't do without, replacing any said before. An empty list lets every dislike be left out again.",
+      }),
+  })
+  .openapi("NeedsInput", {
+    description:
+      "For example, a stir fry that's nothing without its mushrooms: someone who doesn't like them can't just leave them out.",
+    example: { foods: ["mushrooms"] },
+  })
 
 export const DietsInputSchema = z
   .object({

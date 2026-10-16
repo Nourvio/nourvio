@@ -34,6 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { tastesQuery } from "@/features/household/queries"
 import { CookNotes } from "@/features/recipes/cook-notes"
 import { DietBadges, DietDialog } from "@/features/recipes/diet-labels"
 import { formatMinutes, sourceName } from "@/features/recipes/format"
@@ -53,6 +54,8 @@ import {
 import { RatingInput } from "@/features/recipes/rating-stars"
 import { RecipePhoto, usePhotoActions } from "@/features/recipes/recipe-photo"
 import { StepList } from "@/features/recipes/step-list"
+import { TastesNote } from "@/features/recipes/tastes-note"
+import { mergeLeftOut, useRecipeTastes } from "@/features/recipes/use-tastes"
 import { useUnitSystem } from "@/features/recipes/use-unit-system"
 import { VersionsDialog } from "@/features/recipes/versions-dialog"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
@@ -67,8 +70,11 @@ type RecipePageSearch = {
 export const Route = createFileRoute("/_app/recipes/$slug/")({
   validateSearch: (search: Record<string, unknown>): RecipePageSearch =>
     typeof search.with === "string" && search.with ? { with: search.with } : {},
-  loader: ({ context, params }) =>
-    context.queryClient.ensureQueryData(recipeQuery(params.slug)),
+  loader: ({ context, params }) => {
+    // What's left out for the household's dislikes, as it comes.
+    void context.queryClient.prefetchQuery(tastesQuery)
+    return context.queryClient.ensureQueryData(recipeQuery(params.slug))
+  },
   component: RecipePage,
 })
 
@@ -104,6 +110,9 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   const factorOf = both
     ? (lineId: string) => both.factors.get(lineId) ?? servings.factor
     : undefined
+  const tastes = useRecipeTastes(recipe)
+  const pairedTastes = useRecipeTastes(paired)
+  const leftOut = mergeLeftOut(tastes, pairedTastes)
   const showWith = (slug: string | undefined) =>
     void setSearch({ search: slug ? { with: slug } : {}, replace: true })
   const [showVersions, setShowVersions] = React.useState(false)
@@ -406,7 +415,9 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               />
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="grid gap-4">
+            {paired && <TastesNote recipe={paired} tastes={pairedTastes} />}
+            <TastesNote recipe={recipe} tastes={tastes} />
             {ingredients.length === 0 ? (
               <p className="text-muted-foreground">
                 {t("recipes.noIngredients")}
@@ -417,6 +428,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                 factor={servings.factor}
                 factorOf={factorOf}
                 system={system}
+                leftOut={leftOut}
               />
             )}
           </CardContent>

@@ -18,6 +18,11 @@ export type Reason =
   | { kind: "rated"; stars: number }
   /** Quick enough for a weeknight dinner. */
   | { kind: "quick"; minutes: number }
+  /**
+   * Not a reason but a note: made without foods someone doesn't like.
+   * "Leave out the mushrooms (Emma)".
+   */
+  | { kind: "leaveOut"; foods: { food: string; who: string | null }[] }
 
 /** What the reason builder looks at. */
 export type ReasonRecipe = {
@@ -42,6 +47,7 @@ export function reasonsFor(
     theme,
     weeknightDinner,
     usesUp = [],
+    leaveOut = [],
   }: {
     /** The household's today, "2026-10-15". */
     today: string
@@ -49,6 +55,8 @@ export function reasonsFor(
     weeknightDinner: boolean
     /** Food at home to use soon that it uses. */
     usesUp?: readonly string[]
+    /** Dislikes it's made without, always said, after the reasons. */
+    leaveOut?: readonly { food: string; who: string | null }[]
   }
 ): Reason[] {
   const reasons: Reason[] = []
@@ -78,5 +86,12 @@ export function reasonsFor(
   ) {
     reasons.push({ kind: "quick", minutes: recipe.totalMinutes })
   }
-  return reasons.slice(0, MOST)
+  const why = reasons.slice(0, MOST)
+  if (leaveOut.length > 0) {
+    why.push({
+      kind: "leaveOut",
+      foods: leaveOut.map(({ food, who }) => ({ food, who })),
+    })
+  }
+  return why
 }

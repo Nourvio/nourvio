@@ -1,4 +1,8 @@
-import { MinusSignIcon, PlusSignIcon } from "@hugeicons/core-free-icons"
+import {
+  MinusSignCircleIcon,
+  MinusSignIcon,
+  PlusSignIcon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { displayIngredient, type UnitSystem } from "@merran/shared"
 import * as React from "react"
@@ -11,6 +15,7 @@ import { cn } from "@/lib/utils"
 
 import { formatServings } from "./format"
 import type { Recipe } from "./queries"
+import type { LeftOutLine } from "./use-tastes"
 
 type Line = Recipe["ingredients"][number]
 
@@ -151,7 +156,8 @@ export type Ticks = ReturnType<typeof useTicks>
 
 /**
  * The ingredients, with their amounts scaled and in the chosen units.
- * Each can be ticked off while getting things out.
+ * Each can be ticked off while getting things out; ones left out for
+ * someone who doesn't like them are crossed off, saying who for.
  */
 export function IngredientList({
   lines,
@@ -160,6 +166,7 @@ export function IngredientList({
   system,
   ticks,
   highlighted,
+  leftOut,
   size = "default",
 }: {
   lines: Line[]
@@ -171,8 +178,11 @@ export function IngredientList({
   ticks?: Ticks
   /** Lines to pick out, like the ones the current step uses. */
   highlighted?: ReadonlySet<string>
+  /** Lines left out for the household's dislikes, by id. */
+  leftOut?: ReadonlyMap<string, LeftOutLine>
   size?: "default" | "lg"
 }) {
+  const { t } = useTranslation()
   const own = useTicks()
   const { ticked, toggle } = ticks ?? own
 
@@ -191,6 +201,46 @@ export function IngredientList({
                 factor: factorOf?.(line.id) ?? factor,
                 system,
               })
+              const out = leftOut?.get(line.id)
+              if (out) {
+                return (
+                  <li key={line.id}>
+                    <div
+                      className={cn(
+                        "flex items-start gap-3 rounded-xl px-2 py-1.5 text-muted-foreground",
+                        size === "lg" && "py-2"
+                      )}
+                    >
+                      <HugeiconsIcon
+                        icon={MinusSignCircleIcon}
+                        strokeWidth={2}
+                        className={cn(
+                          "size-4 shrink-0",
+                          size === "lg" ? "mt-1.5" : "mt-1"
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "leading-snug",
+                          size === "lg" ? "text-lg" : "text-base"
+                        )}
+                      >
+                        <span className="line-through">
+                          {amount && (
+                            <span className="font-semibold">{amount}</span>
+                          )}
+                          {rest}
+                        </span>{" "}
+                        <span className="text-sm whitespace-nowrap">
+                          {out.who
+                            ? t("recipes.tastes.lineFor", { who: out.who })
+                            : t("recipes.tastes.line")}
+                        </span>
+                      </span>
+                    </div>
+                  </li>
+                )
+              }
               const done = ticked.has(line.id)
               return (
                 <li key={line.id}>

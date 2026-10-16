@@ -3,6 +3,7 @@ import {
   ArrowRight02Icon,
   Cancel01Icon,
   Mic01Icon,
+  MinusSignCircleIcon,
   TextFontIcon,
   Timer02Icon,
   VolumeHighIcon,
@@ -54,6 +55,7 @@ import {
   useTicks,
 } from "@/features/recipes/ingredient-list"
 import { useRefreshRecipes, type Recipe } from "@/features/recipes/queries"
+import { mergeLeftOut, useRecipeTastes } from "@/features/recipes/use-tastes"
 import { useUnitSystem } from "@/features/recipes/use-unit-system"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
@@ -109,6 +111,8 @@ export function CookView({
   const steps = both?.steps ?? recipe.steps
   /** How much each line is scaled: a pairing has its own amount. */
   const factorOf = (lineId: string) => both?.factors.get(lineId) ?? scale
+  /** Lines left out for someone who doesn't like them. */
+  const leftOut = mergeLeftOut(useRecipeTastes(recipe), useRecipeTastes(paired))
   const name = paired
     ? t("recipes.pairing.name", { base: recipe.name, paired: paired.name })
     : recipe.name
@@ -144,7 +148,9 @@ export function CookView({
       ingredients.filter((line) => !("from" in line) || line.from === from)
     )
   }, [step, ingredients])
-  const stepIngredients = ingredients.filter((line) => highlighted.has(line.id))
+  const stepLines = ingredients.filter((line) => highlighted.has(line.id))
+  const stepIngredients = stepLines.filter((line) => !leftOut.has(line.id))
+  const stepLeftOut = stepLines.filter((line) => leftOut.has(line.id))
   const cooking: Cooking = {
     slug: recipe.slug,
     scale,
@@ -280,7 +286,9 @@ export function CookView({
           voice.speak(textForPage(page))
           break
         case "ingredients": {
-          const lines = onPrep ? ingredients : stepIngredients
+          const lines = onPrep
+            ? ingredients.filter((line) => !leftOut.has(line.id))
+            : stepIngredients
           const list = lines.map(says).join(". ")
           voice.speak(
             lines.length === 0
@@ -353,6 +361,7 @@ export function CookView({
       system={system}
       ticks={ticks}
       highlighted={highlighted}
+      leftOut={leftOut}
       size={size}
     />
   )
@@ -582,6 +591,34 @@ export function CookView({
                     })}
                   </ul>
                 </div>
+              )}
+
+              {stepLeftOut.length > 0 && (
+                <p
+                  className={cn(
+                    "flex items-start gap-2 text-muted-foreground",
+                    DETAIL_TEXT[textSize]
+                  )}
+                >
+                  <HugeiconsIcon
+                    icon={MinusSignCircleIcon}
+                    strokeWidth={2}
+                    className="mt-1 size-4 shrink-0"
+                  />
+                  <span>
+                    {t("cook.leaveOut", {
+                      lines: stepLeftOut
+                        .map((line) => {
+                          const { amount, rest } = displayIngredient(
+                            line.text,
+                            { factor: factorOf(line.id), system }
+                          )
+                          return `${amount}${rest}`.trim()
+                        })
+                        .join(", "),
+                    })}
+                  </span>
+                </p>
               )}
 
               {next && (

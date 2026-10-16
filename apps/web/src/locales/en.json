@@ -285,12 +285,21 @@
       },
       "tastes": {
         "title": "Tastes",
-        "description": "What your household eats and doesn't. Fill the week keeps to it. Anyone in the household can change it.",
+        "description": "What your household eats and doesn't. Fill the week and the autoplan keep to it. Anyone in the household can change it.",
         "avoid": "Foods to avoid",
-        "avoidHint": "Nuts, dairy, gluten, eggs and meat get the same careful check as the diet labels: pesto has nuts, butter is dairy. An allergy is never suggested.",
+        "avoidHint": "Leave it out: recipes with it are still suggested, with it crossed off and not bought, unless it's what the dish is, like mushroom risotto. Never: recipes with it aren't suggested. Nor are allergies, and nuts, dairy, gluten, eggs and meat get the diet labels' careful check (pesto has nuts, butter is dairy), so they can't just be left out.",
         "food": "Food to avoid",
         "foodPlaceholder": "A food, like mushrooms",
-        "allergy": "Allergy",
+        "who": "Who doesn't eat it",
+        "whoPlaceholder": "Who? If not everyone",
+        "forWho": "for {{who}}",
+        "level": "How firmly",
+        "levelOf": "How firmly to avoid {{food}}",
+        "levels": {
+          "leave-out": "Leave it out",
+          "never": "Never",
+          "allergy": "Allergy"
+        },
         "add": "Add",
         "stopAvoiding": "Stop avoiding {{food}}",
         "diets": "Every meal must be",
@@ -632,7 +641,9 @@
       "notLately_other": "Not had in {{count}} weeks",
       "rated_one": "Rated {{count}} star",
       "rated_other": "Rated {{count}} stars",
-      "quick": "Quick: {{time}}"
+      "quick": "Quick: {{time}}",
+      "leaveOut": "Leave out the {{foods}}",
+      "leaveOutFor": "{{food}} for {{who}}"
     },
     "somethingElse": "Something else",
     "swapped": "Swapped in {{name}}.",
@@ -979,6 +990,25 @@
       "purgeDescription": "There's no way back, and their photos go too.",
       "purged_one": "Deleted {{count}} recipe for good.",
       "purged_other": "Deleted {{count}} recipes for good."
+    },
+    "tastes": {
+      "label": "What your household's tastes make of it",
+      "leaving": "Leaving out the {{food}} for {{who}}.",
+      "leavingAll": "Leaving out the {{food}}, which your household doesn't like.",
+      "need": "It needs the {{food}}",
+      "neededSaved": "Noted: it needs the {{food}}, so it won't be suggested.",
+      "leaveOutSaved": "The {{food}} will be left out of it again.",
+      "needed": "Needs the {{food}}, which {{who}} doesn't like, so it isn't suggested.",
+      "neededAll": "Needs the {{food}}, which your household doesn't like, so it isn't suggested.",
+      "canLeaveOut": "Can be left out",
+      "dish": "This one is all about the {{food}}, which {{who}} doesn't like, so it isn't suggested.",
+      "dishAll": "This one is all about the {{food}}, which your household doesn't like, so it isn't suggested.",
+      "allergy": "Has {{food}}: {{who}} is allergic. It isn't suggested.",
+      "allergyAll": "Has {{food}}, an allergy in your household. It isn't suggested.",
+      "never": "Has {{food}}, which {{who}} doesn't eat. It isn't suggested.",
+      "neverAll": "Has {{food}}, which your household doesn't eat. It isn't suggested.",
+      "line": "left out",
+      "lineFor": "left out for {{who}}"
     }
   },
   "cook": {
@@ -1064,7 +1094,8 @@
       "test": "Test voice",
       "none": "This device has no voices for reading aloud.",
       "sample": "Preheat the oven to 425 degrees, and season the chicken while it heats."
-    }
+    },
+    "leaveOut": "Leave out: {{lines}}"
   },
   "select": {
     "start": "Select",

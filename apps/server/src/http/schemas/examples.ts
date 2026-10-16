@@ -176,6 +176,7 @@ export const RECIPE = {
   cookMinutes: 40,
   notes: "Bone-in thighs work too: give them 10 minutes more.",
   dietOverrides: {},
+  needs: [],
   ingredients: [
     {
       id: IDS.ingredients[0],

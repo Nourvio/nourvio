@@ -4,8 +4,21 @@ import { dietsFor, type Diet } from "../diets/diets.ts"
 // diets every meal must fit, and how long weeknight dinners can take. Fill
 // the week and the autoplan keep to them, without AI.
 
-/** A food the household doesn't eat, and whether that's an allergy. */
-export type AvoidedFood = { food: string; allergy: boolean }
+/**
+ * How firmly a food is avoided. With an allergy or never, recipes that
+ * have it aren't suggested. With leave it out, they are, with its lines
+ * crossed off, unless it's what the dish is.
+ */
+export const AVOID_LEVELS = ["allergy", "never", "leave-out"] as const
+export type AvoidLevel = (typeof AVOID_LEVELS)[number]
+
+/** A food the household doesn't eat: how firmly, and who it's for. */
+export type AvoidedFood = {
+  food: string
+  level: AvoidLevel
+  /** Who doesn't eat it, when it isn't everyone: "Emma". */
+  who: string | null
+}
 
 export type HouseholdTastes = {
   avoid: AvoidedFood[]
@@ -46,6 +59,19 @@ const FOOD_DIETS: Record<string, Diet> = {
   meat: "vegetarian",
 }
 
+const foodKey = (food: string) => food.trim().toLowerCase()
+
+/**
+ * Whether a food can be picked out of a recipe. Nuts, dairy, gluten, eggs
+ * and meat are in too many things (pesto, butter, pasta, mayonnaise, stock)
+ * to cross off a line, so they're never suggested instead.
+ */
+export const canLeaveOut = (food: string) => !FOOD_DIETS[foodKey(food)]
+
+/** The level a food is avoided at in practice: see `canLeaveOut`. */
+export const levelOf = (item: AvoidedFood): AvoidLevel =>
+  item.level === "leave-out" && !canLeaveOut(item.food) ? "never" : item.level
+
 /** "mushroom" also matches "mushrooms", "berry" matches "berries", and so on. */
 function foodPattern(food: string) {
   const base = food
@@ -83,13 +109,87 @@ export function avoidedIn(
   const text = lines.join("\n")
   let labels = diets
   return avoid.filter((item) => {
-    const diet = FOOD_DIETS[item.food.trim().toLowerCase()]
+    const diet = FOOD_DIETS[foodKey(item.food)]
     if (diet) {
       labels ??= dietsFor(lines)
       return !labels.includes(diet)
     }
     return foodPattern(item.food)?.test(text) ?? false
   })
+}
+
+/** Whether text names a food, in any of its forms: "Mushrooms" names "mushroom". */
+export const namesFood = (text: string, food: string) =>
+  foodPattern(food)?.test(text) ?? false
+
+/** A food to leave out of a recipe, and the lines it's in. */
+export type LeftOut = {
+  food: string
+  who: string | null
+  /** Where it is in the recipe's lines, from 0. */
+  lines: number[]
+}
+
+/** What a household's avoided foods make of a recipe. */
+export type TasteCheck = {
+  /**
+   * The foods that keep it from being suggested: allergies, ones never
+   * eaten, and dislikes it can't do without.
+   */
+  ruledOut: AvoidedFood[]
+  /** Dislikes it can do without: cross these lines off. */
+  leaveOut: LeftOut[]
+}
+
+/**
+ * A recipe against the household's avoided foods. A dislike to leave out
+ * is crossed off its lines, unless the recipe can't do without it: it's in
+ * the recipe's name (Mushroom Risotto), or the household said the recipe
+ * needs it. Then it's ruled out like the rest.
+ */
+export function checkTastes(
+  recipe: {
+    name: string
+    lines: readonly string[]
+    /** Its diet labels as shown, corrections and all. */
+    diets?: readonly Diet[]
+    /** Foods the household said it can't do without. */
+    needs?: readonly string[] | null
+  },
+  avoid: readonly AvoidedFood[]
+): TasteCheck {
+  const check: TasteCheck = { ruledOut: [], leaveOut: [] }
+  if (avoid.length === 0 || recipe.lines.length === 0) return check
+  check.ruledOut = avoidedIn(
+    recipe.lines,
+    avoid.filter((item) => levelOf(item) !== "leave-out"),
+    recipe.diets
+  )
+  for (const item of avoid) {
+    if (levelOf(item) !== "leave-out") continue
+    const pattern = foodPattern(item.food)
+    if (!pattern) continue
+    const lines = recipe.lines.flatMap((line, index) =>
+      pattern.test(line) ? [index] : []
+    )
+    if (lines.length === 0) continue
+    const needed =
+      pattern.test(recipe.name) ||
+      (recipe.needs ?? []).some((food) => pattern.test(food))
+    if (needed) check.ruledOut.push(item)
+    else check.leaveOut.push({ food: item.food, who: item.who, lines })
+  }
+  return check
+}
+
+/** The lines a recipe is made without, by the household's dislikes. */
+export function leftOutLines(
+  recipe: Parameters<typeof checkTastes>[0],
+  avoid: readonly AvoidedFood[]
+) {
+  return new Set(
+    checkTastes(recipe, avoid).leaveOut.flatMap((item) => item.lines)
+  )
 }
 
 /** The diets every meal must fit that a recipe doesn't. */

@@ -1433,13 +1433,27 @@
                   "minLength": 1,
                   "maxLength": 60
                 },
-                "allergy": {
-                  "type": "boolean"
+                "level": {
+                  "type": "string",
+                  "enum": [
+                    "allergy",
+                    "never",
+                    "leave-out"
+                  ],
+                  "description": "How firmly: an `allergy` or `never`, and recipes with it aren't suggested; `leave-out`, and they are, with it crossed off, unless it's what the dish is or the recipe needs it. Nuts, dairy, gluten, eggs and meat can't be left out, so they're saved as `never`."
+                },
+                "who": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "maxLength": 40,
+                  "description": "Who doesn't eat it, when it isn't everyone."
                 }
               },
               "required": [
                 "food",
-                "allergy"
+                "level"
               ]
             },
             "maxItems": 100,
@@ -1480,11 +1494,13 @@
           "avoid": [
             {
               "food": "peanuts",
-              "allergy": true
+              "level": "allergy",
+              "who": "Sam"
             },
             {
               "food": "mushrooms",
-              "allergy": false
+              "level": "leave-out",
+              "who": "Emma"
             }
           ],
           "diets": [],
@@ -3798,9 +3814,47 @@
               "kind",
               "minutes"
             ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "leaveOut"
+                ]
+              },
+              "foods": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "food": {
+                      "type": "string",
+                      "maxLength": 60
+                    },
+                    "who": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "food",
+                    "who"
+                  ]
+                },
+                "maxItems": 20
+              }
+            },
+            "required": [
+              "kind",
+              "foods"
+            ]
           }
         ],
-        "description": "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.",
+        "description": "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.",
         "example": {
           "kind": "notLately",
           "weeks": 5
@@ -5010,6 +5064,13 @@
               "dietOverrides": {
                 "$ref": "#/components/schemas/DietOverrides"
               },
+              "needs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead."
+              },
               "ingredients": {
                 "type": "array",
                 "items": {
@@ -5031,6 +5092,7 @@
               "cookMinutes",
               "notes",
               "dietOverrides",
+              "needs",
               "ingredients",
               "steps"
             ]
@@ -5068,6 +5130,7 @@
           "cookMinutes": 40,
           "notes": "Bone-in thighs work too: give them 10 minutes more.",
           "dietOverrides": {},
+          "needs": [],
           "ingredients": [
             {
               "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -5682,6 +5745,7 @@
             "cookMinutes": 40,
             "notes": "Bone-in thighs work too: give them 10 minutes more.",
             "dietOverrides": {},
+            "needs": [],
             "ingredients": [
               {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -6215,6 +6279,30 @@
           "overrides": {
             "gluten-free": false
           }
+        }
+      },
+      "NeedsInput": {
+        "type": "object",
+        "properties": {
+          "foods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "maxItems": 50,
+            "description": "Foods it can't do without, replacing any said before. An empty list lets every dislike be left out again."
+          }
+        },
+        "required": [
+          "foods"
+        ],
+        "description": "For example, a stir fry that's nothing without its mushrooms: someone who doesn't like them can't just leave them out.",
+        "example": {
+          "foods": [
+            "mushrooms"
+          ]
         }
       },
       "RecipePairings": {
@@ -13688,6 +13776,90 @@
         "responses": {
           "200": {
             "description": "The recipe, made now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/needs": {
+      "put": {
+        "operationId": "setRecipeNeeds",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Say what a recipe can't do without",
+        "description": "A food the household doesn't like is usually left out of recipes, crossed off and not bought. One a recipe can't do without rules that recipe out instead, as when it's in the recipe's name. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NeedsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The recipe, with what it needs.",
             "content": {
               "application/json": {
                 "schema": {

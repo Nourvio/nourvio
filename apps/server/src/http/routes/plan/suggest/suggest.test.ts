@@ -223,18 +223,21 @@ describe("tastes", () => {
     ).toEqual({ avoid: [], diets: [], weeknightMinutes: null })
     const res = await jamie.put("/api/households/current/tastes", {
       avoid: [
-        { food: " Mushrooms ", allergy: false },
-        { food: "mushrooms", allergy: true },
-        { food: "nuts", allergy: true },
+        { food: " Mushrooms ", level: "leave-out", who: " Emma " },
+        { food: "mushrooms", level: "allergy" },
+        { food: "nuts", level: "allergy", who: "" },
+        // Dairy's in too much to leave out.
+        { food: "dairy", level: "leave-out", who: "Sam" },
       ],
       diets: ["vegetarian", "vegetarian"],
       weeknightMinutes: 45,
     })
-    // A food once, an allergy if either says so.
+    // A food once, the firmest saying, and who it's for kept.
     expect(await res.json()).toEqual({
       avoid: [
-        { food: "mushrooms", allergy: true },
-        { food: "nuts", allergy: true },
+        { food: "mushrooms", level: "allergy", who: "Emma" },
+        { food: "nuts", level: "allergy", who: null },
+        { food: "dairy", level: "never", who: "Sam" },
       ],
       diets: ["vegetarian"],
       weeknightMinutes: 45,
@@ -245,9 +248,9 @@ describe("tastes", () => {
   test("rule out foods to avoid, and long weeknight dinners", async () => {
     await setTastes({
       avoid: [
-        { food: "mushroom", allergy: false },
+        { food: "mushroom", level: "never", who: null },
         // Pesto has nuts.
-        { food: "nuts", allergy: true },
+        { food: "nuts", level: "allergy", who: null },
       ],
       weeknightMinutes: 45,
     })
@@ -277,7 +280,7 @@ describe("tastes", () => {
     expect(
       (
         await put({
-          avoid: [{ food: "", allergy: false }],
+          avoid: [{ food: "", level: "never" }],
           diets: [],
           weeknightMinutes: null,
         })
@@ -285,6 +288,15 @@ describe("tastes", () => {
     ).toBe(400)
     expect(
       (await put({ avoid: [], diets: ["keto"], weeknightMinutes: null })).status
+    ).toBe(400)
+    expect(
+      (
+        await put({
+          avoid: [{ food: "olives", level: "sometimes" }],
+          diets: [],
+          weeknightMinutes: null,
+        })
+      ).status
     ).toBe(400)
     expect(
       (await put({ avoid: [], diets: [], weeknightMinutes: 5 })).status

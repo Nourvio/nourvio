@@ -90,4 +90,22 @@ describe("reasons", () => {
       )
     ).toEqual([{ kind: "new" }, { kind: "rated", stars: 5 }])
   })
+
+  test("always say what to leave out, after the reasons", () => {
+    expect(
+      reasonsFor(
+        { rating: 5, totalMinutes: 20, lastMadeAt: null },
+        {
+          today,
+          theme: null,
+          weeknightDinner: true,
+          leaveOut: [{ food: "mushroom", who: "Emma" }],
+        }
+      )
+    ).toEqual([
+      { kind: "new" },
+      { kind: "rated", stars: 5 },
+      { kind: "leaveOut", foods: [{ food: "mushroom", who: "Emma" }] },
+    ])
+  })
 })

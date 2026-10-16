@@ -2,6 +2,7 @@ import { useQuery, useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { CookView } from "@/features/cook/cook-view"
+import { tastesQuery } from "@/features/household/queries"
 import { recipeQuery } from "@/features/recipes/queries"
 
 type CookSearch = {
@@ -24,6 +25,8 @@ export const Route = createFileRoute("/_focus/recipes/$slug/cook")({
   loaderDeps: ({ search }) => ({ with: search.with }),
   loader: ({ context, params, deps }) =>
     Promise.all([
+      // What's left out for the household's dislikes.
+      context.queryClient.ensureQueryData(tastesQuery).catch(() => null),
       context.queryClient.ensureQueryData(recipeQuery(params.slug)),
       // A pairing that's gone just means cooking the recipe alone.
       deps.with

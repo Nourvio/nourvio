@@ -33,8 +33,8 @@ Everything here is in 0.1 unless it says **Later**.
 | Cook view: get ready, step ingredients, timers, text size, keeping your place, wake lock | M1 | Core | |
 | Hands-free with the device's voice | M7, M10 | Core | Commands per language |
 | Server voice (Kokoro or OpenAI) | M10 | Module | Kokoro behind a compose profile, not on by default |
-| Swap an ingredient | M7 | AI | |
-| Tidy up, auto tidy, library runs, Review queue | M1 | AI | |
+| Swap an ingredient | M7 | AI | Also offered for a disliked food that can't just be left out: "zucchini instead of the mushrooms" |
+| Tidy up, auto tidy, library runs, Review queue | M1 | AI | Tidy up also marks each ingredient as the main thing, safe to leave out, or swappable, so leaving out a dislike no longer leans on the recipe's name |
 | AI photos | Built | Module | A few photo styles to choose from per household; the REFERENCE dark plate on white marble is the default |
 | Nutrition from the site | M1 | Core | |
 | Nutrition: USDA calculation, AI estimate, plan totals | M5 | Module | |
@@ -68,6 +68,7 @@ Everything here is in 0.1 unless it says **Later**.
 | What's next (time of day) | Built | Core | |
 | Fill the week, re-roll, Something else | M3 | Core | |
 | Tastes and rules | M7 | Core | The rules apply without AI; the assistant offering to remember one is AI |
+| **Leave it out: dislikes crossed off rather than ruled out** | New | Core | Each avoided food is an allergy, never, or leave it out, with who it's for. A dislike to leave out is crossed off the recipe and in the cook view, not bought, and not used from the pantry, unless it's in the recipe's name or the household says the recipe needs it. Nuts, dairy, gluten, eggs and meat can't be left out. Rules only; AI tidy up and swaps make it smarter later |
 | Theme nights | M13 | Core | |
 | Weekly autoplan | M8 | Core | |
 | Select meals, Repeat last week, Clear the rest | M14 | Core | |
@@ -172,7 +173,7 @@ Each phase ends with something that runs and can be tried, on `edge` images. 0.1
 
 ### Phase 3: Plan, list and pantry
 
-- The week, the pool of meals, what's next, Fill the week with a reason for each pick, theme nights, tastes and rules, the autoplan
+- The week, the pool of meals, what's next, Fill the week with a reason for each pick, theme nights, tastes and rules (dislikes left out rather than ruled out), the autoplan
 - The list from the plan, every-week and always-on-hand items, usual buys, aisles, lists by store, live updates
 - The pantry with fridge, freezer and cupboard, use soon, leftovers, put away, cooking uses it up
 - Today, and the install button
@@ -184,6 +185,7 @@ Each phase ends with something that runs and can be tried, on `edge` images. 0.1
 - Providers through AI SDK: Anthropic, OpenAI, OpenAI-compatible, Google; the model catalog
 - Server and household keys, the server admin's policy, monthly limits, usage by key source
 - AI import (text, photos, pages), tidy up and the Review queue, swaps, cooking notes into edits
+- Smarter leave it out: tidy up marks which ingredients a recipe can't do without, and swaps offer a stand-in for a dislike
 - The assistant with its tools and proposals, web search, Discover
 - Receipts
 

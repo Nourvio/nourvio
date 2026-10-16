@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi"
-import { DIETS, THEME_KINDS } from "@merran/shared"
+import { AVOID_LEVELS, DIETS, THEME_KINDS } from "@merran/shared"
 import { MEALS, PLAN_STATUSES } from "../../database/entities/index.ts"
 import { IDS, TIMES } from "./examples.ts"
 
@@ -31,10 +31,18 @@ export const ReasonSchema = z
       stars: z.number().int().min(1).max(5),
     }),
     z.object({ kind: z.literal("quick"), minutes: z.number().int().min(0) }),
+    z.object({
+      kind: z.literal("leaveOut"),
+      foods: z
+        .array(
+          z.object({ food: z.string().max(60), who: z.string().nullable() })
+        )
+        .max(20),
+    }),
   ])
   .openapi("Reason", {
     description:
-      'Why a meal was picked: the night\'s theme ("Taco night"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.',
+      "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.",
     example: { kind: "notLately", weeks: 5 },
   })
 
@@ -395,7 +403,19 @@ export const TastesSchema = z
       .array(
         z.object({
           food: z.string().trim().min(1, "Name the food.").max(60),
-          allergy: z.boolean(),
+          level: z.enum(AVOID_LEVELS).openapi({
+            description:
+              "How firmly: an `allergy` or `never`, and recipes with it aren't suggested; `leave-out`, and they are, with it crossed off, unless it's what the dish is or the recipe needs it. Nuts, dairy, gluten, eggs and meat can't be left out, so they're saved as `never`.",
+          }),
+          who: z
+            .string()
+            .trim()
+            .max(40)
+            .nullish()
+            .transform((value) => value || null)
+            .openapi({
+              description: "Who doesn't eat it, when it isn't everyone.",
+            }),
         })
       )
       .max(100)
@@ -410,8 +430,8 @@ export const TastesSchema = z
   .openapi("Tastes", {
     example: {
       avoid: [
-        { food: "peanuts", allergy: true },
-        { food: "mushrooms", allergy: false },
+        { food: "peanuts", level: "allergy", who: "Sam" },
+        { food: "mushrooms", level: "leave-out", who: "Emma" },
       ],
       diets: [],
       weeknightMinutes: 45,

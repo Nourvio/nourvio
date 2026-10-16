@@ -99,6 +99,7 @@ async function recipesOf(
     rating: recipe.rating ?? null,
     nutrition: (recipe.nutrition as Record<string, unknown> | null) ?? null,
     dietOverrides: recipe.dietOverrides ?? {},
+    needs: recipe.needs ?? [],
     origin: recipe.origin,
     importedFrom: recipe.importedFrom ?? null,
     lastMadeAt: recipe.lastMadeAt?.toISOString() ?? null,

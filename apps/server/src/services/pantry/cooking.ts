@@ -13,7 +13,7 @@ import {
   type PantrySnapshot,
   type PlanEntry,
 } from "../../database/entities/index.ts"
-import { hasRecipe, loadMealLines, mealLines } from "../plan/meal-lines.ts"
+import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
 import { amountOf, measured, merged } from "./pantry.ts"
 
 // Cooking a planned meal uses what it takes from the pantry: what was set
@@ -32,7 +32,7 @@ export async function useForMeals(
 ) {
   const cooking = entries.filter((entry) => !entry.pantryUsed)
   if (cooking.length === 0) return
-  await loadMealLines(em, cooking)
+  const linesOf = await loadMealLines(em, cooking[0]!.household.id, cooking)
   const pantry = await em.find(PantryItem, {})
   const gone = new Set<string>()
 
@@ -50,7 +50,7 @@ export async function useForMeals(
           share: shareOf(row, entry.id),
         })
     }
-    const needs = hasRecipe(entry) ? combineLines(mealLines(entry)) : []
+    const needs = hasRecipe(entry) ? combineLines(linesOf(entry)) : []
     for (const need of needs) {
       const key = pantryKey(need.name)
       // What was set aside for this meal goes first.

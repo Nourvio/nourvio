@@ -59,6 +59,11 @@ export const Recipe = defineEntity({
     /** The household's corrections to the diet labels worked out from the ingredients. */
     dietOverrides: p.json<Record<string, boolean>>().nullable(),
     /**
+     * Foods the household said it can't do without, so a dislike that's
+     * usually left out rules it out instead.
+     */
+    needs: p.json<string[]>().nullable(),
+    /**
      * The diet labels, corrections and all, as ",vegetarian,gluten-free,":
      * worked out whenever the ingredients change, and found with `like`.
      */

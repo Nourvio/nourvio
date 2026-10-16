@@ -1,6 +1,9 @@
 import {
+  AVOID_LEVELS,
+  levelOf,
   NO_TASTES,
   NO_THEMES,
+  type AvoidLevel,
   type HouseholdTastes,
   type NightTheme,
   type WeekThemes,
@@ -25,12 +28,23 @@ export async function saveTastes(
   tastes: HouseholdTastes
 ): Promise<HouseholdTastes> {
   const household = await em.findOneOrFail(Household, { id: householdId })
-  // One of each food, an allergy winning over a dislike.
+  // One of each food, the firmest winning: an allergy over never, never
+  // over leave it out. What can't be left out is saved as never.
+  const firmness = (level: AvoidLevel) =>
+    AVOID_LEVELS.length - AVOID_LEVELS.indexOf(level)
   const foods = new Map<string, HouseholdTastes["avoid"][number]>()
-  for (const { food, allergy } of tastes.avoid) {
-    const key = food.trim().toLowerCase()
+  for (const item of tastes.avoid) {
+    const food = item.food.trim()
+    const key = food.toLowerCase()
+    const level = levelOf(item)
+    const who = item.who?.trim() || null
     const known = foods.get(key)
-    foods.set(key, { food: food.trim(), allergy: allergy || !!known?.allergy })
+    foods.set(
+      key,
+      known && firmness(known.level) >= firmness(level)
+        ? { ...known, who: known.who ?? who }
+        : { food, level, who: who ?? known?.who ?? null }
+    )
   }
   const saved: HouseholdTastes = {
     avoid: [...foods.values()],

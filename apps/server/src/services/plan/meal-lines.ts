@@ -1,24 +1,57 @@
-import { pairingFactor, type ListLine } from "@merran/shared"
+import {
+  leftOutLines,
+  pairingFactor,
+  type AvoidedFood,
+  type ListLine,
+} from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
-import type { PlanEntry } from "../../database/entities/index.ts"
+import type {
+  PlanEntry,
+  Recipe,
+  RecipeIngredient,
+} from "../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { toNumber } from "../recipes/recipes.ts"
+import { getTastes } from "./preferences.ts"
 
 // What a planned meal takes: its recipe's ingredient lines, and its
-// side's, scaled to its servings. The list shops for them; cooking uses
-// them from the pantry.
+// side's, scaled to its servings, less what's left out for someone who
+// doesn't like it. The list shops for them; cooking uses them from the
+// pantry.
 
 /** What it takes to work out a meal's lines: its recipes and their lines. */
 const POPULATE = ["recipe.ingredients", "withRecipe.ingredients"] as const
 
-/** Loads meals' recipes and lines, Recently deleted ones too. */
+/**
+ * Loads meals' recipes and lines, Recently deleted ones too, and the
+ * household's dislikes: what each meal takes, from `mealLines`.
+ */
 export async function loadMealLines(
   em: EntityManager,
+  householdId: string,
   entries: readonly PlanEntry[]
 ) {
   await em.populate([...entries], POPULATE, {
     filters: { [NOT_DELETED_FILTER]: false },
   })
+  const { avoid } = await getTastes(em, householdId)
+  return (entry: PlanEntry) => mealLines(entry, avoid)
+}
+
+/** A recipe's lines in order, less what's left out. */
+function linesOf(recipe: Recipe, avoid: readonly AvoidedFood[]) {
+  const lines = recipe.ingredients
+    .getItems()
+    .sort((a, b) => a.position - b.position)
+  const without = leftOutLines(
+    {
+      name: recipe.name,
+      lines: lines.map((line) => line.rawText),
+      needs: recipe.needs,
+    },
+    avoid
+  )
+  return lines.filter((_, index) => !without.has(index)) as RecipeIngredient[]
 }
 
 /** Whether a meal's recipe can be cooked: it has one, not in Recently deleted. */
@@ -29,22 +62,23 @@ export function hasRecipe(entry: PlanEntry) {
 
 /**
  * A planned meal's ingredient lines, scaled to its servings, and its side's,
- * scaled to match as on the recipe page. Its recipes are loaded.
+ * scaled to match as on the recipe page, less what's left out for the
+ * household's dislikes. Its recipes are loaded.
  */
-export function mealLines(entry: PlanEntry): ListLine[] {
+export function mealLines(
+  entry: PlanEntry,
+  avoid: readonly AvoidedFood[] = []
+): ListLine[] {
   const recipe = entry.recipe!.getEntity()
   const servings = toNumber(recipe.servings)
   const planned = toNumber(entry.servings)
   const factor = planned && servings ? planned / servings : 1
-  const lines: ListLine[] = recipe.ingredients
-    .getItems()
-    .sort((a, b) => a.position - b.position)
-    .map((line) => ({
-      text: line.rawText,
-      factor,
-      source: recipe.name,
-      meal: entry.id,
-    }))
+  const lines: ListLine[] = linesOf(recipe, avoid).map((line) => ({
+    text: line.rawText,
+    factor,
+    source: recipe.name,
+    meal: entry.id,
+  }))
   const side = entry.withRecipe?.getEntity()
   if (side && !side.deletedAt) {
     const sideFactor = pairingFactor(
@@ -52,9 +86,7 @@ export function mealLines(entry: PlanEntry): ListLine[] {
       { servings: toNumber(side.servings) },
       factor
     )
-    for (const line of side.ingredients
-      .getItems()
-      .sort((a, b) => a.position - b.position)) {
+    for (const line of linesOf(side, avoid)) {
       lines.push({
         text: line.rawText,
         factor: sideFactor,

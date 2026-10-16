@@ -1,6 +1,6 @@
 import {
   addDays,
-  avoidedIn,
+  checkTastes,
   clockIn,
   dayOfWeek,
   fitsTheme,
@@ -81,6 +81,8 @@ type Candidate = {
   tags: string[]
   diets: Diet[]
   lines: string[]
+  /** Foods the household said it can't do without. */
+  needs: string[]
 }
 
 export type Suggestion = Slot & {
@@ -114,10 +116,16 @@ const isWeeknightDinner = (slot: Slot) =>
 
 /**
  * Higher is likelier: uses up what needs using, well rated, tagged for the
- * meal, quick on weeknights.
+ * meal, quick on weeknights, and made as written rather than leaving
+ * something out.
  */
-function weight(recipe: Candidate, slot: Slot, usesUp: number) {
-  let score = 1
+function weight(
+  recipe: Candidate,
+  slot: Slot,
+  usesUp: number,
+  leavesOut: boolean
+) {
+  let score = leavesOut ? 0.5 : 1
   if (usesUp > 0) score += 2 + (usesUp - 1) * 0.5
   if (recipe.rating) {
     score += recipe.rating >= 4 ? 2 : recipe.rating <= 2 ? -0.75 : 0.5
@@ -180,6 +188,7 @@ async function candidates(em: EntityManager): Promise<Candidate[]> {
     tags: (tags.get(recipe.id) ?? []).map(tagKey),
     diets: decodeDiets(recipe.diets),
     lines: lines.get(recipe.id) ?? [],
+    needs: recipe.needs ?? [],
   }))
 }
 
@@ -262,14 +271,18 @@ export async function suggestMeals(
     new Date(`${today}T00:00:00Z`).getTime() - NO_REPEAT_DAYS * 86_400_000
   )
 
-  // The household's rules: foods nobody should get, diets every meal fits,
-  // and how long weeknight dinners can take.
+  // The household's rules: foods nobody should get or that are left out,
+  // diets every meal fits, and how long weeknight dinners can take.
+  const checks = new Map(
+    recipes.map((recipe) => [recipe.id, checkTastes(recipe, tastes.avoid)])
+  )
+  const leaveOut = (recipe: Candidate) => checks.get(recipe.id)?.leaveOut ?? []
   const ruledOut = new Set(
     recipes
       .filter(
         (recipe) =>
           missingDiets(recipe.diets, tastes.diets).length > 0 ||
-          avoidedIn(recipe.lines, tastes.avoid, recipe.diets).length > 0
+          (checks.get(recipe.id)?.ruledOut.length ?? 0) > 0
       )
       .map((recipe) => recipe.id)
   )
@@ -330,7 +343,8 @@ export async function suggestMeals(
   for (const [index, slot] of order) {
     const recipe = pick(
       candidatesFor(slot),
-      (r) => weight(r, slot, usesUp.get(r.id)?.length ?? 0),
+      (r) =>
+        weight(r, slot, usesUp.get(r.id)?.length ?? 0, leaveOut(r).length > 0),
       random
     )
     if (!recipe) continue
@@ -381,6 +395,7 @@ export async function suggestMeals(
             : null,
           weeknightDinner: isWeeknightDinner(slot),
           usesUp: (usesUp.get(recipe.id) ?? []).slice(0, 2),
+          leaveOut: leaveOut(recipe),
         }),
       },
     ]

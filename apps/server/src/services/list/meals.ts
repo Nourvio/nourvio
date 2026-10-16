@@ -18,7 +18,7 @@ import {
 } from "../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { coverFromPantry, releasePantry } from "../pantry/stock.ts"
-import { hasRecipe, loadMealLines, mealLines } from "../plan/meal-lines.ts"
+import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
 import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
 import { aislesOf } from "./aisles.ts"
 import { listsOf } from "./lists.ts"
@@ -54,11 +54,11 @@ export async function listMeals(
   householdId: string,
   entries: readonly PlanEntry[]
 ) {
-  await loadMealLines(em, entries)
+  const linesOf = await loadMealLines(em, householdId, entries)
   const meals = entries.filter(shopped)
   const isOnHand = await onHandOf(em, householdId)
   const onHand = new Set<string>()
-  const needed = combineLines(meals.flatMap(mealLines)).filter((item) => {
+  const needed = combineLines(meals.flatMap(linesOf)).filter((item) => {
     if (!isOnHand(item.name)) return true
     onHand.add(item.name.toLowerCase())
     return false

@@ -35,7 +35,7 @@ import {
   type Suggestion,
 } from "./queries"
 import { usePlanActions } from "./use-plan-actions"
-import { useWhyText } from "./why"
+import { splitWhy, useWhyText } from "./why"
 
 const slotKey = (slot: PlanSlot) => `${slot.date}:${slot.meal}`
 
@@ -255,9 +255,9 @@ function FillWeek({
                     </span>
                   )}
                 </span>
-                {row.why.length > 0 ? (
+                {splitWhy(row.why).reasons.length > 0 ? (
                   <span className="truncate text-xs font-medium text-primary">
-                    {whyText(row.why)}
+                    {whyText(splitWhy(row.why).reasons)}
                   </span>
                 ) : (
                   row.recipe.totalMinutes != null && (
@@ -265,6 +265,11 @@ function FillWeek({
                       {formatMinutes(t, row.recipe.totalMinutes)}
                     </span>
                   )
+                )}
+                {splitWhy(row.why).leaveOut.length > 0 && (
+                  <span className="truncate text-xs text-muted-foreground">
+                    {whyText(splitWhy(row.why).leaveOut)}
+                  </span>
                 )}
               </div>
               <Button

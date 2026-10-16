@@ -115,6 +115,7 @@ export function describeRecipe(recipe: Recipe, tags: string[]) {
     cookMinutes: recipe.cookMinutes ?? null,
     notes: recipe.notes ?? null,
     dietOverrides: overridesOf(recipe),
+    needs: recipe.needs ?? [],
     ingredients: recipe.ingredients.getItems().map((line) => ({
       id: line.id,
       section: line.section ?? null,
@@ -271,6 +272,7 @@ export async function importRecipe(
     lastMadeAt: Date | null
     nutrition: Nutrition | null
     dietOverrides: Record<string, boolean>
+    needs?: readonly string[]
     createdAt: Date
     updatedAt: Date
     versions: {
@@ -305,6 +307,7 @@ export async function importRecipe(
         Object.keys(options.dietOverrides).length > 0
           ? options.dietOverrides
           : null,
+      needs: options.needs?.length ? [...options.needs] : null,
       createdAt: options.createdAt,
       updatedAt: options.updatedAt,
     })
@@ -558,6 +561,25 @@ export async function setDiets(
   const kept = keptOverrides(suggested, options.overrides)
   recipe.dietOverrides = Object.keys(kept).length > 0 ? kept : null
   recipe.diets = encodeDiets(applyDietOverrides(suggested, kept))
+  await em.flush()
+  return loadRecipe(em, recipe.id)
+}
+
+/**
+ * Says which foods a recipe can't do without, so a dislike in it rules it
+ * out rather than being left out. Not an edit, so no version is kept.
+ */
+export async function setNeeds(
+  em: EntityManager,
+  options: { recipe: string; foods: readonly string[] }
+) {
+  const recipe = await findRecipe(em, options.recipe)
+  const foods = [
+    ...new Set(
+      options.foods.map((food) => food.trim().toLowerCase()).filter(Boolean)
+    ),
+  ]
+  recipe.needs = foods.length > 0 ? foods : null
   await em.flush()
   return loadRecipe(em, recipe.id)
 }

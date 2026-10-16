@@ -1680,6 +1680,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recipes/{recipe}/needs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Say what a recipe can't do without
+         * @description A food the household doesn't like is usually left out of recipes, crossed off and not bought. One a recipe can't do without rules that recipe out instead, as when it's in the recipe's name. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
+         */
+        put: operations["setRecipeNeeds"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/{recipe}/pairings": {
         parameters: {
             query?: never;
@@ -2815,11 +2835,13 @@ export interface components {
          *       "avoid": [
          *         {
          *           "food": "peanuts",
-         *           "allergy": true
+         *           "level": "allergy",
+         *           "who": "Sam"
          *         },
          *         {
          *           "food": "mushrooms",
-         *           "allergy": false
+         *           "level": "leave-out",
+         *           "who": "Emma"
          *         }
          *       ],
          *       "diets": [],
@@ -2830,7 +2852,13 @@ export interface components {
             /** @description Foods the household doesn't eat. */
             avoid: {
                 food: string;
-                allergy: boolean;
+                /**
+                 * @description How firmly: an `allergy` or `never`, and recipes with it aren't suggested; `leave-out`, and they are, with it crossed off, unless it's what the dish is or the recipe needs it. Nuts, dairy, gluten, eggs and meat can't be left out, so they're saved as `never`.
+                 * @enum {string}
+                 */
+                level: "allergy" | "never" | "leave-out";
+                /** @description Who doesn't eat it, when it isn't everyone. */
+                who?: string | null;
             }[];
             /** @description Diets every meal must fit. */
             diets: ("vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "egg-free" | "nut-free")[];
@@ -3949,7 +3977,7 @@ export interface components {
         /** @enum {string} */
         PlanStatus: "planned" | "cooked" | "skipped";
         /**
-         * @description Why a meal was picked: the night's theme ("Taco night"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.
+         * @description Why a meal was picked: the night's theme ("Taco night"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.
          * @example {
          *       "kind": "notLately",
          *       "weeks": 5
@@ -3982,6 +4010,13 @@ export interface components {
             /** @enum {string} */
             kind: "quick";
             minutes: number;
+        } | {
+            /** @enum {string} */
+            kind: "leaveOut";
+            foods: {
+                food: string;
+                who: string | null;
+            }[];
         };
         /**
          * @example {
@@ -4602,6 +4637,7 @@ export interface components {
          *       "cookMinutes": 40,
          *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *       "dietOverrides": {},
+         *       "needs": [],
          *       "ingredients": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -4672,6 +4708,8 @@ export interface components {
             cookMinutes: number | null;
             notes: string | null;
             dietOverrides: components["schemas"]["DietOverrides"];
+            /** @description Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead. */
+            needs: string[];
             ingredients: components["schemas"]["Ingredient"][];
             steps: components["schemas"]["Step"][];
         };
@@ -4897,6 +4935,7 @@ export interface components {
          *         "cookMinutes": 40,
          *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
          *         "dietOverrides": {},
+         *         "needs": [],
          *         "ingredients": [
          *           {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000011",
@@ -5194,6 +5233,18 @@ export interface components {
          */
         DietsInput: {
             overrides: components["schemas"]["DietOverrides"] & unknown;
+        };
+        /**
+         * @description For example, a stir fry that's nothing without its mushrooms: someone who doesn't like them can't just leave them out.
+         * @example {
+         *       "foods": [
+         *         "mushrooms"
+         *       ]
+         *     }
+         */
+        NeedsInput: {
+            /** @description Foods it can't do without, replacing any said before. An empty list lets every dislike be left out again. */
+            foods: string[];
         };
         /**
          * @example {
@@ -10284,6 +10335,60 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description The recipe, made now. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setRecipeNeeds: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NeedsInput"];
+            };
+        };
+        responses: {
+            /** @description The recipe, with what it needs. */
             200: {
                 headers: {
                     [name: string]: unknown;

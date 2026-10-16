@@ -31,7 +31,7 @@ import { cn } from "@/lib/utils"
 import { ChangeMealDialog } from "./change-meal-dialog"
 import { useHouseholdClock, type PlanEntry } from "./queries"
 import { usePlanActions } from "./use-plan-actions"
-import { useWhyText } from "./why"
+import { splitWhy, useWhyText } from "./why"
 
 /** Cooking a planned meal: its servings, and its side alongside. */
 export function cookSearch(entry: PlanEntry) {
@@ -63,6 +63,7 @@ export function MealTile({
 }) {
   const { t } = useTranslation()
   const whyText = useWhyText()
+  const { reasons, leaveOut } = splitWhy(entry.why)
   const press = useLongPress(
     () => selection.start(entry.id),
     !selection.selecting
@@ -186,9 +187,14 @@ export function MealTile({
                 .join(" · ")
             : !cooked && !skipped && t("plan.aNote")}
         </span>
-        {entry.why.length > 0 && entry.status === "planned" && (
+        {entry.status === "planned" && reasons.length > 0 && (
           <span className="truncate text-xs font-medium text-primary">
-            {whyText(entry.why)}
+            {whyText(reasons)}
+          </span>
+        )}
+        {entry.status === "planned" && leaveOut.length > 0 && (
+          <span className="truncate text-xs text-muted-foreground">
+            {whyText(leaveOut)}
           </span>
         )}
       </div>

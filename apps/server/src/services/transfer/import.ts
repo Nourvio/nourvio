@@ -183,6 +183,7 @@ export const importJob: JobHandler = {
           lastMadeAt: recipe.lastMadeAt ? new Date(recipe.lastMadeAt) : null,
           nutrition: recipe.nutrition as Nutrition | null,
           dietOverrides: recipe.dietOverrides,
+          needs: recipe.needs,
           createdAt: new Date(recipe.createdAt),
           updatedAt: new Date(recipe.updatedAt),
           versions: recipe.versions.map((version) => ({
