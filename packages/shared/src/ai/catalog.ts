@@ -50,7 +50,8 @@ export const TASK_SIZES: Record<AiTask, ModelSize> = {
 }
 
 /** What a model can do, which a feature checks before it runs. */
-export type ModelAbility = "tools" | "images" | "structured" | "webSearch"
+export type ModelAbility =
+  "tools" | "images" | "pdfs" | "structured" | "webSearch"
 
 export type CatalogModel = {
   provider: KeyedProvider
@@ -65,6 +66,7 @@ export type CatalogModel = {
 const ALL: readonly ModelAbility[] = [
   "tools",
   "images",
+  "pdfs",
   "structured",
   "webSearch",
 ]
@@ -160,7 +162,7 @@ export const AI_MODELS: readonly CatalogModel[] = [
     id: "gemini-3.5-flash-lite",
     name: "Gemini 3.5 Flash-Lite",
     size: "small",
-    abilities: ["tools", "images", "structured"],
+    abilities: ["tools", "images", "pdfs", "structured"],
     price: [0.3, 2.5],
   },
 ]

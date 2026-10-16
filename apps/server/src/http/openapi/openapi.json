@@ -229,16 +229,29 @@
             "type": "string",
             "maxLength": 4000,
             "default": "",
-            "description": "What they say. Can be left out with photos."
+            "description": "What they say. Can be left out with files."
           },
-          "photos": {
+          "files": {
             "type": "array",
             "items": {
-              "type": "string",
-              "pattern": "^[a-f0-9]{24}$"
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{24}$"
+                },
+                "name": {
+                  "type": "string",
+                  "maxLength": 200,
+                  "description": "Its name, to show and to tell the model: \"lasagna.pdf\"."
+                }
+              },
+              "required": [
+                "id"
+              ]
             },
             "maxItems": 4,
-            "description": "Photos to send with it, up to 4, by the ids `POST /assistant/photos` gave them: of what they're cooking, say. The message keeps them as file parts, linking to each photo."
+            "description": "Photos and PDFs to send with it, up to 4, by the ids `POST /assistant/files` gave them: a photo of what they're cooking, or a recipe to draft. The message keeps them as file parts, linking to each file."
           },
           "context": {
             "type": "object",
@@ -257,15 +270,18 @@
         },
         "example": {
           "text": "Is this thick enough?",
-          "photos": [
-            "4f1c2a9e7b3d5f6a8c0e1b2d"
+          "files": [
+            {
+              "id": "4f1c2a9e7b3d5f6a8c0e1b2d",
+              "name": "sauce.jpg"
+            }
           ],
           "context": {
             "recipe": "0199e8b0-5a10-7a01-8b00-000000000006"
           }
         }
       },
-      "AssistantPhoto": {
+      "AssistantFile": {
         "type": "object",
         "properties": {
           "id": {
@@ -274,15 +290,25 @@
           "url": {
             "type": "string",
             "description": "Where it's shown from."
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "image/jpeg",
+              "application/pdf"
+            ],
+            "description": "A photo is kept as JPEG; a PDF as it is."
           }
         },
         "required": [
           "id",
-          "url"
+          "url",
+          "mediaType"
         ],
         "example": {
           "id": "4f1c2a9e7b3d5f6a8c0e1b2d",
-          "url": "/api/assistant/photos/4f1c2a9e7b3d5f6a8c0e1b2d"
+          "url": "/api/assistant/files/4f1c2a9e7b3d5f6a8c0e1b2d",
+          "mediaType": "image/jpeg"
         }
       },
       "ApiKey": {
@@ -10508,7 +10534,7 @@
           "Assistant"
         ],
         "summary": "Delete a chat",
-        "description": "Gone for good, with its messages and the photos in them. What was applied from it stays. With an API key, it needs the `assistant: write` permission.",
+        "description": "Gone for good, with its messages and the files in them. What was applied from it stays. With an API key, it needs the `assistant: write` permission.",
         "security": [
           {
             "session": []
@@ -10573,7 +10599,7 @@
           "Assistant"
         ],
         "summary": "Ask the assistant",
-        "description": "Sends a message, and streams the assistant's answer back as AI SDK's UI message stream (server-sent events), the way `useChat` reads it: its text, and the tools it uses as it uses them. It can see photos sent with a message (uploaded first, with `POST /assistant/photos`) when the model reads photos, look things up in the household's recipes, plan, list and pantry, search the web when the model can, and propose changes, which come back as suggestions (`GET /proposals/{proposalId}`) for the person to apply. Both messages are kept. Uses the household's model for the assistant, which must be able to use tools, and counts towards its AI spend. With an API key, it needs the `assistant: write` permission.",
+        "description": "Sends a message, and streams the assistant's answer back as AI SDK's UI message stream (server-sent events), the way `useChat` reads it: its text, and the tools it uses as it uses them. It can see photos and PDFs sent with a message (uploaded first, with `POST /assistant/files`) when the model reads them, drafting a recipe from one, look things up in the household's recipes, plan, list and pantry, search the web when the model can, and propose changes, which come back as suggestions (`GET /proposals/{proposalId}`) for the person to apply. Both messages are kept. Uses the household's model for the assistant, which must be able to use tools, and counts towards its AI spend. With an API key, it needs the `assistant: write` permission.",
         "security": [
           {
             "session": []
@@ -10637,7 +10663,7 @@
             }
           },
           "404": {
-            "description": "No such chat of yours, or no such photo.",
+            "description": "No such chat of yours, or no such file.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10647,7 +10673,7 @@
             }
           },
           "422": {
-            "description": "The model can't use tools, or read photos.",
+            "description": "The model can't use tools, or read photos or PDFs.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10669,14 +10695,14 @@
         }
       }
     },
-    "/api/assistant/photos": {
+    "/api/assistant/files": {
       "post": {
-        "operationId": "uploadAssistantPhoto",
+        "operationId": "uploadAssistantFile",
         "tags": [
           "Assistant"
         ],
-        "summary": "Add a photo for the assistant",
-        "description": "A photo to send with a message, like what's in the pan: its id goes in the message's `photos`. JPEG, PNG or WebP, up to 15 MB; it's kept smaller, the right way up, with the person's chats. With an API key, it needs the `assistant: write` permission.",
+        "summary": "Add a photo or PDF for the assistant",
+        "description": "A file to send with a message, by its id in the message's `files`: a photo of what's in the pan, or a recipe to draft, as a photo or PDF. A photo is JPEG, PNG or WebP up to 15 MB, kept smaller and the right way up; a PDF is up to 10 MB. They're kept with the person's chats. With an API key, it needs the `assistant: write` permission.",
         "security": [
           {
             "session": []
@@ -10693,7 +10719,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "photo": {
+                  "file": {
                     "type": "string",
                     "format": "binary"
                   }
@@ -10708,13 +10734,13 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AssistantPhoto"
+                  "$ref": "#/components/schemas/AssistantFile"
                 }
               }
             }
           },
           "400": {
-            "description": "No photo, or not one Merran can read.",
+            "description": "No file, or not a photo or PDF Merran can read.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10744,7 +10770,7 @@
             }
           },
           "413": {
-            "description": "The photo is too big.",
+            "description": "The file is too big.",
             "content": {
               "application/json": {
                 "schema": {
@@ -10756,14 +10782,14 @@
         }
       }
     },
-    "/api/assistant/photos/{photoId}": {
+    "/api/assistant/files/{fileId}": {
       "get": {
-        "operationId": "getAssistantPhoto",
+        "operationId": "getAssistantFile",
         "tags": [
           "Assistant"
         ],
-        "summary": "A photo sent to the assistant",
-        "description": "As JPEG. Only the person who sent it sees it, like their chats. A photo never changes, so it can be kept for good. With an API key, it needs the `assistant: read` permission.",
+        "summary": "A file sent to the assistant",
+        "description": "A photo as JPEG, or a PDF. Only the person who sent it sees it, like their chats. A file never changes, so it can be kept for good. With an API key, it needs the `assistant: read` permission.",
         "security": [
           {
             "session": []
@@ -10780,15 +10806,21 @@
               "example": "4f1c2a9e7b3d5f6a8c0e1b2d"
             },
             "required": true,
-            "name": "photoId",
+            "name": "fileId",
             "in": "path"
           }
         ],
         "responses": {
           "200": {
-            "description": "The photo.",
+            "description": "The file.",
             "content": {
               "image/jpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/pdf": {
                 "schema": {
                   "type": "string",
                   "format": "binary"
@@ -10817,7 +10849,60 @@
             }
           },
           "404": {
-            "description": "No such photo of yours.",
+            "description": "No such file of yours.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteAssistantFile",
+        "tags": [
+          "Assistant"
+        ],
+        "summary": "Delete a file sent to the assistant",
+        "description": "For one taken out of a message before it's sent. A message it's already in says it's gone. One that's already gone is fine. With an API key, it needs the `assistant: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "assistant:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "4f1c2a9e7b3d5f6a8c0e1b2d"
+            },
+            "required": true,
+            "name": "fileId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
             "content": {
               "application/json": {
                 "schema": {

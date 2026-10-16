@@ -1,8 +1,11 @@
 import { z } from "@hono/zod-openapi"
-import { MAX_MESSAGE_PHOTOS } from "../../services/assistant/photos.ts"
+import {
+  MAX_MESSAGE_FILES,
+  MAX_PDF_BYTES,
+} from "../../services/assistant/files.ts"
 import { IDS, TIMES } from "./examples.ts"
 
-const PHOTO_ID = "4f1c2a9e7b3d5f6a8c0e1b2d"
+const FILE_ID = "4f1c2a9e7b3d5f6a8c0e1b2d"
 
 const CHAT = {
   id: IDS.chat,
@@ -50,13 +53,21 @@ export const ChatMessageInputSchema = z
       .trim()
       .max(4000, "Keep it under 4,000 characters.")
       .default("")
-      .openapi({ description: "What they say. Can be left out with photos." }),
-    photos: z
-      .array(z.string().regex(/^[a-f0-9]{24}$/, "That isn't a photo's id."))
-      .max(MAX_MESSAGE_PHOTOS, `Send ${MAX_MESSAGE_PHOTOS} photos or fewer.`)
+      .openapi({ description: "What they say. Can be left out with files." }),
+    files: z
+      .array(
+        z.object({
+          id: z.string().regex(/^[a-f0-9]{24}$/, "That isn't a file's id."),
+          name: z.string().trim().max(200).optional().openapi({
+            description:
+              'Its name, to show and to tell the model: "lasagna.pdf".',
+          }),
+        })
+      )
+      .max(MAX_MESSAGE_FILES, `Send ${MAX_MESSAGE_FILES} files or fewer.`)
       .optional()
       .openapi({
-        description: `Photos to send with it, up to ${MAX_MESSAGE_PHOTOS}, by the ids \`POST /assistant/photos\` gave them: of what they're cooking, say. The message keeps them as file parts, linking to each photo.`,
+        description: `Photos and PDFs to send with it, up to ${MAX_MESSAGE_FILES}, by the ids \`POST /assistant/files\` gave them: a photo of what they're cooking, or a recipe to draft. The message keeps them as file parts, linking to each file.`,
       }),
     context: z
       .object({
@@ -73,29 +84,39 @@ export const ChatMessageInputSchema = z
           'What\'s on their screen, for the assistant to know: "this recipe" is the one there.',
       }),
   })
-  .refine((input) => input.text || input.photos?.length, {
-    message: "Say something, or add a photo.",
+  .refine((input) => input.text || input.files?.length, {
+    message: "Say something, or add a photo or file.",
     path: ["text"],
   })
   .openapi("ChatMessageInput", {
     example: {
       text: "Is this thick enough?",
-      photos: [PHOTO_ID],
+      files: [{ id: FILE_ID, name: "sauce.jpg" }],
       context: { recipe: IDS.lemonChicken },
     },
   })
 
-export const AssistantPhotoSchema = z
+export const AssistantFileSchema = z
   .object({
     id: z.string(),
     url: z.string().openapi({ description: "Where it's shown from." }),
+    mediaType: z.enum(["image/jpeg", "application/pdf"]).openapi({
+      description: "A photo is kept as JPEG; a PDF as it is.",
+    }),
   })
-  .openapi("AssistantPhoto", {
-    example: { id: PHOTO_ID, url: `/api/assistant/photos/${PHOTO_ID}` },
+  .openapi("AssistantFile", {
+    example: {
+      id: FILE_ID,
+      url: `/api/assistant/files/${FILE_ID}`,
+      mediaType: "image/jpeg",
+    },
   })
 
-export const AssistantPhotoParam = z.object({
-  photoId: z
+export const AssistantFileParam = z.object({
+  fileId: z
     .string()
-    .openapi({ param: { name: "photoId", in: "path" }, example: PHOTO_ID }),
+    .openapi({ param: { name: "fileId", in: "path" }, example: FILE_ID }),
 })
+
+/** The largest PDF, in words. */
+export const PDF_LIMIT = `${MAX_PDF_BYTES / 1_000_000} MB`

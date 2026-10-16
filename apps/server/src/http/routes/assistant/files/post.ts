@@ -2,11 +2,11 @@ import { createRoute, z } from "@hono/zod-openapi"
 import { bodyLimit } from "hono/body-limit"
 import type { AppDeps } from "../../../../core/context.ts"
 import { AppError } from "../../../../core/errors.ts"
-import { storeChatPhoto } from "../../../../services/assistant/photos.ts"
+import { storeChatFile } from "../../../../services/assistant/files.ts"
 import { MAX_PHOTO_BYTES } from "../../../../services/recipes/photos.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
-import { AssistantPhotoSchema } from "../../../schemas/assistant.ts"
+import { AssistantFileSchema, PDF_LIMIT } from "../../../schemas/assistant.ts"
 import {
   errorResponse,
   jsonResponse,
@@ -18,18 +18,17 @@ const keys = openToKeys("assistant", "write")
 const tooBig = () =>
   new AppError(
     "too_large",
-    "photo_too_large",
-    "That photo is too big. Use one under 15 MB."
+    "file_too_large",
+    `That file is too big. Use a photo under 15 MB, or a PDF under ${PDF_LIMIT}.`
   )
 
 const route = createRoute({
   method: "post",
-  path: "/assistant/photos",
-  operationId: "uploadAssistantPhoto",
+  path: "/assistant/files",
+  operationId: "uploadAssistantFile",
   tags: ["Assistant"],
-  summary: "Add a photo for the assistant",
-  description:
-    "A photo to send with a message, like what's in the pan: its id goes in the message's `photos`. JPEG, PNG or WebP, up to 15 MB; it's kept smaller, the right way up, with the person's chats.",
+  summary: "Add a photo or PDF for the assistant",
+  description: `A file to send with a message, by its id in the message's \`files\`: a photo of what's in the pan, or a recipe to draft, as a photo or PDF. A photo is JPEG, PNG or WebP up to 15 MB, kept smaller and the right way up; a PDF is up to ${PDF_LIMIT}. They're kept with the person's chats.`,
   ...keys,
   middleware: [
     ...keys.middleware,
@@ -47,7 +46,7 @@ const route = createRoute({
         "multipart/form-data": {
           schema: z.object({
             // Checked here, to say what's wrong in words.
-            photo: z
+            file: z
               .any()
               .optional()
               .openapi({ type: "string", format: "binary" }),
@@ -57,9 +56,9 @@ const route = createRoute({
     },
   },
   responses: {
-    201: jsonResponse(AssistantPhotoSchema, "Kept."),
-    400: errorResponse("No photo, or not one Merran can read."),
-    413: errorResponse("The photo is too big."),
+    201: jsonResponse(AssistantFileSchema, "Kept."),
+    400: errorResponse("No file, or not a photo or PDF Merran can read."),
+    413: errorResponse("The file is too big."),
     ...SIGNED_IN_ERRORS,
   },
 })
@@ -67,17 +66,17 @@ const route = createRoute({
 export default (router: Router, { files }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { householdId, userId } = inHousehold(c)
-    const { photo } = await c.req.parseBody()
-    if (!(photo instanceof File)) {
-      throw new AppError("invalid", "no_photo", "Add a photo.", {
-        photo: "Add a photo.",
+    const { file } = await c.req.parseBody()
+    if (!(file instanceof File)) {
+      throw new AppError("invalid", "no_file", "Add a photo or PDF.", {
+        file: "Add a photo or PDF.",
       })
     }
-    if (photo.size > MAX_PHOTO_BYTES) throw tooBig()
-    const kept = await storeChatPhoto(
+    if (file.size > MAX_PHOTO_BYTES) throw tooBig()
+    const kept = await storeChatFile(
       files,
       { householdId, userId },
-      Buffer.from(await photo.arrayBuffer())
+      Buffer.from(await file.arrayBuffer())
     )
     return c.json(kept, 201)
   })

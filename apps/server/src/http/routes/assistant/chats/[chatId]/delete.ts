@@ -16,7 +16,7 @@ const route = createRoute({
   tags: ["Assistant"],
   summary: "Delete a chat",
   description:
-    "Gone for good, with its messages and the photos in them. What was applied from it stays.",
+    "Gone for good, with its messages and the files in them. What was applied from it stays.",
   ...openToKeys("assistant", "write"),
   request: { params: ChatParam },
   responses: {

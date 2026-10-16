@@ -133,19 +133,28 @@ const startChat = async (who = kyle) => {
 const send = (chatId: string, text: string, context?: object, who = kyle) =>
   who.post(`/api/assistant/chats/${chatId}/messages`, { text, context })
 
-/** A photo, uploaded the way the web app does. */
-async function uploadPhoto(photo: Buffer | string, who = kyle) {
+/** A photo or PDF, uploaded the way the web app does. */
+async function uploadFile(body: Buffer | string, name: string, who = kyle) {
   const data = new FormData()
-  data.append("photo", new File([photo], "pan.png"))
+  data.append("file", new File([body], name))
   const request = new Request("http://merran.test", {
     method: "POST",
     body: data,
   })
-  return who.send("POST", "/api/assistant/photos", {
+  return who.send("POST", "/api/assistant/files", {
     body: new Uint8Array(await request.arrayBuffer()),
     type: request.headers.get("content-type")!,
   })
 }
+
+/** The smallest PDF there is: one empty page. */
+const PDF = `%PDF-1.4
+1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
+2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
+3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 200 200] >> endobj
+trailer << /Root 1 0 R >>
+%%EOF
+`
 
 /** The proposal a tool made, from the stream. */
 const proposed = (parts: Record<string, unknown>[]) =>
@@ -514,32 +523,43 @@ describe("the assistant", () => {
     })
       .png()
       .toBuffer()
-    const notPhoto = await uploadPhoto("not a photo")
+    const notPhoto = await uploadFile("not a photo", "notes.txt")
     expect(notPhoto.status).toBe(400)
-    const uploaded = await uploadPhoto(png)
+    const uploaded = await uploadFile(png, "pan.png")
     expect(uploaded.status, await uploaded.clone().text()).toBe(201)
     const photo = (await uploaded.json()) as { id: string; url: string }
-    expect(photo.url).toBe(`/api/assistant/photos/${photo.id}`)
+    expect(photo).toMatchObject({
+      url: `/api/assistant/files/${photo.id}`,
+      mediaType: "image/jpeg",
+    })
 
     const shown = await kyle.get(photo.url)
     expect(shown.status).toBe(200)
     expect(shown.headers.get("content-type")).toBe("image/jpeg")
     expect((await sam.get(photo.url)).status).toBe(404)
+    // Sam can't delete it either; one taken out before sending is deleted.
+    expect((await sam.delete(photo.url)).status).toBe(204)
+    expect((await kyle.get(photo.url)).status).toBe(200)
+    const unsent = (await (await uploadFile(png, "other.png")).json()) as {
+      url: string
+    }
+    expect((await kyle.delete(unsent.url)).status).toBe(204)
+    expect((await kyle.get(unsent.url)).status).toBe(404)
 
     const chatId = await startChat()
-    // Neither words nor a photo is nothing to send.
+    // Neither words nor a file is nothing to send.
     expect((await send(chatId, " ")).status).toBe(400)
     const samsChat = await startChat(sam)
     const someoneElses = await sam.post(
       `/api/assistant/chats/${samsChat}/messages`,
-      { photos: [photo.id] }
+      { files: [{ id: photo.id }] }
     )
     expect(someoneElses.status).toBe(404)
     await sam.delete(`/api/assistant/chats/${samsChat}`)
 
     script = ["It needs a few more minutes: the edges are still pale."]
     const res = await kyle.post(`/api/assistant/chats/${chatId}/messages`, {
-      photos: [photo.id],
+      files: [{ id: photo.id, name: "pan.png" }],
     })
     expect(res.status, await res.clone().text()).toBe(200)
     await chunks(res)
@@ -548,20 +568,54 @@ describe("the assistant", () => {
     expect(said).toEqual([
       expect.objectContaining({ type: "file", mediaType: "image/jpeg" }),
     ])
-    expect(system()).toContain("Photos:")
+    expect(system()).toContain("Photos of what they're cooking")
 
     // Kept as a link to the photo, not the photo.
     const chat = await (await kyle.get(`/api/assistant/chats/${chatId}`)).json()
     expect(chat.messages[0].parts).toEqual([
-      { type: "file", mediaType: "image/jpeg", url: photo.url },
+      {
+        type: "file",
+        mediaType: "image/jpeg",
+        url: photo.url,
+        filename: "pan.png",
+      },
     ])
     expect(chat.title).toBe("New chat")
 
-    // Deleting the chat deletes its photos.
+    // Deleting the chat deletes its files.
     expect((await kyle.delete(`/api/assistant/chats/${chatId}`)).status).toBe(
       204
     )
     expect((await kyle.get(photo.url)).status).toBe(404)
+  })
+
+  test("reads a recipe from a PDF, which it offers to draft", async () => {
+    const uploaded = await uploadFile(PDF, "lasagna.pdf")
+    expect(uploaded.status, await uploaded.clone().text()).toBe(201)
+    const pdf = (await uploaded.json()) as { id: string; url: string }
+    expect(pdf).toMatchObject({ mediaType: "application/pdf" })
+    const shown = await kyle.get(pdf.url)
+    expect(shown.headers.get("content-type")).toBe("application/pdf")
+    expect(Buffer.from(await shown.arrayBuffer()).toString()).toBe(PDF)
+
+    const chatId = await startChat()
+    script = ["Here it is as a recipe."]
+    const res = await kyle.post(`/api/assistant/chats/${chatId}/messages`, {
+      text: "Add this one",
+      files: [{ id: pdf.id, name: "lasagna.pdf" }],
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    await chunks(res)
+    expect(asked.at(-1)!.content).toEqual([
+      expect.objectContaining({
+        type: "file",
+        mediaType: "application/pdf",
+        filename: "lasagna.pdf",
+      }),
+      { type: "text", text: "Add this one" },
+    ])
+    expect(system()).toContain("A recipe in a photo or a PDF")
+    await kyle.delete(`/api/assistant/chats/${chatId}`)
   })
 
   test("a tool that fails tells the model, which carries on", async () => {

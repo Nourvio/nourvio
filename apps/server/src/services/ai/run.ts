@@ -73,6 +73,7 @@ export function aiUnavailable(why: Unavailable) {
 /** What a model that can't do something can't do, in words. */
 const ABILITY_WORDS: Record<ModelAbility, string> = {
   images: "read photos",
+  pdfs: "read PDFs",
   structured: "fill in a form",
   tools: "use tools",
   webSearch: "search the web",

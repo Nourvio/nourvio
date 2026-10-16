@@ -13,7 +13,13 @@ import { prepareAi } from "../ai/run.ts"
 import { householdToday } from "../pantry/pantry.ts"
 import { getTastes } from "../plan/preferences.ts"
 import { addMessages, chatMessages, findChat } from "./chats.ts"
-import { photosIn, photoUrl, readChatPhoto, withPhotos } from "./photos.ts"
+import {
+  filesIn,
+  fileUrl,
+  readChatFile,
+  withFiles,
+  type ChatFileType,
+} from "./files.ts"
 import { contextText, systemPrompt, type PageContext } from "./prompt.ts"
 import { assistantTools } from "./tools.ts"
 
@@ -36,8 +42,8 @@ export async function respond(
     userId: string
     chatId: string
     text: string
-    /** Photos sent with it, uploaded first. */
-    photos?: readonly string[]
+    /** Photos and PDFs sent with it, uploaded first. */
+    files?: readonly { id: string; name?: string }[]
     context?: PageContext
   }
 ): Promise<Response> {
@@ -45,26 +51,33 @@ export async function respond(
   const owner = { householdId, userId }
   const em = forHousehold(deps.database.em, householdId)
   const chat = await findChat(em, userId, options.chatId)
-  const photos = [...new Set(options.photos ?? [])]
-  for (const photoId of photos) {
-    if (!(await readChatPhoto(deps.files, owner, photoId))) {
+  const sent: { id: string; name?: string; mediaType: ChatFileType }[] = []
+  for (const file of options.files ?? []) {
+    if (sent.some((other) => other.id === file.id)) continue
+    const kept = await readChatFile(deps.files, owner, file.id)
+    if (!kept) {
       throw new AppError(
         "not_found",
-        "photo_not_found",
-        "That photo is gone. Add it again."
+        "file_not_found",
+        "That file is gone. Add it again."
       )
     }
+    sent.push({ ...file, mediaType: kept.mediaType })
   }
   const earlier = await chatMessages(em, chat)
+  const types = new Set(
+    [...filesIn(earlier), ...sent].map((file) => file.mediaType)
+  )
   // Checked before anything's kept: no AI, no message.
   const ai = await prepareAi(deps, em, {
     householdId,
     userId,
     task: "assistant",
-    needs:
-      photos.length > 0 || photosIn(earlier).length > 0
-        ? ["tools", "images"]
-        : ["tools"],
+    needs: [
+      "tools",
+      ...(types.has("image/jpeg") ? (["images"] as const) : []),
+      ...(types.has("application/pdf") ? (["pdfs"] as const) : []),
+    ],
   })
   const [history, person, household, tastes, today, onScreen] =
     await Promise.all([
@@ -84,10 +97,11 @@ export async function respond(
     id: uuidv7(),
     role: "user",
     parts: [
-      ...photos.map((photoId) => ({
+      ...sent.map((file) => ({
         type: "file" as const,
-        mediaType: "image/jpeg",
-        url: photoUrl(photoId),
+        mediaType: file.mediaType,
+        url: fileUrl(file.id),
+        ...(file.name ? { filename: file.name } : {}),
       })),
       ...(options.text ? [{ type: "text" as const, text: options.text }] : []),
     ],
@@ -115,7 +129,7 @@ export async function respond(
     model: ai.model,
     system,
     messages: await convertToModelMessages(
-      await withPhotos(deps.files, owner, messages),
+      await withFiles(deps.files, owner, messages),
       {
         tools,
         ignoreIncompleteToolCalls: true,

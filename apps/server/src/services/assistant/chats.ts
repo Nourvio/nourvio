@@ -3,7 +3,7 @@ import type { UIMessage } from "ai"
 import { AppError } from "../../core/errors.ts"
 import { Chat, ChatMessage, User } from "../../database/entities/index.ts"
 import type { FileStore } from "../storage/files.ts"
-import { photosIn, removeChatPhotos } from "./photos.ts"
+import { filesIn, removeChatFiles } from "./files.ts"
 
 // A person's chats with the assistant, in the household they're in: kept
 // to pick up again, newest first. Each message is kept as AI SDK's UI
@@ -83,7 +83,7 @@ export async function startChat(
   return describeChat(chat)
 }
 
-/** Deletes a chat, with its messages and the photos in them. */
+/** Deletes a chat, with its messages and the files in them. */
 export async function deleteChat(
   em: EntityManager,
   files: FileStore,
@@ -91,9 +91,13 @@ export async function deleteChat(
   chatId: string
 ) {
   const chat = await findChat(em, owner.userId, chatId)
-  const photos = photosIn(await chatMessages(em, chat))
+  const sent = filesIn(await chatMessages(em, chat))
   await em.remove(chat).flush()
-  await removeChatPhotos(files, owner, photos)
+  await removeChatFiles(
+    files,
+    owner,
+    sent.map((file) => file.id)
+  )
 }
 
 /**

@@ -1996,13 +1996,22 @@
       "minutes": "{{minutes}} min"
     },
     "close": "Close",
-    "photos": {
-      "add": "Add a photo",
-      "remove": "Remove this photo",
-      "attached": "A photo to send",
-      "sent": "A photo you sent",
-      "tooMany": "Up to {{count}} photos at a time.",
-      "camera": "Take a photo"
+    "files": {
+      "add": "Add a photo or file",
+      "choose": "Upload a photo or file",
+      "camera": "Take a photo",
+      "cameraDescription": "Point it at what you're cooking, or at a recipe.",
+      "cameraBlocked": "Merran can't use the camera. Allow it in your browser's settings, or add a photo instead.",
+      "takeIt": "Take photo",
+      "photo": "Photo",
+      "pdf": "PDF",
+      "preview": "Show {{name}}",
+      "previewDescription": "A file added to the chat, bigger.",
+      "openOwn": "Open it on its own",
+      "remove": "Remove {{name}}",
+      "tooMany": "Up to {{count}} at a time.",
+      "notUsable": "Only photos and PDFs can be added.",
+      "pdfTooBig": "{{name}} is too big. Use a PDF under 10 MB."
     }
   },
   "discover": {

@@ -1,20 +1,27 @@
 import {
   ArrowUp02Icon,
+  Attachment01Icon,
   Cancel01Icon,
   Camera01Icon,
   CheckmarkCircle02Icon,
-  ImageAdd01Icon,
+  PlusSignIcon,
   StopIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useChat } from "@ai-sdk/react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { DefaultChatTransport, type UIMessage } from "ai"
+import { DefaultChatTransport, type FileUIPart, type UIMessage } from "ai"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
 import type { Proposal } from "@/features/recipes/tidy/queries"
@@ -22,13 +29,18 @@ import { api, CLIENT_ID, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 
 import { useAssistant } from "./assistant-context"
-import { Markdown } from "./markdown"
 import {
-  AttachedPhotos,
-  photoIdOf,
-  SentPhotos,
-  useAttachedPhotos,
-} from "./photos"
+  ACCEPT,
+  AttachmentTray,
+  CameraDialog,
+  FilePreview,
+  fileIdOf,
+  SentFiles,
+  useAttachments,
+  useCanTakePhoto,
+  type Previewed,
+} from "./attachments"
+import { Markdown } from "./markdown"
 import { ProposalCard } from "./proposal-card"
 
 /** Ideas to start with, on a new chat. */
@@ -75,7 +87,11 @@ export function ChatView({
   const { page } = useAssistant()
   const [aboutPage, setAboutPage] = React.useState(true)
   const [text, setText] = React.useState("")
-  const attached = useAttachedPhotos()
+  const attached = useAttachments()
+  const canTakePhoto = useCanTakePhoto()
+  const [webcam, setWebcam] = React.useState(false)
+  const [previewed, setPreviewed] = React.useState<Previewed | null>(null)
+  const [dragging, setDragging] = React.useState(false)
   const picker = React.useRef<HTMLInputElement>(null)
   const camera = React.useRef<HTMLInputElement>(null)
   const scroller = React.useRef<HTMLDivElement>(null)
@@ -113,15 +129,17 @@ export function ChatView({
           const said = parts
             .flatMap((part) => (part.type === "text" ? [part.text] : []))
             .join("\n")
-          const photos = parts.flatMap((part) => {
-            const id = part.type === "file" ? photoIdOf(part.url) : null
-            return id ? [id] : []
+          const files = parts.flatMap((part) => {
+            const id = part.type === "file" ? fileIdOf(part.url) : null
+            return id && part.type === "file"
+              ? [{ id, ...(part.filename ? { name: part.filename } : {}) }]
+              : []
           })
           return {
             api: `/api/assistant/chats/${chat.current}/messages`,
             body: {
               text: said,
-              ...(photos.length > 0 ? { photos } : {}),
+              ...(files.length > 0 ? { files } : {}),
               context: context.current,
             },
           }
@@ -146,11 +164,25 @@ export function ChatView({
   }, [messages, status])
 
   const ready =
-    (text.trim() !== "" || attached.photos.length > 0) && !attached.uploading
+    (text.trim() !== "" || attached.files.length > 0) && !attached.uploading
+
+  /** A photo or PDF, bigger; a phone shows a PDF best on its own. */
+  function preview(file: Previewed) {
+    if (file.pdf && window.matchMedia("(pointer: coarse)").matches) {
+      window.open(file.url, "_blank", "noopener")
+      return
+    }
+    setPreviewed(file)
+  }
+
+  function takePhoto() {
+    if (canTakePhoto === "phone") camera.current?.click()
+    else setWebcam(true)
+  }
 
   function send(said: string) {
     const trimmed = said.trim()
-    if ((!trimmed && attached.photos.length === 0) || attached.uploading) return
+    if ((!trimmed && attached.files.length === 0) || attached.uploading) return
     if (busy) return
     clearError()
     const files = attached.take()
@@ -185,7 +217,7 @@ export function ChatView({
           <ol className="grid gap-5">
             {messages.map((message) => (
               <li key={message.id}>
-                <Message message={message} />
+                <Message message={message} onPreview={preview} />
               </li>
             ))}
           </ol>
@@ -203,15 +235,10 @@ export function ChatView({
       </div>
 
       <form
-        className="grid gap-2 border-t px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
+        className="px-3 pt-1 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]"
         onSubmit={(event) => {
           event.preventDefault()
           send(text)
-        }}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => {
-          event.preventDefault()
-          void attached.add([...event.dataTransfer.files])
         }}
       >
         {(
@@ -225,7 +252,7 @@ export function ChatView({
             key={capture ?? "pick"}
             ref={ref}
             type="file"
-            accept="image/*"
+            accept={capture ? "image/*" : ACCEPT}
             capture={capture}
             multiple={!capture}
             hidden
@@ -235,52 +262,27 @@ export function ChatView({
             }}
           />
         ))}
-        {page?.recipe && aboutPage && (
-          <span className="flex w-fit max-w-full items-center gap-1 rounded-full bg-muted py-0.5 pr-1 pl-3 text-xs text-muted-foreground">
-            <span className="truncate">
-              {t("assistant.about", { name: page.recipe.name })}
-            </span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-xs"
-              className="rounded-full"
-              aria-label={t("assistant.notAbout")}
-              onClick={() => setAboutPage(false)}
-            >
-              <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-            </Button>
-          </span>
-        )}
-        <AttachedPhotos photos={attached.photos} onRemove={attached.remove} />
-        <div className="flex items-end gap-2">
-          <div className="flex">
-            {/* A computer's file picker can't take one, so phones only. */}
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="hidden text-muted-foreground pointer-coarse:inline-flex"
-              aria-label={t("assistant.photos.camera")}
-              title={t("assistant.photos.camera")}
-              disabled={attached.full}
-              onClick={() => camera.current?.click()}
-            >
-              <HugeiconsIcon icon={Camera01Icon} strokeWidth={2} />
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="text-muted-foreground"
-              aria-label={t("assistant.photos.add")}
-              title={t("assistant.photos.add")}
-              disabled={attached.full}
-              onClick={() => picker.current?.click()}
-            >
-              <HugeiconsIcon icon={ImageAdd01Icon} strokeWidth={2} />
-            </Button>
-          </div>
+        <div
+          className={cn(
+            "grid gap-1 rounded-3xl border bg-input/30 p-2 transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50",
+            dragging && "border-primary bg-muted/60"
+          )}
+          onDragOver={(event) => {
+            event.preventDefault()
+            setDragging(true)
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault()
+            setDragging(false)
+            void attached.add([...event.dataTransfer.files])
+          }}
+        >
+          <AttachmentTray
+            files={attached.files}
+            onRemove={attached.remove}
+            onPreview={preview}
+          />
           <Textarea
             value={text}
             rows={1}
@@ -288,11 +290,11 @@ export function ChatView({
             enterKeyHint="send"
             placeholder={t("assistant.placeholder")}
             aria-label={t("assistant.placeholder")}
-            className="max-h-40 min-h-10 resize-none"
+            className="max-h-40 min-h-10 resize-none rounded-none border-0 bg-transparent px-2 py-1.5 shadow-none focus-visible:ring-0 dark:bg-transparent"
             onChange={(event) => setText(event.target.value)}
             onPaste={(event) => {
               const files = [...event.clipboardData.files]
-              if (!files.some((file) => file.type.startsWith("image/"))) return
+              if (files.length === 0) return
               event.preventDefault()
               void attached.add(files)
             }}
@@ -303,28 +305,91 @@ export function ChatView({
               }
             }}
           />
-          {busy ? (
-            <Button
-              type="button"
-              size="icon"
-              variant="outline"
-              aria-label={t("assistant.stop")}
-              onClick={() => void stop()}
-            >
-              <HugeiconsIcon icon={StopIcon} strokeWidth={2} />
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              size="icon"
-              aria-label={t("assistant.send")}
-              disabled={!ready}
-            >
-              <HugeiconsIcon icon={ArrowUp02Icon} strokeWidth={2} />
-            </Button>
-          )}
+          <div className="flex min-w-0 items-center gap-1.5">
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    type="button"
+                    size="icon-sm"
+                    variant="ghost"
+                    className="shrink-0 rounded-full text-muted-foreground"
+                    aria-label={t("assistant.files.add")}
+                    title={t("assistant.files.add")}
+                    disabled={attached.full}
+                  />
+                }
+              >
+                <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="top" align="start" className="w-auto">
+                {canTakePhoto && (
+                  <DropdownMenuItem onClick={takePhoto}>
+                    <HugeiconsIcon icon={Camera01Icon} strokeWidth={2} />
+                    {t("assistant.files.camera")}
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={() => picker.current?.click()}>
+                  <HugeiconsIcon icon={Attachment01Icon} strokeWidth={2} />
+                  {t("assistant.files.choose")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            {page?.recipe && aboutPage && (
+              <span className="flex min-w-0 items-center gap-0.5 rounded-full bg-muted py-0.5 pr-0.5 pl-2.5 text-xs text-muted-foreground">
+                <span className="truncate">
+                  {t("assistant.about", { name: page.recipe.name })}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-xs"
+                  className="shrink-0 rounded-full"
+                  aria-label={t("assistant.notAbout")}
+                  onClick={() => setAboutPage(false)}
+                >
+                  <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+                </Button>
+              </span>
+            )}
+            <div className="ml-auto shrink-0">
+              {busy ? (
+                <Button
+                  type="button"
+                  size="icon-sm"
+                  variant="outline"
+                  className="rounded-full"
+                  aria-label={t("assistant.stop")}
+                  onClick={() => void stop()}
+                >
+                  <HugeiconsIcon icon={StopIcon} strokeWidth={2} />
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  size="icon-sm"
+                  className="rounded-full"
+                  aria-label={t("assistant.send")}
+                  disabled={!ready}
+                >
+                  <HugeiconsIcon icon={ArrowUp02Icon} strokeWidth={2} />
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </form>
+      <CameraDialog
+        open={webcam}
+        onOpenChange={setWebcam}
+        onTaken={(photo) => void attached.add([photo])}
+      />
+      <FilePreview
+        file={previewed}
+        onOpenChange={(open) => {
+          if (!open) setPreviewed(null)
+        }}
+      />
     </div>
   )
 }
@@ -332,18 +397,24 @@ export function ChatView({
 type Part = UIMessage["parts"][number]
 
 /** A message: the person's on the right, the assistant's with its tools. */
-function Message({ message }: { message: UIMessage }) {
+function Message({
+  message,
+  onPreview,
+}: {
+  message: UIMessage
+  onPreview: (file: Previewed) => void
+}) {
   const { t } = useTranslation()
   if (message.role === "user") {
     const said = message.parts
       .flatMap((part) => (part.type === "text" ? [part.text] : []))
       .join("\n")
-    const photos = message.parts.flatMap((part) =>
-      part.type === "file" ? [part.url] : []
+    const files = message.parts.filter(
+      (part): part is FileUIPart => part.type === "file"
     )
     return (
       <div className="grid gap-2">
-        <SentPhotos urls={photos} />
+        <SentFiles parts={files} onPreview={onPreview} />
         {said && (
           <p className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-primary px-3.5 py-2 whitespace-pre-wrap text-primary-foreground">
             {said}

@@ -155,7 +155,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | A suggested model for each task | Detail | Built | |
 | The AI proposes, people apply: a Review queue | Key | Built | |
 | A cooking assistant to chat with, that can plan and edit with your OK | Headline | Built | AI; knows the recipe or week on screen, and offers changes as cards to apply |
-| Show the assistant a photo: is it done, is the sauce thick enough? | Key | Built | AI; any model that reads images; the camera opens on phones |
+| Show the assistant a photo: is it done, is the sauce thick enough? | Key | Built | AI; any model that reads images; take one with a phone's camera or a computer's webcam |
+| Send the assistant a recipe as a PDF or photo, and it drafts it for your library | Key | Built | AI; any model that reads PDFs or images |
 | Ask what to use instead, and get a swap to use this time or save | Detail | Built | AI |
 | Finding recipes online in chat | Key | Built | AI, with web search |
 

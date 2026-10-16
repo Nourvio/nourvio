@@ -44,7 +44,7 @@ export interface paths {
         post?: never;
         /**
          * Delete a chat
-         * @description Gone for good, with its messages and the photos in them. What was applied from it stays. With an API key, it needs the `assistant: write` permission.
+         * @description Gone for good, with its messages and the files in them. What was applied from it stays. With an API key, it needs the `assistant: write` permission.
          */
         delete: operations["deleteChat"];
         options?: never;
@@ -63,7 +63,7 @@ export interface paths {
         put?: never;
         /**
          * Ask the assistant
-         * @description Sends a message, and streams the assistant's answer back as AI SDK's UI message stream (server-sent events), the way `useChat` reads it: its text, and the tools it uses as it uses them. It can see photos sent with a message (uploaded first, with `POST /assistant/photos`) when the model reads photos, look things up in the household's recipes, plan, list and pantry, search the web when the model can, and propose changes, which come back as suggestions (`GET /proposals/{proposalId}`) for the person to apply. Both messages are kept. Uses the household's model for the assistant, which must be able to use tools, and counts towards its AI spend. With an API key, it needs the `assistant: write` permission.
+         * @description Sends a message, and streams the assistant's answer back as AI SDK's UI message stream (server-sent events), the way `useChat` reads it: its text, and the tools it uses as it uses them. It can see photos and PDFs sent with a message (uploaded first, with `POST /assistant/files`) when the model reads them, drafting a recipe from one, look things up in the household's recipes, plan, list and pantry, search the web when the model can, and propose changes, which come back as suggestions (`GET /proposals/{proposalId}`) for the person to apply. Both messages are kept. Uses the household's model for the assistant, which must be able to use tools, and counts towards its AI spend. With an API key, it needs the `assistant: write` permission.
          */
         post: operations["sendChatMessage"];
         delete?: never;
@@ -72,7 +72,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/assistant/photos": {
+    "/api/assistant/files": {
         parameters: {
             query?: never;
             header?: never;
@@ -82,17 +82,17 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Add a photo for the assistant
-         * @description A photo to send with a message, like what's in the pan: its id goes in the message's `photos`. JPEG, PNG or WebP, up to 15 MB; it's kept smaller, the right way up, with the person's chats. With an API key, it needs the `assistant: write` permission.
+         * Add a photo or PDF for the assistant
+         * @description A file to send with a message, by its id in the message's `files`: a photo of what's in the pan, or a recipe to draft, as a photo or PDF. A photo is JPEG, PNG or WebP up to 15 MB, kept smaller and the right way up; a PDF is up to 10 MB. They're kept with the person's chats. With an API key, it needs the `assistant: write` permission.
          */
-        post: operations["uploadAssistantPhoto"];
+        post: operations["uploadAssistantFile"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/assistant/photos/{photoId}": {
+    "/api/assistant/files/{fileId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -100,13 +100,17 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * A photo sent to the assistant
-         * @description As JPEG. Only the person who sent it sees it, like their chats. A photo never changes, so it can be kept for good. With an API key, it needs the `assistant: read` permission.
+         * A file sent to the assistant
+         * @description A photo as JPEG, or a PDF. Only the person who sent it sees it, like their chats. A file never changes, so it can be kept for good. With an API key, it needs the `assistant: read` permission.
          */
-        get: operations["getAssistantPhoto"];
+        get: operations["getAssistantFile"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete a file sent to the assistant
+         * @description For one taken out of a message before it's sent. A message it's already in says it's gone. One that's already gone is fine. With an API key, it needs the `assistant: write` permission.
+         */
+        delete: operations["deleteAssistantFile"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2905,8 +2909,11 @@ export interface components {
         /**
          * @example {
          *       "text": "Is this thick enough?",
-         *       "photos": [
-         *         "4f1c2a9e7b3d5f6a8c0e1b2d"
+         *       "files": [
+         *         {
+         *           "id": "4f1c2a9e7b3d5f6a8c0e1b2d",
+         *           "name": "sauce.jpg"
+         *         }
          *       ],
          *       "context": {
          *         "recipe": "0199e8b0-5a10-7a01-8b00-000000000006"
@@ -2915,12 +2922,16 @@ export interface components {
          */
         ChatMessageInput: {
             /**
-             * @description What they say. Can be left out with photos.
+             * @description What they say. Can be left out with files.
              * @default
              */
             text: string;
-            /** @description Photos to send with it, up to 4, by the ids `POST /assistant/photos` gave them: of what they're cooking, say. The message keeps them as file parts, linking to each photo. */
-            photos?: string[];
+            /** @description Photos and PDFs to send with it, up to 4, by the ids `POST /assistant/files` gave them: a photo of what they're cooking, or a recipe to draft. The message keeps them as file parts, linking to each file. */
+            files?: {
+                id: string;
+                /** @description Its name, to show and to tell the model: "lasagna.pdf". */
+                name?: string;
+            }[];
             /** @description What's on their screen, for the assistant to know: "this recipe" is the one there. */
             context?: {
                 /** @description The recipe on their screen, by id or address. */
@@ -2932,13 +2943,19 @@ export interface components {
         /**
          * @example {
          *       "id": "4f1c2a9e7b3d5f6a8c0e1b2d",
-         *       "url": "/api/assistant/photos/4f1c2a9e7b3d5f6a8c0e1b2d"
+         *       "url": "/api/assistant/files/4f1c2a9e7b3d5f6a8c0e1b2d",
+         *       "mediaType": "image/jpeg"
          *     }
          */
-        AssistantPhoto: {
+        AssistantFile: {
             id: string;
             /** @description Where it's shown from. */
             url: string;
+            /**
+             * @description A photo is kept as JPEG; a PDF as it is.
+             * @enum {string}
+             */
+            mediaType: "image/jpeg" | "application/pdf";
         };
         /**
          * @example {
@@ -8020,7 +8037,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description No such chat of yours, or no such photo. */
+            /** @description No such chat of yours, or no such file. */
             404: {
                 headers: {
                     [name: string]: unknown;
@@ -8029,7 +8046,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description The model can't use tools, or read photos. */
+            /** @description The model can't use tools, or read photos or PDFs. */
             422: {
                 headers: {
                     [name: string]: unknown;
@@ -8049,7 +8066,7 @@ export interface operations {
             };
         };
     };
-    uploadAssistantPhoto: {
+    uploadAssistantFile: {
         parameters: {
             query?: never;
             header?: never;
@@ -8060,7 +8077,7 @@ export interface operations {
             content: {
                 "multipart/form-data": {
                     /** Format: binary */
-                    photo?: string;
+                    file?: string;
                 };
             };
         };
@@ -8071,10 +8088,10 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AssistantPhoto"];
+                    "application/json": components["schemas"]["AssistantFile"];
                 };
             };
-            /** @description No photo, or not one Merran can read. */
+            /** @description No file, or not a photo or PDF Merran can read. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -8101,7 +8118,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description The photo is too big. */
+            /** @description The file is too big. */
             413: {
                 headers: {
                     [name: string]: unknown;
@@ -8112,24 +8129,25 @@ export interface operations {
             };
         };
     };
-    getAssistantPhoto: {
+    getAssistantFile: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                photoId: string;
+                fileId: string;
             };
             cookie?: never;
         };
         requestBody?: never;
         responses: {
-            /** @description The photo. */
+            /** @description The file. */
             200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
                     "image/jpeg": string;
+                    "application/pdf": string;
                 };
             };
             /** @description Not signed in. */
@@ -8150,8 +8168,46 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description No such photo of yours. */
+            /** @description No such file of yours. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteAssistantFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
