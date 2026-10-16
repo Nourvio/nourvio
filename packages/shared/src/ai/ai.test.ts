@@ -1,5 +1,12 @@
 import { describe, expect, test } from "vitest"
-import { costOf, endpointRef, modelRef, parseModelRef } from "./catalog.ts"
+import {
+  costOf,
+  costPerUse,
+  endpointRef,
+  modelRef,
+  parseModelRef,
+  suggestedModel,
+} from "./catalog.ts"
 import {
   DEFAULT_AI_POLICY,
   nearLimit,
@@ -56,6 +63,18 @@ describe("models", () => {
     expect(parseModelRef("endpoint:abc")).toBeNull()
   })
 
+  test("suggest the right size for each task, and say what a use costs", () => {
+    expect(suggestedModel("anthropic", "import")).toBe("claude-sonnet-5-5")
+    expect(suggestedModel("anthropic", "swaps")).toBe("claude-haiku-5-5")
+    expect(suggestedModel("openai", "assistant")).toBe("gpt-6-sol")
+    // A recipe read by Sonnet: 8,000 in at $2 a million, 1,500 out at $10.
+    expect(costPerUse([2, 10], "import")).toBeCloseTo(0.031)
+    // By Opus, twice that.
+    expect(costPerUse([4, 20], "import")).toBeCloseTo(0.062)
+    // A swap by Haiku, a sliver of a cent.
+    expect(costPerUse([0.1, 0.5], "swaps")).toBeLessThan(0.001)
+  })
+
   test("cost what they cost, an address of one's own nothing", () => {
     // $4 in and $20 out a million tokens.
     expect(costOf("anthropic", "claude-opus-5-5", 10_000, 1_000)).toBeCloseTo(
@@ -100,7 +119,7 @@ describe("whose key pays", () => {
     expect(resolveAi(input())).toMatchObject({
       ok: true,
       key: { id: "server-claude" },
-      ref: "anthropic:claude-opus-5-5",
+      ref: "anthropic:claude-sonnet-5-5",
     })
     expect(resolveAi(input({ task: "swaps" }))).toMatchObject({
       ok: true,

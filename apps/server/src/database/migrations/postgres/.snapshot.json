@@ -325,6 +325,40 @@
           "enumItems": [],
           "mappedType": "uuid"
         },
+        "credit": {
+          "name": "credit",
+          "type": "double precision",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "double"
+        },
+        "credit_since": {
+          "name": "credit_since",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
         "hint": {
           "name": "hint",
           "type": "varchar(255)",
@@ -409,6 +443,23 @@
           "collation": null,
           "enumItems": [],
           "mappedType": "string"
+        },
+        "out_of_credit_at": {
+          "name": "out_of_credit_at",
+          "type": "timestamptz(6)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 6,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
         },
         "provider": {
           "name": "provider",
@@ -644,6 +695,23 @@
           "enumItems": [],
           "mappedType": "integer"
         },
+        "key": {
+          "name": "key",
+          "type": "varchar(255)",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": 255,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "string"
+        },
         "model": {
           "name": "model",
           "type": "varchar(255)",
@@ -791,6 +859,16 @@
           "composite": true,
           "constraint": false,
           "keyName": "ai_usage_household_id_month_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "key"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "ai_usage_key_index",
           "primary": false,
           "unique": false
         },

@@ -79,7 +79,17 @@ export function ServerAiKeysCard() {
         <CardTitle>{t("ai.server.keysTitle")}</CardTitle>
         <CardDescription>{t("ai.server.keysDescription")}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="grid gap-3">
+        {data?.keys.some((key) => key.outOfCreditAt) && (
+          <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            {t("ai.server.outOfCredit")}
+          </p>
+        )}
+        {data?.keys.some((key) => key.lowOnCredit) && (
+          <p className="rounded-xl border border-amber-500/30 bg-amber-500/[0.07] px-3 py-2 text-sm">
+            {t("ai.server.lowOnCredit")}
+          </p>
+        )}
         {!data ? (
           <Skeleton className="h-24" />
         ) : (
@@ -88,10 +98,11 @@ export function ServerAiKeysCard() {
             canAddKeys
             canAddAddresses
             onAdd={async (key) => {
-              await unwrap(
+              const added = await unwrap(
                 api.POST("/api/settings/server/ai/keys", { body: key })
               )
               await refresh()
+              return added
             }}
             onRemove={async (key) => {
               await unwrap(
@@ -102,9 +113,19 @@ export function ServerAiKeysCard() {
               await refresh()
             }}
             onTest={async (key) => {
-              await unwrap(
+              const tested = await unwrap(
                 api.POST("/api/settings/server/ai/keys/{keyId}/test", {
                   params: { path: { keyId: key.id } },
+                })
+              )
+              await refresh()
+              return tested
+            }}
+            onSetCredit={async (key, amount) => {
+              await unwrap(
+                api.PUT("/api/settings/server/ai/keys/{keyId}/credit", {
+                  params: { path: { keyId: key.id } },
+                  body: { amount },
                 })
               )
               await refresh()
@@ -316,6 +337,7 @@ export function ServerAiPolicyCard() {
               id={`${id}-large`}
               value={policy.large}
               options={data.models}
+              task="import"
               noneLabel={t("ai.models.keyDefault")}
               onChange={(large) => change({ large })}
             />
@@ -328,6 +350,7 @@ export function ServerAiPolicyCard() {
               id={`${id}-small`}
               value={policy.small}
               options={data.models}
+              task="swaps"
               noneLabel={t("ai.models.keyDefault")}
               onChange={(small) => change({ small })}
             />

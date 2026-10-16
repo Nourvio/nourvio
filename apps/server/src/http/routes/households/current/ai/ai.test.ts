@@ -47,7 +47,9 @@ let kyleId: string
 const calls: FetchCall[] = []
 const fetcher = fakeAiFetcher(calls)
 const targets: AiTarget[] = []
-const ai = mockAiModels({ input: 10_000, output: 1_000 }, targets)
+/** Providers whose keys answer as out of credit, for the tests that need it. */
+const outOfCredit = new Set<string>()
+const ai = mockAiModels({ input: 10_000, output: 1_000 }, targets, outOfCredit)
 
 const householdAi = async (who: TestClient) => {
   const res = await who.get("/api/households/current/ai")
@@ -113,7 +115,7 @@ describe("a household's AI", () => {
     })
     expect(home.status.tasks.import).toEqual({
       ok: true,
-      ref: "anthropic:claude-opus-5-5",
+      ref: "anthropic:claude-sonnet-5-5",
       source: "server",
     })
     expect(home.status.tasks.swaps).toMatchObject({
@@ -257,33 +259,33 @@ describe("AI calls", () => {
     )
 
   test("go on whose key pays, and say what they took and cost", async () => {
-    await setPolicy({ monthlyLimit: 0.05 })
+    await setPolicy({ monthlyLimit: 0.025 })
     const result = await call()
     expect(result.text).toBe("ok")
     expect(targets.at(-1)).toMatchObject({
       provider: "anthropic",
-      model: "claude-opus-5-5",
+      model: "claude-sonnet-5-5",
       apiKey: GOOD_KEYS.anthropic,
     })
 
     const home = await householdAi(kyle)
-    // 10,000 tokens in at $4 a million, 1,000 out at $20.
-    expect(home.usage.months[0].server).toBeCloseTo(0.06)
+    // 10,000 tokens in at $2 a million, 1,000 out at $10.
+    expect(home.usage.months[0].server).toBeCloseTo(0.03)
     expect(home.usage.months[0].household).toBe(0)
     expect(home.usage.tasks).toEqual([
-      { task: "import", cost: expect.closeTo(0.06), calls: 1 },
+      { task: "import", cost: expect.closeTo(0.03), calls: 1 },
     ])
     expect(home.usage.people).toEqual([
-      { userId: kyleId, name: "Kyle", cost: expect.closeTo(0.06), calls: 1 },
+      { userId: kyleId, name: "Kyle", cost: expect.closeTo(0.03), calls: 1 },
     ])
-    expect(home.status.server).toMatchObject({ limit: 0.05, near: true })
+    expect(home.status.server).toMatchObject({ limit: 0.025, near: true })
 
     const server = await (await kyle.get("/api/settings/server/ai")).json()
     expect(
       server.households.find((h: { id: string }) => h.id === homeId)
-    ).toMatchObject({ spent: expect.closeTo(0.06), near: true })
+    ).toMatchObject({ spent: expect.closeTo(0.03), near: true })
     expect(server.usage.models).toEqual([
-      expect.objectContaining({ model: "claude-opus-5-5", calls: 1 }),
+      expect.objectContaining({ model: "claude-sonnet-5-5", calls: 1 }),
     ])
   })
 
@@ -293,8 +295,154 @@ describe("AI calls", () => {
     const home = await householdAi(kyle)
     expect(home.status.tasks.import).toEqual({ ok: false, why: "overLimit" })
     // A higher limit for this household lets it go on.
-    await setPolicy({ monthlyLimit: 0.05, limits: { [homeId]: 1 } })
+    await setPolicy({ monthlyLimit: 0.025, limits: { [homeId]: 1 } })
     expect((await call()).text).toBe("ok")
     await setPolicy({})
+  })
+})
+
+describe("a key's credit", () => {
+  const call = () =>
+    useAi(
+      { settings, fetcher, ai },
+      forHousehold(database.em.fork(), homeId),
+      { householdId: homeId, userId: kyleId, task: "import" },
+      (model) => generateText({ model, prompt: "A recipe, please." })
+    )
+  const serverClaude = async () =>
+    (await (await kyle.get("/api/settings/server/ai")).json()).keys.find(
+      (key: { provider: string }) => key.provider === "anthropic"
+    )
+  const homeOpenAi = async () =>
+    (await householdAi(kyle)).keys.find(
+      (key: { provider: string }) => key.provider === "openai"
+    )
+
+  test("counts down from what's entered, warning when it's low", async () => {
+    const key = await serverClaude()
+    const path = `/api/settings/server/ai/keys/${key.id}/credit`
+    const res = await kyle.put(path, { amount: 0.035 })
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect((await res.json()).credit).toMatchObject({
+      amount: 0.035,
+      spent: 0,
+      left: 0.035,
+    })
+
+    // Sonnet reads a recipe for about 3¢.
+    await call()
+    const after = await serverClaude()
+    expect(after.credit.left).toBeCloseTo(0.005)
+    expect(after.lowOnCredit).toBe(true)
+    // The household that relies on it hears so.
+    expect((await householdAi(kyle)).status.keyAlerts).toEqual([
+      {
+        id: key.id,
+        source: "server",
+        provider: "anthropic",
+        name: null,
+        outOfCredit: false,
+        left: expect.closeTo(0.005),
+      },
+    ])
+
+    const cleared = await (await kyle.put(path, { amount: null })).json()
+    expect(cleared).toMatchObject({ credit: null, lowOnCredit: false })
+  })
+
+  test("is noted when the provider says it's out, and the next key is used", async () => {
+    // Home's own OpenAI key comes first.
+    const added = await kyle.post("/api/households/current/ai/keys", {
+      provider: "openai",
+      key: GOOD_KEYS.openai,
+    })
+    expect(added.status, await added.clone().text()).toBe(201)
+    outOfCredit.add("openai")
+    expect((await call()).text).toBe("ok")
+    expect(targets.at(-1)).toMatchObject({ provider: "anthropic" })
+
+    const home = await householdAi(kyle)
+    const own = home.keys.find(
+      (key: { provider: string }) => key.provider === "openai"
+    )
+    expect(own.outOfCreditAt).not.toBeNull()
+    expect(home.status.keyAlerts).toContainEqual(
+      expect.objectContaining({
+        id: own.id,
+        source: "household",
+        outOfCredit: true,
+      })
+    )
+    // Passed over for now: the server's key does big tasks.
+    expect(home.status.tasks.import).toMatchObject({ source: "server" })
+  })
+
+  test("says so when there's no other key", async () => {
+    outOfCredit.add("anthropic")
+    await expect(call()).rejects.toMatchObject({ code: "ai_out_of_credit" })
+    expect((await serverClaude()).outOfCreditAt).not.toBeNull()
+    expect((await householdAi(kyle)).status.available).toBe(false)
+  })
+
+  test("is tried again once it's topped up, or tests well", async () => {
+    outOfCredit.clear()
+    const key = await serverClaude()
+    await kyle.put(`/api/settings/server/ai/keys/${key.id}/credit`, {
+      amount: 20,
+    })
+    expect((await serverClaude()).outOfCreditAt).toBeNull()
+
+    // A test checks credit with one tiny call on its cheapest model.
+    const own = await homeOpenAi()
+    const tested = await (
+      await kyle.post(`/api/households/current/ai/keys/${own.id}/test`)
+    ).json()
+    expect(tested.outOfCreditAt).toBeNull()
+    expect(tested.creditCheck).toEqual({ result: "ok", message: null })
+    expect(targets.at(-1)).toMatchObject({
+      provider: "openai",
+      model: "gpt-6-luna",
+    })
+    outOfCredit.add("openai")
+    const empty = await (
+      await kyle.post(`/api/households/current/ai/keys/${own.id}/test`)
+    ).json()
+    expect(empty.outOfCreditAt).not.toBeNull()
+    expect(empty.creditCheck).toEqual({ result: "out", message: null })
+    outOfCredit.clear()
+    expect((await call()).text).toBe("ok")
+  })
+
+  test("is entered by admins", async () => {
+    const key = await serverClaude()
+    const own = await homeOpenAi()
+    expect(
+      (
+        await jamie.put(`/api/settings/server/ai/keys/${key.id}/credit`, {
+          amount: 5,
+        })
+      ).status
+    ).toBe(403)
+    expect(
+      (
+        await sam.put(`/api/households/current/ai/keys/${own.id}/credit`, {
+          amount: 5,
+        })
+      ).status
+    ).toBe(403)
+    expect(
+      (
+        await jamie.put(`/api/households/current/ai/keys/${own.id}/credit`, {
+          amount: 5,
+        })
+      ).status
+    ).toBe(404)
+    expect(
+      (
+        await kyle.put(`/api/households/current/ai/keys/${own.id}/credit`, {
+          amount: -1,
+        })
+      ).status
+    ).toBe(400)
   })
 })

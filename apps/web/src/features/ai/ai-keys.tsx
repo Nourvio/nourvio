@@ -36,7 +36,7 @@ import {
 import { Spinner } from "@/components/ui/spinner"
 import { ApiError } from "@/lib/api/client"
 
-import type { AiKey, NewAiKey } from "./queries"
+import { formatMoney, type AiKey, type NewAiKey } from "./queries"
 
 type Choice = (typeof KEYED_PROVIDERS)[number] | "openai-compatible"
 
@@ -58,17 +58,36 @@ export function AiKeys({
   onAdd,
   onRemove,
   onTest,
+  onSetCredit,
 }: {
   keys: AiKey[]
   canAddKeys: boolean
   canAddAddresses: boolean
-  onAdd: (key: NewAiKey) => Promise<void>
+  onAdd: (key: NewAiKey) => Promise<AiKey>
   onRemove: (key: AiKey) => Promise<void>
-  onTest: (key: AiKey) => Promise<void>
+  onTest: (key: AiKey) => Promise<AiKey>
+  onSetCredit: (key: AiKey, amount: number | null) => Promise<void>
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [adding, setAdding] = React.useState(false)
+  const [crediting, setCrediting] = React.useState<AiKey | null>(null)
+  const money = (dollars: number) => formatMoney(dollars, i18n.language)
   const [busy, setBusy] = React.useState<string | null>(null)
+
+  /** Says what a test found: it works, and whether it has credit. */
+  function sayChecked(key: AiKey) {
+    const name = keyName(key)
+    const check = key.creditCheck
+    if (!check) toast.success(t("ai.keys.works", { name }))
+    else if (check.result === "ok")
+      toast.success(t("ai.keys.worksWithCredit", { name }))
+    else if (check.result === "out")
+      toast.error(t("ai.keys.worksNoCredit", { name }))
+    else
+      toast.warning(
+        t("ai.keys.worksUnchecked", { name, why: check.message ?? "" })
+      )
+  }
 
   async function run(id: string, work: () => Promise<void>) {
     setBusy(id)
@@ -104,6 +123,16 @@ export function AiKeys({
                       {t("ai.keys.unreadable")}
                     </Badge>
                   )}
+                  {key.outOfCreditAt && (
+                    <Badge variant="destructive">
+                      {t("ai.keys.outOfCredit")}
+                    </Badge>
+                  )}
+                  {key.lowOnCredit && (
+                    <Badge className="bg-amber-500/15 text-amber-800 dark:text-amber-300">
+                      {t("ai.keys.lowOnCredit")}
+                    </Badge>
+                  )}
                 </span>
                 <span className="truncate text-sm text-muted-foreground">
                   {[
@@ -111,20 +140,34 @@ export function AiKeys({
                     key.hint && t("ai.keys.endsIn", { hint: key.hint }),
                     key.provider === "openai-compatible" &&
                       t("ai.keys.models", { count: key.models?.length ?? 0 }),
+                    key.credit &&
+                      t("ai.keys.creditLeft", {
+                        left: money(key.credit.left),
+                        amount: money(key.credit.amount),
+                      }),
                   ]
                     .filter(Boolean)
                     .join(" · ")}
                 </span>
               </div>
               <div className="flex gap-1">
+                {key.provider !== "openai-compatible" && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={busy !== null}
+                    onClick={() => setCrediting(key)}
+                  >
+                    {t("ai.keys.credit")}
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
                   disabled={busy !== null}
                   onClick={() =>
                     void run(key.id, async () => {
-                      await onTest(key)
-                      toast.success(t("ai.keys.works", { name: keyName(key) }))
+                      sayChecked(await onTest(key))
                     })
                   }
                 >
@@ -167,14 +210,110 @@ export function AiKeys({
           </Button>
         </div>
       )}
+      <CreditDialog
+        aiKey={crediting}
+        onOpenChange={(open) => {
+          if (!open) setCrediting(null)
+        }}
+        onSave={async (amount) => {
+          if (crediting) await onSetCredit(crediting, amount)
+        }}
+      />
       <AddKeyDialog
         open={adding}
         onOpenChange={setAdding}
         canAddKeys={canAddKeys}
         canAddAddresses={canAddAddresses}
-        onAdd={onAdd}
+        onAdd={async (key) => sayChecked(await onAdd(key))}
       />
     </div>
+  )
+}
+
+/**
+ * Notes the credit on a key, as its provider's dashboard says it is now:
+ * the providers don't tell Merran, so it counts down from here.
+ */
+function CreditDialog({
+  aiKey,
+  onOpenChange,
+  onSave,
+}: {
+  aiKey: AiKey | null
+  onOpenChange: (open: boolean) => void
+  onSave: (amount: number | null) => Promise<void>
+}) {
+  const { t } = useTranslation()
+  const [amount, setAmount] = React.useState("")
+  const [saving, setSaving] = React.useState(false)
+  const id = React.useId()
+  React.useEffect(() => {
+    setAmount(aiKey?.credit ? String(aiKey.credit.left.toFixed(2)) : "")
+  }, [aiKey])
+
+  async function save(value: number | null) {
+    setSaving(true)
+    try {
+      await onSave(value)
+      toast.success(t("ai.keys.creditSaved"))
+      onOpenChange(false)
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err
+      toast.error(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog open={aiKey !== null} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <form
+          className="grid gap-4"
+          onSubmit={(event) => {
+            event.preventDefault()
+            const value = Number(amount.replace(/[^0-9.]/g, ""))
+            if (amount.trim() && !Number.isNaN(value)) void save(value)
+          }}
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {t("ai.keys.creditTitle", { name: aiKey ? keyName(aiKey) : "" })}
+            </DialogTitle>
+            <DialogDescription>{t("ai.keys.creditHint")}</DialogDescription>
+          </DialogHeader>
+          <Field>
+            <FieldLabel htmlFor={`${id}-amount`}>
+              {t("ai.keys.creditAmount")}
+            </FieldLabel>
+            <Input
+              id={`${id}-amount`}
+              inputMode="decimal"
+              className="max-w-40"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              autoFocus
+            />
+          </Field>
+          <DialogFooter>
+            {aiKey?.credit && (
+              <Button
+                type="button"
+                variant="ghost"
+                disabled={saving}
+                onClick={() => void save(null)}
+              >
+                {t("ai.keys.creditStop")}
+              </Button>
+            )}
+            <Button type="submit" disabled={saving || !amount.trim()}>
+              {saving && <Spinner data-icon="inline-start" />}
+              {t("ai.keys.creditSave")}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -228,7 +367,6 @@ function AddKeyDialog({
           ? { provider, name, baseUrl, key: key || null }
           : { provider, key }
       )
-      toast.success(t("ai.keys.added"))
       reset()
       onOpenChange(false)
     } catch (err) {

@@ -12,7 +12,7 @@ import type { EntityManager } from "@mikro-orm/sql"
 import type { AppDeps } from "../../core/context.ts"
 import { Household } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER } from "../../database/scope.ts"
-import { keyInfos } from "./keys.ts"
+import { keyInfos, listKeys } from "./keys.ts"
 import { coversHousehold, getPolicy } from "./policy.ts"
 import { spentThisMonth } from "./usage.ts"
 
@@ -134,6 +134,24 @@ export async function householdAiStatus(
   >
   const serverLimit = serverLimitFor(context.policy, householdId)
   const ownLimit = context.ai.monthlyLimit
+  // The keys it relies on that are out of credit, or running low.
+  const [ownKeys, serverKeys] = await Promise.all([
+    listKeys(deps, em, householdId),
+    context.covers ? listKeys(deps, em, null) : [],
+  ])
+  const keyAlerts = [
+    ...ownKeys.map((key) => ({ key, source: "household" as const })),
+    ...serverKeys.map((key) => ({ key, source: "server" as const })),
+  ]
+    .filter(({ key }) => key.outOfCreditAt || key.lowOnCredit)
+    .map(({ key, source }) => ({
+      id: key.id,
+      source,
+      provider: key.provider,
+      name: key.name,
+      outOfCredit: key.outOfCreditAt !== null,
+      left: key.credit?.left ?? null,
+    }))
   return {
     available: Object.values(tasks).some((task) => task.ok),
     tasks,
@@ -152,5 +170,6 @@ export async function householdAiStatus(
     },
     mayAddKeys: context.policy.householdKeys,
     mayAddAddresses: context.policy.householdAddresses,
+    keyAlerts,
   }
 }

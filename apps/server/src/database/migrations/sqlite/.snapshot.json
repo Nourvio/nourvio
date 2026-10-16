@@ -320,6 +320,40 @@
           "enumItems": [],
           "mappedType": "text"
         },
+        "credit": {
+          "name": "credit",
+          "type": "double",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "double"
+        },
+        "credit_since": {
+          "name": "credit_since",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
+        },
         "hint": {
           "name": "hint",
           "type": "text",
@@ -404,6 +438,23 @@
           "collation": null,
           "enumItems": [],
           "mappedType": "text"
+        },
+        "out_of_credit_at": {
+          "name": "out_of_credit_at",
+          "type": "datetime",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "datetime"
         },
         "provider": {
           "name": "provider",
@@ -658,6 +709,23 @@
           "enumItems": [],
           "mappedType": "integer"
         },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "text"
+        },
         "model": {
           "name": "model",
           "type": "text",
@@ -805,6 +873,16 @@
           "composite": true,
           "constraint": false,
           "keyName": "ai_usage_household_id_month_index",
+          "primary": false,
+          "unique": false
+        },
+        {
+          "columnNames": [
+            "key"
+          ],
+          "composite": false,
+          "constraint": false,
+          "keyName": "ai_usage_key_index",
           "primary": false,
           "unique": false
         },

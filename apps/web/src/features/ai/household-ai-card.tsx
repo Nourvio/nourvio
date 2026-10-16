@@ -1,6 +1,6 @@
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { AI_TASKS, TASK_SIZES } from "@merran/shared"
+import { AI_TASKS, PROVIDER_NAMES, TASK_SIZES } from "@merran/shared"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import * as React from "react"
 import { Link } from "@tanstack/react-router"
@@ -84,6 +84,47 @@ function StatusLine({ data }: { data: HouseholdAi }) {
   )
 }
 
+/** Keys the household relies on that are out of credit, or running low. */
+export function useKeyAlertText() {
+  const { t, i18n } = useTranslation()
+  return (alert: HouseholdAi["status"]["keyAlerts"][number]) => {
+    const name =
+      alert.provider === "openai-compatible"
+        ? (alert.name ?? t("ai.keys.address"))
+        : PROVIDER_NAMES[alert.provider]
+    const whose = t(`ai.alerts.whose.${alert.source}`, { name })
+    return alert.outOfCredit
+      ? t("ai.alerts.out", { whose })
+      : alert.left === null
+        ? t("ai.alerts.lowUnknown", { whose })
+        : t("ai.alerts.low", {
+            whose,
+            left: formatMoney(alert.left, i18n.language),
+          })
+  }
+}
+
+function KeyAlerts({ data }: { data: HouseholdAi }) {
+  const text = useKeyAlertText()
+  if (data.status.keyAlerts.length === 0) return null
+  return (
+    <ul className="grid gap-1.5">
+      {data.status.keyAlerts.map((alert) => (
+        <li
+          key={alert.id}
+          className={
+            alert.outOfCredit
+              ? "rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              : "rounded-xl border border-amber-500/30 bg-amber-500/[0.07] px-3 py-2 text-sm"
+          }
+        >
+          {text(alert)}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 /**
  * Settings → Household → AI: whose key pays, the household's own keys,
  * the models it picks, a limit on its own keys, and what it's spent.
@@ -153,6 +194,7 @@ export function HouseholdAiCard() {
       <CardContent>
         <FieldGroup>
           <StatusLine data={data} />
+          <KeyAlerts data={data} />
 
           <Field>
             <FieldLabel>{t("ai.household.serverKeys")}</FieldLabel>
@@ -182,10 +224,11 @@ export function HouseholdAiCard() {
                 canAddKeys={data.status.mayAddKeys}
                 canAddAddresses={data.status.mayAddAddresses}
                 onAdd={async (key) => {
-                  await unwrap(
+                  const added = await unwrap(
                     api.POST("/api/households/current/ai/keys", { body: key })
                   )
                   await refresh()
+                  return added
                 }}
                 onRemove={async (key) => {
                   await unwrap(
@@ -196,9 +239,19 @@ export function HouseholdAiCard() {
                   await refresh()
                 }}
                 onTest={async (key) => {
-                  await unwrap(
+                  const tested = await unwrap(
                     api.POST("/api/households/current/ai/keys/{keyId}/test", {
                       params: { path: { keyId: key.id } },
+                    })
+                  )
+                  await refresh()
+                  return tested
+                }}
+                onSetCredit={async (key, amount) => {
+                  await unwrap(
+                    api.PUT("/api/households/current/ai/keys/{keyId}/credit", {
+                      params: { path: { keyId: key.id } },
+                      body: { amount },
                     })
                   )
                   await refresh()
@@ -241,6 +294,7 @@ export function HouseholdAiCard() {
                   options={data.models}
                   noneLabel={t("ai.models.default")}
                   showSource
+                  task="import"
                   onChange={(large) => change({ large })}
                 />
               </Field>
@@ -254,10 +308,26 @@ export function HouseholdAiCard() {
                   options={data.models}
                   noneLabel={t("ai.models.default")}
                   showSource
+                  task="swaps"
                   onChange={(small) => change({ small })}
                 />
                 <FieldDescription>{t("ai.models.sizesHint")}</FieldDescription>
               </Field>
+              {(picked.large ||
+                picked.small ||
+                Object.keys(picked.tasks).length > 0) && (
+                <div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      change({ large: null, small: null, tasks: {} })
+                    }
+                  >
+                    {t("ai.models.useSuggested")}
+                  </Button>
+                </div>
+              )}
               <Collapsible>
                 <CollapsibleTrigger
                   render={
@@ -283,6 +353,7 @@ export function HouseholdAiCard() {
                         options={data.models}
                         noneLabel={t(`ai.models.${TASK_SIZES[task]}Default`)}
                         showSource
+                        task={task}
                         onChange={(ref) => {
                           const tasks = { ...picked.tasks }
                           if (ref) tasks[task] = ref
@@ -404,12 +475,15 @@ export function HouseholdAiCard() {
  */
 export function AiLimitNote() {
   const { t, i18n } = useTranslation()
+  const keyAlertText = useKeyAlertText()
   const { data } = useQuery({ ...householdAiQuery, staleTime: 5 * 60_000 })
   if (!data) return null
-  const { server, own } = data.status
+  const { server, own, keyAlerts } = data.status
   const money = (dollars: number) => formatMoney(dollars, i18n.language)
-  const text =
-    server.near && server.limit !== null
+  const alert = keyAlerts.find((one) => one.outOfCredit) ?? keyAlerts[0] ?? null
+  const text = alert
+    ? keyAlertText(alert)
+    : server.near && server.limit !== null
       ? t("ai.near.server", {
           spent: money(server.spent),
           limit: money(server.limit),

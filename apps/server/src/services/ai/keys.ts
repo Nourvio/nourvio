@@ -11,6 +11,15 @@ import { AiKey, Secret } from "../../database/entities/index.ts"
 import { ENV_KEYS } from "../../modules/ai/settings.ts"
 import { checkLink } from "../fetch/public-fetch.ts"
 import { UnreadableSecretError } from "../secrets/secret-box.ts"
+import {
+  checkCredit,
+  creditView,
+  passedOver,
+  setCredit,
+  stateOf,
+  type CreditCheck,
+  type KeyState,
+} from "./credit.ts"
 import { listModels, type AiTarget } from "./providers.ts"
 import { getPolicy } from "./policy.ts"
 
@@ -36,6 +45,14 @@ export type AiKeyView = {
   fromEnvironment: boolean
   /** Sealed with a master key the server no longer has: it needs entering again. */
   unreadable: boolean
+  /** The credit entered for it, what's been spent since, and about what's left. */
+  credit: { amount: number; since: string; spent: number; left: number } | null
+  /** When its provider last said it's out of credit; none since it worked. */
+  outOfCreditAt: string | null
+  /** About a fifth or less of its credit left, by Merran's count. */
+  lowOnCredit: boolean
+  /** What a test or adding it found of its credit, with one tiny call. */
+  creditCheck?: CreditCheck | null
 }
 
 /** A key to add: a provider's, or an address with a key or none. */
@@ -89,7 +106,21 @@ function readable(deps: Deps, row: AiKey) {
   }
 }
 
-function describe(deps: Deps, row: AiKey): AiKeyView {
+/** A key's credit as Settings shows it. */
+async function creditOf(em: EntityManager, keyId: string, state: KeyState) {
+  const view = await creditView(em, keyId, state)
+  return {
+    credit: view.credit,
+    outOfCreditAt: state.outOfCreditAt?.toISOString() ?? null,
+    lowOnCredit: view.lowOnCredit,
+  }
+}
+
+async function describe(
+  deps: Deps,
+  em: EntityManager,
+  row: AiKey
+): Promise<AiKeyView> {
   return {
     id: row.id,
     provider: row.provider,
@@ -100,6 +131,11 @@ function describe(deps: Deps, row: AiKey): AiKeyView {
     testedAt: row.testedAt?.toISOString() ?? null,
     fromEnvironment: false,
     unreadable: !readable(deps, row),
+    ...(await creditOf(em, row.id, {
+      credit: row.credit == null ? null : Number(row.credit),
+      creditSince: row.creditSince ?? null,
+      outOfCreditAt: row.outOfCreditAt ?? null,
+    })),
   }
 }
 
@@ -109,32 +145,54 @@ export async function listKeys(
   em: EntityManager,
   householdId: string | null
 ): Promise<AiKeyView[]> {
-  const rows = (await rowsOf(em, householdId)).map((row) => describe(deps, row))
+  const rows = await Promise.all(
+    (await rowsOf(em, householdId)).map((row) => describe(deps, em, row))
+  )
   if (householdId) return rows
-  const fromEnv = (await envKeys(deps)).map(({ provider, key }): AiKeyView => ({
-    id: envId(provider),
-    provider,
-    name: null,
-    baseUrl: null,
-    hint: hintOf(key),
-    models: null,
-    testedAt: null,
-    fromEnvironment: true,
-    unreadable: false,
-  }))
+  const fromEnv = await Promise.all(
+    (await envKeys(deps)).map(
+      async ({ provider, key }): Promise<AiKeyView> => ({
+        id: envId(provider),
+        provider,
+        name: null,
+        baseUrl: null,
+        hint: hintOf(key),
+        models: null,
+        testedAt: null,
+        fromEnvironment: true,
+        unreadable: false,
+        ...(await creditOf(
+          em,
+          envId(provider),
+          await stateOf(deps, em, envId(provider))
+        )),
+      })
+    )
+  )
   // A key in the environment wins over one added for the same provider.
   const set = new Set(fromEnv.map((key) => key.provider))
   return [...fromEnv, ...rows.filter((row) => !set.has(row.provider))]
 }
 
-/** The keys for choosing whose pays: readable ones, and addresses with models. */
+/**
+ * The keys for choosing whose pays: readable ones, and addresses with
+ * models, but not one out of credit within the hour.
+ */
 export async function keyInfos(
   deps: Deps,
   em: EntityManager,
   householdId: string | null
 ): Promise<AiKeyInfo[]> {
   return (await listKeys(deps, em, householdId))
-    .filter((key) => !key.unreadable)
+    .filter(
+      (key) =>
+        !key.unreadable &&
+        !passedOver({
+          credit: null,
+          creditSince: null,
+          outOfCreditAt: key.outOfCreditAt ? new Date(key.outOfCreditAt) : null,
+        })
+    )
     .map((key) => ({
       id: key.id,
       source: householdId ? "household" : "server",
@@ -180,7 +238,7 @@ export async function targetOf(
  * may add keys, or addresses, only if the server's AI policy lets them.
  */
 export async function addKey(
-  deps: Deps,
+  deps: Deps & Pick<AppDeps, "ai">,
   em: EntityManager,
   {
     householdId,
@@ -213,7 +271,7 @@ export async function addKey(
     homeNetwork,
   })
 
-  return em.transactional(async (tx) => {
+  const added = await em.transactional(async (tx) => {
     if (!address) {
       for (const old of await tx.find(
         AiKey,
@@ -235,8 +293,21 @@ export async function addKey(
       createdBy: userId,
     })
     await tx.flush()
-    return describe(deps, row)
+    return row.id
   })
+  const creditCheck = await checkCredit(
+    deps,
+    em,
+    added,
+    { provider: input.provider, apiKey: key, baseUrl, homeNetwork },
+    models
+  )
+  const row = await em.findOneOrFail(
+    AiKey,
+    { id: added },
+    { populate: ["secret"], refresh: true }
+  )
+  return { ...(await describe(deps, em, row)), creditCheck }
 }
 
 async function remove(em: EntityManager, row: AiKey) {
@@ -277,9 +348,35 @@ export async function removeKey(
   await remove(em, await ownRow(em, householdId, keyId))
 }
 
+/**
+ * Notes the credit on one of a household's keys, or the server's, as its
+ * provider's dashboard says it is now; null stops counting.
+ */
+export async function setKeyCredit(
+  deps: Deps,
+  em: EntityManager,
+  householdId: string | null,
+  keyId: string,
+  amount: number | null
+): Promise<AiKeyView> {
+  if (!keyId.startsWith("env:")) await ownRow(em, householdId, keyId)
+  const before = (await listKeys(deps, em, householdId)).find(
+    (key) => key.id === keyId
+  )
+  if (!before) throw notFound()
+  await setCredit(deps, em, keyId, amount)
+  const row = keyId.startsWith("env:")
+    ? null
+    : await em.findOne(AiKey, { id: keyId })
+  if (row) await em.refresh(row)
+  return (await listKeys(deps, em, householdId)).find(
+    (key) => key.id === keyId
+  )!
+}
+
 /** Tests a key again, and notes what it can use now. */
 export async function testKey(
-  deps: Deps,
+  deps: Deps & Pick<AppDeps, "ai">,
   em: EntityManager,
   householdId: string | null,
   keyId: string
@@ -288,10 +385,16 @@ export async function testKey(
   if (env && !householdId) {
     const target = await targetOf(deps, em, keyId, "")
     const models = await listModels(deps.fetcher, target)
+    const creditCheck = await checkCredit(deps, em, keyId, target, models)
     const [view] = (await listKeys(deps, em, null)).filter(
       (key) => key.id === keyId
     )
-    return { ...view!, models, testedAt: new Date().toISOString() }
+    return {
+      ...view!,
+      models,
+      testedAt: new Date().toISOString(),
+      creditCheck,
+    }
   }
   const row = await ownRow(em, householdId, keyId)
   if (!readable(deps, row)) {
@@ -305,5 +408,7 @@ export async function testKey(
   row.models = await listModels(deps.fetcher, target)
   row.testedAt = new Date()
   await em.flush()
-  return describe(deps, row)
+  const creditCheck = await checkCredit(deps, em, keyId, target, row.models)
+  await em.refresh(row)
+  return { ...(await describe(deps, em, row)), creditCheck }
 }

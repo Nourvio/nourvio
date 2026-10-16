@@ -1,3 +1,4 @@
+import { APICallError } from "ai"
 import { MockLanguageModelV4 } from "ai/test"
 import type { AiModels, AiTarget } from "../services/ai/providers.ts"
 import type { FetchOptions, Fetcher } from "../services/fetch/public-fetch.ts"
@@ -71,34 +72,61 @@ export function fakeAiFetcher(calls: FetchCall[] = []): Fetcher {
   }
 }
 
-/** Models that answer "ok", taking `tokens`, and remember where calls went. */
+/** What Anthropic answers a key with no credit. */
+const NO_CREDIT = JSON.stringify({
+  type: "error",
+  error: {
+    type: "invalid_request_error",
+    message:
+      "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.",
+  },
+})
+
+/**
+ * Models that answer "ok", taking `tokens`, and remember where calls went.
+ * Calls to a provider in `outOfCredit` are refused as a key with no credit.
+ */
 export function mockAiModels(
   tokens = { input: 10_000, output: 1_000 },
-  targets: AiTarget[] = []
+  targets: AiTarget[] = [],
+  outOfCredit: Set<string> = new Set()
 ): AiModels {
   return (target) => {
     targets.push(target)
     return new MockLanguageModelV4({
       provider: target.provider,
       modelId: target.model,
-      doGenerate: async () => ({
-        content: [{ type: "text", text: "ok" }],
-        finishReason: { unified: "stop", raw: "stop" },
-        usage: {
-          inputTokens: {
-            total: tokens.input,
-            noCache: tokens.input,
-            cacheRead: 0,
-            cacheWrite: 0,
+      doGenerate: async () => {
+        if (outOfCredit.has(target.provider)) {
+          throw new APICallError({
+            message:
+              "Your credit balance is too low to access the Anthropic API.",
+            url: "https://api.anthropic.com/v1/messages",
+            requestBodyValues: {},
+            statusCode: 400,
+            responseBody: NO_CREDIT,
+            isRetryable: false,
+          })
+        }
+        return {
+          content: [{ type: "text", text: "ok" }],
+          finishReason: { unified: "stop", raw: "stop" },
+          usage: {
+            inputTokens: {
+              total: tokens.input,
+              noCache: tokens.input,
+              cacheRead: 0,
+              cacheWrite: 0,
+            },
+            outputTokens: {
+              total: tokens.output,
+              text: tokens.output,
+              reasoning: 0,
+            },
           },
-          outputTokens: {
-            total: tokens.output,
-            text: tokens.output,
-            reasoning: 0,
-          },
-        },
-        warnings: [],
-      }),
+          warnings: [],
+        }
+      },
     })
   }
 }

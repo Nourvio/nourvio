@@ -125,6 +125,14 @@ export const AI_MODELS: readonly CatalogModel[] = [
   },
   {
     provider: "openai",
+    id: "gpt-6.1-sol",
+    name: "GPT-6.1 Sol",
+    size: "large",
+    abilities: ALL,
+    price: [2, 10],
+  },
+  {
+    provider: "openai",
     id: "gpt-6-luna",
     name: "GPT-6 Luna",
     size: "small",
@@ -157,15 +165,49 @@ export const AI_MODELS: readonly CatalogModel[] = [
   },
 ]
 
-/** The model each provider uses for each size when nobody's picked one. */
+/**
+ * The model each provider uses for each size when nobody's picked one:
+ * the one suggested, the right size and no bigger. Reading a recipe page
+ * or a photo, tidying one up or holding a conversation is well within
+ * Sonnet's reach, at half Opus's price; matching "onion" to "Onions, raw"
+ * is Haiku's.
+ */
 export const DEFAULT_MODELS: Record<
   KeyedProvider,
   Record<ModelSize, string>
 > = {
-  anthropic: { large: "claude-opus-5-5", small: "claude-haiku-5-5" },
+  anthropic: { large: "claude-sonnet-5-5", small: "claude-haiku-5-5" },
   openai: { large: "gpt-6-sol", small: "gpt-6-luna" },
   google: { large: "gemini-4-argon", small: "gemini-3.8-flash" },
 }
+
+/** The model suggested for a task on a provider: its size's default. */
+export const suggestedModel = (provider: KeyedProvider, task: AiTask) =>
+  DEFAULT_MODELS[provider][TASK_SIZES[task]]
+
+/**
+ * Roughly what a task takes each time, in tokens: a recipe page read, a
+ * message answered. For saying what a model would cost for it, "about 3¢
+ * a recipe", so a model that's more than a task needs shows.
+ */
+export const TASK_USE: Record<AiTask, { input: number; output: number }> = {
+  assistant: { input: 5_000, output: 600 },
+  import: { input: 8_000, output: 1_500 },
+  tidy: { input: 3_000, output: 2_500 },
+  notes: { input: 2_500, output: 800 },
+  swaps: { input: 800, output: 200 },
+  nutrition: { input: 1_200, output: 300 },
+  shopping: { input: 1_500, output: 200 },
+  receipts: { input: 2_000, output: 600 },
+  discover: { input: 1_500, output: 400 },
+  reminders: { input: 1_500, output: 200 },
+}
+
+/** About what one use of a task costs on a price, in US dollars. */
+export const costPerUse = (price: readonly number[], task: AiTask) =>
+  ((price[0] ?? 0) * TASK_USE[task].input +
+    (price[1] ?? 0) * TASK_USE[task].output) /
+  1_000_000
 
 export const PROVIDER_NAMES: Record<AiProvider, string> = {
   anthropic: "Claude",

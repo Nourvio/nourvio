@@ -1,3 +1,9 @@
+import {
+  costPerUse,
+  parseModelRef,
+  suggestedModel,
+  type AiTask,
+} from "@merran/shared"
 import { useTranslation } from "react-i18next"
 
 import {
@@ -10,7 +16,31 @@ import {
 
 import { formatMoney, type ModelOption } from "./queries"
 
-/** Picks a model from the ones some keys can run, or none for the default. */
+/** "about 3¢", "under 1¢", "about $1.20": what one use of a task costs. */
+export function usePerUse() {
+  const { t, i18n } = useTranslation()
+  return (dollars: number) =>
+    dollars < 0.01
+      ? t("ai.costs.underCent")
+      : dollars < 1
+        ? t("ai.costs.cents", { count: Math.round(dollars * 100) })
+        : t("ai.costs.dollars", { amount: formatMoney(dollars, i18n.language) })
+}
+
+/** Whether a model is the one suggested for a task. */
+export function isSuggested(ref: string, task: AiTask) {
+  const parsed = parseModelRef(ref)
+  return (
+    parsed?.kind === "keyed" &&
+    parsed.model === suggestedModel(parsed.provider, task)
+  )
+}
+
+/**
+ * Picks a model from the ones some keys can run, or none for the default.
+ * For a task, each says what a use of it costs on that model, and which
+ * is suggested, so one that's more than the task needs shows.
+ */
 export function ModelSelect({
   id,
   value,
@@ -19,6 +49,7 @@ export function ModelSelect({
   noneLabel,
   disabled,
   showSource,
+  task,
 }: {
   id?: string
   value: string | null
@@ -29,8 +60,11 @@ export function ModelSelect({
   disabled?: boolean
   /** Says which models run on the server's keys rather than one's own. */
   showSource?: boolean
+  /** The task it's for, or the one a size is like, for costs and suggestions. */
+  task?: AiTask
 }) {
   const { t, i18n } = useTranslation()
+  const perUse = usePerUse()
   const items = [
     { value: "", label: noneLabel },
     ...options.map((option) => {
@@ -38,15 +72,27 @@ export function ModelSelect({
         showSource && option.source === "server"
           ? t("ai.models.onServer", { name: option.name })
           : option.name
-      return {
-        value: option.ref,
-        label: option.price
+      const label = task
+        ? t("ai.models.perUse", {
+            name,
+            cost: option.price
+              ? perUse(costPerUse(option.price, task))
+              : t("ai.costs.free"),
+            unit: t(`ai.units.${task}`),
+          })
+        : option.price
           ? t("ai.models.priced", {
               name,
               input: formatMoney(option.price[0] ?? 0, i18n.language),
               output: formatMoney(option.price[1] ?? 0, i18n.language),
             })
-          : name,
+          : name
+      return {
+        value: option.ref,
+        label:
+          task && isSuggested(option.ref, task)
+            ? t("ai.models.suggested", { label })
+            : label,
       }
     }),
   ]
@@ -61,7 +107,7 @@ export function ModelSelect({
       onValueChange={(next) => onChange(next ? String(next) : null)}
       disabled={disabled}
     >
-      <SelectTrigger id={id} className="w-full sm:w-96">
+      <SelectTrigger id={id} className="w-full sm:w-[28rem]">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

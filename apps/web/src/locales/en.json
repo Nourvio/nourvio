@@ -1564,20 +1564,36 @@
       "keyHint": "Pasted whole. It can't be read back once it's added.",
       "cancel": "Cancel",
       "testAndAdd": "Test and add",
-      "added": "Added."
+      "added": "Added.",
+      "outOfCredit": "Out of credit",
+      "lowOnCredit": "Low on credit",
+      "creditLeft": "About {{left}} left of {{amount}}",
+      "credit": "Credit",
+      "creditTitle": "Credit on the {{name}} key",
+      "creditHint": "The providers don't tell Merran how much credit a key has, so enter what its dashboard says now. Merran counts what it spends from here and warns when about a fifth is left. Use of the key outside Merran isn't counted.",
+      "creditAmount": "Credit now, in US dollars",
+      "creditSave": "Save",
+      "creditStop": "Stop counting",
+      "creditSaved": "Noted.",
+      "worksWithCredit": "{{name}} works, and has credit.",
+      "worksNoCredit": "{{name}} works, but it's out of credit. Top it up with the provider, then test it again.",
+      "worksUnchecked": "{{name}} works, but its credit couldn't be checked: {{why}}"
     },
     "models": {
       "large": "Model for big tasks",
       "small": "Model for small tasks",
       "sizesHint": "Big tasks read pages and hold conversations; small ones match ingredients and pick products, where a cheap model does as well.",
-      "default": "Go by the keys",
-      "keyDefault": "Each key's own default",
-      "largeDefault": "The model for big tasks",
-      "smallDefault": "The model for small tasks",
+      "default": "Suggested for your keys",
+      "keyDefault": "Suggested for each key",
+      "largeDefault": "As for big tasks",
+      "smallDefault": "As for small tasks",
       "perTask": "A model for each task",
       "priced": "{{name}} · {{input}} in, {{output}} out a million tokens",
       "gone": "{{ref}} (no key for it now)",
-      "onServer": "{{name}}, on the server's keys"
+      "onServer": "{{name}}, on the server's keys",
+      "perUse": "{{name}} · {{cost}} {{unit}}",
+      "suggested": "{{label}} · suggested",
+      "useSuggested": "Use the suggested models"
     },
     "status": {
       "uses": {
@@ -1601,7 +1617,9 @@
     },
     "server": {
       "keysTitle": "AI keys",
-      "keysDescription": "The server's keys and addresses, for the households the policy below covers. A local Ollama goes here, as an address, for the households you choose. Keys can also be set in the environment (MERRAN_ANTHROPIC_API_KEY and the like)."
+      "keysDescription": "The server's keys and addresses, for the households the policy below covers. A local Ollama goes here, as an address, for the households you choose. Keys can also be set in the environment (MERRAN_ANTHROPIC_API_KEY and the like).",
+      "outOfCredit": "A key here is out of credit. Top it up with its provider, then enter its credit or test it, and it's used again.",
+      "lowOnCredit": "A key here is low on credit. Top it up with its provider, then enter its new credit."
     },
     "policy": {
       "title": "Who may use the server's AI",
@@ -1665,6 +1683,34 @@
     "near": {
       "server": "AI this month: {{spent}} of {{limit}} on the server's keys.",
       "own": "AI this month: {{spent}} of {{limit}} on your own keys."
+    },
+    "costs": {
+      "underCent": "under 1¢",
+      "cents_one": "about {{count}}¢",
+      "cents_other": "about {{count}}¢",
+      "dollars": "about {{amount}}",
+      "free": "free"
+    },
+    "units": {
+      "assistant": "a message",
+      "import": "a recipe",
+      "tidy": "a recipe",
+      "notes": "a note",
+      "swaps": "a swap",
+      "nutrition": "a recipe",
+      "shopping": "an item",
+      "receipts": "a receipt",
+      "discover": "a search",
+      "reminders": "a day"
+    },
+    "alerts": {
+      "whose": {
+        "server": "The server's {{name}} key",
+        "household": "Your {{name}} key"
+      },
+      "out": "{{whose}} is out of credit, so AI uses another key, or stops, until it's topped up.",
+      "low": "{{whose}} is low on credit: about {{left}} left.",
+      "lowUnknown": "{{whose}} is low on credit."
     }
   }
 }

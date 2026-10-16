@@ -1,6 +1,7 @@
 import {
   AI_TASKS,
   DEFAULT_AI_POLICY,
+  KEYED_PROVIDERS,
   parseModelRef,
   SERVER_KEYS_FOR,
   type AiPolicy,
@@ -35,6 +36,19 @@ export const aiPolicySchema: z.ZodType<AiPolicy> = z.object({
   small: modelRefSchema.nullable(),
 })
 
+/** What Merran knows of a key from the environment: its credit, and if it ran out. */
+export type EnvKeyState = {
+  credit: number | null
+  creditSince: string | null
+  outOfCreditAt: string | null
+}
+
+const envKeyStateSchema = z.object({
+  credit: z.number().nullable(),
+  creditSince: z.string().nullable(),
+  outOfCreditAt: z.string().nullable(),
+})
+
 /**
  * The server's AI keys can come from the environment, where they can't be
  * changed in the app; others are added in Settings → This server → AI.
@@ -61,6 +75,19 @@ export const AI = {
     envOnly: true,
     description:
       "A Gemini key for the server, for the households the AI policy covers. Keys can also be added in Settings.",
+  }),
+  envKeys: jsonSetting({
+    key: "ai.envKeys",
+    internal: true,
+    description:
+      "For each AI key set in the environment: the credit entered for it, and when its provider last said it's out.",
+    schema: z.partialRecord(
+      z.enum(KEYED_PROVIDERS),
+      envKeyStateSchema
+    ) as z.ZodType<
+      Partial<Record<(typeof KEYED_PROVIDERS)[number], EnvKeyState>>
+    >,
+    default: {},
   }),
   policy: jsonSetting({
     key: "ai.policy",

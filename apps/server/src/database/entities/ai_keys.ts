@@ -31,6 +31,14 @@ export const AiKey = defineEntity({
     /** An address's models, from its last test. */
     models: p.json<string[]>().nullable(),
     testedAt: p.datetime().nullable(),
+    /**
+     * The credit on the key when it was entered, in US dollars, for a
+     * rough "about $3 left": the providers don't say.
+     */
+    credit: p.double().nullable(),
+    creditSince: p.datetime().nullable(),
+    /** When the provider last said the key is out of credit. */
+    outOfCreditAt: p.datetime().nullable(),
     createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

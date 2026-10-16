@@ -1625,6 +1625,58 @@
               },
               "mayAddAddresses": {
                 "type": "boolean"
+              },
+              "keyAlerts": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "source": {
+                      "type": "string",
+                      "enum": [
+                        "server",
+                        "household"
+                      ]
+                    },
+                    "provider": {
+                      "type": "string",
+                      "enum": [
+                        "anthropic",
+                        "openai",
+                        "google",
+                        "openai-compatible"
+                      ]
+                    },
+                    "name": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "outOfCredit": {
+                      "type": "boolean"
+                    },
+                    "left": {
+                      "type": [
+                        "number",
+                        "null"
+                      ],
+                      "description": "About what's left, when credit was entered."
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "source",
+                    "provider",
+                    "name",
+                    "outOfCredit",
+                    "left"
+                  ]
+                },
+                "description": "The keys it relies on, its own and the server's, that are out of credit or running low."
               }
             },
             "required": [
@@ -1634,7 +1686,8 @@
               "server",
               "own",
               "mayAddKeys",
-              "mayAddAddresses"
+              "mayAddAddresses",
+              "keyAlerts"
             ]
           },
           "keys": {
@@ -1823,7 +1876,8 @@
               "near": false
             },
             "mayAddKeys": true,
-            "mayAddAddresses": false
+            "mayAddAddresses": false,
+            "keyAlerts": []
           },
           "keys": [],
           "settings": {
@@ -1921,6 +1975,77 @@
           "unreadable": {
             "type": "boolean",
             "description": "Sealed with a master key the server no longer has: take it off and add it again."
+          },
+          "credit": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "amount": {
+                "type": "number",
+                "description": "The credit entered, in US dollars."
+              },
+              "since": {
+                "type": "string",
+                "format": "date-time",
+                "description": "When it was entered."
+              },
+              "spent": {
+                "type": "number",
+                "description": "What Merran has spent on the key since."
+              },
+              "left": {
+                "type": "number",
+                "description": "About what's left. Use of the key outside Merran isn't counted."
+              }
+            },
+            "required": [
+              "amount",
+              "since",
+              "spent",
+              "left"
+            ],
+            "description": "The providers don't tell a key how much credit it has left, so it's what someone entered, less what Merran's spent on it since. None until entered."
+          },
+          "outOfCreditAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When its provider last said it's out of credit. It's passed over for an hour, then tried again; it clears once it works."
+          },
+          "lowOnCredit": {
+            "type": "boolean",
+            "description": "About a fifth or less of its entered credit left."
+          },
+          "creditCheck": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "result": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "out",
+                  "failed"
+                ]
+              },
+              "message": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "result",
+              "message"
+            ],
+            "description": "Only from adding or testing a key: whether one tiny call on its cheapest model found credit (`ok`), none (`out`), or couldn't tell (`failed`, with the provider's words). Addresses aren't checked."
           }
         },
         "required": [
@@ -1932,7 +2057,10 @@
           "models",
           "testedAt",
           "fromEnvironment",
-          "unreadable"
+          "unreadable",
+          "credit",
+          "outOfCreditAt",
+          "lowOnCredit"
         ],
         "example": {
           "id": "0199e8b0-5a10-7a01-8b00-000000000028",
@@ -1946,7 +2074,15 @@
           ],
           "testedAt": "2026-10-16T17:00:00.000Z",
           "fromEnvironment": false,
-          "unreadable": false
+          "unreadable": false,
+          "credit": {
+            "amount": 20,
+            "since": "2026-10-01T17:00:00.000Z",
+            "spent": 16.6,
+            "left": 3.4
+          },
+          "outOfCreditAt": null,
+          "lowOnCredit": true
         }
       },
       "HouseholdAiSettings": {
@@ -2176,6 +2312,26 @@
         "example": {
           "provider": "anthropic",
           "key": "sk-ant-api03-...7xQa"
+        }
+      },
+      "KeyCredit": {
+        "type": "object",
+        "properties": {
+          "amount": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "minimum": 0,
+            "maximum": 100000,
+            "description": "The credit on the key now, in US dollars; null to stop counting."
+          }
+        },
+        "required": [
+          "amount"
+        ],
+        "example": {
+          "amount": 20
         }
       },
       "Job": {
@@ -8096,7 +8252,15 @@
               ],
               "testedAt": "2026-10-16T17:00:00.000Z",
               "fromEnvironment": false,
-              "unreadable": false
+              "unreadable": false,
+              "credit": {
+                "amount": 20,
+                "since": "2026-10-01T17:00:00.000Z",
+                "spent": 16.6,
+                "left": 3.4
+              },
+              "outOfCreditAt": null,
+              "lowOnCredit": true
             }
           ],
           "policy": {
@@ -9725,6 +9889,84 @@
         "responses": {
           "204": {
             "description": "Taken off."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/ai/keys/{keyId}/credit": {
+      "put": {
+        "operationId": "setHouseholdAiKeyCredit",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Note an AI key's credit",
+        "description": "Household admins only. The credit on the key now, as its provider's dashboard says: the providers don't tell a key, so Merran counts what it spends from here and warns when about a fifth is left. Entering it also tries the key again if it ran out. Null stops counting.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeyCredit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Noted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKey"
+                }
+              }
+            }
           },
           "401": {
             "description": "Not signed in.",
@@ -16911,6 +17153,84 @@
           },
           "409": {
             "description": "It's set in the server's environment.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server/ai/keys/{keyId}/credit": {
+      "put": {
+        "operationId": "setServerAiKeyCredit",
+        "tags": [
+          "AI"
+        ],
+        "summary": "Note an AI key's credit",
+        "description": "Server admins only. The credit on the key now, as its provider's dashboard says: the providers don't tell a key, so Merran counts what it spends from here and warns when about a fifth is left. Entering it also tries the key again if it ran out. Null stops counting.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeyCredit"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Noted.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiKey"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such key.",
             "content": {
               "application/json": {
                 "schema": {

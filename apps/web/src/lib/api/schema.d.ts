@@ -348,6 +348,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/households/current/ai/keys/{keyId}/credit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Note an AI key's credit
+         * @description Household admins only. The credit on the key now, as its provider's dashboard says: the providers don't tell a key, so Merran counts what it spends from here and warns when about a fifth is left. Entering it also tries the key again if it ran out. Null stops counting.
+         */
+        put: operations["setHouseholdAiKeyCredit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households/current/ai/keys/{keyId}/test": {
         parameters: {
             query?: never;
@@ -2024,6 +2044,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings/server/ai/keys/{keyId}/credit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Note an AI key's credit
+         * @description Server admins only. The credit on the key now, as its provider's dashboard says: the providers don't tell a key, so Merran counts what it spends from here and warns when about a fifth is left. Entering it also tries the key again if it ran out. Null stops counting.
+         */
+        put: operations["setServerAiKeyCredit"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings/server/ai/keys/{keyId}/test": {
         parameters: {
             query?: never;
@@ -2886,7 +2926,8 @@ export interface components {
          *           "near": false
          *         },
          *         "mayAddKeys": true,
-         *         "mayAddAddresses": false
+         *         "mayAddAddresses": false,
+         *         "keyAlerts": []
          *       },
          *       "keys": [],
          *       "settings": {
@@ -3068,6 +3109,18 @@ export interface components {
                 };
                 mayAddKeys: boolean;
                 mayAddAddresses: boolean;
+                /** @description The keys it relies on, its own and the server's, that are out of credit or running low. */
+                keyAlerts: {
+                    id: string;
+                    /** @enum {string} */
+                    source: "server" | "household";
+                    /** @enum {string} */
+                    provider: "anthropic" | "openai" | "google" | "openai-compatible";
+                    name: string | null;
+                    outOfCredit: boolean;
+                    /** @description About what's left, when credit was entered. */
+                    left: number | null;
+                }[];
             };
             keys: components["schemas"]["AiKey"][];
             settings: components["schemas"]["HouseholdAiSettings"];
@@ -3109,7 +3162,15 @@ export interface components {
          *       ],
          *       "testedAt": "2026-10-16T17:00:00.000Z",
          *       "fromEnvironment": false,
-         *       "unreadable": false
+         *       "unreadable": false,
+         *       "credit": {
+         *         "amount": 20,
+         *         "since": "2026-10-01T17:00:00.000Z",
+         *         "spent": 16.6,
+         *         "left": 3.4
+         *       },
+         *       "outOfCreditAt": null,
+         *       "lowOnCredit": true
          *     }
          */
         AiKey: {
@@ -3131,6 +3192,33 @@ export interface components {
             fromEnvironment: boolean;
             /** @description Sealed with a master key the server no longer has: take it off and add it again. */
             unreadable: boolean;
+            /** @description The providers don't tell a key how much credit it has left, so it's what someone entered, less what Merran's spent on it since. None until entered. */
+            credit: {
+                /** @description The credit entered, in US dollars. */
+                amount: number;
+                /**
+                 * Format: date-time
+                 * @description When it was entered.
+                 */
+                since: string;
+                /** @description What Merran has spent on the key since. */
+                spent: number;
+                /** @description About what's left. Use of the key outside Merran isn't counted. */
+                left: number;
+            } | null;
+            /**
+             * Format: date-time
+             * @description When its provider last said it's out of credit. It's passed over for an hour, then tried again; it clears once it works.
+             */
+            outOfCreditAt: string | null;
+            /** @description About a fifth or less of its entered credit left. */
+            lowOnCredit: boolean;
+            /** @description Only from adding or testing a key: whether one tiny call on its cheapest model found credit (`ok`), none (`out`), or couldn't tell (`failed`, with the provider's words). Addresses aren't checked. */
+            creditCheck?: {
+                /** @enum {string} */
+                result: "ok" | "out" | "failed";
+                message: string | null;
+            } | null;
         };
         /**
          * @example {
@@ -3244,6 +3332,15 @@ export interface components {
             name: string;
             baseUrl: string;
             key?: string | null;
+        };
+        /**
+         * @example {
+         *       "amount": 20
+         *     }
+         */
+        KeyCredit: {
+            /** @description The credit on the key now, in US dollars; null to stop counting. */
+            amount: number | null;
         };
         /**
          * @example {
@@ -6099,7 +6196,15 @@ export interface components {
          *           ],
          *           "testedAt": "2026-10-16T17:00:00.000Z",
          *           "fromEnvironment": false,
-         *           "unreadable": false
+         *           "unreadable": false,
+         *           "credit": {
+         *             "amount": 20,
+         *             "since": "2026-10-01T17:00:00.000Z",
+         *             "spent": 16.6,
+         *             "left": 3.4
+         *           },
+         *           "outOfCreditAt": null,
+         *           "lowOnCredit": true
          *         }
          *       ],
          *       "policy": {
@@ -7233,6 +7338,59 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setHouseholdAiKeyCredit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                keyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeyCredit"];
+            };
+        };
+        responses: {
+            /** @description Noted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiKey"];
+                };
             };
             /** @description Not signed in. */
             401: {
@@ -12258,6 +12416,59 @@ export interface operations {
             };
             /** @description It's set in the server's environment. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setServerAiKeyCredit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                keyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeyCredit"];
+            };
+        };
+        responses: {
+            /** @description Noted. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiKey"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such key. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

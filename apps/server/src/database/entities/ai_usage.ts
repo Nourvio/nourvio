@@ -24,6 +24,8 @@ export const AiUsage = defineEntity({
     provider: p.enum(AI_PROVIDERS),
     model: p.string(),
     source: p.enum(AI_KEY_SOURCES),
+    /** The key that paid: an ai_keys id, or "env:anthropic" and the like. */
+    key: p.string().nullable().index(),
     /** "2026-10": the month it counts towards, by the household's own days. */
     month: p.string(),
     inputTokens: p.integer(),

@@ -28,6 +28,14 @@ const KEY = {
   testedAt: "2026-10-16T17:00:00.000Z",
   fromEnvironment: false,
   unreadable: false,
+  credit: {
+    amount: 20,
+    since: "2026-10-01T17:00:00.000Z",
+    spent: 16.6,
+    left: 3.4,
+  },
+  outOfCreditAt: null,
+  lowOnCredit: true,
 }
 
 export const AiKeySchema = z
@@ -58,8 +66,60 @@ export const AiKeySchema = z
       description:
         "Sealed with a master key the server no longer has: take it off and add it again.",
     }),
+    credit: z
+      .object({
+        amount: z
+          .number()
+          .openapi({ description: "The credit entered, in US dollars." }),
+        since: z.iso
+          .datetime()
+          .openapi({ description: "When it was entered." }),
+        spent: z
+          .number()
+          .openapi({ description: "What Merran has spent on the key since." }),
+        left: z.number().openapi({
+          description:
+            "About what's left. Use of the key outside Merran isn't counted.",
+        }),
+      })
+      .nullable()
+      .openapi({
+        description:
+          "The providers don't tell a key how much credit it has left, so it's what someone entered, less what Merran's spent on it since. None until entered.",
+      }),
+    outOfCreditAt: z.iso.datetime().nullable().openapi({
+      description:
+        "When its provider last said it's out of credit. It's passed over for an hour, then tried again; it clears once it works.",
+    }),
+    lowOnCredit: z.boolean().openapi({
+      description: "About a fifth or less of its entered credit left.",
+    }),
+    creditCheck: z
+      .object({
+        result: z.enum(["ok", "out", "failed"]),
+        message: z.string().nullable(),
+      })
+      .nullish()
+      .openapi({
+        description:
+          "Only from adding or testing a key: whether one tiny call on its cheapest model found credit (`ok`), none (`out`), or couldn't tell (`failed`, with the provider's words). Addresses aren't checked.",
+      }),
   })
   .openapi("AiKey", { example: KEY })
+
+export const KeyCreditSchema = z
+  .object({
+    amount: z
+      .number()
+      .min(0, "Use 0 or more.")
+      .max(100_000)
+      .nullable()
+      .openapi({
+        description:
+          "The credit on the key now, in US dollars; null to stop counting.",
+      }),
+  })
+  .openapi("KeyCredit", { example: { amount: 20 } })
 
 export const KeyParam = z.object({
   keyId: z
@@ -240,6 +300,23 @@ export const HouseholdAiSchema = z
       own: z.object({ limit: cost.nullable(), spent: cost, near: z.boolean() }),
       mayAddKeys: z.boolean(),
       mayAddAddresses: z.boolean(),
+      keyAlerts: z
+        .array(
+          z.object({
+            id: z.string(),
+            source: z.enum(["server", "household"]),
+            provider: z.enum(AI_PROVIDERS),
+            name: z.string().nullable(),
+            outOfCredit: z.boolean(),
+            left: z.number().nullable().openapi({
+              description: "About what's left, when credit was entered.",
+            }),
+          })
+        )
+        .openapi({
+          description:
+            "The keys it relies on, its own and the server's, that are out of credit or running low.",
+        }),
     }),
     keys: z.array(AiKeySchema),
     settings: HouseholdAiSettingsSchema,
@@ -289,6 +366,7 @@ export const HouseholdAiSchema = z
         own: { limit: null, spent: 0, near: false },
         mayAddKeys: true,
         mayAddAddresses: false,
+        keyAlerts: [],
       },
       keys: [],
       settings: { large: null, small: null, tasks: {}, monthlyLimit: null },

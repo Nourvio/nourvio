@@ -44,6 +44,8 @@ export async function recordUsage(
     provider: AiProvider
     model: string
     source: KeySource
+    /** The key that paid. */
+    keyId: string
     inputTokens: number
     outputTokens: number
   }
@@ -55,6 +57,7 @@ export async function recordUsage(
     provider: call.provider,
     model: call.model,
     source: call.source,
+    key: call.keyId,
     month: await monthFor(em, call.householdId),
     inputTokens: call.inputTokens,
     outputTokens: call.outputTokens,
