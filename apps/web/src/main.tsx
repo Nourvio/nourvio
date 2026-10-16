@@ -9,6 +9,7 @@ import { createRoot } from "react-dom/client"
 import { ThemeProvider } from "@/components/theme/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { TimerAlarm } from "@/features/cook/timers"
 import { startErrorTracking } from "@/features/error-tracking/start"
 import { queryClient } from "@/lib/query-client"
 
@@ -36,6 +37,7 @@ createRoot(document.getElementById("root")!).render(
         <TooltipProvider>
           <RouterProvider router={router} />
           <Toaster />
+          <TimerAlarm />
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>

@@ -391,6 +391,14 @@ export async function clearPhoto(
   return loadRecipe(em, recipe.id)
 }
 
+/** "I made this": the recipe was made now. Not an edit, so no version is kept. */
+export async function markMade(em: EntityManager, options: { recipe: string }) {
+  const recipe = await findRecipe(em, options.recipe)
+  recipe.lastMadeAt = new Date()
+  await em.flush()
+  return loadRecipe(em, recipe.id)
+}
+
 /** Rates a recipe, or clears its rating. Not an edit, so no version is kept. */
 export async function setRating(
   em: EntityManager,

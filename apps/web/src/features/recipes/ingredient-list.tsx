@@ -121,13 +121,33 @@ export function UnitToggle({
       className={className}
     >
       {(["written", "metric", "us"] as const).map((value) => (
-        <ToggleGroupItem key={value} value={value} className="flex-1">
+        <ToggleGroupItem key={value} value={value} className="grow">
           {t(`recipes.units.${value}`)}
         </ToggleGroupItem>
       ))}
     </ToggleGroup>
   )
 }
+
+/** Ingredients ticked off while getting things out, by id. */
+export function useTicks(initial: Iterable<string> = []) {
+  const [ticked, setTicked] = React.useState<ReadonlySet<string>>(
+    () => new Set(initial)
+  )
+  const toggle = React.useCallback(
+    (id: string) =>
+      setTicked((current) => {
+        const next = new Set(current)
+        if (!next.delete(id)) next.add(id)
+        return next
+      }),
+    []
+  )
+  const clear = React.useCallback(() => setTicked(new Set()), [])
+  return { ticked, toggle, clear }
+}
+
+export type Ticks = ReturnType<typeof useTicks>
 
 /**
  * The ingredients, with their amounts scaled and in the chosen units.
@@ -137,18 +157,21 @@ export function IngredientList({
   lines,
   factor,
   system,
+  ticks,
+  highlighted,
+  size = "default",
 }: {
   lines: Line[]
   factor: number
   system: UnitSystem
+  /** Ticks kept by the page, as the cook view does; otherwise kept here. */
+  ticks?: Ticks
+  /** Lines to pick out, like the ones the current step uses. */
+  highlighted?: ReadonlySet<string>
+  size?: "default" | "lg"
 }) {
-  const [ticked, setTicked] = React.useState<ReadonlySet<string>>(new Set())
-  const toggle = (id: string) =>
-    setTicked((current) => {
-      const next = new Set(current)
-      if (!next.delete(id)) next.add(id)
-      return next
-    })
+  const own = useTicks()
+  const { ticked, toggle } = ticks ?? own
 
   return (
     <div className="-mx-2 grid gap-5">
@@ -168,15 +191,24 @@ export function IngredientList({
               const done = ticked.has(line.id)
               return (
                 <li key={line.id}>
-                  <label className="flex cursor-pointer items-start gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted/60">
+                  <label
+                    className={cn(
+                      "flex cursor-pointer items-start gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted/60",
+                      highlighted?.has(line.id) &&
+                        !done &&
+                        "bg-accent text-accent-foreground hover:bg-accent/80",
+                      size === "lg" && "py-2"
+                    )}
+                  >
                     <Checkbox
                       checked={done}
                       onCheckedChange={() => toggle(line.id)}
-                      className="mt-0.5"
+                      className={size === "lg" ? "mt-1" : "mt-0.5"}
                     />
                     <span
                       className={cn(
-                        "text-base leading-snug",
+                        "leading-snug",
+                        size === "lg" ? "text-lg" : "text-base",
                         done && "text-muted-foreground line-through"
                       )}
                     >

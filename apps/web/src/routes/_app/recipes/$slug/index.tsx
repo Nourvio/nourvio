@@ -1,11 +1,13 @@
 import {
   ArrowLeft01Icon,
+  CookingPotIcon,
   Delete02Icon,
   Edit02Icon,
   ImageAdd02Icon,
   ImageRemove01Icon,
   LinkSquare02Icon,
   MoreHorizontalIcon,
+  Tick02Icon,
   Time04Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -88,6 +90,29 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
       queryClient.setQueryData(key, recipe)
       if (!(error instanceof ApiError)) throw error
       toast.error(error.message)
+    }
+  }
+
+  const [marking, setMarking] = React.useState(false)
+
+  async function markMade() {
+    setMarking(true)
+    try {
+      queryClient.setQueryData(
+        recipeQuery(recipe.slug).queryKey,
+        await unwrap(
+          api.POST("/api/recipes/{recipe}/made", {
+            params: { path: { recipe: recipe.id } },
+          })
+        )
+      )
+      await refresh()
+      toast.success(t("recipes.markedMade"))
+    } catch (error) {
+      if (!(error instanceof ApiError)) throw error
+      toast.error(error.message)
+    } finally {
+      setMarking(false)
     }
   }
 
@@ -196,6 +221,40 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
             </div>
           )}
           <div className="flex flex-wrap gap-2 pt-2">
+            <Button
+              size="lg"
+              render={
+                <Link
+                  to="/recipes/$slug/cook"
+                  params={{ slug: recipe.slug }}
+                  search={
+                    servings.changed
+                      ? { scale: Math.round(servings.factor * 1000) / 1000 }
+                      : {}
+                  }
+                />
+              }
+            >
+              <HugeiconsIcon
+                icon={CookingPotIcon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+              {t("recipes.startCooking")}
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              disabled={marking}
+              onClick={() => void markMade()}
+            >
+              <HugeiconsIcon
+                icon={Tick02Icon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+              {t("recipes.madeIt")}
+            </Button>
             <Button
               size="lg"
               variant="outline"

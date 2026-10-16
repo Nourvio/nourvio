@@ -460,6 +460,66 @@
       "makes": "Makes"
     },
     "lastMade": "Last made {{when}}",
-    "original": "Original recipe: {{site}}"
+    "original": "Original recipe: {{site}}",
+    "startCooking": "Start cooking",
+    "madeIt": "Made it",
+    "markedMade": "Marked as made today."
+  },
+  "cook": {
+    "exit": "Exit",
+    "getReady": "Get ready",
+    "stepOf": "Step {{step}} of {{count}}",
+    "noSteps": "No steps",
+    "screenOn": "Screen stays on",
+    "steps": "Steps",
+    "goToReady": "Go to getting ready",
+    "goToStep": "Go to step {{step}}",
+    "gather": "Gather everything first",
+    "gatherHint": "Get it all out and measured, ticking things off as you go.",
+    "makes_one": "This makes {{servings}} serving.",
+    "makes_other": "This makes {{servings}} servings.",
+    "forThisStep": "For this step",
+    "upNext": "Next:",
+    "noStepsYet": "This recipe has no steps yet. Add some from Edit.",
+    "back": "Back",
+    "start": "Start",
+    "next": "Next",
+    "done": "Done cooking",
+    "resumed": "Picked up where you left off.",
+    "startOver": "Start over",
+    "made": "Nice work. Marked as made today.",
+    "textSize": {
+      "label": "Text size",
+      "standard": "Standard",
+      "large": "Large",
+      "huge": "Extra large"
+    },
+    "timers": {
+      "list": "Timers",
+      "new": "New timer",
+      "minutes": "Minutes",
+      "start": "Start",
+      "startFor": "Start a timer: {{label}}",
+      "up": "Time's up: {{label}}",
+      "label": "{{label}} timer",
+      "done": "Done",
+      "addMinute": "+1 min",
+      "addMinuteTo": "Add a minute to the {{label}} timer",
+      "ok": "OK",
+      "cancel": "Cancel the {{label}} timer",
+      "dismiss": "Dismiss the {{label}} timer",
+      "more": "+{{count}}"
+    },
+    "duration": {
+      "hours_one": "{{count}} hour",
+      "hours_other": "{{count}} hours",
+      "minutes_one": "{{count}} minute",
+      "minutes_other": "{{count}} minutes",
+      "seconds_one": "{{count}} second",
+      "seconds_other": "{{count}} seconds",
+      "hoursRange": "{{from}}–{{to}} hours",
+      "minutesRange": "{{from}}–{{to}} minutes",
+      "secondsRange": "{{from}}–{{to}} seconds"
+    }
   }
 }

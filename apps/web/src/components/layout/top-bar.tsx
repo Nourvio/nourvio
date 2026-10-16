@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next"
 
 import { Logo } from "@/components/brand/logo"
 import { SidebarTrigger } from "@/components/ui/sidebar"
+import { TimerBadges } from "@/features/cook/timers"
 
 import { UserMenu } from "./user-menu"
 
@@ -15,9 +16,13 @@ export function TopBar() {
         <Link to="/" className="md:hidden" aria-label={t("app.home")}>
           <Logo />
         </Link>
-        {/* iPad and desktop have the account menu at the foot of the sidebar. */}
-        <div className="ml-auto md:hidden">
-          <UserMenu />
+        <div className="ml-auto flex items-center gap-2">
+          {/* Kitchen timers still counting, while cooking elsewhere. */}
+          <TimerBadges />
+          {/* iPad and desktop have the account menu at the foot of the sidebar. */}
+          <div className="md:hidden">
+            <UserMenu />
+          </div>
         </div>
       </div>
     </header>

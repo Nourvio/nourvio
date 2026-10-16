@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as FocusRouteImport } from './routes/_focus'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
@@ -27,9 +28,14 @@ import { Route as AppSettingsServerRouteImport } from './routes/_app/settings/se
 import { Route as AppSettingsYouRouteImport } from './routes/_app/settings/you'
 import { Route as AppRecipesSlugIndexRouteImport } from './routes/_app/recipes/$slug/index'
 import { Route as AppRecipesSlugEditRouteImport } from './routes/_app/recipes/$slug/edit'
+import { Route as FocusRecipesSlugCookRouteImport } from './routes/_focus/recipes/$slug/cook'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FocusRoute = FocusRouteImport.update({
+  id: '/_focus',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -117,6 +123,11 @@ const AppRecipesSlugEditRoute = AppRecipesSlugEditRouteImport.update({
   path: '/recipes/$slug/edit',
   getParentRoute: () => AppRoute,
 } as any)
+const FocusRecipesSlugCookRoute = FocusRecipesSlugCookRouteImport.update({
+  id: '/recipes/$slug/cook',
+  path: '/recipes/$slug/cook',
+  getParentRoute: () => FocusRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -135,16 +146,17 @@ export interface FileRoutesByFullPath {
   '/recipes/': typeof AppRecipesIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
+  '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/recipes/$slug/': typeof AppRecipesSlugIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/list': typeof AppListRoute
   '/pantry': typeof AppPantryRoute
   '/plan': typeof AppPlanRoute
   '/join/$token': typeof JoinTokenRoute
-  '/': typeof AppIndexRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
@@ -153,11 +165,13 @@ export interface FileRoutesByTo {
   '/recipes': typeof AppRecipesIndexRoute
   '/settings': typeof AppSettingsIndexRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
+  '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/recipes/$slug': typeof AppRecipesSlugIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_focus': typeof FocusRouteWithChildren
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
   '/_app/list': typeof AppListRoute
@@ -174,6 +188,7 @@ export interface FileRoutesById {
   '/_app/recipes/': typeof AppRecipesIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
+  '/_focus/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/_app/recipes/$slug/': typeof AppRecipesSlugIndexRoute
 }
 export interface FileRouteTypes {
@@ -195,16 +210,17 @@ export interface FileRouteTypes {
     | '/recipes/'
     | '/settings/'
     | '/recipes/$slug/edit'
+    | '/recipes/$slug/cook'
     | '/recipes/$slug/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/login'
     | '/setup'
     | '/list'
     | '/pantry'
     | '/plan'
     | '/join/$token'
-    | '/'
     | '/recipes/deleted'
     | '/recipes/new'
     | '/settings/household'
@@ -213,10 +229,12 @@ export interface FileRouteTypes {
     | '/recipes'
     | '/settings'
     | '/recipes/$slug/edit'
+    | '/recipes/$slug/cook'
     | '/recipes/$slug'
   id:
     | '__root__'
     | '/_app'
+    | '/_focus'
     | '/login'
     | '/setup'
     | '/_app/list'
@@ -233,11 +251,13 @@ export interface FileRouteTypes {
     | '/_app/recipes/'
     | '/_app/settings/'
     | '/_app/recipes/$slug/edit'
+    | '/_focus/recipes/$slug/cook'
     | '/_app/recipes/$slug/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  FocusRoute: typeof FocusRouteWithChildren
   LoginRoute: typeof LoginRoute
   SetupRoute: typeof SetupRoute
   JoinTokenRoute: typeof JoinTokenRoute
@@ -250,6 +270,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_focus': {
+      id: '/_focus'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof FocusRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -371,6 +398,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesSlugEditRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_focus/recipes/$slug/cook': {
+      id: '/_focus/recipes/$slug/cook'
+      path: '/recipes/$slug/cook'
+      fullPath: '/recipes/$slug/cook'
+      preLoaderRoute: typeof FocusRecipesSlugCookRouteImport
+      parentRoute: typeof FocusRoute
+    }
   }
 }
 
@@ -420,8 +454,19 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface FocusRouteChildren {
+  FocusRecipesSlugCookRoute: typeof FocusRecipesSlugCookRoute
+}
+
+const FocusRouteChildren: FocusRouteChildren = {
+  FocusRecipesSlugCookRoute: FocusRecipesSlugCookRoute,
+}
+
+const FocusRouteWithChildren = FocusRoute._addFileChildren(FocusRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  FocusRoute: FocusRouteWithChildren,
   LoginRoute: LoginRoute,
   SetupRoute: SetupRoute,
   JoinTokenRoute: JoinTokenRoute,
