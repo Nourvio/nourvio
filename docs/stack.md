@@ -91,12 +91,11 @@ Sign-in is the code most likely to hurt people if we get it wrong, and the code 
 
 - email or username with a password, sessions, and rate limits
 - **organizations**, which become households: members, roles and invitations
-- **API keys** with permissions, expiry and rate limits, owned by a person or a household
 - passkeys and two-step sign-in (TOTP), off until someone turns them on
 - single sign-on with OIDC (Authentik, Authelia, Keycloak, Pocket ID, Google and the like) through `@better-auth/sso`
 - an admin plugin for the server admin
 
-What we keep for ourselves: **what each role may do.** Better Auth says who someone is and which household they're in; Merran's own service layer decides what they can touch, and every query is scoped to the household (see [platform.md](platform.md#keeping-households-apart)).
+What we keep for ourselves: **API keys**, and **what each role may do.** Better Auth has an API key plugin, but its keys belong to a user or an organization and stand in for a session, while Merran's act as one person in one household. So keys are Merran's own (`services/auth/api-keys.ts`, decided October 15, 2026): a SHA-256 hash, permissions per area, expiry and a per-key rate limit. As for roles: Better Auth says who someone is and which household they're in; Merran's own service layer decides what they can touch, and every query is scoped to the household (see [platform.md](platform.md#keeping-households-apart)).
 
 **Watch out for:** Better Auth moves quickly and had real security fixes in mid-2026 (SSO and invitation issues fixed in 1.6.11). Use 1.6.14 or later, update every `@better-auth/*` package together, and let Renovate flag security releases straight away.
 

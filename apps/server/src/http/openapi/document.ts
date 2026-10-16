@@ -16,6 +16,11 @@ const TAGS = [
       "Setting up the server, signing in and out, invite links and switching households. Signed-in requests carry the session cookie.",
   },
   {
+    name: "API keys",
+    description:
+      "Keys for scripts and tools like Home Assistant. Each acts as its person in one household, with only the permissions it was given, and stops working if it expires, is revoked, or its person leaves the household.",
+  },
+  {
     name: "Households",
     description:
       "The household in use: its settings, its people and their roles, and invite links.",
@@ -43,7 +48,7 @@ export async function buildOpenApiDocument(
       title: "Merran API",
       version,
       description:
-        "Everything the Merran app does, it does through this API: the same routes are open to scripts and to tools like Home Assistant. Sign in with `POST /api/auth/sign-in/username`, then send the session cookie it sets.",
+        "Everything the Merran app does, it does through this API: the same routes are open to scripts and to tools like Home Assistant. Tools use an API key: make one at `POST /api/auth/api-keys` while signed in, then send it as `Authorization: Bearer mrn_…`. Each route says whether a key can use it, and with which permission. Browsers sign in with `POST /api/auth/sign-in/username` and send the session cookie it sets.",
       license: {
         name: "AGPL-3.0-or-later",
         url: "https://www.gnu.org/licenses/agpl-3.0.html",

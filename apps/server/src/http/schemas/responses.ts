@@ -1,6 +1,9 @@
 import type { z } from "@hono/zod-openapi"
 import { ErrorSchema } from "../errors.ts"
 
+/** OpenAPI security requirements: any one of them will do. */
+type Security = Record<string, string[]>[]
+
 /** A JSON response, for a route's `responses`. */
 export function jsonResponse<T extends z.ZodType>(
   schema: T,
@@ -21,4 +24,13 @@ export const SIGNED_IN_ERRORS = {
 }
 
 /** The session cookie, for a route's `security`. */
-export const SESSION_SECURITY = [{ session: [] }]
+export const SESSION_SECURITY: Security = [{ session: [] }]
+
+/** An API key, for a route's `security`. */
+export const API_KEY_SECURITY: Security = [{ apiKey: [] }]
+
+/** Either a session or an API key with the right permission. */
+export const SESSION_OR_API_KEY_SECURITY: Security = [
+  { session: [] },
+  { apiKey: [] },
+]

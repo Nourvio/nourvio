@@ -6,7 +6,7 @@ import type { Router } from "../../router.ts"
 import { describeHousehold, HouseholdSchema } from "../../schemas/households.ts"
 import {
   jsonResponse,
-  SESSION_SECURITY,
+  SESSION_OR_API_KEY_SECURITY,
   SIGNED_IN_ERRORS,
 } from "../../schemas/responses.ts"
 
@@ -15,7 +15,8 @@ const route = createRoute({
   path: "/households/current",
   tags: ["Households"],
   summary: "The household in use",
-  security: SESSION_SECURITY,
+  description: "With an API key, it needs the `household: read` permission.",
+  security: SESSION_OR_API_KEY_SECURITY,
   responses: {
     200: jsonResponse(HouseholdSchema, "The household."),
     ...SIGNED_IN_ERRORS,
@@ -24,7 +25,10 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { householdId, role, em } = inHousehold(c)
+    const { householdId, role, em } = inHousehold(c, {
+      area: "household",
+      access: "read",
+    })
     const household = await em.findOneOrFail(Household, householdId)
     return c.json(describeHousehold(household, role), 200)
   })

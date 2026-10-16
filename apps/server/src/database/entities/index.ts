@@ -1,6 +1,7 @@
 // One file per table, named after the table.
 
 import { Account } from "./accounts.ts"
+import { ApiKey } from "./api_keys.ts"
 import { Aisle } from "./aisles.ts"
 import { CookNote } from "./cook_notes.ts"
 import { EmailInvitation } from "./email_invitations.ts"
@@ -27,6 +28,7 @@ import { Verification } from "./verifications.ts"
 import { WeeklyItem } from "./weekly_items.ts"
 
 export * from "./accounts.ts"
+export * from "./api_keys.ts"
 export * from "./aisles.ts"
 export * from "./cook_notes.ts"
 export * from "./email_invitations.ts"
@@ -55,6 +57,7 @@ export * from "./weekly_items.ts"
 /** Every entity. A new one goes here, or the database won't know about it. */
 export const entities = [
   Account,
+  ApiKey,
   Aisle,
   CookNote,
   EmailInvitation,

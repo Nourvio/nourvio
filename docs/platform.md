@@ -87,7 +87,8 @@ A person can belong to several households (say, their own and their parents'), w
 
 People make their own keys for scripts, Home Assistant, the browser extension and the iPhone Shortcut. In the REFERENCE app every key had its owner's full rights; in Merran each key says what it can do.
 
-- **Settings → You → API keys:** a name, which household it's for, what it may do, and when it expires (30 days, 90 days, a year, or never). The key is shown once, starts with `mrn_` (so secret scanners can spot a leaked one), and only its hash is stored. Each key shows when it was last used, and can be revoked.
+- **Merran's own,** not Better Auth's plugin (see [stack.md](stack.md#better-auth-instead-of-our-own-sign-in)): made and listed at `/api/auth/api-keys`, checked by the same `authenticate()` that reads session cookies.
+- **Settings → You → API keys:** a name, what it may do, and when it expires (30 days, 90 days, a year, or never); it's for the household in use. The key is shown once, starts with `mrn_` (so secret scanners can spot a leaked one), and only its hash is stored. Each key shows when it was last used, and can be revoked.
 - **Permissions**, read or read and write, for each area: recipes, plan, list, pantry, imports, and the assistant (which spends AI money). Admin actions are never available to keys in 0.1.
 - **A key acts as the person, in one household.** Leaving that household, or being removed from it, stops the key.
 - **Household keys** (owned by the household, not a person, for things like a kitchen display or Home Assistant that shouldn't stop working when one person leaves) are supported by Better Auth and come after 0.1.
@@ -95,7 +96,8 @@ People make their own keys for scripts, Home Assistant, the browser extension an
   - **The browser extension:** Connect opens Merran, which asks "Let the Merran extension see your recipes, plan and list?", then makes a key with just those permissions and hands it to the extension.
   - **The iPhone Shortcut:** a key with only the share permission, made by the Share to Merran guide. Shares made with it open through a one-time sign-in link, as in the REFERENCE app.
 - **The server admin** can turn API keys off, cap how long they last, and limit which permissions can be given.
-- **Rate limits** per key, so a runaway script can't take the server down.
+- **Rate limits** per key (300 requests a minute), so a runaway script can't take the server down.
+- **Routes refuse keys unless they say otherwise:** each route that a key may use names the permission it needs, and the API reference shows it. `GET /api/auth/api-keys/current` lets a tool check its key works.
 
 ## The public API
 

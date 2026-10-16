@@ -3,7 +3,7 @@
   "info": {
     "title": "Merran API",
     "version": "0.0.0",
-    "description": "Everything the Merran app does, it does through this API: the same routes are open to scripts and to tools like Home Assistant. Sign in with `POST /api/auth/sign-in/username`, then send the session cookie it sets.",
+    "description": "Everything the Merran app does, it does through this API: the same routes are open to scripts and to tools like Home Assistant. Tools use an API key: make one at `POST /api/auth/api-keys` while signed in, then send it as `Authorization: Bearer mrn_…`. Each route says whether a key can use it, and with which permission. Browsers sign in with `POST /api/auth/sign-in/username` and send the session cookie it sets.",
     "license": {
       "name": "AGPL-3.0-or-later",
       "url": "https://www.gnu.org/licenses/agpl-3.0.html"
@@ -27,6 +27,10 @@
       "description": "Setting up the server, signing in and out, invite links and switching households. Signed-in requests carry the session cookie."
     },
     {
+      "name": "API keys",
+      "description": "Keys for scripts and tools like Home Assistant. Each acts as its person in one household, with only the permissions it was given, and stops working if it expires, is revoked, or its person leaves the household."
+    },
+    {
       "name": "Households",
       "description": "The household in use: its settings, its people and their roles, and invite links."
     },
@@ -42,6 +46,12 @@
         "in": "cookie",
         "name": "merran.session_token",
         "description": "The cookie that signing in sets."
+      },
+      "apiKey": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "mrn_…",
+        "description": "An API key, made at POST /api/auth/api-keys, sent as `Authorization: Bearer mrn_…`. It acts as its person in one household, with only the permissions it was given."
       }
     },
     "schemas": {
@@ -458,6 +468,183 @@
           }
         }
       },
+      "ApiKey": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "start": {
+            "type": "string",
+            "example": "mrn_3fK9aQ"
+          },
+          "household": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name"
+            ]
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/ApiKeyPermissions"
+          },
+          "expiresAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lastUsedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "start",
+          "household",
+          "permissions",
+          "expiresAt",
+          "lastUsedAt",
+          "createdAt"
+        ]
+      },
+      "ApiKeyPermissions": {
+        "type": "object",
+        "properties": {
+          "household": {
+            "type": "string",
+            "enum": [
+              "read"
+            ]
+          },
+          "recipes": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ]
+          },
+          "plan": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ]
+          },
+          "list": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ]
+          },
+          "pantry": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ]
+          },
+          "imports": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ]
+          },
+          "assistant": {
+            "type": "string",
+            "enum": [
+              "read",
+              "write"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "NewApiKey": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/ApiKey"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "example": "mrn_3fK9aQ…"
+              }
+            },
+            "required": [
+              "key"
+            ]
+          }
+        ]
+      },
+      "NewApiKeyRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "permissions": {
+            "$ref": "#/components/schemas/ApiKeyPermissions"
+          },
+          "expiresInDays": {
+            "anyOf": [
+              {
+                "type": "number",
+                "enum": [
+                  30
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  90
+                ]
+              },
+              {
+                "type": "number",
+                "enum": [
+                  365
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": 90
+          }
+        },
+        "required": [
+          "name",
+          "permissions"
+        ]
+      },
       "User": {
         "type": "object",
         "properties": {
@@ -729,9 +916,13 @@
           "Households"
         ],
         "summary": "The household in use",
+        "description": "With an API key, it needs the `household: read` permission.",
         "security": [
           {
             "session": []
+          },
+          {
+            "apiKey": []
           }
         ],
         "responses": {
@@ -828,9 +1019,13 @@
           "Households"
         ],
         "summary": "Who's in the household",
+        "description": "With an API key, it needs the `household: read` permission.",
         "security": [
           {
             "session": []
+          },
+          {
+            "apiKey": []
           }
         ],
         "responses": {
@@ -1452,6 +1647,214 @@
           },
           "410": {
             "description": "The link has been used, or has expired.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/api-keys": {
+      "get": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Your API keys",
+        "description": "Your keys in every household you're in, newest first. The keys themselves can't be shown again.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Your keys.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApiKey"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Make an API key",
+        "description": "For the household in use. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewApiKeyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Made. Copy the key now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewApiKey"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/api-keys/current": {
+      "get": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Check an API key",
+        "description": "The key this request was sent with: its household and what it may do. A quick way for a tool like Home Assistant to check its key works.",
+        "security": [
+          {
+            "apiKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The key works.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKey"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No API key was sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "The key doesn't work.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/api-keys/{keyId}": {
+      "delete": {
+        "tags": [
+          "API keys"
+        ],
+        "summary": "Revoke an API key",
+        "description": "It stops working straight away.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "keyId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revoked."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "You have no such key.",
             "content": {
               "application/json": {
                 "schema": {

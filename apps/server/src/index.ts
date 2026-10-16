@@ -35,7 +35,12 @@ logger.info(
     : "Using Postgres"
 )
 
-const auth = createAuth({ config, database, secret: loadSecret(config) })
+const auth = createAuth({
+  config,
+  database,
+  secret: loadSecret(config),
+  logger,
+})
 
 // A fresh server is claimed with a code from this log, so a stranger who
 // finds the page first can't take it.

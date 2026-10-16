@@ -25,10 +25,13 @@ export type AppEnv = {
      * scoped, which `inHousehold()` does.
      */
     em: EntityManager
-    /** Who's signed in, if anyone. Routes use `signedIn()` to require it. */
+    /** Who sent the request, if anyone. Routes require it with the guards in http/middleware/auth.ts. */
     user: Authenticated["user"] | null
-    session: Authenticated["session"] | null
-    /** The household they're using. Routes use `inHousehold()` to require it. */
+    /** Their session, when they signed in rather than using an API key. */
+    session: Authenticated["session"]
+    /** The household they're using. */
     household: Authenticated["household"]
+    /** The API key they used, if any. */
+    apiKey: Authenticated["apiKey"]
   }
 }

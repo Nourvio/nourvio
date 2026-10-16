@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth"
+import type { Logger } from "pino"
 import { admin, openAPI, organization, username } from "better-auth/plugins"
 import { v7 as uuidv7 } from "uuid"
 import type { Config } from "../../core/config.ts"
@@ -25,6 +26,8 @@ export type AuthOptions = {
   config: Pick<Config, "database" | "publicUrl">
   database: Database
   secret: string
+  /** Where Better Auth's own messages go. Without it, they're printed plainly. */
+  logger?: Logger
 }
 
 /**
@@ -32,12 +35,21 @@ export type AuthOptions = {
  * (src/database/entities); Better Auth reads and writes them through the same
  * connection, with each table and column named here.
  */
-export function createAuth({ config, database, secret }: AuthOptions) {
+export function createAuth({ config, database, secret, logger }: AuthOptions) {
+  const log = logger?.child({ source: "better-auth" })
   return betterAuth({
     appName: "Merran",
     basePath: AUTH_BASE,
     ...(config.publicUrl ? { baseURL: config.publicUrl } : {}),
     secret,
+    ...(log
+      ? {
+          logger: {
+            log: (level, message, ...args) =>
+              log[level](args.length > 0 ? { details: args } : {}, message),
+          },
+        }
+      : {}),
     database: {
       db: database.em.getKysely(),
       type: config.database.kind,

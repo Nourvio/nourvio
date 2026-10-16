@@ -41,6 +41,13 @@ export function createApp(deps: AppDeps) {
     name: "merran.session_token",
     description: "The cookie that signing in sets.",
   })
+  app.openAPIRegistry.registerComponent("securitySchemes", "apiKey", {
+    type: "http",
+    scheme: "bearer",
+    bearerFormat: "mrn_…",
+    description:
+      "An API key, made at POST /api/auth/api-keys, sent as `Authorization: Bearer mrn_…`. It acts as its person in one household, with only the permissions it was given.",
+  })
   // Built once, on first request, since the routes don't change while running.
   let spec: ReturnType<typeof buildOpenApiDocument> | undefined
   app.get(SPEC_PATH, async (c) => {
