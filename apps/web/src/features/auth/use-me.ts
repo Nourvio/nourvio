@@ -29,7 +29,9 @@ export function useRefreshAll() {
   const queryClient = useQueryClient()
   const router = useRouter()
   return async () => {
-    queryClient.removeQueries()
+    // Reset, not remove: removing leaves what's on screen holding the old
+    // household's data, and nothing tells it to load again.
+    await queryClient.resetQueries()
     await router.invalidate()
   }
 }
