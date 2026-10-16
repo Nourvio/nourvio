@@ -3043,6 +3043,97 @@
           "householdName": "The Riveras"
         }
       },
+      "ShareOutcome": {
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "added",
+              "already",
+              "failed"
+            ],
+            "description": "Added, already in the library (this is that recipe), or not added."
+          },
+          "code": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why it wasn't added, for programs: \"no_link\", \"no_recipe_data\" and the like."
+          },
+          "message": {
+            "type": "string",
+            "description": "What happened, in words to show, as a Shortcut does.",
+            "example": "Added Lemon Chicken to Merran."
+          },
+          "recipe": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "name"
+            ]
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The recipe's page."
+          }
+        },
+        "required": [
+          "outcome",
+          "code",
+          "message",
+          "recipe",
+          "url"
+        ],
+        "example": {
+          "outcome": "added",
+          "code": null,
+          "message": "Added Lemon Chicken to Merran.",
+          "recipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+            "slug": "lemon-chicken",
+            "name": "Lemon Chicken"
+          },
+          "url": "https://merran.example.com/recipes/lemon-chicken"
+        }
+      },
+      "SharedText": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "title": "Lemon Chicken",
+          "text": "Making this tonight! https://example.com/lemon-chicken"
+        }
+      },
       "TelemetryReport": {
         "type": "object",
         "properties": {
@@ -7869,6 +7960,113 @@
           },
           "409": {
             "description": "It hasn't finished, or another like it is already waiting.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share": {
+      "post": {
+        "operationId": "shareToMerran",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Share something to Merran",
+        "description": "What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "imports:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "url": {
+                    "type": "string"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "What was shared, as a file: a text file with the link, a .webloc, or the web page."
+                  }
+                }
+              }
+            },
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SharedText"
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Already there, or not added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareOutcome"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareOutcome"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Too big to share.",
             "content": {
               "application/json": {
                 "schema": {

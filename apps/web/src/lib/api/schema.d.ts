@@ -15,91 +15,13 @@ export interface paths {
          * Your API keys
          * @description Your keys in every household you're in, newest first. The keys themselves can't be shown again.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Your keys. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ApiKey"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listApiKeys"];
         put?: never;
         /**
          * Make an API key
          * @description For the household in use. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["NewApiKeyRequest"];
-                };
-            };
-            responses: {
-                /** @description Made. Copy the key now. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["NewApiKey"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["createApiKey"];
         delete?: never;
         options?: never;
         head?: never;
@@ -115,46 +37,9 @@ export interface paths {
         };
         /**
          * Check an API key
-         * @description The key this request was sent with: its household and what it may do. A quick way for a tool like Home Assistant to check its key works.
+         * @description The key this request was sent with: its household and what it may do. A quick way for a tool like Home Assistant to check its key works. Any API key that works will do: it needs no permission.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The key works. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ApiKey"];
-                    };
-                };
-                /** @description No API key was sent. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The key doesn't work. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["checkApiKey"];
         put?: never;
         post?: never;
         delete?: never;
@@ -177,53 +62,7 @@ export interface paths {
          * Revoke an API key
          * @description It stops working straight away.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    keyId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Revoked. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description You have no such key. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["revokeApiKey"];
         options?: never;
         head?: never;
         patch?: never;
@@ -240,122 +79,13 @@ export interface paths {
          * See an invite
          * @description Which household an invite link is for, before joining.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    token: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The invite can be used. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Invite"];
-                    };
-                };
-                /** @description No invite has that link. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The link has been used, or has expired. */
-                410: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["getInvite"];
         put?: never;
         /**
          * Join a household
          * @description Signed in, this adds you to the invite's household. Signed out, send `account` to make one, which then signs in.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    token: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": components["schemas"]["JoinRequest"];
-                };
-            };
-            responses: {
-                /** @description Joined, with an account you already had. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Me"];
-                    };
-                };
-                /** @description Joined, with a new account, and signed in. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Me"];
-                    };
-                };
-                /** @description Signed out, and no account was sent. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No invite has that link. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Already in the household, or the account exists. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The link has been used, or has expired. */
-                410: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["joinHousehold"];
         delete?: never;
         options?: never;
         head?: never;
@@ -373,35 +103,7 @@ export interface paths {
          * Who's signed in
          * @description The signed-in person, their households and the one in use on this device. Switch households with `POST /api/auth/organization/set-active`.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Signed in. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Me"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["getMe"];
         put?: never;
         post?: never;
         delete?: never;
@@ -421,44 +123,7 @@ export interface paths {
          * Export your data
          * @description Your account, the households you're in, the cooking notes you wrote, and your API keys (never the keys themselves), as a JSON file to keep. A household's recipes are in the household's export.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Your data, to download. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["MyData"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["exportMyData"];
         put?: never;
         post?: never;
         delete?: never;
@@ -475,82 +140,13 @@ export interface paths {
             cookie?: never;
         };
         /** Whether the server still needs setting up */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description True until the first account exists. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["SetupStatus"];
-                    };
-                };
-            };
-        };
+        get: operations["getSetupStatus"];
         put?: never;
         /**
          * Set up the server
          * @description Makes the first account, which is the server admin, and its household, then signs in. Needs the setup code printed in the server's log.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SetupRequest"];
-                };
-            };
-            responses: {
-                /** @description Set up, and signed in. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Me"];
-                    };
-                };
-                /** @description Something's wrong with what was sent, or the code. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The server's already set up. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Too many wrong codes. Try again in a few minutes. */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["setUpServer"];
         delete?: never;
         options?: never;
         head?: never;
@@ -568,26 +164,7 @@ export interface paths {
          * What's on
          * @description Which of Merran's optional parts are on, what they make possible, and what the web app needs from them. Needs no sign-in: the web app reads it before anyone signs in.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description What's on. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Capabilities"];
-                    };
-                };
-            };
-        };
+        get: operations["getCapabilities"];
         put?: never;
         post?: never;
         delete?: never;
@@ -607,26 +184,7 @@ export interface paths {
          * Check the server is up
          * @description Answers as long as the server is running. Needs no sign-in, and says nothing personal.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The server is up. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Health"];
-                    };
-                };
-            };
-        };
+        get: operations["checkHealth"];
         put?: never;
         post?: never;
         delete?: never;
@@ -646,35 +204,7 @@ export interface paths {
          * Check the server can do its work
          * @description Checks the database answers and is up to date. For uptime monitors. Needs no sign-in.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Ready. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Ready"];
-                    };
-                };
-                /** @description Not ready: the database is unreachable or out of date. */
-                503: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["checkReady"];
         put?: never;
         post?: never;
         delete?: never;
@@ -696,50 +226,7 @@ export interface paths {
          * Start another household
          * @description Server admins only, for now. You become its owner, and it becomes the one in use on this device.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        name: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Started. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Household"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["createHousehold"];
         delete?: never;
         options?: never;
         head?: never;
@@ -757,44 +244,7 @@ export interface paths {
          * The household in use
          * @description With an API key, it needs the `household: read` permission.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The household. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Household"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["getHousehold"];
         put?: never;
         post?: never;
         delete?: never;
@@ -804,48 +254,7 @@ export interface paths {
          * Change the household
          * @description Household admins only.
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["HouseholdChanges"];
-                };
-            };
-            responses: {
-                /** @description Changed. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Household"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        patch: operations["updateHousehold"];
         trace?: never;
     };
     "/api/households/current/export": {
@@ -859,44 +268,7 @@ export interface paths {
          * Export the household
          * @description Household admins only. A zip of the household's details and recipes, with their photos, versions, cooking notes and pairings, in the Merran export format (docs/export-format.md). Recipes in Recently deleted, secrets, API keys and invites stay behind.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The export, as a zip. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/zip": string;
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["exportHousehold"];
         put?: never;
         post?: never;
         delete?: never;
@@ -918,66 +290,7 @@ export interface paths {
          * Import a Merran export into the household
          * @description Household admins only. The body is the export's zip. It's checked, then imported in the background: follow the job at /households/current/jobs/{jobId}. Recipes already here, like from importing the same export twice, are skipped.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/zip": string;
-                };
-            };
-            responses: {
-                /** @description Importing. */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Job"];
-                    };
-                };
-                /** @description That isn't a Merran export this Merran can read. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The file is too big. */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["importIntoHousehold"];
         delete?: never;
         options?: never;
         head?: never;
@@ -997,67 +310,7 @@ export interface paths {
          * Check a file from another app
          * @description Household admins only. The body is the file: a Mealie backup, or recipes exported from Mealie. It's kept, and what's in it is said, so its import can be started at /households/current/import/files/{fileId}/start. A file not started is cleared away after a week.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/zip": string;
-                    "application/octet-stream": string;
-                };
-            };
-            responses: {
-                /** @description What's in it. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportFile"];
-                    };
-                };
-                /** @description Merran can't read that file. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The file is too big. */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["checkImportFile"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1077,59 +330,7 @@ export interface paths {
          * Import a checked file from another app
          * @description Household admins only. Imports a file checked at /households/current/import/files, in the background: follow the job at /households/current/jobs/{jobId}. Recipes an earlier import brought in are skipped.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    fileId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["StartImportFile"];
-                };
-            };
-            responses: {
-                /** @description Importing. */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Job"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The file isn't here any more. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["startFileImport"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1149,66 +350,7 @@ export interface paths {
          * Connect to a Mealie
          * @description The server admin only, since Mealie is usually on the home network and this reaches the address given. Says which Mealie it is and how many recipes it has. The token isn't kept.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["MealieConnection"];
-                };
-            };
-            responses: {
-                /** @description Connected. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["MealieCheck"];
-                    };
-                };
-                /** @description Mealie didn't take the token. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Couldn't reach Mealie, or it isn't Mealie. */
-                502: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["checkMealie"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1228,66 +370,7 @@ export interface paths {
          * Import from a Mealie
          * @description The server admin only. Imports every recipe in the Mealie, in the background: follow the job at /households/current/jobs/{jobId}. Recipes an earlier import brought in are skipped. The token is sealed while the import runs, and forgotten once it's finished.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["MealieConnection"];
-                };
-            };
-            responses: {
-                /** @description Importing. */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Job"];
-                    };
-                };
-                /** @description Mealie didn't take the token. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Couldn't reach Mealie, or it isn't Mealie. */
-                502: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["importFromMealie"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1305,97 +388,13 @@ export interface paths {
          * Invite links that can still be used
          * @description Household admins only. The links themselves can't be shown again.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Unused links, newest first. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["InviteLink"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listInvites"];
         put?: never;
         /**
          * Make an invite link
          * @description Household admins only. The link works once, for 7 days. Send it to the person; it's shown only now.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /**
-                         * @default member
-                         * @enum {string}
-                         */
-                        role?: "admin" | "member";
-                    };
-                };
-            };
-            responses: {
-                /** @description Made. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["NewInviteLink"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["createInvite"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1416,53 +415,7 @@ export interface paths {
          * Cancel an invite link
          * @description Household admins only.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    inviteId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Cancelled. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such invite. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["cancelInvite"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1479,55 +432,7 @@ export interface paths {
          * One of the household's jobs
          * @description Household admins only. How a job for this household, like an import, is getting on.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    jobId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The job. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Job"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such job in this household. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["getHouseholdJob"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1549,64 +454,7 @@ export interface paths {
          * Stop one of the household's jobs
          * @description Household admins only. What it already did stays: an import keeps the recipes it brought in.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    jobId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Cancelled, or stopping. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Job"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such job in this household. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description It has already finished. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["cancelHouseholdJob"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1624,44 +472,7 @@ export interface paths {
          * Who's in the household
          * @description With an API key, it needs the `household: read` permission.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Its people, longest-standing first. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Member"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listMembers"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1684,133 +495,14 @@ export interface paths {
          * Remove someone, or leave
          * @description Household admins can remove people; anyone can remove themselves. The last owner can't leave.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    memberId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Removed. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such person in the household. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description That would leave no owner. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["removeMember"];
         options?: never;
         head?: never;
         /**
          * Change someone's role
          * @description Household admins only. Only owners can make or unmake owners, and there's always at least one owner.
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    memberId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @enum {string} */
-                        role: "owner" | "admin" | "member";
-                    };
-                };
-            };
-            responses: {
-                /** @description Changed. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Member"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such person in the household. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description That would leave no owner. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        patch: operations["updateMember"];
         trace?: never;
     };
     "/api/households/import": {
@@ -1826,66 +518,7 @@ export interface paths {
          * Import a Merran export as a new household
          * @description Server admins only, as for starting any household. The body is the export's zip. A household is made with the export's name and details, you become its owner, and it becomes the one in use on this device; its recipes are imported in the background: follow the job at /households/current/jobs/{jobId}.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/zip": string;
-                };
-            };
-            responses: {
-                /** @description Made, and importing. */
-                202: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["HouseholdImport"];
-                    };
-                };
-                /** @description That isn't a Merran export this Merran can read. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The file is too big. */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["importHousehold"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1903,115 +536,13 @@ export interface paths {
          * Find recipes
          * @description The household's recipes, a page at a time: searched, filtered by tags, and sorted. With an API key, it needs the `recipes: read` permission.
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Words in the name, description or ingredients. */
-                    q?: string;
-                    /** @description Only recipes with this tag. Repeat it for all of several. */
-                    tag?: string | string[];
-                    /** @description Only recipes with this diet label. Repeat it for all of several. */
-                    diet?: components["schemas"]["Diet"] | components["schemas"]["Diet"][];
-                    /** @description Only recipes ready in this many minutes or fewer. */
-                    maxMinutes?: number;
-                    /** @description Only recipes not made yet (true), or only ones made (false). */
-                    new?: string;
-                    /** @description Newest added, name, recently changed, top rated, or recently made. */
-                    sort?: "newest" | "name" | "updated" | "rating" | "made";
-                    limit?: number;
-                    offset?: number | null;
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The recipes that match. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecipeList"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listRecipes"];
         put?: never;
         /**
          * Add a recipe
          * @description Ingredients and steps are lines, one each, as typed in the editor; a line starting with "#" starts a section. Each ingredient line is read into its amount, unit, food and note. With an API key, it needs the `recipes: write` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RecipeInput"];
-                };
-            };
-            responses: {
-                /** @description Added. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description Something isn't right, field by field. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["createRecipe"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2031,57 +562,7 @@ export interface paths {
          * Change several recipes at once
          * @description Moves recipes to Recently deleted, or adds or takes off tags, up to 500 at a time. Ones that aren't there are skipped. With an API key, it needs the `recipes: write` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RecipeBulkInput"];
-                };
-            };
-            responses: {
-                /** @description Done. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BulkResult"];
-                    };
-                };
-                /** @description Nothing picked, or something else is off. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["bulkChangeRecipes"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2099,86 +580,14 @@ export interface paths {
          * Recently deleted
          * @description Deleted recipes, which can be put back for 30 days, latest first. With an API key, it needs the `recipes: read` permission.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description What's there. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["DeletedRecipe"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listDeletedRecipes"];
         put?: never;
         post?: never;
         /**
          * Empty Recently deleted
          * @description Deletes everything in it for good. This can't be undone. With an API key, it needs the `recipes: write` permission.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Emptied. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["emptyDeletedRecipes"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2197,57 +606,7 @@ export interface paths {
          * Put back, or delete for good, several recipes at once
          * @description For recipes in Recently deleted, up to 500 at a time. Ones that aren't there are skipped. With an API key, it needs the `recipes: write` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["DeletedBulkInput"];
-                };
-            };
-            responses: {
-                /** @description Done. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["BulkResult"];
-                    };
-                };
-                /** @description Nothing picked, or something else is off. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["bulkChangeDeletedRecipes"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2268,53 +627,7 @@ export interface paths {
          * Delete a recipe for good
          * @description Only for a recipe in Recently deleted. This can't be undone. With an API key, it needs the `recipes: write` permission.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    recipeId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted for good. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe in Recently deleted. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["purgeRecipe"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2333,55 +646,7 @@ export interface paths {
          * Put a recipe back
          * @description Takes a recipe out of Recently deleted, back where it was. With an API key, it needs the `recipes: write` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    recipeId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Put back. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe in Recently deleted. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["restoreRecipe"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2401,88 +666,7 @@ export interface paths {
          * Add a recipe from a link
          * @description Reads the recipe data most recipe sites put in their pages, and its photo. A link the household imported before gives back that recipe, unless `force` is set. Pages without recipe data, and video links, can't be imported yet. With an API key, it needs the `recipes: write` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        url: string;
-                        /** @description Import it again even if the household has it. */
-                        force?: boolean;
-                    };
-                };
-            };
-            responses: {
-                /** @description Already in the library. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportResult"];
-                    };
-                };
-                /** @description Added. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ImportResult"];
-                    };
-                };
-                /** @description Not a link Merran can fetch. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The page has no recipe data, or it's a video. */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The site couldn't be reached, or turned Merran away. */
-                502: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["importRecipe"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2500,44 +684,7 @@ export interface paths {
          * Recipe tags
          * @description The household's tags, with how many recipes have each, alphabetically. With an API key, it needs the `recipes: read` permission.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The tags. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Tag"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listTags"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2560,112 +707,14 @@ export interface paths {
          * Delete a tag
          * @description Takes it off every recipe. The recipes stay. With an API key, it needs the `recipes: write` permission.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    tagId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such tag. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["deleteTag"];
         options?: never;
         head?: never;
         /**
          * Rename or merge a tag
          * @description Renaming a tag to another tag's name merges them: every recipe with either has the one tag. With an API key, it needs the `recipes: write` permission.
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    tagId: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["TagChanges"];
-                };
-            };
-            responses: {
-                /** @description All the tags, after the change. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Tag"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such tag. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        patch: operations["updateTag"];
         trace?: never;
     };
     "/api/recipes/{recipe}": {
@@ -2679,176 +728,18 @@ export interface paths {
          * A recipe
          * @description With its ingredients, read into amounts, units and foods, and its steps. With an API key, it needs the `recipes: read` permission.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The recipe. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["getRecipe"];
         /**
          * Change a recipe
          * @description Replaces the whole recipe, as the editor saves it. The recipe as it was is kept as a version, so the change can be undone; its slug stays the same. With an API key, it needs the `recipes: write` permission.
          */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RecipeInput"];
-                };
-            };
-            responses: {
-                /** @description Saved. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description Something isn't right, field by field. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        put: operations["updateRecipe"];
         post?: never;
         /**
          * Delete a recipe
          * @description Moves it to Recently deleted, where it can be put back for 30 days. With an API key, it needs the `recipes: write` permission.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Moved to Recently deleted. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["deleteRecipe"];
         options?: never;
         head?: never;
         patch?: never;
@@ -2865,124 +756,13 @@ export interface paths {
          * How cooking a recipe went
          * @description Each time it was cooked and someone said how it went: stars, a note, or both. Newest first, the latest 50. With an API key, it needs the `recipes: read` permission.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The notes. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CookNote"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listCookNotes"];
         put?: never;
         /**
          * Say how cooking a recipe went
          * @description Stars, a note for next time, or both. The stars become the recipe's rating, without keeping a version. With an API key, it needs the `recipes: write` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["CookNoteInput"];
-                };
-            };
-            responses: {
-                /** @description Saved. */
-                201: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["CookNote"];
-                    };
-                };
-                /** @description Neither stars nor a note, or something else is off. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["createCookNote"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3003,55 +783,7 @@ export interface paths {
          * Delete a cooking note
          * @description The recipe keeps its rating. With an API key, it needs the `recipes: write` permission.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                    noteId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Deleted. */
-                204: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content?: never;
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe or note. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["deleteCookNote"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3069,69 +801,7 @@ export interface paths {
          * Correct a recipe's diet labels
          * @description The labels are worked out from the ingredients. Corrections that differ from them are kept, and stick when the recipe is edited. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
          */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["DietsInput"];
-                };
-            };
-            responses: {
-                /** @description The recipe, with its labels. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description A label Merran doesn't know. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        put: operations["setRecipeDiets"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3152,56 +822,7 @@ export interface paths {
          * Mark a recipe made
          * @description The recipe was made now: its `lastMadeAt` is set. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The recipe, made now. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["markRecipeMade"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3219,124 +840,13 @@ export interface paths {
          * What a recipe goes with
          * @description Recipes it pairs with, picked or by a whole tag, every recipe that adds up to, and the recipes it's offered with. Recipes in Recently deleted are left out. With an API key, it needs the `recipes: read` permission.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description What it goes with. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecipePairings"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listPairings"];
         put?: never;
         /**
          * Add to what a recipe goes with
          * @description Recipes, or every recipe with a tag, so new ones join by themselves. Ones it already goes with, and the recipe itself, are skipped. With an API key, it needs the `recipes: write` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["PairingsInput"];
-                };
-            };
-            responses: {
-                /** @description What it goes with now. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecipePairings"];
-                    };
-                };
-                /** @description Nothing picked, or no tag by that name. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe, or one of those to pair isn't there. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["addPairings"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3357,57 +867,7 @@ export interface paths {
          * Take something off what a recipe goes with
          * @description The recipes stay. With an API key, it needs the `recipes: write` permission.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                    pairingId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description What it goes with now. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecipePairings"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe or pairing. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["removePairing"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3424,191 +884,18 @@ export interface paths {
          * A recipe's photo
          * @description As WebP: `full` for the recipe page, or `card`, cropped for recipe cards. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.
          */
-        get: {
-            parameters: {
-                query?: {
-                    size?: "full" | "card";
-                    /** @description Which photo: the links in `photo` say. */
-                    v?: string;
-                };
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The photo. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "image/webp": string;
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe, or it has no photo. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["getRecipePhoto"];
         /**
          * Give a recipe a photo
          * @description Send the photo itself as the body, as a JPEG, PNG, WebP or GIF of up to 15 MB. It replaces any photo the recipe had. With an API key, it needs the `recipes: write` permission.
          */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "image/*": string;
-                };
-            };
-            responses: {
-                /** @description The recipe, with its new photo. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description That isn't a photo Merran can read. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description The photo is over 15 MB. */
-                413: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        put: operations["setRecipePhoto"];
         post?: never;
         /**
          * Take a recipe's photo away
          * @description The photo is deleted. With an API key, it needs the `recipes: write` permission.
          */
-        delete: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The recipe, without a photo. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        delete: operations["deleteRecipePhoto"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3626,69 +913,7 @@ export interface paths {
          * Rate a recipe
          * @description Sets the recipe's stars, or clears them. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
          */
-        put: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["RecipeRatingInput"];
-                };
-            };
-            responses: {
-                /** @description The recipe, with its new rating. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description The rating isn't from 1 to 5. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        put: operations["rateRecipe"];
         post?: never;
         delete?: never;
         options?: never;
@@ -3707,56 +932,7 @@ export interface paths {
          * A recipe's earlier versions
          * @description How it was before each change, newest first, so any change can be undone. The last 50 are kept. With an API key, it needs the `recipes: read` permission.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The versions. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["RecipeVersion"][];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listRecipeVersions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3778,57 +954,7 @@ export interface paths {
          * Go back to a version
          * @description Makes the recipe what it was in that version. How it is now is kept as a version too, so this can be undone as well. With an API key, it needs the `recipes: write` permission.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    /** @description The recipe's id, or its slug. */
-                    recipe: string;
-                    versionId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The recipe, as it was. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Recipe"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such recipe or version. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["restoreRecipeVersion"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3846,44 +972,7 @@ export interface paths {
          * The household's settings
          * @description The settings of the household in use, like its own AI keys. Anyone in the household can see them; secrets show only whether they're set.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The settings. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["HouseholdSettings"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["getHouseholdSettings"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3893,57 +982,7 @@ export interface paths {
          * Change the household's settings
          * @description Household admins only. Send only what changes. Nothing is saved if anything is wrong.
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SettingChanges"];
-                };
-            };
-            responses: {
-                /** @description Saved. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["HouseholdSettings"];
-                    };
-                };
-                /** @description Something isn't right, field by field. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        patch: operations["updateHouseholdSettings"];
         trace?: never;
     };
     "/api/settings/server": {
@@ -3957,44 +996,7 @@ export interface paths {
          * The server's settings
          * @description Server admins only. Every server setting that can be seen here, with where its value comes from, and a little about the server.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The settings. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ServerSettings"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["getServerSettings"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4004,57 +1006,7 @@ export interface paths {
          * Change the server's settings
          * @description Server admins only. Send only what changes. Nothing is saved if anything is wrong, and settings from environment variables can't be changed.
          */
-        patch: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": components["schemas"]["SettingChanges"];
-                };
-            };
-            responses: {
-                /** @description Saved. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["ServerSettings"];
-                    };
-                };
-                /** @description Something isn't right, field by field. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        patch: operations["updateServerSettings"];
         trace?: never;
     };
     "/api/settings/server/jobs": {
@@ -4068,47 +1020,7 @@ export interface paths {
          * The server's jobs
          * @description Server admins only. The latest 100 jobs, newest first: what's waiting, running, done, or failed and why.
          */
-        get: {
-            parameters: {
-                query?: {
-                    /** @description Only jobs that are queued, running, done, failed or cancelled. */
-                    status?: "queued" | "running" | "done" | "failed" | "cancelled";
-                };
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The jobs. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["JobList"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["listServerJobs"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4130,64 +1042,7 @@ export interface paths {
          * Stop a job
          * @description Server admins only. A waiting job is cancelled; a running one is asked to stop, and is cancelled once it has.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    jobId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Cancelled, or stopping. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Job"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such job. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description It has already finished. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["cancelServerJob"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4207,64 +1062,27 @@ export interface paths {
          * Try a job again
          * @description Server admins only. A failed or cancelled job runs again from the start.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path: {
-                    jobId: string;
-                };
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description Waiting to run. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Job"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description No such job. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description It hasn't finished, or another like it is already waiting. */
-                409: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
+        post: operations["retryServerJob"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/share": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
+        get?: never;
+        put?: never;
+        /**
+         * Share something to Merran
+         * @description What Android's share sheet and the iPhone Shortcut send. A link to a recipe, as text, a form, JSON, or a file with the link in it (a text file, a .webloc, or the web page itself), is added as a recipe. Photos and text of a recipe can't be added yet. It answers with what happened, in words a Shortcut can show, rather than an error when the link couldn't be added. With an API key, it needs the `imports: write` permission.
+         */
+        post: operations["shareToMerran"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4284,44 +1102,7 @@ export interface paths {
          * Make a new install id
          * @description Server admins only. Summaries from now on can't be linked to earlier ones. Answers with the next summary.
          */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The next summary, with the new id. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TelemetryReport"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        post: operations["renewInstallId"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4339,44 +1120,7 @@ export interface paths {
          * The next telemetry summary
          * @description Server admins only. Exactly what the daily summary would send, whether or not it's on.
          */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description The summary. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["TelemetryReport"];
-                    };
-                };
-                /** @description Not signed in. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-                /** @description Not allowed. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": components["schemas"]["Error"];
-                    };
-                };
-            };
-        };
+        get: operations["getTelemetryReport"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4394,125 +1138,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Sign in with username */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody: {
-                content: {
-                    "application/json": {
-                        /** @description The username of the user */
-                        username: string;
-                        /** @description The password of the user */
-                        password: string;
-                        /** @description Remember the user session */
-                        rememberMe?: boolean;
-                        /** @description URL to redirect to after sign in (also used as the redirect target for email verification when required) */
-                        callbackURL?: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Success */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @description Whether the client should follow the Location header. True when callbackURL was provided. */
-                            redirect: boolean;
-                            /** @description Session token for the authenticated session */
-                            token: string;
-                            /** @description The callbackURL echoed back so the client can redirect. */
-                            url?: string | null;
-                            user: components["schemas"]["User"];
-                        };
-                    };
-                };
-                /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                        };
-                    };
-                };
-                /** @description Unauthorized. Due to missing or invalid authentication. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                        };
-                    };
-                };
-                /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Not Found. The requested resource was not found. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Unprocessable Entity. Validation error */
-                422: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-            };
-        };
+        /**
+         * Sign in
+         * @description With a username and password. Sets the session cookie that signed-in requests send. Scripts and tools like Home Assistant use an API key instead. Answers in Better Auth's error shape.
+         */
+        post: operations["signIn"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4528,8 +1158,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Sign in with email and password */
-        post: operations["signInEmail"];
+        /**
+         * Sign in with an email address
+         * @description The same as signing in with a username, with the account's email address instead.
+         */
+        post: operations["signInWithEmail"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4545,7 +1178,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Sign out the current user */
+        /**
+         * Sign out
+         * @description Ends this session, and clears its cookie.
+         */
         post: operations["signOut"];
         delete?: never;
         options?: never;
@@ -4560,7 +1196,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Get the current session */
+        /**
+         * This session
+         * @description Who's signed in, and their session, or null when no one is. `GET /api/auth/me` says more: their households and which one is in use.
+         */
         get: operations["getSession"];
         put?: never;
         post?: never;
@@ -4577,8 +1216,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description List all active sessions for the user */
-        get: operations["listUserSessions"];
+        /**
+         * Where you're signed in
+         * @description Every session you have open: one for each browser or device.
+         */
+        get: operations["listSessions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4596,103 +1238,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Revoke a single session */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": {
-                        /** @description The token to revoke */
-                        token: string;
-                    };
-                };
-            };
-            responses: {
-                /** @description Success */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @description Indicates if the session was revoked successfully */
-                            status: boolean;
-                        };
-                    };
-                };
-                /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                        };
-                    };
-                };
-                /** @description Unauthorized. Due to missing or invalid authentication. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                        };
-                    };
-                };
-                /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Not Found. The requested resource was not found. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-            };
-        };
+        /**
+         * Sign out somewhere
+         * @description Ends one of your sessions, named by its token from `GET /api/auth/list-sessions`.
+         */
+        post: operations["revokeSession"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4708,100 +1258,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Revoke all other sessions for the user except the current one */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            responses: {
-                /** @description Success */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @description Indicates if all other sessions were revoked successfully */
-                            status: boolean;
-                        };
-                    };
-                };
-                /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                        };
-                    };
-                };
-                /** @description Unauthorized. Due to missing or invalid authentication. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                        };
-                    };
-                };
-                /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Not Found. The requested resource was not found. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-            };
-        };
+        /**
+         * Sign out everywhere else
+         * @description Ends every session you have but this one.
+         */
+        post: operations["revokeOtherSessions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4817,100 +1278,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Revoke all sessions for the user */
-        post: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: {
-                content: {
-                    "application/json": Record<string, never>;
-                };
-            };
-            responses: {
-                /** @description Success */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            /** @description Indicates if all sessions were revoked successfully */
-                            status: boolean;
-                        };
-                    };
-                };
-                /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
-                400: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                        };
-                    };
-                };
-                /** @description Unauthorized. Due to missing or invalid authentication. */
-                401: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message: string;
-                        };
-                    };
-                };
-                /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
-                403: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Not Found. The requested resource was not found. */
-                404: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
-                429: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-                /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
-                500: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            message?: string;
-                        };
-                    };
-                };
-            };
-        };
+        /**
+         * Sign out everywhere
+         * @description Ends every session you have, this one too.
+         */
+        post: operations["revokeAllSessions"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4926,7 +1298,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Change the password of the user */
+        /**
+         * Change your password
+         * @description Needs your current password. The new one needs at least 10 characters. With `revokeOtherSessions`, everywhere else is signed out too, and a new token comes back for this session.
+         */
         post: operations["changePassword"];
         delete?: never;
         options?: never;
@@ -4943,8 +1318,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Update the current user */
-        post: operations["updateUser"];
+        /**
+         * Change your name
+         * @description Your name, username or picture.
+         */
+        post: operations["updateProfile"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4960,8 +1338,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Set the active organization */
-        post: operations["setActiveOrganization"];
+        /**
+         * Switch households
+         * @description Makes another of your households the one in use on this device. Better Auth calls households organizations, so it's named by `organizationId`. An API key always works in its own household.
+         */
+        post: operations["switchHousehold"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4988,6 +1369,24 @@ export interface components {
                 };
             };
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+         *       "name": "Home Assistant",
+         *       "start": "mrn_3fK9aQ",
+         *       "household": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *         "name": "The Riveras"
+         *       },
+         *       "permissions": {
+         *         "recipes": "read",
+         *         "list": "write"
+         *       },
+         *       "expiresAt": "2027-01-13T18:30:00.000Z",
+         *       "lastUsedAt": "2026-10-15T18:30:00.000Z",
+         *       "createdAt": "2026-10-01T17:30:00.000Z"
+         *     }
+         */
         ApiKey: {
             id: string;
             name: string;
@@ -5005,6 +1404,12 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /**
+         * @example {
+         *       "recipes": "read",
+         *       "list": "write"
+         *     }
+         */
         ApiKeyPermissions: {
             /** @enum {string} */
             household?: "read";
@@ -5021,16 +1426,54 @@ export interface components {
             /** @enum {string} */
             assistant?: "read" | "write";
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000009",
+         *       "name": "Home Assistant",
+         *       "start": "mrn_3fK9aQ",
+         *       "household": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *         "name": "The Riveras"
+         *       },
+         *       "permissions": {
+         *         "recipes": "read",
+         *         "list": "write"
+         *       },
+         *       "expiresAt": "2027-01-13T18:30:00.000Z",
+         *       "lastUsedAt": null,
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "key": "mrn_3fK9aQ…"
+         *     }
+         */
         NewApiKey: components["schemas"]["ApiKey"] & {
             /** @example mrn_3fK9aQ… */
             key: string;
         };
+        /**
+         * @example {
+         *       "name": "Home Assistant",
+         *       "permissions": {
+         *         "recipes": "read",
+         *         "list": "write"
+         *       },
+         *       "expiresInDays": 90
+         *     }
+         */
         NewApiKeyRequest: {
             name: string;
             permissions: components["schemas"]["ApiKeyPermissions"];
             /** @default 90 */
             expiresInDays: 30 | 90 | 365 | null;
         };
+        /**
+         * @example {
+         *       "household": {
+         *         "name": "The Riveras"
+         *       },
+         *       "role": "member",
+         *       "expiresAt": "2026-10-22T18:30:00.000Z"
+         *     }
+         */
         Invite: {
             household: {
                 name: string;
@@ -5040,6 +1483,23 @@ export interface components {
             /** Format: date-time */
             expiresAt: string;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+         *       "name": "Sam Rivera",
+         *       "email": "sam@example.com",
+         *       "username": "sam",
+         *       "serverAdmin": true,
+         *       "households": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *           "name": "The Riveras",
+         *           "role": "owner"
+         *         }
+         *       ],
+         *       "activeHouseholdId": "0199e8b0-5a10-7a01-8b00-000000000003"
+         *     }
+         */
         Me: {
             id: string;
             name: string;
@@ -5054,9 +1514,27 @@ export interface components {
             }[];
             activeHouseholdId: string | null;
         };
+        /**
+         * @example {
+         *       "account": {
+         *         "name": "Jamie Rivera",
+         *         "email": "jamie@example.com",
+         *         "username": "jamie",
+         *         "password": "correct horse battery staple"
+         *       }
+         *     }
+         */
         JoinRequest: {
             account?: components["schemas"]["NewAccount"];
         };
+        /**
+         * @example {
+         *       "name": "Jamie Rivera",
+         *       "email": "jamie@example.com",
+         *       "username": "jamie",
+         *       "password": "correct horse battery staple"
+         *     }
+         */
         NewAccount: {
             name: string;
             /** Format: email */
@@ -5064,6 +1542,49 @@ export interface components {
             username: string;
             password: string;
         };
+        /**
+         * @example {
+         *       "format": "merran.person",
+         *       "version": 1,
+         *       "exportedAt": "2026-10-15T18:30:00.000Z",
+         *       "account": {
+         *         "name": "Sam Rivera",
+         *         "email": "sam@example.com",
+         *         "username": "sam",
+         *         "createdAt": "2026-10-01T17:30:00.000Z",
+         *         "preferences": {}
+         *       },
+         *       "households": [
+         *         {
+         *           "name": "The Riveras",
+         *           "role": "owner",
+         *           "joinedAt": "2026-10-01T17:30:00.000Z"
+         *         }
+         *       ],
+         *       "cookingNotes": [
+         *         {
+         *           "household": "The Riveras",
+         *           "recipe": "Lemon Chicken",
+         *           "rating": 5,
+         *           "note": "More lemon next time.",
+         *           "createdAt": "2026-10-09T01:15:00.000Z"
+         *         }
+         *       ],
+         *       "apiKeys": [
+         *         {
+         *           "name": "Home Assistant",
+         *           "household": "The Riveras",
+         *           "permissions": {
+         *             "recipes": "read",
+         *             "list": "write"
+         *           },
+         *           "createdAt": "2026-10-01T17:30:00.000Z",
+         *           "lastUsedAt": "2026-10-15T18:30:00.000Z",
+         *           "expiresAt": "2027-01-13T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
         MyData: {
             /** @enum {string} */
             format: "merran.person";
@@ -5108,13 +1629,52 @@ export interface components {
                 expiresAt: string | null;
             }[];
         };
+        /**
+         * @example {
+         *       "needed": true
+         *     }
+         */
         SetupStatus: {
             needed: boolean;
         };
+        /**
+         * @example {
+         *       "name": "Sam Rivera",
+         *       "email": "sam@example.com",
+         *       "username": "sam",
+         *       "password": "correct horse battery staple",
+         *       "code": "ABCD-EFGH-JKMN",
+         *       "household": "The Riveras"
+         *     }
+         */
         SetupRequest: components["schemas"]["NewAccount"] & {
             code: string;
             household: string;
         };
+        /**
+         * @example {
+         *       "version": "0.1.0",
+         *       "modules": [
+         *         {
+         *           "id": "errorTracking",
+         *           "on": true
+         *         },
+         *         {
+         *           "id": "telemetry",
+         *           "on": true
+         *         }
+         *       ],
+         *       "capabilities": [],
+         *       "client": {
+         *         "errorTracking": {
+         *           "dsn": "https://public-key@errors.example.com/1",
+         *           "environment": "home",
+         *           "sampleRate": 1,
+         *           "release": "0.1.0"
+         *         }
+         *       }
+         *     }
+         */
         Capabilities: {
             version: string;
             modules: {
@@ -5136,18 +1696,41 @@ export interface components {
                 };
             };
         };
+        /**
+         * @example {
+         *       "status": "ok",
+         *       "version": "0.1.0"
+         *     }
+         */
         Health: {
             /** @enum {string} */
             status: "ok";
             /** @example 0.1.0 */
             version: string;
         };
+        /**
+         * @example {
+         *       "status": "ready",
+         *       "database": "sqlite"
+         *     }
+         */
         Ready: {
             /** @enum {string} */
             status: "ready";
             /** @enum {string} */
             database: "sqlite" | "postgres";
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *       "name": "The Riveras",
+         *       "country": "US",
+         *       "currency": "USD",
+         *       "timeZone": "America/Phoenix",
+         *       "weekStartsOn": 0,
+         *       "role": "owner"
+         *     }
+         */
         Household: {
             id: string;
             name: string;
@@ -5158,6 +1741,12 @@ export interface components {
             /** @enum {string} */
             role: "owner" | "admin" | "member";
         };
+        /**
+         * @example {
+         *       "name": "The Rivera-Parks",
+         *       "weekStartsOn": 1
+         *     }
+         */
         HouseholdChanges: {
             name?: string;
             country?: string | null;
@@ -5165,6 +1754,27 @@ export interface components {
             timeZone?: string;
             weekStartsOn?: number;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+         *       "kind": "household.import",
+         *       "status": "running",
+         *       "scheduled": false,
+         *       "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *       "progress": {
+         *         "done": 42,
+         *         "total": 128
+         *       },
+         *       "result": null,
+         *       "error": null,
+         *       "attempts": 1,
+         *       "maxAttempts": 3,
+         *       "runAt": "2026-10-15T18:30:00.000Z",
+         *       "startedAt": "2026-10-15T18:30:00.000Z",
+         *       "finishedAt": null,
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
         Job: {
             id: string;
             /**
@@ -5202,6 +1812,27 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000018",
+         *       "app": "mealie",
+         *       "what": "backup",
+         *       "recipes": 312,
+         *       "alreadyHere": 0,
+         *       "groups": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000019",
+         *           "name": "Home",
+         *           "recipes": 298
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001a",
+         *           "name": "Grandma",
+         *           "recipes": 14
+         *         }
+         *       ]
+         *     }
+         */
         ImportFile: {
             /** @description Start its import at /households/current/import/files/{fileId}/start. */
             id: string;
@@ -5222,10 +1853,22 @@ export interface components {
                 recipes: number;
             }[];
         };
+        /**
+         * @example {
+         *       "group": "0199e8b0-5a10-7a01-8b00-000000000019"
+         *     }
+         */
         StartImportFile: {
             /** @description Which of a Mealie backup's groups to import. All of them if left out. */
             group?: string | null;
         };
+        /**
+         * @example {
+         *       "version": "v3.28.0",
+         *       "recipes": 312,
+         *       "alreadyHere": 0
+         *     }
+         */
         MealieCheck: {
             /** @example v3.28.0 */
             version: string | null;
@@ -5233,11 +1876,25 @@ export interface components {
             /** @description Recipes an earlier Mealie import brought in. They're skipped. */
             alreadyHere: number;
         };
+        /**
+         * @example {
+         *       "url": "http://192.168.1.20:9000",
+         *       "token": "sample-mealie-api-token"
+         *     }
+         */
         MealieConnection: {
             /** Format: uri */
             url: string;
             token: string;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+         *       "role": "member",
+         *       "expiresAt": "2026-10-22T18:30:00.000Z",
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
         InviteLink: {
             id: string;
             /** @enum {string} */
@@ -5247,10 +1904,29 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000a",
+         *       "role": "member",
+         *       "expiresAt": "2026-10-22T18:30:00.000Z",
+         *       "createdAt": "2026-10-15T18:30:00.000Z",
+         *       "link": "https://merran.example.com/join/sample-invite-token"
+         *     }
+         */
         NewInviteLink: components["schemas"]["InviteLink"] & {
             /** Format: uri */
             link: string;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000005",
+         *       "userId": "0199e8b0-5a10-7a01-8b00-000000000002",
+         *       "name": "Jamie Rivera",
+         *       "username": "jamie",
+         *       "role": "admin",
+         *       "joinedAt": "2026-10-01T17:30:00.000Z"
+         *     }
+         */
         Member: {
             id: string;
             userId: string;
@@ -5261,15 +1937,105 @@ export interface components {
             /** Format: date-time */
             joinedAt: string;
         };
+        /**
+         * @example {
+         *       "household": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *         "name": "The Riveras",
+         *         "country": "US",
+         *         "currency": "USD",
+         *         "timeZone": "America/Phoenix",
+         *         "weekStartsOn": 0,
+         *         "role": "owner"
+         *       },
+         *       "job": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+         *         "kind": "household.import",
+         *         "status": "queued",
+         *         "scheduled": false,
+         *         "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *         "progress": null,
+         *         "result": null,
+         *         "error": null,
+         *         "attempts": 0,
+         *         "maxAttempts": 3,
+         *         "runAt": "2026-10-15T18:30:00.000Z",
+         *         "startedAt": null,
+         *         "finishedAt": null,
+         *         "createdAt": "2026-10-15T18:30:00.000Z"
+         *       }
+         *     }
+         */
         HouseholdImport: {
             household: components["schemas"]["Household"];
             job: components["schemas"]["Job"];
         };
+        /**
+         * @example {
+         *       "recipes": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "slug": "lemon-chicken",
+         *           "name": "Lemon Chicken",
+         *           "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *           "servings": 4,
+         *           "totalMinutes": 50,
+         *           "rating": 5,
+         *           "tags": [
+         *             "chicken",
+         *             "dinner"
+         *           ],
+         *           "diets": [
+         *             "gluten-free",
+         *             "dairy-free",
+         *             "egg-free",
+         *             "nut-free"
+         *           ],
+         *           "photo": {
+         *             "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *             "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *           },
+         *           "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *           "createdAt": "2026-10-01T17:30:00.000Z",
+         *           "updatedAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ],
+         *       "total": 1
+         *     }
+         */
         RecipeList: {
             recipes: components["schemas"]["RecipeSummary"][];
             /** @description How many match, in all. */
             total: number;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *       "slug": "lemon-chicken",
+         *       "name": "Lemon Chicken",
+         *       "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *       "servings": 4,
+         *       "totalMinutes": 50,
+         *       "rating": 5,
+         *       "tags": [
+         *         "chicken",
+         *         "dinner"
+         *       ],
+         *       "diets": [
+         *         "gluten-free",
+         *         "dairy-free",
+         *         "egg-free",
+         *         "nut-free"
+         *       ],
+         *       "photo": {
+         *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *       },
+         *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "updatedAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
         RecipeSummary: {
             id: string;
             /** @example lemon-chicken */
@@ -5299,6 +2065,100 @@ export interface components {
         };
         /** @enum {string} */
         Diet: "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "egg-free" | "nut-free";
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *       "slug": "lemon-chicken",
+         *       "name": "Lemon Chicken",
+         *       "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *       "servings": 4,
+         *       "totalMinutes": 50,
+         *       "rating": 5,
+         *       "tags": [
+         *         "chicken",
+         *         "dinner"
+         *       ],
+         *       "diets": [
+         *         "gluten-free",
+         *         "dairy-free",
+         *         "egg-free",
+         *         "nut-free"
+         *       ],
+         *       "photo": {
+         *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *       },
+         *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "updatedAt": "2026-10-15T18:30:00.000Z",
+         *       "origin": "link",
+         *       "sourceUrl": "https://example.com/lemon-chicken",
+         *       "yieldText": null,
+         *       "prepMinutes": 10,
+         *       "cookMinutes": 40,
+         *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
+         *       "dietOverrides": {},
+         *       "ingredients": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *           "section": null,
+         *           "text": "2 lb chicken thighs",
+         *           "quantity": 2,
+         *           "quantityMax": null,
+         *           "unit": "pound",
+         *           "food": "chicken thighs",
+         *           "note": null
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *           "section": null,
+         *           "text": "1 tbsp olive oil",
+         *           "quantity": 1,
+         *           "quantityMax": null,
+         *           "unit": "tablespoon",
+         *           "food": "olive oil",
+         *           "note": null
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+         *           "section": null,
+         *           "text": "2 lemons, juiced",
+         *           "quantity": 2,
+         *           "quantityMax": null,
+         *           "unit": null,
+         *           "food": "lemons",
+         *           "note": "juiced"
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+         *           "section": null,
+         *           "text": "4 cloves garlic, smashed",
+         *           "quantity": 4,
+         *           "quantityMax": null,
+         *           "unit": "clove",
+         *           "food": "garlic",
+         *           "note": "smashed"
+         *         }
+         *       ],
+         *       "steps": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *           "section": null,
+         *           "text": "Heat the oven to 425°F."
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+         *           "section": null,
+         *           "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+         *           "section": null,
+         *           "text": "Roast skin side up for 40 minutes, until crisp."
+         *         }
+         *       ]
+         *     }
+         */
         Recipe: components["schemas"]["RecipeSummary"] & {
             /** @enum {string} */
             origin: "link" | "video" | "text" | "photo" | "manual" | "assistant" | "mealie" | "paprika" | "merran";
@@ -5320,6 +2180,18 @@ export interface components {
             "egg-free"?: boolean;
             "nut-free"?: boolean;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *       "section": null,
+         *       "text": "1 tbsp olive oil",
+         *       "quantity": 1,
+         *       "quantityMax": null,
+         *       "unit": "tablespoon",
+         *       "food": "olive oil",
+         *       "note": null
+         *     }
+         */
         Ingredient: {
             id: string;
             section: string | null;
@@ -5332,11 +2204,43 @@ export interface components {
             food: string | null;
             note: string | null;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *       "section": null,
+         *       "text": "Heat the oven to 425°F."
+         *     }
+         */
         Step: {
             id: string;
             section: string | null;
             text: string;
         };
+        /**
+         * @example {
+         *       "name": "Lemon Chicken",
+         *       "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *       "servings": 4,
+         *       "prepMinutes": 10,
+         *       "cookMinutes": 40,
+         *       "sourceUrl": "https://example.com/lemon-chicken",
+         *       "tags": [
+         *         "chicken",
+         *         "dinner"
+         *       ],
+         *       "ingredients": [
+         *         "2 lb chicken thighs",
+         *         "1 tbsp olive oil",
+         *         "2 lemons, juiced",
+         *         "4 cloves garlic, smashed"
+         *       ],
+         *       "steps": [
+         *         "Heat the oven to 425°F.",
+         *         "Toss the chicken with the oil, lemon juice, garlic, salt and pepper.",
+         *         "Roast skin side up for 40 minutes, until crisp."
+         *       ]
+         *     }
+         */
         RecipeInput: {
             name: string;
             description?: string | null;
@@ -5363,10 +2267,27 @@ export interface components {
             /** @default [] */
             steps: string[];
         };
+        /**
+         * @example {
+         *       "changed": 2
+         *     }
+         */
         BulkResult: {
             /** @description How many it changed. Ones not there, or already that way, are skipped. */
             changed: number;
         };
+        /**
+         * @example {
+         *       "action": "addTags",
+         *       "ids": [
+         *         "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "0199e8b0-5a10-7a01-8b00-000000000007"
+         *       ],
+         *       "tags": [
+         *         "weeknight"
+         *       ]
+         *     }
+         */
         RecipeBulkInput: {
             /** @enum {string} */
             action: "delete";
@@ -5382,6 +2303,36 @@ export interface components {
             ids: string[];
             tags: string[];
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *       "slug": "lemon-chicken",
+         *       "name": "Lemon Chicken",
+         *       "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *       "servings": 4,
+         *       "totalMinutes": 50,
+         *       "rating": 5,
+         *       "tags": [
+         *         "chicken",
+         *         "dinner"
+         *       ],
+         *       "diets": [
+         *         "gluten-free",
+         *         "dairy-free",
+         *         "egg-free",
+         *         "nut-free"
+         *       ],
+         *       "photo": {
+         *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *       },
+         *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "updatedAt": "2026-10-15T18:30:00.000Z",
+         *       "deletedAt": "2026-10-15T18:30:00.000Z",
+         *       "goneAt": "2026-11-14T18:30:00.000Z"
+         *     }
+         */
         DeletedRecipe: components["schemas"]["RecipeSummary"] & {
             /** Format: date-time */
             deletedAt: string;
@@ -5391,6 +2342,14 @@ export interface components {
              */
             goneAt: string;
         };
+        /**
+         * @example {
+         *       "action": "restore",
+         *       "ids": [
+         *         "0199e8b0-5a10-7a01-8b00-000000000006"
+         *       ]
+         *     }
+         */
         DeletedBulkInput: {
             /** @enum {string} */
             action: "restore";
@@ -5400,21 +2359,139 @@ export interface components {
             action: "purge";
             ids: string[];
         };
+        /**
+         * @example {
+         *       "recipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "slug": "lemon-chicken",
+         *         "name": "Lemon Chicken",
+         *         "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *         "servings": 4,
+         *         "totalMinutes": 50,
+         *         "rating": 5,
+         *         "tags": [
+         *           "chicken",
+         *           "dinner"
+         *         ],
+         *         "diets": [
+         *           "gluten-free",
+         *           "dairy-free",
+         *           "egg-free",
+         *           "nut-free"
+         *         ],
+         *         "photo": {
+         *           "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         },
+         *         "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *         "createdAt": "2026-10-01T17:30:00.000Z",
+         *         "updatedAt": "2026-10-15T18:30:00.000Z",
+         *         "origin": "link",
+         *         "sourceUrl": "https://example.com/lemon-chicken",
+         *         "yieldText": null,
+         *         "prepMinutes": 10,
+         *         "cookMinutes": 40,
+         *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
+         *         "dietOverrides": {},
+         *         "ingredients": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *             "section": null,
+         *             "text": "2 lb chicken thighs",
+         *             "quantity": 2,
+         *             "quantityMax": null,
+         *             "unit": "pound",
+         *             "food": "chicken thighs",
+         *             "note": null
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *             "section": null,
+         *             "text": "1 tbsp olive oil",
+         *             "quantity": 1,
+         *             "quantityMax": null,
+         *             "unit": "tablespoon",
+         *             "food": "olive oil",
+         *             "note": null
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+         *             "section": null,
+         *             "text": "2 lemons, juiced",
+         *             "quantity": 2,
+         *             "quantityMax": null,
+         *             "unit": null,
+         *             "food": "lemons",
+         *             "note": "juiced"
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+         *             "section": null,
+         *             "text": "4 cloves garlic, smashed",
+         *             "quantity": 4,
+         *             "quantityMax": null,
+         *             "unit": "clove",
+         *             "food": "garlic",
+         *             "note": "smashed"
+         *           }
+         *         ],
+         *         "steps": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *             "section": null,
+         *             "text": "Heat the oven to 425°F."
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+         *             "section": null,
+         *             "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+         *             "section": null,
+         *             "text": "Roast skin side up for 40 minutes, until crisp."
+         *           }
+         *         ]
+         *       },
+         *       "duplicate": false
+         *     }
+         */
         ImportResult: {
             recipe: components["schemas"]["Recipe"];
             /** @description True when the link was imported before: this is that recipe, unchanged. */
             duplicate: boolean;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000008",
+         *       "name": "weeknight",
+         *       "recipes": 12
+         *     }
+         */
         Tag: {
             id: string;
             name: string;
             /** @description How many recipes have it. */
             recipes: number;
         };
+        /**
+         * @example {
+         *       "name": "Weeknight"
+         *     }
+         */
         TagChanges: {
             /** @description A name another tag already has merges the two. */
             name: string;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000c",
+         *       "rating": 5,
+         *       "note": "More lemon next time.",
+         *       "by": "Sam Rivera",
+         *       "createdAt": "2026-10-09T01:15:00.000Z"
+         *     }
+         */
         CookNote: {
             id: string;
             /** @description 1 to 5 stars. */
@@ -5426,15 +2503,63 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /**
+         * @example {
+         *       "rating": 5,
+         *       "note": "More lemon next time."
+         *     }
+         */
         CookNoteInput: {
             /** @description 1 to 5 stars. They become the recipe's rating. */
             rating?: number | null;
             /** @description Anything to change next time. */
             note?: string | null;
         };
+        /**
+         * @description For example, not gluten-free after all, because the household's stock has wheat in it.
+         * @example {
+         *       "overrides": {
+         *         "gluten-free": false
+         *       }
+         *     }
+         */
         DietsInput: {
             overrides: components["schemas"]["DietOverrides"] & unknown;
         };
+        /**
+         * @example {
+         *       "pairings": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000000e",
+         *           "kind": "recipe",
+         *           "recipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *             "slug": "garlic-rice",
+         *             "name": "Garlic Rice",
+         *             "photo": null,
+         *             "servings": 4,
+         *             "totalMinutes": 25
+         *           }
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000000f",
+         *           "kind": "tag",
+         *           "tag": "salad"
+         *         }
+         *       ],
+         *       "options": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *           "slug": "garlic-rice",
+         *           "name": "Garlic Rice",
+         *           "photo": null,
+         *           "servings": 4,
+         *           "totalMinutes": 25
+         *         }
+         *       ],
+         *       "pairsWith": []
+         *     }
+         */
         RecipePairings: {
             /** @description What it goes with, as set. */
             pairings: components["schemas"]["Pairing"][];
@@ -5443,6 +2568,20 @@ export interface components {
             /** @description Recipes it's offered with: the other way round. */
             pairsWith: components["schemas"]["PairOption"][];
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000e",
+         *       "kind": "recipe",
+         *       "recipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *         "slug": "garlic-rice",
+         *         "name": "Garlic Rice",
+         *         "photo": null,
+         *         "servings": 4,
+         *         "totalMinutes": 25
+         *       }
+         *     }
+         */
         Pairing: {
             id: string;
             /** @enum {string} */
@@ -5455,6 +2594,16 @@ export interface components {
             /** @description Every recipe with this tag. */
             tag: string;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *       "slug": "garlic-rice",
+         *       "name": "Garlic Rice",
+         *       "photo": null,
+         *       "servings": 4,
+         *       "totalMinutes": 25
+         *     }
+         */
         PairOption: {
             id: string;
             slug: string;
@@ -5464,16 +2613,37 @@ export interface components {
             servings: number | null;
             totalMinutes: number | null;
         };
+        /**
+         * @example {
+         *       "recipes": [
+         *         "garlic-rice"
+         *       ]
+         *     }
+         */
         PairingsInput: {
             /** @description Recipes it goes with, by id or slug. */
             recipes?: string[];
             /** @description Or every recipe with this tag, now and later. */
             tag?: string;
         };
+        /**
+         * @example {
+         *       "rating": 4
+         *     }
+         */
         RecipeRatingInput: {
             /** @description From 1 to 5 stars, or null to clear it. */
             rating: number | null;
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000d",
+         *       "source": "edit",
+         *       "name": "Lemon Chicken",
+         *       "createdBy": "Sam Rivera",
+         *       "createdAt": "2026-10-01T17:30:00.000Z"
+         *     }
+         */
         RecipeVersion: {
             id: string;
             /** @enum {string} */
@@ -5484,9 +2654,25 @@ export interface components {
             /** Format: date-time */
             createdAt: string;
         };
+        /**
+         * @description No module has household settings yet, so the list is empty.
+         * @example {
+         *       "settings": []
+         *     }
+         */
         HouseholdSettings: {
             settings: components["schemas"]["SettingState"][];
         };
+        /**
+         * @example {
+         *       "key": "errorTracking.environment",
+         *       "kind": "text",
+         *       "value": "home",
+         *       "default": "production",
+         *       "source": "saved",
+         *       "lockedBy": null
+         *     }
+         */
         SettingState: {
             /** @example errorTracking.environment */
             key: string;
@@ -5521,6 +2707,39 @@ export interface components {
         SettingChanges: {
             [key: string]: unknown;
         };
+        /**
+         * @example {
+         *       "about": {
+         *         "version": "0.1.0",
+         *         "installMethod": "docker",
+         *         "database": "sqlite",
+         *         "publicUrl": "https://merran.example.com"
+         *       },
+         *       "settings": [
+         *         {
+         *           "key": "errorTracking.environment",
+         *           "kind": "text",
+         *           "value": "home",
+         *           "default": "production",
+         *           "source": "saved",
+         *           "lockedBy": null
+         *         },
+         *         {
+         *           "key": "errorTracking.dsn",
+         *           "kind": "secret",
+         *           "value": null,
+         *           "default": null,
+         *           "source": "environment",
+         *           "lockedBy": "MERRAN_SENTRY_DSN",
+         *           "secret": {
+         *             "set": true,
+         *             "hint": "4f2a",
+         *             "unreadable": false
+         *           }
+         *         }
+         *       ]
+         *     }
+         */
         ServerSettings: {
             about: {
                 version: string;
@@ -5532,12 +2751,121 @@ export interface components {
             };
             settings: components["schemas"]["SettingState"][];
         };
+        /**
+         * @example {
+         *       "jobs": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+         *           "kind": "household.import",
+         *           "status": "running",
+         *           "scheduled": false,
+         *           "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *           "progress": {
+         *             "done": 42,
+         *             "total": 128
+         *           },
+         *           "result": null,
+         *           "error": null,
+         *           "attempts": 1,
+         *           "maxAttempts": 3,
+         *           "runAt": "2026-10-15T18:30:00.000Z",
+         *           "startedAt": "2026-10-15T18:30:00.000Z",
+         *           "finishedAt": null,
+         *           "createdAt": "2026-10-15T18:30:00.000Z",
+         *           "householdName": "The Riveras"
+         *         }
+         *       ]
+         *     }
+         */
         JobList: {
             jobs: components["schemas"]["JobListItem"][];
         };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+         *       "kind": "household.import",
+         *       "status": "running",
+         *       "scheduled": false,
+         *       "householdId": "0199e8b0-5a10-7a01-8b00-000000000003",
+         *       "progress": {
+         *         "done": 42,
+         *         "total": 128
+         *       },
+         *       "result": null,
+         *       "error": null,
+         *       "attempts": 1,
+         *       "maxAttempts": 3,
+         *       "runAt": "2026-10-15T18:30:00.000Z",
+         *       "startedAt": "2026-10-15T18:30:00.000Z",
+         *       "finishedAt": null,
+         *       "createdAt": "2026-10-15T18:30:00.000Z",
+         *       "householdName": "The Riveras"
+         *     }
+         */
         JobListItem: components["schemas"]["Job"] & {
             householdName: string | null;
         };
+        /**
+         * @example {
+         *       "outcome": "added",
+         *       "code": null,
+         *       "message": "Added Lemon Chicken to Merran.",
+         *       "recipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "slug": "lemon-chicken",
+         *         "name": "Lemon Chicken"
+         *       },
+         *       "url": "https://merran.example.com/recipes/lemon-chicken"
+         *     }
+         */
+        ShareOutcome: {
+            /**
+             * @description Added, already in the library (this is that recipe), or not added.
+             * @enum {string}
+             */
+            outcome: "added" | "already" | "failed";
+            /** @description Why it wasn't added, for programs: "no_link", "no_recipe_data" and the like. */
+            code: string | null;
+            /**
+             * @description What happened, in words to show, as a Shortcut does.
+             * @example Added Lemon Chicken to Merran.
+             */
+            message: string;
+            recipe: {
+                id: string;
+                slug: string;
+                name: string;
+            } | null;
+            /** @description The recipe's page. */
+            url: string | null;
+        };
+        /**
+         * @example {
+         *       "title": "Lemon Chicken",
+         *       "text": "Making this tonight! https://example.com/lemon-chicken"
+         *     }
+         */
+        SharedText: {
+            title?: string;
+            text?: string;
+            url?: string;
+        };
+        /**
+         * @example {
+         *       "installId": "0199e8b0-5a10-7a01-8b00-0000000000ff",
+         *       "version": "0.1.0",
+         *       "install": "docker",
+         *       "arch": "x64",
+         *       "database": "sqlite",
+         *       "modules": {
+         *         "errorTracking": true,
+         *         "telemetry": true
+         *       },
+         *       "households": "1",
+         *       "people": "2-5",
+         *       "recipes": "100-499"
+         *     }
+         */
         TelemetryReport: {
             installId: string;
             version: string;
@@ -5606,7 +2934,45 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    signInEmail: {
+    listApiKeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your keys. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKey"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createApiKey: {
         parameters: {
             query?: never;
             header?: never;
@@ -5615,6 +2981,3535 @@ export interface operations {
         };
         requestBody: {
             content: {
+                "application/json": components["schemas"]["NewApiKeyRequest"];
+            };
+        };
+        responses: {
+            /** @description Made. Copy the key now. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewApiKey"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    checkApiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The key works. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiKey"];
+                };
+            };
+            /** @description No API key was sent. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The key doesn't work. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    revokeApiKey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                keyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Revoked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description You have no such key. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The invite can be used. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invite"];
+                };
+            };
+            /** @description No invite has that link. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The link has been used, or has expired. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    joinHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["JoinRequest"];
+            };
+        };
+        responses: {
+            /** @description Joined, with an account you already had. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description Joined, with a new account, and signed in. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description Signed out, and no account was sent. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No invite has that link. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Already in the household, or the account exists. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The link has been used, or has expired. */
+            410: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getMe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signed in. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    exportMyData: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Your data, to download. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MyData"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSetupStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description True until the first account exists. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SetupStatus"];
+                };
+            };
+        };
+    };
+    setUpServer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SetupRequest"];
+            };
+        };
+        responses: {
+            /** @description Set up, and signed in. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Me"];
+                };
+            };
+            /** @description Something's wrong with what was sent, or the code. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The server's already set up. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too many wrong codes. Try again in a few minutes. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getCapabilities: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What's on. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Capabilities"];
+                };
+            };
+        };
+    };
+    checkHealth: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The server is up. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    checkReady: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Ready. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ready"];
+                };
+            };
+            /** @description Not ready: the database is unreachable or out of date. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    name: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Started. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Household"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The household. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Household"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HouseholdChanges"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Household"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    exportHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The export, as a zip. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/zip": string;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    importIntoHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/zip": string;
+            };
+        };
+        responses: {
+            /** @description Importing. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description That isn't a Merran export this Merran can read. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The file is too big. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    checkImportFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/zip": string;
+                "application/octet-stream": string;
+            };
+        };
+        responses: {
+            /** @description What's in it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportFile"];
+                };
+            };
+            /** @description Merran can't read that file. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The file is too big. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startFileImport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                fileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartImportFile"];
+            };
+        };
+        responses: {
+            /** @description Importing. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The file isn't here any more. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    checkMealie: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MealieConnection"];
+            };
+        };
+        responses: {
+            /** @description Connected. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealieCheck"];
+                };
+            };
+            /** @description Mealie didn't take the token. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Couldn't reach Mealie, or it isn't Mealie. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    importFromMealie: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MealieConnection"];
+            };
+        };
+        responses: {
+            /** @description Importing. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Mealie didn't take the token. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Couldn't reach Mealie, or it isn't Mealie. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listInvites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unused links, newest first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InviteLink"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * @default member
+                     * @enum {string}
+                     */
+                    role?: "admin" | "member";
+                };
+            };
+        };
+        responses: {
+            /** @description Made. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewInviteLink"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    cancelInvite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                inviteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such invite. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getHouseholdJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The job. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such job in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    cancelHouseholdJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled, or stopping. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such job in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has already finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its people, longest-standing first. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Removed. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such person in the household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description That would leave no owner. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                memberId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** @enum {string} */
+                    role: "owner" | "admin" | "member";
+                };
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Member"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such person in the household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description That would leave no owner. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    importHousehold: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/zip": string;
+            };
+        };
+        responses: {
+            /** @description Made, and importing. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdImport"];
+                };
+            };
+            /** @description That isn't a Merran export this Merran can read. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The file is too big. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listRecipes: {
+        parameters: {
+            query?: {
+                /** @description Words in the name, description or ingredients. */
+                q?: string;
+                /** @description Only recipes with this tag. Repeat it for all of several. */
+                tag?: string | string[];
+                /** @description Only recipes with this diet label. Repeat it for all of several. */
+                diet?: components["schemas"]["Diet"] | components["schemas"]["Diet"][];
+                /** @description Only recipes ready in this many minutes or fewer. */
+                maxMinutes?: number;
+                /** @description Only recipes not made yet (true), or only ones made (false). */
+                new?: string;
+                /** @description Newest added, name, recently changed, top rated, or recently made. */
+                sort?: "newest" | "name" | "updated" | "rating" | "made";
+                limit?: number;
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recipes that match. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipeList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeInput"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Something isn't right, field by field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    bulkChangeRecipes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeBulkInput"];
+            };
+        };
+        responses: {
+            /** @description Done. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResult"];
+                };
+            };
+            /** @description Nothing picked, or something else is off. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listDeletedRecipes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What's there. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletedRecipe"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    emptyDeletedRecipes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Emptied. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    bulkChangeDeletedRecipes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeletedBulkInput"];
+            };
+        };
+        responses: {
+            /** @description Done. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkResult"];
+                };
+            };
+            /** @description Nothing picked, or something else is off. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    purgeRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted for good. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe in Recently deleted. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    restoreRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipeId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Put back. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe in Recently deleted. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    importRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    url: string;
+                    /** @description Import it again even if the household has it. */
+                    force?: boolean;
+                };
+            };
+        };
+        responses: {
+            /** @description Already in the library. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Not a link Merran can fetch. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The page has no recipe data, or it's a video. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The site couldn't be reached, or turned Merran away. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listTags: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The tags. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tag"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such tag. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateTag: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                tagId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagChanges"];
+            };
+        };
+        responses: {
+            /** @description All the tags, after the change. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tag"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such tag. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recipe. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Something isn't right, field by field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Moved to Recently deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listCookNotes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The notes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CookNote"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    createCookNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CookNoteInput"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CookNote"];
+                };
+            };
+            /** @description Neither stars nor a note, or something else is off. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteCookNote: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+                noteId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe or note. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setRecipeDiets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DietsInput"];
+            };
+        };
+        responses: {
+            /** @description The recipe, with its labels. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description A label Merran doesn't know. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    markRecipeMade: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recipe, made now. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listPairings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What it goes with. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipePairings"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addPairings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PairingsInput"];
+            };
+        };
+        responses: {
+            /** @description What it goes with now. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipePairings"];
+                };
+            };
+            /** @description Nothing picked, or no tag by that name. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe, or one of those to pair isn't there. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removePairing: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+                pairingId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What it goes with now. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipePairings"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe or pairing. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getRecipePhoto: {
+        parameters: {
+            query?: {
+                size?: "full" | "card";
+                /** @description Which photo: the links in `photo` say. */
+                v?: string;
+            };
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The photo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": string;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe, or it has no photo. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setRecipePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "image/*": string;
+            };
+        };
+        responses: {
+            /** @description The recipe, with its new photo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description That isn't a photo Merran can read. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The photo is over 15 MB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteRecipePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recipe, without a photo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    rateRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecipeRatingInput"];
+            };
+        };
+        responses: {
+            /** @description The recipe, with its new rating. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description The rating isn't from 1 to 5. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listRecipeVersions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The versions. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipeVersion"][];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    restoreRecipeVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+                versionId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recipe, as it was. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe or version. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getHouseholdSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdSettings"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateHouseholdSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingChanges"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdSettings"];
+                };
+            };
+            /** @description Something isn't right, field by field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getServerSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The settings. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerSettings"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateServerSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SettingChanges"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ServerSettings"];
+                };
+            };
+            /** @description Something isn't right, field by field. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listServerJobs: {
+        parameters: {
+            query?: {
+                /** @description Only jobs that are queued, running, done, failed or cancelled. */
+                status?: "queued" | "running" | "done" | "failed" | "cancelled";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The jobs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JobList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    cancelServerJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Cancelled, or stopping. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such job. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has already finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    retryServerJob: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Waiting to run. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Job"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such job. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It hasn't finished, or another like it is already waiting. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    shareToMerran: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    title?: string;
+                    text?: string;
+                    url?: string;
+                    /**
+                     * Format: binary
+                     * @description What was shared, as a file: a text file with the link, a .webloc, or the web page.
+                     */
+                    file?: string;
+                };
+                "application/json": components["schemas"]["SharedText"];
+                "text/plain": string;
+            };
+        };
+        responses: {
+            /** @description Already there, or not added. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareOutcome"];
+                };
+            };
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShareOutcome"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Too big to share. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    renewInstallId: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The next summary, with the new id. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryReport"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getTelemetryReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The summary. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelemetryReport"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    signIn: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "username": "sam",
+                 *       "password": "correct horse battery staple",
+                 *       "rememberMe": true
+                 *     }
+                 */
+                "application/json": {
+                    /** @description The username of the user */
+                    username: string;
+                    /** @description The password of the user */
+                    password: string;
+                    /** @description Remember the user session */
+                    rememberMe?: boolean;
+                    /** @description URL to redirect to after sign in (also used as the redirect target for email verification when required) */
+                    callbackURL?: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "redirect": false,
+                     *       "token": "sample-session-token",
+                     *       "url": null,
+                     *       "user": {
+                     *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                     *         "name": "Sam Rivera",
+                     *         "email": "sam@example.com",
+                     *         "emailVerified": false,
+                     *         "image": null,
+                     *         "createdAt": "2026-10-01T17:30:00.000Z",
+                     *         "updatedAt": "2026-10-01T17:30:00.000Z",
+                     *         "username": "sam",
+                     *         "displayUsername": "sam",
+                     *         "role": "admin",
+                     *         "banned": false
+                     *       }
+                     *     }
+                     */
+                    "application/json": {
+                        /** @description Whether the client should follow the Location header. True when callbackURL was provided. */
+                        redirect: boolean;
+                        /** @description Session token for the authenticated session */
+                        token: string;
+                        /** @description The callbackURL echoed back so the client can redirect. */
+                        url?: string | null;
+                        user: components["schemas"]["User"];
+                    };
+                };
+            };
+            /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            /** @description Unauthorized. Due to missing or invalid authentication. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Not Found. The requested resource was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Unprocessable Entity. Validation error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    signInWithEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                /**
+                 * @example {
+                 *       "email": "sam@example.com",
+                 *       "password": "correct horse battery staple"
+                 *     }
+                 */
                 "application/json": {
                     /** @description Email of the user */
                     email: string;
@@ -5634,6 +6529,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "redirect": false,
+                     *       "token": "sample-session-token",
+                     *       "url": null,
+                     *       "user": {
+                     *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                     *         "name": "Sam Rivera",
+                     *         "email": "sam@example.com",
+                     *         "emailVerified": false,
+                     *         "image": null,
+                     *         "createdAt": "2026-10-01T17:30:00.000Z",
+                     *         "updatedAt": "2026-10-01T17:30:00.000Z",
+                     *         "username": "sam",
+                     *         "displayUsername": "sam",
+                     *         "role": "admin",
+                     *         "banned": false
+                     *       }
+                     *     }
+                     */
                     "application/json": {
                         /** @enum {boolean} */
                         redirect: false;
@@ -5721,6 +6636,7 @@ export interface operations {
         };
         requestBody?: {
             content: {
+                /** @example {} */
                 "application/json": {
                     /** @description The URL to redirect to after provider logout */
                     callbackURL?: string;
@@ -5738,6 +6654,11 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "success": true
+                     *     }
+                     */
                     "application/json": {
                         success?: boolean;
                         /** @description Provider logout URL when RP-initiated logout is available */
@@ -5830,6 +6751,34 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "session": {
+                     *         "id": "0199e8b0-5a10-7a01-8b00-000000000010",
+                     *         "expiresAt": "2026-10-22T18:30:00.000Z",
+                     *         "token": "sample-session-token",
+                     *         "createdAt": "2026-10-15T18:30:00.000Z",
+                     *         "updatedAt": "2026-10-15T18:30:00.000Z",
+                     *         "ipAddress": "192.168.1.20",
+                     *         "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)",
+                     *         "userId": "0199e8b0-5a10-7a01-8b00-000000000001",
+                     *         "activeOrganizationId": "0199e8b0-5a10-7a01-8b00-000000000003"
+                     *       },
+                     *       "user": {
+                     *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                     *         "name": "Sam Rivera",
+                     *         "email": "sam@example.com",
+                     *         "emailVerified": false,
+                     *         "image": null,
+                     *         "createdAt": "2026-10-01T17:30:00.000Z",
+                     *         "updatedAt": "2026-10-01T17:30:00.000Z",
+                     *         "username": "sam",
+                     *         "displayUsername": "sam",
+                     *         "role": "admin",
+                     *         "banned": false
+                     *       }
+                     *     }
+                     */
                     "application/json": {
                         session: components["schemas"]["Session"];
                         user: components["schemas"]["User"];
@@ -5904,7 +6853,7 @@ export interface operations {
             };
         };
     };
-    listUserSessions: {
+    listSessions: {
         parameters: {
             query?: never;
             header?: never;
@@ -5919,7 +6868,326 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example [
+                     *       {
+                     *         "id": "0199e8b0-5a10-7a01-8b00-000000000010",
+                     *         "expiresAt": "2026-10-22T18:30:00.000Z",
+                     *         "token": "sample-session-token",
+                     *         "createdAt": "2026-10-15T18:30:00.000Z",
+                     *         "updatedAt": "2026-10-15T18:30:00.000Z",
+                     *         "ipAddress": "192.168.1.20",
+                     *         "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)",
+                     *         "userId": "0199e8b0-5a10-7a01-8b00-000000000001",
+                     *         "activeOrganizationId": "0199e8b0-5a10-7a01-8b00-000000000003"
+                     *       }
+                     *     ]
+                     */
                     "application/json": components["schemas"]["Session"][];
+                };
+            };
+            /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            /** @description Unauthorized. Due to missing or invalid authentication. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Not Found. The requested resource was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    revokeSession: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                /**
+                 * @example {
+                 *       "token": "sample-session-token"
+                 *     }
+                 */
+                "application/json": {
+                    /** @description The token to revoke */
+                    token: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "status": true
+                     *     }
+                     */
+                    "application/json": {
+                        /** @description Indicates if the session was revoked successfully */
+                        status: boolean;
+                    };
+                };
+            };
+            /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            /** @description Unauthorized. Due to missing or invalid authentication. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Not Found. The requested resource was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    revokeOtherSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "status": true
+                     *     }
+                     */
+                    "application/json": {
+                        /** @description Indicates if all other sessions were revoked successfully */
+                        status: boolean;
+                    };
+                };
+            };
+            /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            /** @description Unauthorized. Due to missing or invalid authentication. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message: string;
+                    };
+                };
+            };
+            /** @description Forbidden. You do not have permission to access this resource or to perform this action. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Not Found. The requested resource was not found. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Too Many Requests. You have exceeded the rate limit. Try again later. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+            /** @description Internal Server Error. This is a problem with the server that you cannot fix. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        message?: string;
+                    };
+                };
+            };
+        };
+    };
+    revokeAllSessions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                /** @example {} */
+                "application/json": Record<string, never>;
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    /**
+                     * @example {
+                     *       "status": true
+                     *     }
+                     */
+                    "application/json": {
+                        /** @description Indicates if all sessions were revoked successfully */
+                        status: boolean;
+                    };
                 };
             };
             /** @description Bad Request. Usually due to missing parameters, or invalid parameters. */
@@ -5999,6 +7267,13 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "currentPassword": "correct horse battery staple",
+                 *       "newPassword": "a longer, newer passphrase",
+                 *       "revokeOtherSessions": true
+                 *     }
+                 */
                 "application/json": {
                     /** @description The new password to set */
                     newPassword: string;
@@ -6016,6 +7291,24 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "token": "sample-session-token",
+                     *       "user": {
+                     *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                     *         "name": "Sam Rivera",
+                     *         "email": "sam@example.com",
+                     *         "emailVerified": false,
+                     *         "image": null,
+                     *         "createdAt": "2026-10-01T17:30:00.000Z",
+                     *         "updatedAt": "2026-10-01T17:30:00.000Z",
+                     *         "username": "sam",
+                     *         "displayUsername": "sam",
+                     *         "role": "admin",
+                     *         "banned": false
+                     *       }
+                     *     }
+                     */
                     "application/json": {
                         /** @description New session token if other sessions were revoked */
                         token?: string | null;
@@ -6118,7 +7411,7 @@ export interface operations {
             };
         };
     };
-    updateUser: {
+    updateProfile: {
         parameters: {
             query?: never;
             header?: never;
@@ -6127,6 +7420,11 @@ export interface operations {
         };
         requestBody?: {
             content: {
+                /**
+                 * @example {
+                 *       "name": "Sam R."
+                 *     }
+                 */
                 "application/json": {
                     /** @description The name of the user */
                     name?: string;
@@ -6144,6 +7442,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "user": {
+                     *         "id": "0199e8b0-5a10-7a01-8b00-000000000001",
+                     *         "name": "Sam R.",
+                     *         "email": "sam@example.com",
+                     *         "emailVerified": false,
+                     *         "image": null,
+                     *         "createdAt": "2026-10-01T17:30:00.000Z",
+                     *         "updatedAt": "2026-10-01T17:30:00.000Z",
+                     *         "username": "sam",
+                     *         "displayUsername": "sam",
+                     *         "role": "admin",
+                     *         "banned": false
+                     *       }
+                     *     }
+                     */
                     "application/json": {
                         user?: components["schemas"]["User"];
                     };
@@ -6217,7 +7532,7 @@ export interface operations {
             };
         };
     };
-    setActiveOrganization: {
+    switchHousehold: {
         parameters: {
             query?: never;
             header?: never;
@@ -6226,6 +7541,11 @@ export interface operations {
         };
         requestBody: {
             content: {
+                /**
+                 * @example {
+                 *       "organizationId": "0199e8b0-5a10-7a01-8b00-000000000003"
+                 *     }
+                 */
                 "application/json": {
                     /** @description The organization id to set as active. It can be null to unset the active organization. Eg: "org-id" */
                     organizationId?: string | null;
@@ -6241,6 +7561,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
+                    /**
+                     * @example {
+                     *       "id": "0199e8b0-5a10-7a01-8b00-000000000003",
+                     *       "name": "The Riveras",
+                     *       "slug": "the-riveras",
+                     *       "logo": null,
+                     *       "createdAt": "2026-10-01T17:30:00.000Z",
+                     *       "metadata": null
+                     *     }
+                     */
                     "application/json": components["schemas"]["Organization"];
                 };
             };

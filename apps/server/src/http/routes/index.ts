@@ -6,6 +6,7 @@ import healthRoutes from "./health/index.ts"
 import householdsRoutes from "./households/index.ts"
 import recipesRoutes from "./recipes/index.ts"
 import settingsRoutes from "./settings/index.ts"
+import shareRoutes from "./share/index.ts"
 import telemetryRoutes from "./telemetry/index.ts"
 
 /**
@@ -20,5 +21,6 @@ export default (router: Router, deps: AppDeps) => {
   householdsRoutes(router, deps)
   recipesRoutes(router, deps)
   settingsRoutes(router, deps)
+  shareRoutes(router, deps)
   telemetryRoutes(router, deps)
 }

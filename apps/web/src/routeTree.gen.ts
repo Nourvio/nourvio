@@ -18,6 +18,7 @@ import { Route as AppListRouteImport } from './routes/_app/list'
 import { Route as AppPantryRouteImport } from './routes/_app/pantry'
 import { Route as AppPlanRouteImport } from './routes/_app/plan'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
+import { Route as AppShareRouteImport } from './routes/_app/share'
 import { Route as JoinTokenRouteImport } from './routes/join/$token'
 import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 import { Route as AppRecipesDeletedRouteImport } from './routes/_app/recipes/deleted'
@@ -72,6 +73,11 @@ const AppPlanRoute = AppPlanRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppShareRoute = AppShareRouteImport.update({
+  id: '/share',
+  path: '/share',
   getParentRoute: () => AppRoute,
 } as any)
 const JoinTokenRoute = JoinTokenRouteImport.update({
@@ -143,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/pantry': typeof AppPantryRoute
   '/plan': typeof AppPlanRoute
   '/settings': typeof AppSettingsRouteWithChildren
+  '/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
   '/recipes/new': typeof AppRecipesNewRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/list': typeof AppListRoute
   '/pantry': typeof AppPantryRoute
   '/plan': typeof AppPlanRoute
+  '/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
   '/recipes/new': typeof AppRecipesNewRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/_app/pantry': typeof AppPantryRoute
   '/_app/plan': typeof AppPlanRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
+  '/_app/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/recipes/deleted': typeof AppRecipesDeletedRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/pantry'
     | '/plan'
     | '/settings'
+    | '/share'
     | '/join/$token'
     | '/recipes/deleted'
     | '/recipes/new'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/list'
     | '/pantry'
     | '/plan'
+    | '/share'
     | '/join/$token'
     | '/recipes/deleted'
     | '/recipes/new'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/_app/pantry'
     | '/_app/plan'
     | '/_app/settings'
+    | '/_app/share'
     | '/join/$token'
     | '/_app/'
     | '/_app/recipes/deleted'
@@ -338,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/share': {
+      id: '/_app/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof AppShareRouteImport
       parentRoute: typeof AppRoute
     }
     '/join/$token': {
@@ -452,6 +471,7 @@ interface AppRouteChildren {
   AppPantryRoute: typeof AppPantryRoute
   AppPlanRoute: typeof AppPlanRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
+  AppShareRoute: typeof AppShareRoute
   AppIndexRoute: typeof AppIndexRoute
   AppRecipesDeletedRoute: typeof AppRecipesDeletedRoute
   AppRecipesNewRoute: typeof AppRecipesNewRoute
@@ -465,6 +485,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPantryRoute: AppPantryRoute,
   AppPlanRoute: AppPlanRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
+  AppShareRoute: AppShareRoute,
   AppIndexRoute: AppIndexRoute,
   AppRecipesDeletedRoute: AppRecipesDeletedRoute,
   AppRecipesNewRoute: AppRecipesNewRoute,

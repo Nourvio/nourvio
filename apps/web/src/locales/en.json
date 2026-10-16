@@ -189,6 +189,30 @@
         "title": "Your data",
         "description": "Your account, the households you're in, the cooking notes you wrote and your API keys' names and permissions (never the keys), as a file to keep. A household's recipes are in its export.",
         "download": "Download your data"
+      },
+      "share": {
+        "title": "Share to Merran",
+        "description": "Add a recipe from any app on your phone: share its web page, or a link to it, to Merran.",
+        "android": "Android",
+        "androidSteps": "In Chrome, open the menu (⋮) and tap <b>Install app</b> or <b>Add to home screen</b>. Then, in any app, tap <b>Share</b> and pick <b>Merran</b>.",
+        "needsHttps": "This needs Merran opened at its https address, not a local one like this.",
+        "iphone": "iPhone and iPad",
+        "iphoneIntro": "Apple only lets App Store apps into the share sheet, but a Shortcut can be there instead. It takes a few minutes to set up, once.",
+        "makeKey": "Make a key for the Shortcut",
+        "keyName": "iPhone Shortcut",
+        "steps": {
+          "create": "Open <b>Shortcuts</b>, tap <b>+</b>, and name it <b>Send to Merran</b>.",
+          "shareSheet": "Tap <b>ⓘ</b> and turn on <b>Show in Share Sheet</b>.",
+          "fetch": "Add the action <b>Get Contents of URL</b>, with this address:",
+          "method": "Tap the arrow beside it, and set <b>Method</b> to <b>POST</b>. Under <b>Headers</b>, add <b>Authorization</b>, with this:",
+          "body": "Under <b>Request Body</b>, pick <b>Form</b>, add a <b>File</b> field named <b>file</b>, and set it to <b>Shortcut Input</b>.",
+          "message": "Add <b>Get Dictionary Value</b>, for the key <b>message</b>.",
+          "notify": "Add <b>Show Notification</b>."
+        },
+        "address": "Address",
+        "authorization": "Authorization",
+        "after": "Now, in Safari or any app, tap <b>Share</b>, then <b>Send to Merran</b>. A notification says what was added.",
+        "keyNote": "The key can only add recipes, to {{household}}, and it's yours: someone else needs their own. It's in your API keys, where it can be removed."
       }
     },
     "household": {
@@ -400,6 +424,17 @@
         "change": "Change"
       }
     }
+  },
+  "share": {
+    "title": "Shared to Merran",
+    "adding": "Adding the recipe from {{site}}…",
+    "addingSomething": "Adding what you shared…",
+    "added": "Added {{name}}.",
+    "already": "{{name}} is in your recipes already.",
+    "nothing": "Nothing was shared.",
+    "notAdded": "That wasn't added",
+    "addRecipe": "Add a recipe",
+    "toRecipes": "Go to recipes"
   },
   "recipes": {
     "add": "Add a recipe",
