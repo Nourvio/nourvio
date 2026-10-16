@@ -13,6 +13,7 @@ import {
   themeLabel,
   WEEKNIGHTS,
   type Diet,
+  type IngredientMark,
   type Meal,
   type NightTheme,
   type Reason,
@@ -81,6 +82,8 @@ type Candidate = {
   tags: string[]
   diets: Diet[]
   lines: string[]
+  /** What each line is to the dish, as tidy up marked it. */
+  marks: (IngredientMark | null)[]
   /** Foods the household said it can't do without. */
   needs: string[]
 }
@@ -166,14 +169,16 @@ async function candidates(em: EntityManager): Promise<Candidate[]> {
   const recipes = await em.find(Recipe, {})
   const ids = recipes.map((recipe) => recipe.id)
   const tags = await tagsOf(em, ids)
-  const lines = new Map<string, string[]>()
+  const lines = new Map<string, RecipeIngredient[]>()
   if (ids.length > 0) {
-    for (const line of await em.find(RecipeIngredient, {
-      recipe: { $in: ids },
-    })) {
+    for (const line of await em.find(
+      RecipeIngredient,
+      { recipe: { $in: ids } },
+      { orderBy: { position: "asc" } }
+    )) {
       const list = lines.get(line.recipe.id)
-      if (list) list.push(line.rawText)
-      else lines.set(line.recipe.id, [line.rawText])
+      if (list) list.push(line)
+      else lines.set(line.recipe.id, [line])
     }
   }
   return recipes.map((recipe) => ({
@@ -187,7 +192,8 @@ async function candidates(em: EntityManager): Promise<Candidate[]> {
     lastMadeAt: recipe.lastMadeAt ?? null,
     tags: (tags.get(recipe.id) ?? []).map(tagKey),
     diets: decodeDiets(recipe.diets),
-    lines: lines.get(recipe.id) ?? [],
+    lines: (lines.get(recipe.id) ?? []).map((line) => line.rawText),
+    marks: (lines.get(recipe.id) ?? []).map((line) => line.mark ?? null),
     needs: recipe.needs ?? [],
   }))
 }

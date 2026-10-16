@@ -1,6 +1,8 @@
 import sharp from "sharp"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import yauzl from "yauzl"
+import { RecipeIngredient } from "../../../../../database/entities/index.ts"
+import { HOUSEHOLD_FILTER } from "../../../../../database/scope.ts"
 import type { JobRunner } from "../../../../../services/jobs/runner.ts"
 import {
   account,
@@ -89,6 +91,15 @@ beforeAll(async () => {
   await kyle.request("PUT", "/api/recipes/tomato-soup/diets", {
     overrides: { "gluten-free": false },
   })
+  // As tidy up would mark it.
+  await first.database.em
+    .fork()
+    .nativeUpdate(
+      RecipeIngredient,
+      { rawText: "1 onion" },
+      { mark: "optional" },
+      { filters: { [HOUSEHOLD_FILTER]: false } }
+    )
 
   const sauce = await (
     await kyle.post("/api/recipes", { name: "Pesto", tags: ["Sauce"] })
@@ -163,6 +174,9 @@ describe("importing an export", () => {
       ["For the soup", "3 tbsp butter"],
       ["For the soup", "1 onion"],
     ])
+    expect(soup.ingredients.map((line: { mark: string }) => line.mark)).toEqual(
+      [null, "optional"]
+    )
     expect((await kyleThere.get(soup.photo.full)).status).toBe(200)
 
     const versions = await (

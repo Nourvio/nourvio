@@ -6,6 +6,7 @@ import bulkRoutes from "./bulk/index.ts"
 import deletedRoutes from "./deleted/index.ts"
 import importRoutes from "./import/index.ts"
 import tagsRoutes from "./tags/index.ts"
+import tidyRoutes from "./tidy/index.ts"
 import recipeRoutes from "./[recipe]/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
@@ -16,5 +17,6 @@ export default (router: Router, deps: AppDeps) => {
   deletedRoutes(router, deps)
   importRoutes(router, deps)
   tagsRoutes(router, deps)
+  tidyRoutes(router, deps)
   recipeRoutes(router, deps)
 }

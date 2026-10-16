@@ -1,12 +1,16 @@
 import {
   applyDietOverrides,
   dietsFor,
+  foodKey,
   joinSections,
   keptOverrides,
+  namesFood,
   parseIngredient,
   splitSections,
   type Diet,
   type DietOverrides,
+  type IngredientMark,
+  type MarkedLine,
 } from "@merran/shared"
 import { raw, type FilterQuery } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
@@ -125,6 +129,7 @@ export function describeRecipe(recipe: Recipe, tags: string[]) {
       unit: line.unit ?? null,
       food: line.food ?? null,
       note: line.note ?? null,
+      mark: line.mark ?? null,
     })),
     steps: recipe.steps.getItems().map((step) => ({
       id: step.id,
@@ -167,13 +172,46 @@ export function snapshotOf(recipe: Recipe, tags: string[]): RecipeInput {
   }
 }
 
-/** Sets a recipe to what the input says, lines and tags included. */
+/**
+ * What each line is to the dish, from lines that were marked: a line keeps
+ * its mark by its words, or else by its food, so an edit that rewords
+ * "2 lemons" to "2 lemons, juiced" keeps it.
+ */
+export function marksFrom(lines: readonly MarkedLine[]) {
+  const byText = new Map<string, IngredientMark>()
+  const byFood = new Map<string, IngredientMark>()
+  for (const { line, mark } of lines) {
+    if (!mark) continue
+    byText.set(line.trim().toLowerCase(), mark)
+    const food = parseIngredient(line).food
+    if (food) byFood.set(foodKey(food), mark)
+  }
+  return (line: string, food: string | null): IngredientMark | null =>
+    byText.get(line.trim().toLowerCase()) ??
+    (food ? byFood.get(foodKey(food)) : undefined) ??
+    null
+}
+
+/** A recipe's ingredient lines and their marks. */
+export const markedLines = (recipe: Recipe): MarkedLine[] =>
+  recipe.ingredients
+    .getItems()
+    .map((line) => ({ line: line.rawText, mark: line.mark ?? null }))
+
+/**
+ * Sets a recipe to what the input says, lines and tags included. Its lines
+ * keep their marks (see `marksFrom`), unless `marks` says otherwise.
+ */
 async function fill(
   tx: EntityManager,
   householdId: string,
   recipe: Recipe,
-  input: RecipeInput
+  input: RecipeInput,
+  marks?: readonly MarkedLine[]
 ) {
+  const markOf = marksFrom(
+    marks ?? (recipe.ingredients.isInitialized() ? markedLines(recipe) : [])
+  )
   recipe.name = input.name
   recipe.description = input.description
   recipe.servings = input.servings
@@ -199,6 +237,7 @@ async function fill(
         unit: parsed.unitId,
         food: parsed.food,
         note: parsed.note,
+        mark: markOf(parsed.text, parsed.food),
       })
     })
   )
@@ -273,6 +312,8 @@ export async function importRecipe(
     nutrition: Nutrition | null
     dietOverrides: Record<string, boolean>
     needs?: readonly string[]
+    /** What each ingredient line is to the dish. */
+    marks?: readonly MarkedLine[]
     createdAt: Date
     updatedAt: Date
     versions: {
@@ -311,7 +352,7 @@ export async function importRecipe(
       createdAt: options.createdAt,
       updatedAt: options.updatedAt,
     })
-    await fill(tx, options.householdId, recipe, options.input)
+    await fill(tx, options.householdId, recipe, options.input, options.marks)
     for (const version of options.versions) {
       tx.create(RecipeVersion, {
         household: options.householdId,
@@ -349,6 +390,10 @@ export async function updateRecipe(
     recipe: string
     input: RecipeInput
     source?: VersionSource
+    /** What each line is to the dish, when the change marks them. */
+    marks?: readonly MarkedLine[]
+    /** Tidy up looked at it. */
+    tidied?: boolean
   }
 ) {
   const id = await inHouseholdTransaction(
@@ -364,7 +409,8 @@ export async function updateRecipe(
         source: options.source ?? "edit",
         userId: options.userId,
       })
-      await fill(tx, options.householdId, recipe, options.input)
+      await fill(tx, options.householdId, recipe, options.input, options.marks)
+      if (options.tidied) recipe.tidiedAt = new Date()
       await pruneTags(tx)
       return recipe.id
     }
@@ -571,7 +617,12 @@ export async function setDiets(
  */
 export async function setNeeds(
   em: EntityManager,
-  options: { recipe: string; foods: readonly string[] }
+  options: {
+    recipe: string
+    foods: readonly string[]
+    /** Foods tidy up marked needed that it can do without after all. */
+    canLeaveOut?: readonly string[]
+  }
 ) {
   const recipe = await findRecipe(em, options.recipe)
   const foods = [
@@ -580,6 +631,14 @@ export async function setNeeds(
     ),
   ]
   recipe.needs = foods.length > 0 ? foods : null
+  // The household's word over tidy up's: its lines can come out.
+  for (const food of options.canLeaveOut ?? []) {
+    for (const line of recipe.ingredients.getItems()) {
+      if (line.mark === "needed" && namesFood(line.rawText, food)) {
+        line.mark = "optional"
+      }
+    }
+  }
   await em.flush()
   return loadRecipe(em, recipe.id)
 }

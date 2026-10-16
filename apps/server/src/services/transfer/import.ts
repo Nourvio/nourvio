@@ -184,6 +184,10 @@ export const importJob: JobHandler = {
           nutrition: recipe.nutrition as Nutrition | null,
           dietOverrides: recipe.dietOverrides,
           needs: recipe.needs,
+          marks: recipe.ingredients.map((line) => ({
+            line: line.text,
+            mark: line.mark ?? null,
+          })),
           createdAt: new Date(recipe.createdAt),
           updatedAt: new Date(recipe.updatedAt),
           versions: recipe.versions.map((version) => ({

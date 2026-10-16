@@ -209,6 +209,7 @@ describe("a household's AI", () => {
       small: null,
       tasks: { swaps: "openai:gpt-6-sol" },
       monthlyLimit: 2,
+      autoTidy: false,
     })
     expect(status.tasks.import).toMatchObject({ ref: "openai:gpt-6-astra" })
     expect(status.tasks.swaps).toMatchObject({ ref: "openai:gpt-6-sol" })

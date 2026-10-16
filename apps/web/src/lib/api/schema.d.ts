@@ -1396,6 +1396,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/proposals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Review queue
+         * @description What AI suggests, waiting to be applied or dismissed, newest first, a page at a time. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listProposals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proposals/{proposalId}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Apply a suggestion
+         * @description Applies the sections picked, as one change to the recipe that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["applyProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/proposals/{proposalId}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Dismiss a suggestion
+         * @description The recipe stays as it is. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["dismissProposal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes": {
         parameters: {
             query?: never;
@@ -1712,6 +1772,50 @@ export interface paths {
         patch: operations["updateTag"];
         trace?: never;
     };
+    "/api/recipes/tidy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tidy up runs
+         * @description The household's runs that tidy many recipes: going, or finished in the last day, newest first, with how far each got and what it found. And how many recipes are still to tidy. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listTidyRuns"];
+        put?: never;
+        /**
+         * Tidy up many recipes
+         * @description Tidies recipes in the background, one at a time, with the suggestions left in the Review queue: the ones picked, or every recipe not tidied yet (household admins only), say after moving from another app. It stops if there's no AI, this month's limit is reached, a key runs out of credit, or three recipes in a row fail. Follow it at `GET /recipes/tidy`. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["startTidyRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/tidy/{runId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop a tidy up run
+         * @description The suggestions it made stay in Review. The recipe it's on finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["stopTidyRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/{recipe}": {
         parameters: {
             query?: never;
@@ -1834,7 +1938,7 @@ export interface paths {
         get?: never;
         /**
          * Say what a recipe can't do without
-         * @description A food the household doesn't like is usually left out of recipes, crossed off and not bought. One a recipe can't do without rules that recipe out instead, as when it's in the recipe's name. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
+         * @description A food the household doesn't like is usually left out of recipes, crossed off and not bought. One a recipe can't do without rules that recipe out instead, as when tidy up marked it needed or, before tidy up, it's in the recipe's name. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
          */
         put: operations["setRecipeNeeds"];
         post?: never;
@@ -1930,6 +2034,30 @@ export interface paths {
          */
         put: operations["rateRecipe"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/tidy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A recipe's waiting tidy up
+         * @description The tidy up waiting in the Review queue for this recipe, or null when there's none. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["getRecipeTidy"];
+        put?: never;
+        /**
+         * Tidy up a recipe
+         * @description AI tidies the recipe: consistent ingredient lines, short clear steps, tags from the household's own, a description and servings and times when they're missing, and marks on what it can do without. Nothing changes yet: the suggestion waits in the Review queue, in place of any earlier one for the recipe, and comes back here. Null when there's nothing to change. Uses the household's model for tidying, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["tidyRecipe"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3265,7 +3393,8 @@ export interface components {
          *       "large": null,
          *       "small": null,
          *       "tasks": {},
-         *       "monthlyLimit": 10
+         *       "monthlyLimit": 10,
+         *       "autoTidy": false
          *     }
          */
         HouseholdAiSettings: {
@@ -3334,6 +3463,11 @@ export interface components {
             };
             /** @description A monthly limit on its own keys, in US dollars; null for none. */
             monthlyLimit: number | null;
+            /**
+             * @description Tidy up each recipe it imports, in the background, with the suggestions left in the Review queue.
+             * @default false
+             */
+            autoTidy: boolean;
         };
         AiModelOption: {
             /**
@@ -5261,41 +5395,478 @@ export interface components {
         };
         /**
          * @example {
-         *       "recipes": [
+         *       "proposals": [
          *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
-         *           "slug": "lemon-chicken",
-         *           "name": "Lemon Chicken",
-         *           "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
-         *           "servings": 4,
-         *           "totalMinutes": 50,
-         *           "rating": 5,
-         *           "tags": [
-         *             "chicken",
-         *             "dinner"
-         *           ],
-         *           "diets": [
-         *             "gluten-free",
-         *             "dairy-free",
-         *             "egg-free",
-         *             "nut-free"
-         *           ],
-         *           "photo": {
-         *             "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *             "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000029",
+         *           "kind": "tidy",
+         *           "status": "pending",
+         *           "resolvedAt": null,
+         *           "recipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken"
          *           },
-         *           "lastMadeAt": "2026-10-09T01:15:00.000Z",
-         *           "createdAt": "2026-10-01T17:30:00.000Z",
-         *           "updatedAt": "2026-10-15T18:30:00.000Z"
+         *           "summary": "Split a long step and marked the chicken as needed.",
+         *           "sections": [
+         *             "steps",
+         *             "marks"
+         *           ],
+         *           "before": {
+         *             "steps": [
+         *               "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
+         *             ],
+         *             "marks": [
+         *               {
+         *                 "line": "2 lb chicken thighs",
+         *                 "mark": null
+         *               },
+         *               {
+         *                 "line": "2 lemons, juiced",
+         *                 "mark": null
+         *               }
+         *             ]
+         *           },
+         *           "after": {
+         *             "steps": [
+         *               "Rub the chicken with lemon and garlic.",
+         *               "Roast at 200°C for 40 minutes, until golden."
+         *             ],
+         *             "marks": [
+         *               {
+         *                 "line": "2 lb chicken thighs",
+         *                 "mark": "needed"
+         *               },
+         *               {
+         *                 "line": "2 lemons, juiced",
+         *                 "mark": "needed"
+         *               }
+         *             ]
+         *           },
+         *           "createdAt": "2026-10-01T17:30:00.000Z"
          *         }
          *       ],
          *       "total": 1
          *     }
          */
-        RecipeList: {
-            recipes: components["schemas"]["RecipeSummary"][];
-            /** @description How many match, in all. */
+        ProposalList: {
+            proposals: components["schemas"]["Proposal"][];
+            /** @description How many are waiting in all. */
             total: number;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000029",
+         *       "kind": "tidy",
+         *       "status": "pending",
+         *       "resolvedAt": null,
+         *       "recipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "slug": "lemon-chicken",
+         *         "name": "Lemon Chicken"
+         *       },
+         *       "summary": "Split a long step and marked the chicken as needed.",
+         *       "sections": [
+         *         "steps",
+         *         "marks"
+         *       ],
+         *       "before": {
+         *         "steps": [
+         *           "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
+         *         ],
+         *         "marks": [
+         *           {
+         *             "line": "2 lb chicken thighs",
+         *             "mark": null
+         *           },
+         *           {
+         *             "line": "2 lemons, juiced",
+         *             "mark": null
+         *           }
+         *         ]
+         *       },
+         *       "after": {
+         *         "steps": [
+         *           "Rub the chicken with lemon and garlic.",
+         *           "Roast at 200°C for 40 minutes, until golden."
+         *         ],
+         *         "marks": [
+         *           {
+         *             "line": "2 lb chicken thighs",
+         *             "mark": "needed"
+         *           },
+         *           {
+         *             "line": "2 lemons, juiced",
+         *             "mark": "needed"
+         *           }
+         *         ]
+         *       },
+         *       "createdAt": "2026-10-01T17:30:00.000Z"
+         *     }
+         */
+        Proposal: {
+            id: string;
+            /** @enum {string} */
+            kind: "tidy";
+            /** @enum {string} */
+            status: "pending" | "applied" | "dismissed";
+            recipe: {
+                id: string;
+                slug: string;
+                name: string;
+            } | null;
+            /** @description What it changes, in a sentence. */
+            summary: string;
+            /** @description The sections it changes, each applied or skipped on its own. */
+            sections: components["schemas"]["TidySection"][];
+            before: components["schemas"]["TidyValues"];
+            after: components["schemas"]["TidyValues"];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            resolvedAt: string | null;
+        };
+        /**
+         * @description A part of a recipe tidy up can change: its ingredients, steps, tags, a missing description, missing servings and times, and the marks on its ingredients.
+         * @enum {string}
+         */
+        TidySection: "ingredients" | "steps" | "tags" | "description" | "details" | "marks";
+        /** @description A recipe's sections, only the ones a suggestion changes. Ingredients and steps are editor lines. */
+        TidyValues: {
+            ingredients?: string[];
+            steps?: string[];
+            tags?: string[];
+            description?: string | null;
+            details?: {
+                servings: number | null;
+                prepMinutes: number | null;
+                cookMinutes: number | null;
+                totalMinutes: number | null;
+            };
+            marks?: components["schemas"]["MarkedLine"][];
+        };
+        MarkedLine: {
+            line: string;
+            /** @enum {string|null} */
+            mark: "needed" | "swappable" | "optional" | null;
+        };
+        /**
+         * @example {
+         *       "proposal": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000029",
+         *         "kind": "tidy",
+         *         "status": "applied",
+         *         "resolvedAt": "2026-10-15T18:30:00.000Z",
+         *         "recipe": {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "slug": "lemon-chicken",
+         *           "name": "Lemon Chicken"
+         *         },
+         *         "summary": "Split a long step and marked the chicken as needed.",
+         *         "sections": [
+         *           "steps",
+         *           "marks"
+         *         ],
+         *         "before": {
+         *           "steps": [
+         *             "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
+         *           ],
+         *           "marks": [
+         *             {
+         *               "line": "2 lb chicken thighs",
+         *               "mark": null
+         *             },
+         *             {
+         *               "line": "2 lemons, juiced",
+         *               "mark": null
+         *             }
+         *           ]
+         *         },
+         *         "after": {
+         *           "steps": [
+         *             "Rub the chicken with lemon and garlic.",
+         *             "Roast at 200°C for 40 minutes, until golden."
+         *           ],
+         *           "marks": [
+         *             {
+         *               "line": "2 lb chicken thighs",
+         *               "mark": "needed"
+         *             },
+         *             {
+         *               "line": "2 lemons, juiced",
+         *               "mark": "needed"
+         *             }
+         *           ]
+         *         },
+         *         "createdAt": "2026-10-01T17:30:00.000Z"
+         *       },
+         *       "recipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "slug": "lemon-chicken",
+         *         "name": "Lemon Chicken",
+         *         "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *         "servings": 4,
+         *         "totalMinutes": 50,
+         *         "rating": 5,
+         *         "tags": [
+         *           "chicken",
+         *           "dinner"
+         *         ],
+         *         "diets": [
+         *           "gluten-free",
+         *           "dairy-free",
+         *           "egg-free",
+         *           "nut-free"
+         *         ],
+         *         "photo": {
+         *           "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *           "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *         },
+         *         "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *         "createdAt": "2026-10-01T17:30:00.000Z",
+         *         "updatedAt": "2026-10-15T18:30:00.000Z",
+         *         "origin": "link",
+         *         "sourceUrl": "https://example.com/lemon-chicken",
+         *         "yieldText": null,
+         *         "prepMinutes": 10,
+         *         "cookMinutes": 40,
+         *         "notes": "Bone-in thighs work too: give them 10 minutes more.",
+         *         "dietOverrides": {},
+         *         "needs": [],
+         *         "ingredients": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *             "section": null,
+         *             "text": "2 lb chicken thighs",
+         *             "quantity": 2,
+         *             "quantityMax": null,
+         *             "unit": "pound",
+         *             "food": "chicken thighs",
+         *             "note": null,
+         *             "mark": "needed"
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *             "section": null,
+         *             "text": "1 tbsp olive oil",
+         *             "quantity": 1,
+         *             "quantityMax": null,
+         *             "unit": "tablespoon",
+         *             "food": "olive oil",
+         *             "note": null,
+         *             "mark": "optional"
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+         *             "section": null,
+         *             "text": "2 lemons, juiced",
+         *             "quantity": 2,
+         *             "quantityMax": null,
+         *             "unit": null,
+         *             "food": "lemons",
+         *             "note": "juiced",
+         *             "mark": "needed"
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+         *             "section": null,
+         *             "text": "4 cloves garlic, smashed",
+         *             "quantity": 4,
+         *             "quantityMax": null,
+         *             "unit": "clove",
+         *             "food": "garlic",
+         *             "note": "smashed",
+         *             "mark": "swappable"
+         *           }
+         *         ],
+         *         "steps": [
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *             "section": null,
+         *             "text": "Heat the oven to 425°F."
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+         *             "section": null,
+         *             "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+         *           },
+         *           {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+         *             "section": null,
+         *             "text": "Roast skin side up for 40 minutes, until crisp."
+         *           }
+         *         ]
+         *       }
+         *     }
+         */
+        ApplyResult: {
+            proposal: components["schemas"]["Proposal"];
+            recipe: components["schemas"]["Recipe"];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *       "slug": "lemon-chicken",
+         *       "name": "Lemon Chicken",
+         *       "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *       "servings": 4,
+         *       "totalMinutes": 50,
+         *       "rating": 5,
+         *       "tags": [
+         *         "chicken",
+         *         "dinner"
+         *       ],
+         *       "diets": [
+         *         "gluten-free",
+         *         "dairy-free",
+         *         "egg-free",
+         *         "nut-free"
+         *       ],
+         *       "photo": {
+         *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *       },
+         *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *       "createdAt": "2026-10-01T17:30:00.000Z",
+         *       "updatedAt": "2026-10-15T18:30:00.000Z",
+         *       "origin": "link",
+         *       "sourceUrl": "https://example.com/lemon-chicken",
+         *       "yieldText": null,
+         *       "prepMinutes": 10,
+         *       "cookMinutes": 40,
+         *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
+         *       "dietOverrides": {},
+         *       "needs": [],
+         *       "ingredients": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+         *           "section": null,
+         *           "text": "2 lb chicken thighs",
+         *           "quantity": 2,
+         *           "quantityMax": null,
+         *           "unit": "pound",
+         *           "food": "chicken thighs",
+         *           "note": null,
+         *           "mark": "needed"
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *           "section": null,
+         *           "text": "1 tbsp olive oil",
+         *           "quantity": 1,
+         *           "quantityMax": null,
+         *           "unit": "tablespoon",
+         *           "food": "olive oil",
+         *           "note": null,
+         *           "mark": "optional"
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+         *           "section": null,
+         *           "text": "2 lemons, juiced",
+         *           "quantity": 2,
+         *           "quantityMax": null,
+         *           "unit": null,
+         *           "food": "lemons",
+         *           "note": "juiced",
+         *           "mark": "needed"
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+         *           "section": null,
+         *           "text": "4 cloves garlic, smashed",
+         *           "quantity": 4,
+         *           "quantityMax": null,
+         *           "unit": "clove",
+         *           "food": "garlic",
+         *           "note": "smashed",
+         *           "mark": "swappable"
+         *         }
+         *       ],
+         *       "steps": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *           "section": null,
+         *           "text": "Heat the oven to 425°F."
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+         *           "section": null,
+         *           "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+         *           "section": null,
+         *           "text": "Roast skin side up for 40 minutes, until crisp."
+         *         }
+         *       ]
+         *     }
+         */
+        Recipe: components["schemas"]["RecipeSummary"] & {
+            /** @enum {string} */
+            origin: "link" | "video" | "text" | "photo" | "manual" | "assistant" | "mealie" | "paprika" | "merran";
+            sourceUrl: string | null;
+            yieldText: string | null;
+            prepMinutes: number | null;
+            cookMinutes: number | null;
+            notes: string | null;
+            dietOverrides: components["schemas"]["DietOverrides"];
+            /** @description Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead. */
+            needs: string[];
+            ingredients: components["schemas"]["Ingredient"][];
+            steps: components["schemas"]["Step"][];
+        };
+        /** @enum {string} */
+        Diet: "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "egg-free" | "nut-free";
+        /** @description Where the household corrected the labels the ingredients suggest. */
+        DietOverrides: {
+            vegetarian?: boolean;
+            vegan?: boolean;
+            "gluten-free"?: boolean;
+            "dairy-free"?: boolean;
+            "egg-free"?: boolean;
+            "nut-free"?: boolean;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+         *       "section": null,
+         *       "text": "1 tbsp olive oil",
+         *       "quantity": 1,
+         *       "quantityMax": null,
+         *       "unit": "tablespoon",
+         *       "food": "olive oil",
+         *       "note": null,
+         *       "mark": "optional"
+         *     }
+         */
+        Ingredient: {
+            id: string;
+            section: string | null;
+            /** @description The line as written. */
+            text: string;
+            quantity: number | null;
+            quantityMax: number | null;
+            /** @example tablespoon */
+            unit: string | null;
+            food: string | null;
+            note: string | null;
+            /**
+             * @description What it is to the dish, as tidy up marked it: needed, swappable or optional. A dislike is left out of lines that aren't needed. None until marked.
+             * @enum {string|null}
+             */
+            mark: "needed" | "swappable" | "optional" | null;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+         *       "section": null,
+         *       "text": "Heat the oven to 425°F."
+         *     }
+         */
+        Step: {
+            id: string;
+            section: string | null;
+            text: string;
         };
         /**
          * @example {
@@ -5352,161 +5923,55 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
         };
-        /** @enum {string} */
-        Diet: "vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "egg-free" | "nut-free";
         /**
          * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-000000000006",
-         *       "slug": "lemon-chicken",
-         *       "name": "Lemon Chicken",
-         *       "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
-         *       "servings": 4,
-         *       "totalMinutes": 50,
-         *       "rating": 5,
-         *       "tags": [
-         *         "chicken",
-         *         "dinner"
-         *       ],
-         *       "diets": [
-         *         "gluten-free",
-         *         "dairy-free",
-         *         "egg-free",
-         *         "nut-free"
-         *       ],
-         *       "photo": {
-         *         "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-         *         "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
-         *       },
-         *       "lastMadeAt": "2026-10-09T01:15:00.000Z",
-         *       "createdAt": "2026-10-01T17:30:00.000Z",
-         *       "updatedAt": "2026-10-15T18:30:00.000Z",
-         *       "origin": "link",
-         *       "sourceUrl": "https://example.com/lemon-chicken",
-         *       "yieldText": null,
-         *       "prepMinutes": 10,
-         *       "cookMinutes": 40,
-         *       "notes": "Bone-in thighs work too: give them 10 minutes more.",
-         *       "dietOverrides": {},
-         *       "needs": [],
-         *       "ingredients": [
-         *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-000000000011",
-         *           "section": null,
-         *           "text": "2 lb chicken thighs",
-         *           "quantity": 2,
-         *           "quantityMax": null,
-         *           "unit": "pound",
-         *           "food": "chicken thighs",
-         *           "note": null
-         *         },
-         *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-000000000012",
-         *           "section": null,
-         *           "text": "1 tbsp olive oil",
-         *           "quantity": 1,
-         *           "quantityMax": null,
-         *           "unit": "tablespoon",
-         *           "food": "olive oil",
-         *           "note": null
-         *         },
-         *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-000000000013",
-         *           "section": null,
-         *           "text": "2 lemons, juiced",
-         *           "quantity": 2,
-         *           "quantityMax": null,
-         *           "unit": null,
-         *           "food": "lemons",
-         *           "note": "juiced"
-         *         },
-         *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-000000000014",
-         *           "section": null,
-         *           "text": "4 cloves garlic, smashed",
-         *           "quantity": 4,
-         *           "quantityMax": null,
-         *           "unit": "clove",
-         *           "food": "garlic",
-         *           "note": "smashed"
-         *         }
-         *       ],
-         *       "steps": [
-         *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-000000000015",
-         *           "section": null,
-         *           "text": "Heat the oven to 425°F."
-         *         },
-         *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-000000000016",
-         *           "section": null,
-         *           "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
-         *         },
-         *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-000000000017",
-         *           "section": null,
-         *           "text": "Roast skin side up for 40 minutes, until crisp."
-         *         }
+         *       "sections": [
+         *         "steps",
+         *         "marks"
          *       ]
          *     }
          */
-        Recipe: components["schemas"]["RecipeSummary"] & {
-            /** @enum {string} */
-            origin: "link" | "video" | "text" | "photo" | "manual" | "assistant" | "mealie" | "paprika" | "merran";
-            sourceUrl: string | null;
-            yieldText: string | null;
-            prepMinutes: number | null;
-            cookMinutes: number | null;
-            notes: string | null;
-            dietOverrides: components["schemas"]["DietOverrides"];
-            /** @description Foods the household said it can't do without: a dislike that's usually left out of recipes rules this one out instead. */
-            needs: string[];
-            ingredients: components["schemas"]["Ingredient"][];
-            steps: components["schemas"]["Step"][];
-        };
-        /** @description Where the household corrected the labels the ingredients suggest. */
-        DietOverrides: {
-            vegetarian?: boolean;
-            vegan?: boolean;
-            "gluten-free"?: boolean;
-            "dairy-free"?: boolean;
-            "egg-free"?: boolean;
-            "nut-free"?: boolean;
+        ApplyInput: {
+            /** @description The sections to apply. The rest are skipped. */
+            sections: components["schemas"]["TidySection"][];
         };
         /**
          * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-000000000012",
-         *       "section": null,
-         *       "text": "1 tbsp olive oil",
-         *       "quantity": 1,
-         *       "quantityMax": null,
-         *       "unit": "tablespoon",
-         *       "food": "olive oil",
-         *       "note": null
+         *       "recipes": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "slug": "lemon-chicken",
+         *           "name": "Lemon Chicken",
+         *           "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+         *           "servings": 4,
+         *           "totalMinutes": 50,
+         *           "rating": 5,
+         *           "tags": [
+         *             "chicken",
+         *             "dinner"
+         *           ],
+         *           "diets": [
+         *             "gluten-free",
+         *             "dairy-free",
+         *             "egg-free",
+         *             "nut-free"
+         *           ],
+         *           "photo": {
+         *             "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+         *             "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+         *           },
+         *           "lastMadeAt": "2026-10-09T01:15:00.000Z",
+         *           "createdAt": "2026-10-01T17:30:00.000Z",
+         *           "updatedAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ],
+         *       "total": 1
          *     }
          */
-        Ingredient: {
-            id: string;
-            section: string | null;
-            /** @description The line as written. */
-            text: string;
-            quantity: number | null;
-            quantityMax: number | null;
-            /** @example tablespoon */
-            unit: string | null;
-            food: string | null;
-            note: string | null;
-        };
-        /**
-         * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-000000000015",
-         *       "section": null,
-         *       "text": "Heat the oven to 425°F."
-         *     }
-         */
-        Step: {
-            id: string;
-            section: string | null;
-            text: string;
+        RecipeList: {
+            recipes: components["schemas"]["RecipeSummary"][];
+            /** @description How many match, in all. */
+            total: number;
         };
         /**
          * @example {
@@ -5695,7 +6160,8 @@ export interface components {
          *             "quantityMax": null,
          *             "unit": "pound",
          *             "food": "chicken thighs",
-         *             "note": null
+         *             "note": null,
+         *             "mark": "needed"
          *           },
          *           {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000012",
@@ -5705,7 +6171,8 @@ export interface components {
          *             "quantityMax": null,
          *             "unit": "tablespoon",
          *             "food": "olive oil",
-         *             "note": null
+         *             "note": null,
+         *             "mark": "optional"
          *           },
          *           {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000013",
@@ -5715,7 +6182,8 @@ export interface components {
          *             "quantityMax": null,
          *             "unit": null,
          *             "food": "lemons",
-         *             "note": "juiced"
+         *             "note": "juiced",
+         *             "mark": "needed"
          *           },
          *           {
          *             "id": "0199e8b0-5a10-7a01-8b00-000000000014",
@@ -5725,7 +6193,8 @@ export interface components {
          *             "quantityMax": null,
          *             "unit": "clove",
          *             "food": "garlic",
-         *             "note": "smashed"
+         *             "note": "smashed",
+         *             "mark": "swappable"
          *           }
          *         ],
          *         "steps": [
@@ -5954,6 +6423,78 @@ export interface components {
         };
         /**
          * @example {
+         *       "runs": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000002a",
+         *           "status": "running",
+         *           "library": true,
+         *           "total": 52,
+         *           "done": 12,
+         *           "suggested": 9,
+         *           "fine": 3,
+         *           "failed": 0,
+         *           "stopped": null,
+         *           "startedAt": "2026-10-01T17:30:00.000Z",
+         *           "finishedAt": null
+         *         }
+         *       ],
+         *       "untidied": 40
+         *     }
+         */
+        TidyRuns: {
+            runs: components["schemas"]["TidyRun"][];
+            /** @description How many of its recipes tidy up hasn't looked at yet. */
+            untidied: number;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000002a",
+         *       "status": "running",
+         *       "library": true,
+         *       "total": 52,
+         *       "done": 12,
+         *       "suggested": 9,
+         *       "fine": 3,
+         *       "failed": 0,
+         *       "stopped": null,
+         *       "startedAt": "2026-10-01T17:30:00.000Z",
+         *       "finishedAt": null
+         *     }
+         */
+        TidyRun: {
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "running" | "done" | "failed" | "cancelled";
+            /** @description Every recipe not tidied yet, rather than ones picked. */
+            library: boolean;
+            total: number;
+            done: number;
+            /** @description Recipes with suggestions waiting in Review. */
+            suggested: number;
+            /** @description Recipes with nothing to change. */
+            fine: number;
+            failed: number;
+            /** @description Why it stopped before the end, when it did: no AI, this month's limit, no credit, or three failures in a row. */
+            stopped: string | null;
+            /** Format: date-time */
+            startedAt: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+        };
+        /**
+         * @example {
+         *       "ids": [
+         *         "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "0199e8b0-5a10-7a01-8b00-000000000007"
+         *       ]
+         *     }
+         */
+        TidyRunInput: {
+            /** @description The recipes to tidy. Left out, every recipe not tidied yet, which only household admins can start. */
+            ids?: string[];
+        };
+        /**
+         * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-00000000000c",
          *       "rating": 5,
          *       "note": "More lemon next time.",
@@ -6006,6 +6547,8 @@ export interface components {
         NeedsInput: {
             /** @description Foods it can't do without, replacing any said before. An empty list lets every dislike be left out again. */
             foods: string[];
+            /** @description Foods tidy up marked as needed that it can do without after all: their lines are marked optional. */
+            canLeaveOut?: string[];
         };
         /**
          * @example {
@@ -6115,6 +6658,74 @@ export interface components {
         RecipeRatingInput: {
             /** @description From 1 to 5 stars, or null to clear it. */
             rating: number | null;
+        };
+        /**
+         * @example {
+         *       "proposal": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000029",
+         *         "kind": "tidy",
+         *         "status": "pending",
+         *         "resolvedAt": null,
+         *         "recipe": {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "slug": "lemon-chicken",
+         *           "name": "Lemon Chicken"
+         *         },
+         *         "summary": "Split a long step and marked the chicken as needed.",
+         *         "sections": [
+         *           "steps",
+         *           "marks"
+         *         ],
+         *         "before": {
+         *           "steps": [
+         *             "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
+         *           ],
+         *           "marks": [
+         *             {
+         *               "line": "2 lb chicken thighs",
+         *               "mark": null
+         *             },
+         *             {
+         *               "line": "2 lemons, juiced",
+         *               "mark": null
+         *             }
+         *           ]
+         *         },
+         *         "after": {
+         *           "steps": [
+         *             "Rub the chicken with lemon and garlic.",
+         *             "Roast at 200°C for 40 minutes, until golden."
+         *           ],
+         *           "marks": [
+         *             {
+         *               "line": "2 lb chicken thighs",
+         *               "mark": "needed"
+         *             },
+         *             {
+         *               "line": "2 lemons, juiced",
+         *               "mark": "needed"
+         *             }
+         *           ]
+         *         },
+         *         "createdAt": "2026-10-01T17:30:00.000Z"
+         *       }
+         *     }
+         */
+        RecipeProposal: {
+            proposal: components["schemas"]["Proposal"] | null;
+        };
+        /**
+         * @example {
+         *       "sections": [
+         *         "steps",
+         *         "tags",
+         *         "marks"
+         *       ]
+         *     }
+         */
+        TidyInput: {
+            /** @description What to tidy; every section when left out. */
+            sections?: components["schemas"]["TidySection"][];
         };
         /**
          * @example {
@@ -10325,6 +10936,176 @@ export interface operations {
             };
         };
     };
+    listProposals: {
+        parameters: {
+            query?: {
+                limit?: number;
+                offset?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What's waiting. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProposalList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    applyProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApplyInput"];
+            };
+        };
+        responses: {
+            /** @description Applied: the suggestion and the recipe. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplyResult"];
+                };
+            };
+            /** @description Nothing picked. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such suggestion, or its recipe is gone. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Applied or dismissed already, or the recipe changed. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    dismissProposal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                proposalId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Dismissed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Proposal"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such suggestion. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Applied or dismissed already. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listRecipes: {
         parameters: {
             query?: {
@@ -11336,6 +12117,153 @@ export interface operations {
             };
         };
     };
+    listTidyRuns: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its runs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TidyRuns"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startTidyRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TidyRunInput"];
+            };
+        };
+        responses: {
+            /** @description Started, or the one already going. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TidyRun"];
+                };
+            };
+            /** @description Nothing to tidy. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    stopTidyRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stopped, or stopping. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TidyRun"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such run in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has already finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     getRecipe: {
         parameters: {
             query?: never;
@@ -12220,6 +13148,137 @@ export interface operations {
             };
             /** @description No such recipe. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getRecipeTidy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its suggestion, or null. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipeProposal"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    tidyRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["TidyInput"];
+            };
+        };
+        responses: {
+            /** @description Its suggestion, or null. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipeProposal"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The model can't do it. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description This month's AI limit is reached, or the AI is busy. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The AI provider failed. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

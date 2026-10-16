@@ -277,9 +277,19 @@ export const HouseholdAiSettingsSchema = z
       description:
         "A monthly limit on its own keys, in US dollars; null for none.",
     }),
+    autoTidy: z.boolean().default(false).openapi({
+      description:
+        "Tidy up each recipe it imports, in the background, with the suggestions left in the Review queue.",
+    }),
   })
   .openapi("HouseholdAiSettings", {
-    example: { large: null, small: null, tasks: {}, monthlyLimit: 10 },
+    example: {
+      large: null,
+      small: null,
+      tasks: {},
+      monthlyLimit: 10,
+      autoTidy: false,
+    },
   })
 
 export const HouseholdAiSchema = z

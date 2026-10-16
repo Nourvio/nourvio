@@ -852,15 +852,7 @@
         "reading": "Reading…",
         "slow": "This can take up to a minute.",
         "added": "Added {{name}}. AI read it, so check it over.",
-        "back": "Back",
-        "why": {
-          "noKey": "Reading text and photos needs AI, and this household has no AI key yet.",
-          "notCovered": "Reading text and photos needs AI, and this household has no AI key yet.",
-          "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
-          "ownLimit": "This month's limit on the household's own AI keys is reached."
-        },
-        "fixAdmin": "Set it up in <link>Settings, Household</link>.",
-        "fixMember": "A household admin can set it up in Settings, Household."
+        "back": "Back"
       }
     },
     "links": {
@@ -1046,6 +1038,8 @@
       "label": "What your household's tastes make of it",
       "leaving": "Leaving out the {{food}} for {{who}}.",
       "leavingAll": "Leaving out the {{food}}, which your household doesn't like.",
+      "swapping": "Leaving out the {{food}} for {{who}}: something like it could stand in.",
+      "swappingAll": "Leaving out the {{food}}, which your household doesn't like: something like it could stand in.",
       "need": "It needs the {{food}}",
       "neededSaved": "Noted: it needs the {{food}}, so it won't be suggested.",
       "leaveOutSaved": "The {{food}} will be left out of it again.",
@@ -1060,6 +1054,95 @@
       "neverAll": "Has {{food}}, which your household doesn't eat. It isn't suggested.",
       "line": "left out",
       "lineFor": "left out for {{who}}"
+    },
+    "tidy": {
+      "menu": "Tidy up",
+      "title": "Tidy up {{name}}",
+      "description": "AI tidies the recipe up. Nothing changes until you've looked at what it suggests.",
+      "reviewDescription": "Here's what tidy up suggests. Tick what to keep.",
+      "what": "What to tidy",
+      "options": {
+        "ingredients": "Ingredients: the same units throughout, one thing a line",
+        "steps": "Steps: short and clear, filler taken out",
+        "tags": "Tags, from your own first",
+        "description": "A description, if it has none",
+        "details": "Servings and times, if they're missing",
+        "marks": "What it can do without, for dislikes"
+      },
+      "start": "Tidy up",
+      "tidying": "Tidying…",
+      "slow": "This can take up to a minute.",
+      "cancel": "Cancel",
+      "fine": "Nothing to tidy: it's in good shape.",
+      "done": "Done",
+      "again": "Tidy it up again",
+      "sections": {
+        "ingredients": "Ingredients",
+        "steps": "Steps",
+        "tags": "Tags",
+        "description": "Description",
+        "details": "Servings and times",
+        "marks": "What it can do without"
+      },
+      "now": "Now",
+      "tidied": "Tidied",
+      "notMarked": "Not marked yet.",
+      "marks": {
+        "needed": "Can't do without",
+        "swappable": "Something else could stand in",
+        "optional": "Can be left out"
+      },
+      "details": {
+        "servings": "Serves {{count}}",
+        "prepMinutes": "Prep {{count}} min",
+        "cookMinutes": "Cook {{count}} min",
+        "totalMinutes": "{{count}} min in all"
+      },
+      "applyAll": "Apply all",
+      "apply_one": "Apply {{count}} change",
+      "apply_other": "Apply {{count}} changes",
+      "dismiss": "Dismiss",
+      "applied": "Tidied up {{name}}.",
+      "review": "Review",
+      "hide": "Hide",
+      "reviewTitle": "Review",
+      "reviewPage": "What AI suggests for your recipes. Nothing changes until you apply it.",
+      "none": "Nothing to review",
+      "noneHint": "Tidy up a recipe from its page, or pick a few on Recipes, and what AI suggests waits here.",
+      "waiting_one": "{{count}} recipe has suggestions to review.",
+      "waiting_other": "{{count}} recipes have suggestions to review.",
+      "waitingHere": "Tidy up has suggestions for this recipe: {{summary}}",
+      "picked_one": "Tidying {{count}} recipe. Its suggestions will be in Review.",
+      "picked_other": "Tidying {{count}} recipes. Their suggestions will be in Review.",
+      "runs": {
+        "banner_one": "Tidying recipes: {{done}} of {{total}}.",
+        "banner_other": "Tidying recipes: {{done}} of {{total}}.",
+        "going_one": "Tidying {{done}} of {{total}} recipe…",
+        "going_other": "Tidying {{done}} of {{total}} recipes…",
+        "stop": "Stop",
+        "done_one": "Tidied {{count}} recipe.",
+        "done_other": "Tidied {{count}} recipes.",
+        "suggested_one": "{{count}} has suggestions.",
+        "suggested_other": "{{count}} have suggestions.",
+        "fine_one": "{{count}} needed nothing.",
+        "fine_other": "{{count}} needed nothing.",
+        "failed_one": "{{count}} couldn't be tidied.",
+        "failed_other": "{{count}} couldn't be tidied.",
+        "stopped": "It stopped early: {{why}}",
+        "cancelled": "It was stopped."
+      },
+      "library": {
+        "button_one": "Tidy up {{count}} recipe",
+        "button_other": "Tidy up {{count}} recipes",
+        "title_one": "Tidy up {{count}} recipe?",
+        "title_other": "Tidy up {{count}} recipes?",
+        "description": "AI looks at each recipe not tidied yet, in the background. What it suggests waits here, and nothing changes until you apply it.",
+        "cost": "It costs about {{each}} a recipe, {{total}} in all.",
+        "free": "Your own AI address runs it, so it costs nothing.",
+        "confirm": "Tidy them up",
+        "started_one": "Tidying {{count}} recipe.",
+        "started_other": "Tidying {{count}} recipes."
+      }
     }
   },
   "cook": {
@@ -1718,7 +1801,9 @@
       "save": "Save",
       "saved": "Saved.",
       "addressHint": "A model on your own network, like Ollama, is added by whoever runs Merran. Once it's there, it shows in the models below.",
-      "addressHintAdmin": "A model on your own network, like Ollama, goes in <link>Settings, This server, AI keys</link>, as an address. Households the server's keys cover can then pick it below."
+      "addressHintAdmin": "A model on your own network, like Ollama, goes in <link>Settings, This server, AI keys</link>, as an address. Households the server's keys cover can then pick it below.",
+      "autoTidy": "Tidy up new recipes",
+      "autoTidyHint": "Each recipe you import is tidied up in the background, with what AI suggests waiting in Review."
     },
     "near": {
       "server": "AI this month: {{spent}} of {{limit}} on the server's keys.",
@@ -1751,6 +1836,22 @@
       "out": "{{whose}} is out of credit, so AI uses another key, or stops, until it's topped up.",
       "low": "{{whose}} is low on credit: about {{left}} left.",
       "lowUnknown": "{{whose}} is low on credit."
+    },
+    "needs": {
+      "import": {
+        "noKey": "Reading text and photos needs AI, and this household has no AI key yet.",
+        "notCovered": "Reading text and photos needs AI, and this household has no AI key yet.",
+        "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
+        "ownLimit": "This month's limit on the household's own AI keys is reached."
+      },
+      "tidy": {
+        "noKey": "Tidying up needs AI, and this household has no AI key yet.",
+        "notCovered": "Tidying up needs AI, and this household has no AI key yet.",
+        "overLimit": "This month's AI on the server's keys is used up. It's back next month.",
+        "ownLimit": "This month's limit on the household's own AI keys is reached."
+      },
+      "fixAdmin": "Set it up in <link>Settings, Household</link>.",
+      "fixMember": "A household admin can set it up in Settings, Household."
     }
   }
 }

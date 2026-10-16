@@ -8,6 +8,7 @@ import householdsRoutes from "./households/index.ts"
 import listRoutes from "./list/index.ts"
 import pantryRoutes from "./pantry/index.ts"
 import planRoutes from "./plan/index.ts"
+import proposalsRoutes from "./proposals/index.ts"
 import recipesRoutes from "./recipes/index.ts"
 import settingsRoutes from "./settings/index.ts"
 import shareRoutes from "./share/index.ts"
@@ -27,6 +28,7 @@ export default (router: Router, deps: AppDeps) => {
   listRoutes(router, deps)
   pantryRoutes(router, deps)
   planRoutes(router, deps)
+  proposalsRoutes(router, deps)
   recipesRoutes(router, deps)
   settingsRoutes(router, deps)
   shareRoutes(router, deps)

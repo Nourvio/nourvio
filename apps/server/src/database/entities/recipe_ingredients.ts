@@ -1,4 +1,5 @@
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
+import { INGREDIENT_MARKS } from "@merran/shared"
 import { householdFilter } from "../scope.ts"
 import { id } from "./base.ts"
 import { householdRef } from "./households.ts"
@@ -25,6 +26,11 @@ export const RecipeIngredient = defineEntity({
     unit: p.string().nullable(),
     food: p.string().nullable(),
     note: p.text().nullable(),
+    /**
+     * What it is to the dish, as tidy up marked it: needed, swappable or
+     * optional. Leaving out a dislike goes by it. None until marked.
+     */
+    mark: p.enum(INGREDIENT_MARKS).nullable(),
   },
   filters: householdFilter,
 })

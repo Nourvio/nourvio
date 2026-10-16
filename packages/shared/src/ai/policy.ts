@@ -63,6 +63,8 @@ export type HouseholdAi = {
   tasks: Partial<Record<AiTask, ModelRef>>
   /** A monthly limit on its own keys, in US dollars; null for none. */
   monthlyLimit: number | null
+  /** Tidy up each recipe it imports, with the suggestions left in Review. */
+  autoTidy: boolean
 }
 
 export const NO_HOUSEHOLD_AI: HouseholdAi = {
@@ -70,6 +72,7 @@ export const NO_HOUSEHOLD_AI: HouseholdAi = {
   small: null,
   tasks: {},
   monthlyLimit: null,
+  autoTidy: false,
 }
 
 /**

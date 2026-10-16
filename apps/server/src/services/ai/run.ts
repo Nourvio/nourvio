@@ -33,6 +33,9 @@ import { recordUsage } from "./usage.ts"
 // the key. A key its provider says is out of credit is noted, and the call
 // goes to the next key there is.
 
+/** What calling AI takes: settings for whose key pays, and the models. */
+export type AiDeps = Pick<AppDeps, "settings" | "fetcher" | "ai">
+
 /** Why a feature can't use AI, said so someone can fix it. */
 const UNAVAILABLE: Record<
   Unavailable,
@@ -126,7 +129,7 @@ function callFailed(error: unknown, provider: AiProvider) {
  * returns what AI SDK did, its usage included.
  */
 export async function useAi<T extends { usage: LanguageModelUsage }>(
-  deps: Pick<AppDeps, "settings" | "fetcher" | "ai">,
+  deps: AiDeps,
   em: EntityManager,
   options: {
     householdId: string

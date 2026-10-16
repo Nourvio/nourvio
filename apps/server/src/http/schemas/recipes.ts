@@ -1,5 +1,5 @@
 import { z } from "@hono/zod-openapi"
-import { DIETS } from "@merran/shared"
+import { DIETS, INGREDIENT_MARKS } from "@merran/shared"
 import { RECIPE_ORIGINS } from "../../database/entities/index.ts"
 import {
   COOK_NOTE,
@@ -129,6 +129,10 @@ export const IngredientSchema = z
     unit: z.string().nullable().openapi({ example: "tablespoon" }),
     food: z.string().nullable(),
     note: z.string().nullable(),
+    mark: z.enum(INGREDIENT_MARKS).nullable().openapi({
+      description:
+        "What it is to the dish, as tidy up marked it: needed, swappable or optional. A dislike is left out of lines that aren't needed. None until marked.",
+    }),
   })
   .openapi("Ingredient", { example: RECIPE.ingredients[1] })
 
@@ -271,6 +275,14 @@ export const NeedsInputSchema = z
       .openapi({
         description:
           "Foods it can't do without, replacing any said before. An empty list lets every dislike be left out again.",
+      }),
+    canLeaveOut: z
+      .array(z.string().trim().min(1, "Name the food.").max(60))
+      .max(50)
+      .optional()
+      .openapi({
+        description:
+          "Foods tidy up marked as needed that it can do without after all: their lines are marked optional.",
       }),
   })
   .openapi("NeedsInput", {

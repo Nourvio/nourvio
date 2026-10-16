@@ -16,11 +16,11 @@ import {
 } from "@/components/ui/dialog"
 import { FieldDescription, FieldError } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
+import { NeedsAi, useAiFor } from "@/features/ai/needs-ai"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { cn } from "@/lib/utils"
 
 import type { Recipe } from "../queries"
-import { NeedsAi, useImportAi } from "./needs-ai"
 
 /** The most photos one recipe is read from. */
 const MAX_PHOTOS = 4
@@ -72,7 +72,7 @@ export function FromPhotos({
   onNavigate: () => void
 }) {
   const { t } = useTranslation()
-  const ai = useImportAi()
+  const ai = useAiFor("import")
   const input = React.useRef<HTMLInputElement>(null)
   const [photos, setPhotos] = React.useState<Photo[]>([])
   const [busy, setBusy] = React.useState(false)
@@ -159,7 +159,7 @@ export function FromPhotos({
           {t("recipes.import.photos.description")}
         </DialogDescription>
       </DialogHeader>
-      {ai.why && <NeedsAi why={ai.why} onNavigate={onNavigate} />}
+      {ai.why && <NeedsAi task="import" why={ai.why} onNavigate={onNavigate} />}
       <form
         className="grid min-w-0 gap-4"
         noValidate

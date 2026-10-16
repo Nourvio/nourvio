@@ -39,6 +39,10 @@
       "description": "The household's recipes, their tags and versions, and Recently deleted. Ingredients and steps are written as lines, as in the editor, and each ingredient line is read into its amount, unit, food and note."
     },
     {
+      "name": "Review",
+      "description": "What AI suggests, waiting to be applied or dismissed: tidy ups of recipes, for now. AI never changes a recipe by itself. Each section of a suggestion is applied or skipped on its own, and applying keeps a version."
+    },
+    {
       "name": "Plan",
       "description": "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone."
     },
@@ -2180,6 +2184,11 @@
             "minimum": 0,
             "maximum": 100000,
             "description": "A monthly limit on its own keys, in US dollars; null for none."
+          },
+          "autoTidy": {
+            "type": "boolean",
+            "default": false,
+            "description": "Tidy up each recipe it imports, in the background, with the suggestions left in the Review queue."
           }
         },
         "required": [
@@ -2192,7 +2201,8 @@
           "large": null,
           "small": null,
           "tasks": {},
-          "monthlyLimit": 10
+          "monthlyLimit": 10,
+          "autoTidy": false
         }
       },
       "AiModelOption": {
@@ -6146,93 +6156,236 @@
           ]
         }
       },
-      "RecipeList": {
+      "ProposalList": {
         "type": "object",
         "properties": {
-          "recipes": {
+          "proposals": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/RecipeSummary"
+              "$ref": "#/components/schemas/Proposal"
             }
           },
           "total": {
             "type": "number",
-            "description": "How many match, in all."
+            "description": "How many are waiting in all."
           }
         },
         "required": [
-          "recipes",
+          "proposals",
           "total"
         ],
         "example": {
-          "recipes": [
+          "proposals": [
             {
-              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
-              "slug": "lemon-chicken",
-              "name": "Lemon Chicken",
-              "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
-              "servings": 4,
-              "totalMinutes": 50,
-              "rating": 5,
-              "tags": [
-                "chicken",
-                "dinner"
-              ],
-              "diets": [
-                "gluten-free",
-                "dairy-free",
-                "egg-free",
-                "nut-free"
-              ],
-              "photo": {
-                "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-                "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+              "id": "0199e8b0-5a10-7a01-8b00-000000000029",
+              "kind": "tidy",
+              "status": "pending",
+              "resolvedAt": null,
+              "recipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken"
               },
-              "lastMadeAt": "2026-10-09T01:15:00.000Z",
-              "createdAt": "2026-10-01T17:30:00.000Z",
-              "updatedAt": "2026-10-15T18:30:00.000Z"
+              "summary": "Split a long step and marked the chicken as needed.",
+              "sections": [
+                "steps",
+                "marks"
+              ],
+              "before": {
+                "steps": [
+                  "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
+                ],
+                "marks": [
+                  {
+                    "line": "2 lb chicken thighs",
+                    "mark": null
+                  },
+                  {
+                    "line": "2 lemons, juiced",
+                    "mark": null
+                  }
+                ]
+              },
+              "after": {
+                "steps": [
+                  "Rub the chicken with lemon and garlic.",
+                  "Roast at 200°C for 40 minutes, until golden."
+                ],
+                "marks": [
+                  {
+                    "line": "2 lb chicken thighs",
+                    "mark": "needed"
+                  },
+                  {
+                    "line": "2 lemons, juiced",
+                    "mark": "needed"
+                  }
+                ]
+              },
+              "createdAt": "2026-10-01T17:30:00.000Z"
             }
           ],
           "total": 1
         }
       },
-      "RecipeSummary": {
+      "Proposal": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "slug": {
+          "kind": {
             "type": "string",
-            "example": "lemon-chicken"
+            "enum": [
+              "tidy"
+            ]
           },
-          "name": {
-            "type": "string"
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "applied",
+              "dismissed"
+            ]
           },
-          "description": {
+          "recipe": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "name"
+            ]
+          },
+          "summary": {
+            "type": "string",
+            "description": "What it changes, in a sentence."
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TidySection"
+            },
+            "description": "The sections it changes, each applied or skipped on its own."
+          },
+          "before": {
+            "$ref": "#/components/schemas/TidyValues"
+          },
+          "after": {
+            "$ref": "#/components/schemas/TidyValues"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedAt": {
             "type": [
               "string",
               "null"
-            ]
-          },
-          "servings": {
-            "type": [
-              "number",
-              "null"
-            ]
-          },
-          "totalMinutes": {
-            "type": [
-              "number",
-              "null"
             ],
-            "description": "As given, or prep and cook added up."
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "recipe",
+          "summary",
+          "sections",
+          "before",
+          "after",
+          "createdAt",
+          "resolvedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000029",
+          "kind": "tidy",
+          "status": "pending",
+          "resolvedAt": null,
+          "recipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+            "slug": "lemon-chicken",
+            "name": "Lemon Chicken"
           },
-          "rating": {
-            "type": [
-              "number",
-              "null"
+          "summary": "Split a long step and marked the chicken as needed.",
+          "sections": [
+            "steps",
+            "marks"
+          ],
+          "before": {
+            "steps": [
+              "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
+            ],
+            "marks": [
+              {
+                "line": "2 lb chicken thighs",
+                "mark": null
+              },
+              {
+                "line": "2 lemons, juiced",
+                "mark": null
+              }
             ]
+          },
+          "after": {
+            "steps": [
+              "Rub the chicken with lemon and garlic.",
+              "Roast at 200°C for 40 minutes, until golden."
+            ],
+            "marks": [
+              {
+                "line": "2 lb chicken thighs",
+                "mark": "needed"
+              },
+              {
+                "line": "2 lemons, juiced",
+                "mark": "needed"
+              }
+            ]
+          },
+          "createdAt": "2026-10-01T17:30:00.000Z"
+        }
+      },
+      "TidySection": {
+        "type": "string",
+        "enum": [
+          "ingredients",
+          "steps",
+          "tags",
+          "description",
+          "details",
+          "marks"
+        ],
+        "description": "A part of a recipe tidy up can change: its ingredients, steps, tags, a missing description, missing servings and times, and the marks on its ingredients."
+      },
+      "TidyValues": {
+        "type": "object",
+        "properties": {
+          "ingredients": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "tags": {
             "type": "array",
@@ -6240,102 +6393,241 @@
               "type": "string"
             }
           },
-          "diets": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/Diet"
-            },
-            "description": "Diet labels worked out from the ingredients, with the household's corrections."
-          },
-          "photo": {
+          "description": {
             "type": [
-              "object",
+              "string",
               "null"
-            ],
+            ]
+          },
+          "details": {
+            "type": "object",
             "properties": {
-              "full": {
-                "type": "string",
-                "description": "For the recipe page."
+              "servings": {
+                "type": [
+                  "number",
+                  "null"
+                ]
               },
-              "card": {
-                "type": "string",
-                "description": "Cropped, for recipe cards."
+              "prepMinutes": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "cookMinutes": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "totalMinutes": {
+                "type": [
+                  "number",
+                  "null"
+                ]
               }
             },
             "required": [
-              "full",
-              "card"
-            ],
-            "description": "Where its photo is, in each size, or null. The links change with the photo, so they can be kept."
+              "servings",
+              "prepMinutes",
+              "cookMinutes",
+              "totalMinutes"
+            ]
           },
-          "lastMadeAt": {
+          "marks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MarkedLine"
+            }
+          }
+        },
+        "description": "A recipe's sections, only the ones a suggestion changes. Ingredients and steps are editor lines."
+      },
+      "MarkedLine": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "string"
+          },
+          "mark": {
             "type": [
               "string",
               "null"
             ],
-            "format": "date-time"
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "updatedAt": {
-            "type": "string",
-            "format": "date-time"
+            "enum": [
+              "needed",
+              "swappable",
+              "optional",
+              null
+            ]
           }
         },
         "required": [
-          "id",
-          "slug",
-          "name",
-          "description",
-          "servings",
-          "totalMinutes",
-          "rating",
-          "tags",
-          "diets",
-          "photo",
-          "lastMadeAt",
-          "createdAt",
-          "updatedAt"
+          "line",
+          "mark"
+        ]
+      },
+      "ApplyResult": {
+        "type": "object",
+        "properties": {
+          "proposal": {
+            "$ref": "#/components/schemas/Proposal"
+          },
+          "recipe": {
+            "$ref": "#/components/schemas/Recipe"
+          }
+        },
+        "required": [
+          "proposal",
+          "recipe"
         ],
         "example": {
-          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
-          "slug": "lemon-chicken",
-          "name": "Lemon Chicken",
-          "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
-          "servings": 4,
-          "totalMinutes": 50,
-          "rating": 5,
-          "tags": [
-            "chicken",
-            "dinner"
-          ],
-          "diets": [
-            "gluten-free",
-            "dairy-free",
-            "egg-free",
-            "nut-free"
-          ],
-          "photo": {
-            "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
-            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+          "proposal": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000029",
+            "kind": "tidy",
+            "status": "applied",
+            "resolvedAt": "2026-10-15T18:30:00.000Z",
+            "recipe": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "name": "Lemon Chicken"
+            },
+            "summary": "Split a long step and marked the chicken as needed.",
+            "sections": [
+              "steps",
+              "marks"
+            ],
+            "before": {
+              "steps": [
+                "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
+              ],
+              "marks": [
+                {
+                  "line": "2 lb chicken thighs",
+                  "mark": null
+                },
+                {
+                  "line": "2 lemons, juiced",
+                  "mark": null
+                }
+              ]
+            },
+            "after": {
+              "steps": [
+                "Rub the chicken with lemon and garlic.",
+                "Roast at 200°C for 40 minutes, until golden."
+              ],
+              "marks": [
+                {
+                  "line": "2 lb chicken thighs",
+                  "mark": "needed"
+                },
+                {
+                  "line": "2 lemons, juiced",
+                  "mark": "needed"
+                }
+              ]
+            },
+            "createdAt": "2026-10-01T17:30:00.000Z"
           },
-          "lastMadeAt": "2026-10-09T01:15:00.000Z",
-          "createdAt": "2026-10-01T17:30:00.000Z",
-          "updatedAt": "2026-10-15T18:30:00.000Z"
+          "recipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+            "slug": "lemon-chicken",
+            "name": "Lemon Chicken",
+            "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+            "servings": 4,
+            "totalMinutes": 50,
+            "rating": 5,
+            "tags": [
+              "chicken",
+              "dinner"
+            ],
+            "diets": [
+              "gluten-free",
+              "dairy-free",
+              "egg-free",
+              "nut-free"
+            ],
+            "photo": {
+              "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+              "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+            },
+            "lastMadeAt": "2026-10-09T01:15:00.000Z",
+            "createdAt": "2026-10-01T17:30:00.000Z",
+            "updatedAt": "2026-10-15T18:30:00.000Z",
+            "origin": "link",
+            "sourceUrl": "https://example.com/lemon-chicken",
+            "yieldText": null,
+            "prepMinutes": 10,
+            "cookMinutes": 40,
+            "notes": "Bone-in thighs work too: give them 10 minutes more.",
+            "dietOverrides": {},
+            "needs": [],
+            "ingredients": [
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000011",
+                "section": null,
+                "text": "2 lb chicken thighs",
+                "quantity": 2,
+                "quantityMax": null,
+                "unit": "pound",
+                "food": "chicken thighs",
+                "note": null,
+                "mark": "needed"
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000012",
+                "section": null,
+                "text": "1 tbsp olive oil",
+                "quantity": 1,
+                "quantityMax": null,
+                "unit": "tablespoon",
+                "food": "olive oil",
+                "note": null,
+                "mark": "optional"
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000013",
+                "section": null,
+                "text": "2 lemons, juiced",
+                "quantity": 2,
+                "quantityMax": null,
+                "unit": null,
+                "food": "lemons",
+                "note": "juiced",
+                "mark": "needed"
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000014",
+                "section": null,
+                "text": "4 cloves garlic, smashed",
+                "quantity": 4,
+                "quantityMax": null,
+                "unit": "clove",
+                "food": "garlic",
+                "note": "smashed",
+                "mark": "swappable"
+              }
+            ],
+            "steps": [
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000015",
+                "section": null,
+                "text": "Heat the oven to 425°F."
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000016",
+                "section": null,
+                "text": "Toss the chicken with the oil, lemon juice, garlic, salt and pepper."
+              },
+              {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000017",
+                "section": null,
+                "text": "Roast skin side up for 40 minutes, until crisp."
+              }
+            ]
+          }
         }
-      },
-      "Diet": {
-        "type": "string",
-        "enum": [
-          "vegetarian",
-          "vegan",
-          "gluten-free",
-          "dairy-free",
-          "egg-free",
-          "nut-free"
-        ]
       },
       "Recipe": {
         "allOf": [
@@ -6468,7 +6760,8 @@
               "quantityMax": null,
               "unit": "pound",
               "food": "chicken thighs",
-              "note": null
+              "note": null,
+              "mark": "needed"
             },
             {
               "id": "0199e8b0-5a10-7a01-8b00-000000000012",
@@ -6478,7 +6771,8 @@
               "quantityMax": null,
               "unit": "tablespoon",
               "food": "olive oil",
-              "note": null
+              "note": null,
+              "mark": "optional"
             },
             {
               "id": "0199e8b0-5a10-7a01-8b00-000000000013",
@@ -6488,7 +6782,8 @@
               "quantityMax": null,
               "unit": null,
               "food": "lemons",
-              "note": "juiced"
+              "note": "juiced",
+              "mark": "needed"
             },
             {
               "id": "0199e8b0-5a10-7a01-8b00-000000000014",
@@ -6498,7 +6793,8 @@
               "quantityMax": null,
               "unit": "clove",
               "food": "garlic",
-              "note": "smashed"
+              "note": "smashed",
+              "mark": "swappable"
             }
           ],
           "steps": [
@@ -6519,6 +6815,17 @@
             }
           ]
         }
+      },
+      "Diet": {
+        "type": "string",
+        "enum": [
+          "vegetarian",
+          "vegan",
+          "gluten-free",
+          "dairy-free",
+          "egg-free",
+          "nut-free"
+        ]
       },
       "DietOverrides": {
         "type": "object",
@@ -6590,6 +6897,19 @@
               "string",
               "null"
             ]
+          },
+          "mark": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "needed",
+              "swappable",
+              "optional",
+              null
+            ],
+            "description": "What it is to the dish, as tidy up marked it: needed, swappable or optional. A dislike is left out of lines that aren't needed. None until marked."
           }
         },
         "required": [
@@ -6600,7 +6920,8 @@
           "quantityMax",
           "unit",
           "food",
-          "note"
+          "note",
+          "mark"
         ],
         "example": {
           "id": "0199e8b0-5a10-7a01-8b00-000000000012",
@@ -6610,7 +6931,8 @@
           "quantityMax": null,
           "unit": "tablespoon",
           "food": "olive oil",
-          "note": null
+          "note": null,
+          "mark": "optional"
         }
       },
       "Step": {
@@ -6638,6 +6960,208 @@
           "id": "0199e8b0-5a10-7a01-8b00-000000000015",
           "section": null,
           "text": "Heat the oven to 425°F."
+        }
+      },
+      "RecipeSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string",
+            "example": "lemon-chicken"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "totalMinutes": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "As given, or prep and cook added up."
+          },
+          "rating": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "diets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Diet"
+            },
+            "description": "Diet labels worked out from the ingredients, with the household's corrections."
+          },
+          "photo": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "full": {
+                "type": "string",
+                "description": "For the recipe page."
+              },
+              "card": {
+                "type": "string",
+                "description": "Cropped, for recipe cards."
+              }
+            },
+            "required": [
+              "full",
+              "card"
+            ],
+            "description": "Where its photo is, in each size, or null. The links change with the photo, so they can be kept."
+          },
+          "lastMadeAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "description",
+          "servings",
+          "totalMinutes",
+          "rating",
+          "tags",
+          "diets",
+          "photo",
+          "lastMadeAt",
+          "createdAt",
+          "updatedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+          "slug": "lemon-chicken",
+          "name": "Lemon Chicken",
+          "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+          "servings": 4,
+          "totalMinutes": 50,
+          "rating": 5,
+          "tags": [
+            "chicken",
+            "dinner"
+          ],
+          "diets": [
+            "gluten-free",
+            "dairy-free",
+            "egg-free",
+            "nut-free"
+          ],
+          "photo": {
+            "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+            "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+          },
+          "lastMadeAt": "2026-10-09T01:15:00.000Z",
+          "createdAt": "2026-10-01T17:30:00.000Z",
+          "updatedAt": "2026-10-15T18:30:00.000Z"
+        }
+      },
+      "ApplyInput": {
+        "type": "object",
+        "properties": {
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TidySection"
+            },
+            "minItems": 1,
+            "description": "The sections to apply. The rest are skipped."
+          }
+        },
+        "required": [
+          "sections"
+        ],
+        "example": {
+          "sections": [
+            "steps",
+            "marks"
+          ]
+        }
+      },
+      "RecipeList": {
+        "type": "object",
+        "properties": {
+          "recipes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecipeSummary"
+            }
+          },
+          "total": {
+            "type": "number",
+            "description": "How many match, in all."
+          }
+        },
+        "required": [
+          "recipes",
+          "total"
+        ],
+        "example": {
+          "recipes": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "name": "Lemon Chicken",
+              "description": "Crisp chicken thighs roasted with lemon, garlic and thyme.",
+              "servings": 4,
+              "totalMinutes": 50,
+              "rating": 5,
+              "tags": [
+                "chicken",
+                "dinner"
+              ],
+              "diets": [
+                "gluten-free",
+                "dairy-free",
+                "egg-free",
+                "nut-free"
+              ],
+              "photo": {
+                "full": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=full&v=4b1c2d3e",
+                "card": "/api/recipes/0199e8b0-5a10-7a01-8b00-000000000006/photo?size=card&v=4b1c2d3e"
+              },
+              "lastMadeAt": "2026-10-09T01:15:00.000Z",
+              "createdAt": "2026-10-01T17:30:00.000Z",
+              "updatedAt": "2026-10-15T18:30:00.000Z"
+            }
+          ],
+          "total": 1
         }
       },
       "RecipeInput": {
@@ -7083,7 +7607,8 @@
                 "quantityMax": null,
                 "unit": "pound",
                 "food": "chicken thighs",
-                "note": null
+                "note": null,
+                "mark": "needed"
               },
               {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000012",
@@ -7093,7 +7618,8 @@
                 "quantityMax": null,
                 "unit": "tablespoon",
                 "food": "olive oil",
-                "note": null
+                "note": null,
+                "mark": "optional"
               },
               {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000013",
@@ -7103,7 +7629,8 @@
                 "quantityMax": null,
                 "unit": null,
                 "food": "lemons",
-                "note": "juiced"
+                "note": "juiced",
+                "mark": "needed"
               },
               {
                 "id": "0199e8b0-5a10-7a01-8b00-000000000014",
@@ -7113,7 +7640,8 @@
                 "quantityMax": null,
                 "unit": "clove",
                 "food": "garlic",
-                "note": "smashed"
+                "note": "smashed",
+                "mark": "swappable"
               }
             ],
             "steps": [
@@ -7547,6 +8075,149 @@
           "name": "Weeknight"
         }
       },
+      "TidyRuns": {
+        "type": "object",
+        "properties": {
+          "runs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TidyRun"
+            }
+          },
+          "untidied": {
+            "type": "number",
+            "description": "How many of its recipes tidy up hasn't looked at yet."
+          }
+        },
+        "required": [
+          "runs",
+          "untidied"
+        ],
+        "example": {
+          "runs": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000002a",
+              "status": "running",
+              "library": true,
+              "total": 52,
+              "done": 12,
+              "suggested": 9,
+              "fine": 3,
+              "failed": 0,
+              "stopped": null,
+              "startedAt": "2026-10-01T17:30:00.000Z",
+              "finishedAt": null
+            }
+          ],
+          "untidied": 40
+        }
+      },
+      "TidyRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "library": {
+            "type": "boolean",
+            "description": "Every recipe not tidied yet, rather than ones picked."
+          },
+          "total": {
+            "type": "number"
+          },
+          "done": {
+            "type": "number"
+          },
+          "suggested": {
+            "type": "number",
+            "description": "Recipes with suggestions waiting in Review."
+          },
+          "fine": {
+            "type": "number",
+            "description": "Recipes with nothing to change."
+          },
+          "failed": {
+            "type": "number"
+          },
+          "stopped": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why it stopped before the end, when it did: no AI, this month's limit, no credit, or three failures in a row."
+          },
+          "startedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "library",
+          "total",
+          "done",
+          "suggested",
+          "fine",
+          "failed",
+          "stopped",
+          "startedAt",
+          "finishedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000002a",
+          "status": "running",
+          "library": true,
+          "total": 52,
+          "done": 12,
+          "suggested": 9,
+          "fine": 3,
+          "failed": 0,
+          "stopped": null,
+          "startedAt": "2026-10-01T17:30:00.000Z",
+          "finishedAt": null
+        }
+      },
+      "TidyRunInput": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "maxItems": 200,
+            "description": "The recipes to tidy. Left out, every recipe not tidied yet, which only household admins can start."
+          }
+        },
+        "example": {
+          "ids": [
+            "0199e8b0-5a10-7a01-8b00-000000000006",
+            "0199e8b0-5a10-7a01-8b00-000000000007"
+          ]
+        }
+      },
       "CookNote": {
         "type": "object",
         "properties": {
@@ -7656,6 +8327,16 @@
             },
             "maxItems": 50,
             "description": "Foods it can't do without, replacing any said before. An empty list lets every dislike be left out again."
+          },
+          "canLeaveOut": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "maxItems": 50,
+            "description": "Foods tidy up marked as needed that it can do without after all: their lines are marked optional."
           }
         },
         "required": [
@@ -7883,6 +8564,94 @@
         ],
         "example": {
           "rating": 4
+        }
+      },
+      "RecipeProposal": {
+        "type": "object",
+        "properties": {
+          "proposal": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Proposal"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "proposal"
+        ],
+        "example": {
+          "proposal": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000029",
+            "kind": "tidy",
+            "status": "pending",
+            "resolvedAt": null,
+            "recipe": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "name": "Lemon Chicken"
+            },
+            "summary": "Split a long step and marked the chicken as needed.",
+            "sections": [
+              "steps",
+              "marks"
+            ],
+            "before": {
+              "steps": [
+                "Rub the chicken with lemon and garlic, then roast it at 200°C for 40 minutes until golden. Enjoy!"
+              ],
+              "marks": [
+                {
+                  "line": "2 lb chicken thighs",
+                  "mark": null
+                },
+                {
+                  "line": "2 lemons, juiced",
+                  "mark": null
+                }
+              ]
+            },
+            "after": {
+              "steps": [
+                "Rub the chicken with lemon and garlic.",
+                "Roast at 200°C for 40 minutes, until golden."
+              ],
+              "marks": [
+                {
+                  "line": "2 lb chicken thighs",
+                  "mark": "needed"
+                },
+                {
+                  "line": "2 lemons, juiced",
+                  "mark": "needed"
+                }
+              ]
+            },
+            "createdAt": "2026-10-01T17:30:00.000Z"
+          }
+        }
+      },
+      "TidyInput": {
+        "type": "object",
+        "properties": {
+          "sections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TidySection"
+            },
+            "maxItems": 6,
+            "description": "What to tidy; every section when left out."
+          }
+        },
+        "example": {
+          "sections": [
+            "steps",
+            "tags",
+            "marks"
+          ]
         }
       },
       "RecipeVersion": {
@@ -14026,6 +14795,267 @@
         }
       }
     },
+    "/api/proposals": {
+      "get": {
+        "operationId": "listProposals",
+        "tags": [
+          "Review"
+        ],
+        "summary": "The Review queue",
+        "description": "What AI suggests, waiting to be applied or dismissed, newest first, a page at a time. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "default": 0
+            },
+            "required": false,
+            "name": "offset",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What's waiting.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProposalList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proposals/{proposalId}/apply": {
+      "post": {
+        "operationId": "applyProposal",
+        "tags": [
+          "Review"
+        ],
+        "summary": "Apply a suggestion",
+        "description": "Applies the sections picked, as one change to the recipe that keeps a version of how it was; the rest are skipped. A section changed since it was suggested is refused rather than overwritten, and the error says which. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000029"
+            },
+            "required": true,
+            "name": "proposalId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApplyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Applied: the suggestion and the recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApplyResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nothing picked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such suggestion, or its recipe is gone.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Applied or dismissed already, or the recipe changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proposals/{proposalId}/dismiss": {
+      "post": {
+        "operationId": "dismissProposal",
+        "tags": [
+          "Review"
+        ],
+        "summary": "Dismiss a suggestion",
+        "description": "The recipe stays as it is. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000029"
+            },
+            "required": true,
+            "name": "proposalId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dismissed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Proposal"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such suggestion.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Applied or dismissed already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes": {
       "get": {
         "operationId": "listRecipes",
@@ -15521,6 +16551,208 @@
         }
       }
     },
+    "/api/recipes/tidy": {
+      "get": {
+        "operationId": "listTidyRuns",
+        "tags": [
+          "Review"
+        ],
+        "summary": "Tidy up runs",
+        "description": "The household's runs that tidy many recipes: going, or finished in the last day, newest first, with how far each got and what it found. And how many recipes are still to tidy. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "Its runs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TidyRuns"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startTidyRun",
+        "tags": [
+          "Review"
+        ],
+        "summary": "Tidy up many recipes",
+        "description": "Tidies recipes in the background, one at a time, with the suggestions left in the Review queue: the ones picked, or every recipe not tidied yet (household admins only), say after moving from another app. It stops if there's no AI, this month's limit is reached, a key runs out of credit, or three recipes in a row fail. Follow it at `GET /recipes/tidy`. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TidyRunInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Started, or the one already going.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TidyRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nothing to tidy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/tidy/{runId}/stop": {
+      "post": {
+        "operationId": "stopTidyRun",
+        "tags": [
+          "Review"
+        ],
+        "summary": "Stop a tidy up run",
+        "description": "The suggestions it made stay in Review. The recipe it's on finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000002a"
+            },
+            "required": true,
+            "name": "runId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped, or stopping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TidyRun"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such run in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has already finished.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes/{recipe}": {
       "get": {
         "operationId": "getRecipe",
@@ -16171,7 +17403,7 @@
           "Recipes"
         ],
         "summary": "Say what a recipe can't do without",
-        "description": "A food the household doesn't like is usually left out of recipes, crossed off and not bought. One a recipe can't do without rules that recipe out instead, as when it's in the recipe's name. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
+        "description": "A food the household doesn't like is usually left out of recipes, crossed off and not bought. One a recipe can't do without rules that recipe out instead, as when tidy up marked it needed or, before tidy up, it's in the recipe's name. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []
@@ -16852,6 +18084,192 @@
           },
           "404": {
             "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/tidy": {
+      "get": {
+        "operationId": "getRecipeTidy",
+        "tags": [
+          "Review"
+        ],
+        "summary": "A recipe's waiting tidy up",
+        "description": "The tidy up waiting in the Review queue for this recipe, or null when there's none. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Its suggestion, or null.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeProposal"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "tidyRecipe",
+        "tags": [
+          "Review"
+        ],
+        "summary": "Tidy up a recipe",
+        "description": "AI tidies the recipe: consistent ingredient lines, short clear steps, tags from the household's own, a description and servings and times when they're missing, and marks on what it can do without. Nothing changes yet: the suggestion waits in the Review queue, in place of any earlier one for the recipe, and comes back here. Null when there's nothing to change. Uses the household's model for tidying, and counts towards its AI spend. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TidyInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Its suggestion, or null.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeProposal"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The model can't do it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "This month's AI limit is reached, or the AI is busy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The AI provider failed.",
             "content": {
               "application/json": {
                 "schema": {

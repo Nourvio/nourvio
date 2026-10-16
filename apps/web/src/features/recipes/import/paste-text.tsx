@@ -17,10 +17,10 @@ import {
 } from "@/components/ui/field"
 import { Spinner } from "@/components/ui/spinner"
 import { Textarea } from "@/components/ui/textarea"
+import { NeedsAi, useAiFor } from "@/features/ai/needs-ai"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import type { Recipe } from "../queries"
-import { NeedsAi, useImportAi } from "./needs-ai"
 
 /**
  * A recipe pasted as text, for the Add a recipe dialog: from an email, a
@@ -36,7 +36,7 @@ export function PasteText({
   onNavigate: () => void
 }) {
   const { t } = useTranslation()
-  const ai = useImportAi()
+  const ai = useAiFor("import")
   const [text, setText] = React.useState("")
   const [sourceUrl, setSourceUrl] = React.useState("")
   const [busy, setBusy] = React.useState(false)
@@ -93,7 +93,7 @@ export function PasteText({
           {t("recipes.import.text.description")}
         </DialogDescription>
       </DialogHeader>
-      {ai.why && <NeedsAi why={ai.why} onNavigate={onNavigate} />}
+      {ai.why && <NeedsAi task="import" why={ai.why} onNavigate={onNavigate} />}
       <form
         className="grid min-w-0 gap-4"
         noValidate

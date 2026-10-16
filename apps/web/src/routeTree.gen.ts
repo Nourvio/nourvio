@@ -23,6 +23,7 @@ import { Route as JoinTokenRouteImport } from './routes/join/$token'
 import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 import { Route as AppRecipesDeletedRouteImport } from './routes/_app/recipes/deleted'
 import { Route as AppRecipesNewRouteImport } from './routes/_app/recipes/new'
+import { Route as AppRecipesReviewRouteImport } from './routes/_app/recipes/review'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
 import { Route as AppSettingsHouseholdRouteImport } from './routes/_app/settings/household'
 import { Route as AppSettingsImportExportRouteImport } from './routes/_app/settings/import-export'
@@ -101,6 +102,11 @@ const AppRecipesNewRoute = AppRecipesNewRouteImport.update({
   path: '/recipes/new',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRecipesReviewRoute = AppRecipesReviewRouteImport.update({
+  id: '/recipes/review',
+  path: '/recipes/review',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -160,6 +166,7 @@ export interface FileRoutesByFullPath {
   '/join/$token': typeof JoinTokenRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
   '/recipes/new': typeof AppRecipesNewRoute
+  '/recipes/review': typeof AppRecipesReviewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
   '/settings/import-export': typeof AppSettingsImportExportRoute
   '/settings/server': typeof AppSettingsServerRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/join/$token': typeof JoinTokenRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
   '/recipes/new': typeof AppRecipesNewRoute
+  '/recipes/review': typeof AppRecipesReviewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
   '/settings/import-export': typeof AppSettingsImportExportRoute
   '/settings/server': typeof AppSettingsServerRoute
@@ -208,6 +216,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/recipes/deleted': typeof AppRecipesDeletedRoute
   '/_app/recipes/new': typeof AppRecipesNewRoute
+  '/_app/recipes/review': typeof AppRecipesReviewRoute
   '/_app/settings/household': typeof AppSettingsHouseholdRoute
   '/_app/settings/import-export': typeof AppSettingsImportExportRoute
   '/_app/settings/server': typeof AppSettingsServerRoute
@@ -233,6 +242,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/recipes/deleted'
     | '/recipes/new'
+    | '/recipes/review'
     | '/settings/household'
     | '/settings/import-export'
     | '/settings/server'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/recipes/deleted'
     | '/recipes/new'
+    | '/recipes/review'
     | '/settings/household'
     | '/settings/import-export'
     | '/settings/server'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/recipes/deleted'
     | '/_app/recipes/new'
+    | '/_app/recipes/review'
     | '/_app/settings/household'
     | '/_app/settings/import-export'
     | '/_app/settings/server'
@@ -400,6 +412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesNewRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/recipes/review': {
+      id: '/_app/recipes/review'
+      path: '/recipes/review'
+      fullPath: '/recipes/review'
+      preLoaderRoute: typeof AppRecipesReviewRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/': {
       id: '/_app/settings/'
       path: '/'
@@ -495,6 +514,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppRecipesDeletedRoute: typeof AppRecipesDeletedRoute
   AppRecipesNewRoute: typeof AppRecipesNewRoute
+  AppRecipesReviewRoute: typeof AppRecipesReviewRoute
   AppRecipesIndexRoute: typeof AppRecipesIndexRoute
   AppRecipesSlugEditRoute: typeof AppRecipesSlugEditRoute
   AppRecipesImportImportIdRoute: typeof AppRecipesImportImportIdRoute
@@ -510,6 +530,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppRecipesDeletedRoute: AppRecipesDeletedRoute,
   AppRecipesNewRoute: AppRecipesNewRoute,
+  AppRecipesReviewRoute: AppRecipesReviewRoute,
   AppRecipesIndexRoute: AppRecipesIndexRoute,
   AppRecipesSlugEditRoute: AppRecipesSlugEditRoute,
   AppRecipesImportImportIdRoute: AppRecipesImportImportIdRoute,

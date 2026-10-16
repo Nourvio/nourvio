@@ -1,4 +1,5 @@
 import {
+  AiMagicIcon,
   ArrowLeft01Icon,
   CookingPotIcon,
   Delete02Icon,
@@ -57,7 +58,10 @@ import { StepList } from "@/features/recipes/step-list"
 import { TastesNote } from "@/features/recipes/tastes-note"
 import { mergeLeftOut, useRecipeTastes } from "@/features/recipes/use-tastes"
 import { useUnitSystem } from "@/features/recipes/use-unit-system"
+import { TidyDialog } from "@/features/recipes/tidy/tidy-dialog"
+import { TidyWaiting } from "@/features/recipes/tidy/tidy-waiting"
 import { VersionsDialog } from "@/features/recipes/versions-dialog"
+import { useCapability } from "@/features/capabilities/queries"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
@@ -117,6 +121,8 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
     void setSearch({ search: slug ? { with: slug } : {}, replace: true })
   const [showVersions, setShowVersions] = React.useState(false)
   const [showDiets, setShowDiets] = React.useState(false)
+  const [tidying, setTidying] = React.useState(false)
+  const aiOn = useCapability("ai")
   const photo = usePhotoActions(recipe)
 
   async function rate(rating: number | null) {
@@ -368,6 +374,12 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                 <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
+                {aiOn && (
+                  <DropdownMenuItem onClick={() => setTidying(true)}>
+                    <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} />
+                    {t("recipes.tidy.menu")}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => setShowVersions(true)}>
                   <HugeiconsIcon icon={Time04Icon} strokeWidth={2} />
                   {t("recipes.versions.title")}
@@ -398,6 +410,8 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
           </div>
         </div>
       </div>
+
+      <TidyWaiting recipeId={recipe.id} onReview={() => setTidying(true)} />
 
       {/* Ingredients in a tall column on the left, the steps beside them. */}
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] lg:gap-10">
@@ -485,6 +499,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
         open={showDiets}
         onOpenChange={setShowDiets}
       />
+      <TidyDialog recipe={recipe} open={tidying} onOpenChange={setTidying} />
     </article>
   )
 }

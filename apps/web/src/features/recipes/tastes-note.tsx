@@ -1,4 +1,4 @@
-import { levelOf, namesFood } from "@merran/shared"
+import { levelOf } from "@merran/shared"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
@@ -24,13 +24,17 @@ export function TastesNote({
 
   return (
     <ul className="grid gap-1.5" aria-label={t("recipes.tastes.label")}>
-      {tastes.leaveOut.map(({ food, who }) => (
+      {tastes.leaveOut.map(({ food, who, swap }) => (
         <Note
           key={`out:${food}`}
           text={
-            who
-              ? t("recipes.tastes.leaving", { food, who })
-              : t("recipes.tastes.leavingAll", { food })
+            swap
+              ? who
+                ? t("recipes.tastes.swapping", { food, who })
+                : t("recipes.tastes.swappingAll", { food })
+              : who
+                ? t("recipes.tastes.leaving", { food, who })
+                : t("recipes.tastes.leavingAll", { food })
           }
           action={t("recipes.tastes.need", { food })}
           disabled={needs.saving}
@@ -40,10 +44,11 @@ export function TastesNote({
       {tastes.ruledOut.map((item) => {
         const { food, who } = item
         const level = levelOf(item)
-        // A dislike that's usually left out, but not from this one.
-        const needed =
-          level === "leave-out" &&
-          recipe.needs.some((need) => namesFood(need, food))
+        // A dislike that's usually left out, but not from this one: the
+        // household said so, or tidy up marked it. One it's named for has
+        // no way back, until tidy up marks it.
+        const by = tastes.needed.find((need) => need.food === food)?.by
+        const needed = by === "household" || by === "mark"
         const text = needed
           ? who
             ? t("recipes.tastes.needed", { food, who })

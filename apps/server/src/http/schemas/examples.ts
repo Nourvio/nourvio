@@ -37,6 +37,8 @@ export const IDS = {
   costcoList: id(37),
   pantryItems: [id(38), id(39)],
   aiKey: id(40),
+  proposal: id(41),
+  tidyRun: id(42),
 }
 
 export const TIMES = {
@@ -188,6 +190,7 @@ export const RECIPE = {
       unit: "pound",
       food: "chicken thighs",
       note: null,
+      mark: "needed",
     },
     {
       id: IDS.ingredients[1],
@@ -198,6 +201,7 @@ export const RECIPE = {
       unit: "tablespoon",
       food: "olive oil",
       note: null,
+      mark: "optional",
     },
     {
       id: IDS.ingredients[2],
@@ -208,6 +212,7 @@ export const RECIPE = {
       unit: null,
       food: "lemons",
       note: "juiced",
+      mark: "needed",
     },
     {
       id: IDS.ingredients[3],
@@ -218,6 +223,7 @@ export const RECIPE = {
       unit: "clove",
       food: "garlic",
       note: "smashed",
+      mark: "swappable",
     },
   ],
   steps: [

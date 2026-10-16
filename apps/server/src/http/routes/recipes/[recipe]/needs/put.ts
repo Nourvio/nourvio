@@ -21,7 +21,7 @@ const route = createRoute({
   tags: ["Recipes"],
   summary: "Say what a recipe can't do without",
   description:
-    "A food the household doesn't like is usually left out of recipes, crossed off and not bought. One a recipe can't do without rules that recipe out instead, as when it's in the recipe's name. It isn't an edit, so no version is kept.",
+    "A food the household doesn't like is usually left out of recipes, crossed off and not bought. One a recipe can't do without rules that recipe out instead, as when tidy up marked it needed or, before tidy up, it's in the recipe's name. It isn't an edit, so no version is kept.",
   ...openToKeys("recipes", "write"),
   request: {
     params: RecipeParam,
@@ -42,7 +42,7 @@ export default (router: Router, _deps: AppDeps) => {
     const { em } = inHousehold(c)
     const recipe = await setNeeds(em, {
       recipe: c.req.valid("param").recipe,
-      foods: c.req.valid("json").foods,
+      ...c.req.valid("json"),
     })
     return c.json(recipe, 200)
   })

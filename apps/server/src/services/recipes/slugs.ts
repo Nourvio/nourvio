@@ -3,7 +3,15 @@ import { Recipe } from "../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
 
 /** Paths under /recipes that mean something else, in the API and the web app. */
-const RESERVED = new Set(["new", "deleted", "tags", "import", "bulk"])
+const RESERVED = new Set([
+  "new",
+  "deleted",
+  "tags",
+  "import",
+  "bulk",
+  "tidy",
+  "review",
+])
 
 /** "Mom's Lemon Chicken!" → "moms-lemon-chicken". */
 export function slugify(name: string): string {

@@ -8,24 +8,29 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { householdAiQuery } from "@/features/ai/queries"
 import { householdQuery, isAdminRole } from "@/features/household/queries"
 
+/** The tasks a notice can be about. */
+type Task = "import" | "tidy"
+
 /**
- * Whether the household can import with AI, and if not, why. Undefined
+ * Whether the household can use AI for a task, and if not, why. Undefined
  * until it's known.
  */
-export function useImportAi() {
+export function useAiFor(task: Task) {
   const { data } = useQuery(householdAiQuery)
-  const task = data?.status.tasks.import
+  const status = data?.status.tasks[task]
   return {
-    ready: task?.ok,
-    why: task && !task.ok ? task.why : null,
+    ready: status?.ok,
+    why: status && !status.ok ? status.why : null,
   }
 }
 
-/** Why text and photos can't be read, and who can set AI up. */
+/** Why a task can't use AI, and who can set it up. */
 export function NeedsAi({
+  task,
   why,
   onNavigate,
 }: {
+  task: Task
   why: "noKey" | "notCovered" | "overLimit" | "ownLimit"
   /** Following the link to Settings closes the dialog. */
   onNavigate?: () => void
@@ -37,10 +42,10 @@ export function NeedsAi({
       <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} />
       <AlertDescription>
         <p>
-          {t(`recipes.import.ai.why.${why}`)}{" "}
+          {t(`ai.needs.${task}.${why}`)}{" "}
           {isAdminRole(household?.role) ? (
             <Trans
-              i18nKey="recipes.import.ai.fixAdmin"
+              i18nKey="ai.needs.fixAdmin"
               components={{
                 link: (
                   <Link
@@ -52,7 +57,7 @@ export function NeedsAi({
               }}
             />
           ) : (
-            t("recipes.import.ai.fixMember")
+            t("ai.needs.fixMember")
           )}
         </p>
       </AlertDescription>

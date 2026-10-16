@@ -67,7 +67,8 @@ describe("leaving a food out", () => {
   test("crosses off its lines, saying who it's for", () => {
     expect(checkTastes(stirFry, [emma])).toEqual({
       ruledOut: [],
-      leaveOut: [{ food: "mushroom", who: "Emma", lines: [1, 3] }],
+      leaveOut: [{ food: "mushroom", who: "Emma", lines: [1, 3], swap: false }],
+      needed: [],
     })
     expect(leftOutLines(stirFry, [emma])).toEqual(new Set([1, 3]))
   })
@@ -80,6 +81,7 @@ describe("leaving a food out", () => {
     expect(checkTastes(risotto, [emma])).toEqual({
       ruledOut: [emma],
       leaveOut: [],
+      needed: [{ food: "mushroom", who: "Emma", by: "name" }],
     })
     expect(leftOutLines(risotto, [emma])).toEqual(new Set())
   })
@@ -87,7 +89,11 @@ describe("leaving a food out", () => {
   test("rules out a recipe the household said needs it", () => {
     expect(
       checkTastes({ ...stirFry, needs: ["mushrooms"] }, [emma])
-    ).toMatchObject({ ruledOut: [emma], leaveOut: [] })
+    ).toMatchObject({
+      ruledOut: [emma],
+      leaveOut: [],
+      needed: [{ food: "mushroom", by: "household" }],
+    })
     // Needing something else changes nothing.
     expect(
       checkTastes({ ...stirFry, needs: ["chicken"] }, [emma]).leaveOut
@@ -99,6 +105,7 @@ describe("leaving a food out", () => {
     expect(checkTastes(stirFry, [allergy])).toEqual({
       ruledOut: [allergy],
       leaveOut: [],
+      needed: [],
     })
     expect(checkTastes(stirFry, [mushroom]).ruledOut).toEqual([mushroom])
   })
@@ -113,7 +120,7 @@ describe("leaving a food out", () => {
       checkTastes({ name: "Mac and Cheese", lines: ["2 cups cheddar"] }, [
         dairy,
       ])
-    ).toEqual({ ruledOut: [dairy], leaveOut: [] })
+    ).toEqual({ ruledOut: [dairy], leaveOut: [], needed: [] })
   })
 
   test("takes each food on its own", () => {
@@ -125,10 +132,67 @@ describe("leaving a food out", () => {
     expect(checkTastes(salad, [emma, olives, nuts])).toEqual({
       ruledOut: [],
       leaveOut: [
-        { food: "mushroom", who: "Emma", lines: [2] },
-        { food: "olive", who: null, lines: [1] },
+        { food: "mushroom", who: "Emma", lines: [2], swap: false },
+        { food: "olive", who: null, lines: [1], swap: false },
       ],
+      needed: [],
     })
+  })
+})
+
+describe("leaving a food out, once tidy up has marked the lines", () => {
+  const emma = avoided("mushroom", "leave-out", "Emma")
+  const risotto = {
+    name: "Mushroom Risotto",
+    lines: ["1 cup arborio rice", "8 oz mushrooms", "parsley, to serve"],
+  }
+
+  test("goes by the marks, not the name", () => {
+    // Marked optional, the mushrooms come out even though it's named for them.
+    expect(
+      checkTastes({ ...risotto, marks: ["needed", "optional", "optional"] }, [
+        emma,
+      ])
+    ).toMatchObject({ ruledOut: [], leaveOut: [{ lines: [1], swap: false }] })
+    // Marked needed, it's ruled out, and says why.
+    expect(
+      checkTastes({ ...risotto, marks: ["needed", "needed", "optional"] }, [
+        emma,
+      ])
+    ).toMatchObject({
+      ruledOut: [emma],
+      needed: [{ food: "mushroom", by: "mark" }],
+    })
+  })
+
+  test("says when another food could stand in", () => {
+    const stirFry = {
+      name: "Chicken Stir Fry",
+      lines: ["1 lb chicken", "8 oz mushrooms"],
+      marks: ["needed", "swappable"] as const,
+    }
+    expect(checkTastes(stirFry, [emma]).leaveOut).toEqual([
+      { food: "mushroom", who: "Emma", lines: [1], swap: true },
+    ])
+  })
+
+  test("still lets the household's word win", () => {
+    expect(
+      checkTastes(
+        {
+          ...risotto,
+          marks: ["needed", "optional", "optional"],
+          needs: ["mushrooms"],
+        },
+        [emma]
+      ).needed
+    ).toEqual([{ food: "mushroom", who: "Emma", by: "household" }])
+  })
+
+  test("leaves unmarked recipes as they were", () => {
+    expect(
+      checkTastes({ ...risotto, marks: [null, null, null] }, [emma]).needed
+    ).toEqual([{ food: "mushroom", who: "Emma", by: "name" }])
   })
 })
 

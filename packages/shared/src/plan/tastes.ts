@@ -1,4 +1,5 @@
 import { dietsFor, type Diet } from "../diets/diets.ts"
+import { isMarked, type IngredientMark } from "../recipes/marks.ts"
 
 // What a household eats and doesn't: foods to avoid (allergies among them),
 // diets every meal must fit, and how long weeknight dinners can take. Fill
@@ -128,7 +129,18 @@ export type LeftOut = {
   who: string | null
   /** Where it is in the recipe's lines, from 0. */
   lines: number[]
+  /** It matters to the dish, and another food could stand in for it. */
+  swap: boolean
 }
+
+/**
+ * Why a recipe can't do without a dislike: it's in the name (Mushroom
+ * Risotto), the household said so, or tidy up marked it needed.
+ */
+export type NeededBy = "name" | "household" | "mark"
+
+/** A dislike a recipe can't do without, so it's ruled out. */
+export type Needed = { food: string; who: string | null; by: NeededBy }
 
 /** What a household's avoided foods make of a recipe. */
 export type TasteCheck = {
@@ -139,18 +151,23 @@ export type TasteCheck = {
   ruledOut: AvoidedFood[]
   /** Dislikes it can do without: cross these lines off. */
   leaveOut: LeftOut[]
+  /** The dislikes among `ruledOut` it can't do without, and why. */
+  needed: Needed[]
 }
 
 /**
  * A recipe against the household's avoided foods. A dislike to leave out
- * is crossed off its lines, unless the recipe can't do without it: it's in
- * the recipe's name (Mushroom Risotto), or the household said the recipe
- * needs it. Then it's ruled out like the rest.
+ * is crossed off its lines, unless the recipe can't do without it: the
+ * household said it needs it, or tidy up marked a line of it needed. A
+ * recipe not marked yet can't do without what it's named for (Mushroom
+ * Risotto). Then it's ruled out like the rest.
  */
 export function checkTastes(
   recipe: {
     name: string
     lines: readonly string[]
+    /** What each line is to the dish, as tidy up marked it, by line. */
+    marks?: readonly (IngredientMark | null)[] | null
     /** Its diet labels as shown, corrections and all. */
     diets?: readonly Diet[]
     /** Foods the household said it can't do without. */
@@ -158,7 +175,7 @@ export function checkTastes(
   },
   avoid: readonly AvoidedFood[]
 ): TasteCheck {
-  const check: TasteCheck = { ruledOut: [], leaveOut: [] }
+  const check: TasteCheck = { ruledOut: [], leaveOut: [], needed: [] }
   if (avoid.length === 0 || recipe.lines.length === 0) return check
   check.ruledOut = avoidedIn(
     recipe.lines,
@@ -173,11 +190,30 @@ export function checkTastes(
       pattern.test(line) ? [index] : []
     )
     if (lines.length === 0) continue
-    const needed =
-      pattern.test(recipe.name) ||
-      (recipe.needs ?? []).some((food) => pattern.test(food))
-    if (needed) check.ruledOut.push(item)
-    else check.leaveOut.push({ food: item.food, who: item.who, lines })
+    const marked = isMarked(recipe.marks)
+    const markOf = (line: number) => recipe.marks?.[line] ?? null
+    const by: NeededBy | null = (recipe.needs ?? []).some((food) =>
+      pattern.test(food)
+    )
+      ? "household"
+      : marked
+        ? lines.some((line) => markOf(line) === "needed")
+          ? "mark"
+          : null
+        : pattern.test(recipe.name)
+          ? "name"
+          : null
+    if (by) {
+      check.ruledOut.push(item)
+      check.needed.push({ food: item.food, who: item.who, by })
+    } else {
+      check.leaveOut.push({
+        food: item.food,
+        who: item.who,
+        lines,
+        swap: lines.some((line) => markOf(line) === "swappable"),
+      })
+    }
   }
   return check
 }

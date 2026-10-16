@@ -1,3 +1,4 @@
+import { INGREDIENT_MARKS } from "@merran/shared"
 import { z } from "zod"
 import { VERSION_SOURCES } from "../../database/entities/index.ts"
 
@@ -49,6 +50,8 @@ export type HouseholdFile = z.infer<typeof HouseholdFileSchema>
 const Line = z.object({
   section: z.string().nullable(),
   text: z.string().min(1).max(5000),
+  /** An ingredient's mark. Added after version 1 came out. */
+  mark: z.enum(INGREDIENT_MARKS).nullable().optional(),
 })
 
 export const RecipeFileSchema = z.object({

@@ -15,6 +15,7 @@ import { InviteLink } from "./invite_links.ts"
 import { Job } from "./jobs.ts"
 import { PantryItem } from "./pantry_items.ts"
 import { PlanEntry } from "./plan_entries.ts"
+import { Proposal } from "./proposals.ts"
 import { Purchase } from "./purchases.ts"
 import { RateLimit } from "./rate_limits.ts"
 import { RecipeIngredient } from "./recipe_ingredients.ts"
@@ -48,6 +49,7 @@ export * from "./invite_links.ts"
 export * from "./jobs.ts"
 export * from "./pantry_items.ts"
 export * from "./plan_entries.ts"
+export * from "./proposals.ts"
 export * from "./purchases.ts"
 export * from "./rate_limits.ts"
 export * from "./recipe_ingredients.ts"
@@ -83,6 +85,7 @@ export const entities = [
   Job,
   PantryItem,
   PlanEntry,
+  Proposal,
   Purchase,
   RateLimit,
   Recipe,

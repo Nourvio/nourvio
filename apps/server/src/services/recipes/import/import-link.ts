@@ -5,6 +5,7 @@ import type { Fetcher } from "../../fetch/public-fetch.ts"
 import type { FileStore } from "../../storage/files.ts"
 import { MAX_PHOTO_BYTES, removePhoto, storePhoto } from "../photos.ts"
 import { createRecipe, loadRecipe } from "../recipes.ts"
+import { tidyAfterImport } from "../tidy/tidy-run.ts"
 import { readPage, type AiDeps } from "./ai-reader.ts"
 import { findBySourceUrl, isVideoLink, normalizeLink } from "./links.ts"
 import { readRecipeData } from "./recipe-data.ts"
@@ -129,6 +130,11 @@ export async function importLink(
       input: data.input,
       origin: "link",
       photoId,
+    })
+    await tidyAfterImport(em, {
+      householdId: options.householdId,
+      userId: options.userId,
+      recipeId: recipe.id,
     })
     return { recipe, duplicate: false }
   } catch (err) {

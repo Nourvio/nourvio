@@ -1,14 +1,17 @@
 import {
+  AiMagicIcon,
   CookBookIcon,
   Delete02Icon,
   MoreHorizontalIcon,
   Tag01Icon,
+  TaskDone01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useInfiniteQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 
 import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
@@ -34,6 +37,10 @@ import {
   TagRecipesDialog,
 } from "@/features/recipes/bulk-dialogs"
 import { LinkImportsBanner } from "@/features/recipes/link-imports-banner"
+import { useRefreshReview } from "@/features/recipes/tidy/queries"
+import { ReviewBanner } from "@/features/recipes/tidy/tidy-runs"
+import { useCapability } from "@/features/capabilities/queries"
+import { api, ApiError, unwrap } from "@/lib/api/client"
 import { ManageTagsDialog } from "@/features/recipes/manage-tags-dialog"
 import {
   RECIPE_SORTS,
@@ -111,6 +118,27 @@ function RecipesPage() {
   const total = recipes.data?.pages[0]?.total ?? 0
   const items = recipes.data?.pages.flatMap((page) => page.recipes) ?? []
   const picked = items.filter((recipe) => selection.isPicked(recipe.id))
+  const aiOn = useCapability("ai")
+  const refreshReview = useRefreshReview()
+
+  /** Tidies the picked recipes in the background, into Review. */
+  async function tidyPicked() {
+    const ids = [...selection.picked]
+    try {
+      await unwrap(api.POST("/api/recipes/tidy", { body: { ids } }))
+      await refreshReview()
+      selection.done()
+      toast.success(t("recipes.tidy.picked", { count: ids.length }), {
+        action: {
+          label: t("recipes.tidy.review"),
+          onClick: () => void navigate({ to: "/recipes/review" }),
+        },
+      })
+    } catch (err) {
+      if (!(err instanceof ApiError)) throw err
+      toast.error(err.message)
+    }
+  }
 
   return (
     <>
@@ -146,6 +174,12 @@ function RecipesPage() {
                     <HugeiconsIcon icon={Tag01Icon} strokeWidth={2} />
                     {t("recipes.manageTags")}
                   </DropdownMenuItem>
+                  {aiOn && (
+                    <DropdownMenuItem render={<Link to="/recipes/review" />}>
+                      <HugeiconsIcon icon={TaskDone01Icon} strokeWidth={2} />
+                      {t("recipes.tidy.reviewTitle")}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem render={<Link to="/recipes/deleted" />}>
                     <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
                     {t("recipes.deleted.title")}
@@ -160,6 +194,7 @@ function RecipesPage() {
 
       <div className="space-y-6">
         <LinkImportsBanner />
+        <ReviewBanner />
         <RecipeFilters search={search} onChange={setSearch} />
 
         {recipes.isPending ? (
@@ -259,6 +294,15 @@ function RecipesPage() {
             icon: Tag01Icon,
             onSelect: () => setDialog("tags"),
           },
+          ...(aiOn
+            ? [
+                {
+                  label: t("recipes.tidy.menu"),
+                  icon: AiMagicIcon,
+                  onSelect: () => void tidyPicked(),
+                },
+              ]
+            : []),
           {
             label: t("recipes.delete"),
             icon: Delete02Icon,

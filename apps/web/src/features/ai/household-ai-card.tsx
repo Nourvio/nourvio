@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/collapsible"
 import {
   Field,
+  FieldContent,
   FieldDescription,
   FieldGroup,
   FieldLabel,
@@ -30,6 +31,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { Switch } from "@/components/ui/switch"
 import { useMe } from "@/features/auth/use-me"
 import { capabilitiesQuery } from "@/features/capabilities/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
@@ -399,6 +401,24 @@ export function HouseholdAiCard() {
                       limit: money(own.limit),
                     })}
               </FieldDescription>
+            </Field>
+          )}
+
+          {data.status.available && (
+            <Field orientation="horizontal">
+              <FieldContent>
+                <FieldLabel htmlFor={`${id}-tidy`}>
+                  {t("ai.household.autoTidy")}
+                </FieldLabel>
+                <FieldDescription>
+                  {t("ai.household.autoTidyHint")}
+                </FieldDescription>
+              </FieldContent>
+              <Switch
+                id={`${id}-tidy`}
+                checked={picked.autoTidy}
+                onCheckedChange={(autoTidy) => change({ autoTidy })}
+              />
             </Field>
           )}
 

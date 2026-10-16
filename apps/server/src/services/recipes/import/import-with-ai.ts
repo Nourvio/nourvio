@@ -1,5 +1,6 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { createRecipe } from "../recipes.ts"
+import { tidyAfterImport } from "../tidy/tidy-run.ts"
 import {
   photoContent,
   readRecipe,
@@ -28,12 +29,14 @@ export async function importText(
     source: "text",
     sourceUrl: options.sourceUrl ?? null,
   })
-  return createRecipe(em, {
+  const recipe = await createRecipe(em, {
     householdId: options.householdId,
     userId: options.userId,
     input,
     origin: "text",
   })
+  await tidyAfterImport(em, { ...options, recipeId: recipe.id })
+  return recipe
 }
 
 /** Adds the recipe in up to four photos, read by AI as one. */
@@ -52,10 +55,12 @@ export async function importPhotos(
     content: await photoContent(options.photos),
     source: "photos",
   })
-  return createRecipe(em, {
+  const recipe = await createRecipe(em, {
     householdId: options.householdId,
     userId: options.userId,
     input,
     origin: "photo",
   })
+  await tidyAfterImport(em, { ...options, recipeId: recipe.id })
+  return recipe
 }

@@ -32,6 +32,11 @@ const TAGS = [
       "The household's recipes, their tags and versions, and Recently deleted. Ingredients and steps are written as lines, as in the editor, and each ingredient line is read into its amount, unit, food and note.",
   },
   {
+    name: "Review",
+    description:
+      "What AI suggests, waiting to be applied or dismissed: tidy ups of recipes, for now. AI never changes a recipe by itself. Each section of a suggestion is applied or skipped on its own, and applying keeps a version.",
+  },
+  {
     name: "Plan",
     description:
       "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone.",

@@ -47,6 +47,7 @@ function linesOf(recipe: Recipe, avoid: readonly AvoidedFood[]) {
     {
       name: recipe.name,
       lines: lines.map((line) => line.rawText),
+      marks: lines.map((line) => line.mark ?? null),
       needs: recipe.needs,
     },
     avoid

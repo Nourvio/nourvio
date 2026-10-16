@@ -85,6 +85,8 @@ export const Recipe = defineEntity({
      * "I made this" with none planned, or another app's date on import.
      */
     madeOffPlanAt: p.datetime().nullable(),
+    /** When tidy up last looked at it, whatever it found: library runs skip it. */
+    tidiedAt: p.datetime().nullable(),
     /** Set while the recipe is in Recently deleted. */
     deletedAt: p.datetime().nullable().index(),
     createdBy: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),

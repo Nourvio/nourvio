@@ -4,10 +4,9 @@ import { generateText, Output, type UserContent } from "ai"
 import { load } from "cheerio"
 import sharp from "sharp"
 import { z } from "zod"
-import type { AppDeps } from "../../../core/context.ts"
 import { AppError } from "../../../core/errors.ts"
 import type { RecipeInput } from "../../../http/schemas/recipes.ts"
-import { aiUnavailable, useAi } from "../../ai/run.ts"
+import { aiUnavailable, useAi, type AiDeps } from "../../ai/run.ts"
 import { resolveTask } from "../../ai/status.ts"
 import { listTags } from "../tags.ts"
 import { shareImages, type RecipeData } from "./recipe-data.ts"
@@ -17,7 +16,7 @@ import { shareImages, type RecipeData } from "./recipe-data.ts"
 // it. The model writes the recipe out as the editor holds it, and what it
 // wrote is checked after.
 
-export type AiDeps = Pick<AppDeps, "settings" | "fetcher" | "ai">
+export type { AiDeps }
 
 /** The most photos one recipe is read from: a recipe over a few pages. */
 export const MAX_PHOTOS = 4

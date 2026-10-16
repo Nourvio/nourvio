@@ -10,6 +10,7 @@ import pairingsRoutes from "./pairings/index.ts"
 import photoRoutes from "./photo/index.ts"
 import put from "./put.ts"
 import ratingRoutes from "./rating/index.ts"
+import tidyRoutes from "./tidy/index.ts"
 import versionsRoutes from "./versions/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
@@ -23,5 +24,6 @@ export default (router: Router, deps: AppDeps) => {
   pairingsRoutes(router, deps)
   photoRoutes(router, deps)
   ratingRoutes(router, deps)
+  tidyRoutes(router, deps)
   versionsRoutes(router, deps)
 }

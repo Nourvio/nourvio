@@ -22,7 +22,12 @@ export type RecipeTastes = TasteCheck & {
   lines: ReadonlyMap<string, LeftOutLine>
 }
 
-const NONE: RecipeTastes = { ruledOut: [], leaveOut: [], lines: new Map() }
+const NONE: RecipeTastes = {
+  ruledOut: [],
+  leaveOut: [],
+  needed: [],
+  lines: new Map(),
+}
 
 /**
  * What the household's tastes make of a recipe: the lines to leave out for
@@ -41,6 +46,7 @@ export function useRecipeTastes(recipe: Recipe | undefined): RecipeTastes {
       {
         name: recipe.name,
         lines: recipe.ingredients.map((line) => line.text),
+        marks: recipe.ingredients.map((line) => line.mark),
         diets: recipe.diets,
         needs: recipe.needs,
       },
@@ -72,7 +78,11 @@ export function useSetNeeds(recipe: Recipe) {
   const refresh = useRefreshRecipes()
   const [saving, setSaving] = React.useState(false)
 
-  async function setNeeds(foods: string[], message: string) {
+  async function setNeeds(
+    foods: string[],
+    message: string,
+    canLeaveOut?: string[]
+  ) {
     setSaving(true)
     try {
       queryClient.setQueryData(
@@ -80,7 +90,7 @@ export function useSetNeeds(recipe: Recipe) {
         await unwrap(
           api.PUT("/api/recipes/{recipe}/needs", {
             params: { path: { recipe: recipe.id } },
-            body: { foods },
+            body: { foods, ...(canLeaveOut ? { canLeaveOut } : {}) },
           })
         )
       )
@@ -101,10 +111,12 @@ export function useSetNeeds(recipe: Recipe) {
         [...recipe.needs, food],
         t("recipes.tastes.neededSaved", { food })
       ),
+    // Whether the household said so or tidy up marked it.
     leaveOut: (food: string) =>
       setNeeds(
         recipe.needs.filter((need) => !namesFood(need, food)),
-        t("recipes.tastes.leaveOutSaved", { food })
+        t("recipes.tastes.leaveOutSaved", { food }),
+        [food]
       ),
   }
 }

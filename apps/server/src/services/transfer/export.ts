@@ -110,6 +110,7 @@ async function recipesOf(
     ingredients: recipe.ingredients.getItems().map((line) => ({
       section: line.section ?? null,
       text: line.rawText,
+      mark: line.mark ?? null,
     })),
     steps: recipe.steps.getItems().map((step) => ({
       section: step.section ?? null,
