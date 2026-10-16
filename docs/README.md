@@ -37,6 +37,7 @@ It's a full rewrite of the app that was called Mise and then Nourvio. That app (
 | [export-format.md](export-format.md) | The household export: what's in the zip, and how an import treats what's there |
 | [operations.md](operations.md) | Logs, error tracking, analytics and telemetry, what leaves the server, images, releases, backups, the demo |
 | [open-source.md](open-source.md) | Name and license, contributing, CI, dependencies, security reports, docs site, funding, launch |
+| [features.md](features.md) | Every feature with its importance and status, for the marketing and docs sites |
 | [scope.md](scope.md) | Where each REFERENCE feature lands, what's not coming over, and the build order |
 
 The REFERENCE app's docs (`apps/REFERENCE/docs/`) still describe each feature in detail, and these docs link to them rather than repeat them.
