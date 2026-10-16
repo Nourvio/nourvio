@@ -492,7 +492,8 @@
       "label": "Text size",
       "standard": "Standard",
       "large": "Large",
-      "huge": "Extra large"
+      "huge": "Extra large",
+      "withVoice": "Text size and voice"
     },
     "timers": {
       "list": "Timers",
@@ -520,6 +521,33 @@
       "hoursRange": "{{from}}–{{to}} hours",
       "minutesRange": "{{from}}–{{to}} minutes",
       "secondsRange": "{{from}}–{{to}} seconds"
+    },
+    "handsFree": {
+      "label": "Hands-free",
+      "title": "Hands-free: steps read aloud, and commands by voice",
+      "listening": "Listening",
+      "heard": "Heard “{{said}}”",
+      "hint": "Say next, back, read it, ingredients, timer for 10 minutes, or how much garlic.",
+      "denied": "Hands-free needs the microphone. Allow it in the browser's settings for this site."
+    },
+    "voice": {
+      "getReady_one": "Get ready. Gather {{count}} ingredient. Say “ingredients” to hear it, or “next” to start.",
+      "getReady_other": "Get ready. Gather {{count}} ingredients. Say “ingredients” to hear them, or “next” to start.",
+      "step": "Step {{number}}. {{text}}",
+      "noSteps": "This recipe has no steps yet.",
+      "lastStep": "That was the last step. Say “done” when you've finished.",
+      "atStart": "This is the start.",
+      "youNeed": "You'll need: {{list}}.",
+      "forThisStep": "For this step: {{list}}.",
+      "noneInStep": "This step doesn't call for any of the ingredients.",
+      "timerSet": "Timer set for {{duration}}.",
+      "noTimeInStep": "There's no time in this step. Say “timer for 10 minutes”.",
+      "cantFind": "I can't find {{food}} in this recipe.",
+      "label": "Voice",
+      "best": "Best on this device",
+      "test": "Test voice",
+      "none": "This device has no voices for reading aloud.",
+      "sample": "Preheat the oven to 425 degrees, and season the chicken while it heats."
     }
   }
 }

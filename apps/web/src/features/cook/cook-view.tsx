@@ -2,15 +2,21 @@ import {
   ArrowLeft02Icon,
   ArrowRight02Icon,
   Cancel01Icon,
+  Mic01Icon,
   TextFontIcon,
   Timer02Icon,
+  VolumeHighIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   convertTemperatures,
   displayIngredient,
+  firstDuration,
+  goodVoices,
   ingredientsInStep,
   splitDurations,
+  voiceLabel,
+  type CookCommand,
   type UnitSystem,
 } from "@merran/shared"
 import { useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router"
@@ -24,9 +30,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -57,7 +65,11 @@ import {
 } from "./progress"
 import { NewTimerButton, startTimer, TimerChips, type Cooking } from "./timers"
 import { formatDuration, stepWords } from "./durations"
+import { handsFreeSupported, useHandsFree } from "./hands-free"
 import { useWakeLock } from "./use-wake-lock"
+import { readingLanguage, testVoice, useVoiceChoice, useVoices } from "./voices"
+
+type Line = Recipe["ingredients"][number]
 
 const STEP_TEXT: Record<TextSize, string> = {
   standard: "text-2xl md:text-3xl lg:text-4xl",
@@ -188,6 +200,120 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
     }
   }
 
+  // Hands-free: commands by voice, and each page read aloud.
+  const [handsFree, setHandsFree] = React.useState(false)
+  const lastRead = React.useRef<number | null>(null)
+  /** An ingredient as it's said: "1 and a third tablespoons olive oil". */
+  const says = (line: Line) => {
+    const { amount, rest } = displayIngredient(line.text, {
+      factor: scale,
+      system,
+    })
+    return `${amount}${rest}`.trim()
+  }
+  const textForPage = (at: number) => {
+    if (hasPrep && at === 0) {
+      return t("cook.voice.getReady", { count: ingredients.length })
+    }
+    const number = at - (hasPrep ? 1 : 0)
+    const pageStep = steps[number]
+    return pageStep
+      ? t("cook.voice.step", {
+          number: number + 1,
+          text: stepWords(t, convertTemperatures(pageStep.text, system)),
+        })
+      : t("cook.voice.noSteps")
+  }
+  function timerFor(seconds: number, upTo: number | null = null) {
+    const label = formatDuration(t, seconds, upTo)
+    startTimer(label, seconds, cooking)
+    voice.speak(t("cook.voice.timerSet", { duration: label }))
+  }
+  const voice = useHandsFree({
+    enabled: handsFree,
+    onDenied: () => {
+      setHandsFree(false)
+      toast.error(t("cook.handsFree.denied"))
+    },
+    onCommand: (command: CookCommand) => {
+      switch (command.kind) {
+        case "next":
+          if (isLast) voice.speak(t("cook.voice.lastStep"))
+          else go(page + 1)
+          break
+        case "back":
+          if (page === 0) voice.speak(t("cook.voice.atStart"))
+          else go(page - 1)
+          break
+        case "repeat":
+          voice.speak(textForPage(page))
+          break
+        case "ingredients": {
+          const lines = onPrep ? ingredients : stepIngredients
+          const list = lines.map(says).join(". ")
+          voice.speak(
+            lines.length === 0
+              ? t("cook.voice.noneInStep")
+              : onPrep
+                ? t("cook.voice.youNeed", { list })
+                : t("cook.voice.forThisStep", { list })
+          )
+          break
+        }
+        case "timer":
+          timerFor(command.seconds)
+          break
+        case "stepTimer": {
+          const time = step
+            ? firstDuration(convertTemperatures(step.text, system))
+            : undefined
+          if (time) timerFor(time.seconds, time.upTo)
+          else voice.speak(t("cook.voice.noTimeInStep"))
+          break
+        }
+        case "howMuch": {
+          const line = findIngredient(command.food, ingredients)
+          voice.speak(
+            line ? says(line) : t("cook.voice.cantFind", { food: command.food })
+          )
+          break
+        }
+        case "stop":
+          voice.stopSpeaking()
+          break
+        case "done":
+          if (!isLast) {
+            go(page + 1)
+            break
+          }
+          setHandsFree(false)
+          void finish()
+          break
+      }
+    },
+  })
+
+  // Each new page is read aloud while hands-free is on.
+  React.useEffect(() => {
+    if (!handsFree || lastRead.current === page) return
+    lastRead.current = page
+    voice.speak(textForPage(page))
+    // Only turning hands-free on or a new page reads aloud, not each render.
+  }, [handsFree, page])
+
+  function toggleHandsFree() {
+    if (handsFree) {
+      setHandsFree(false)
+      lastRead.current = null
+      voice.stopSpeaking()
+      return
+    }
+    // Speaking straight from the tap lets phones play it.
+    lastRead.current = page
+    voice.speak(textForPage(page))
+    setHandsFree(true)
+  }
+
   const list = (size: "default" | "lg") => (
     <IngredientList
       lines={ingredients}
@@ -231,9 +357,49 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
             phones the timers take a row of their own below. */}
         <TimerChips className="order-last w-full sm:order-none sm:w-auto" />
         <div className="flex items-center gap-2">
+          {handsFreeSupported() && (
+            <Button
+              variant={handsFree ? "default" : "outline"}
+              size="icon"
+              aria-pressed={handsFree}
+              aria-label={t("cook.handsFree.label")}
+              title={t("cook.handsFree.title")}
+              onClick={toggleHandsFree}
+            >
+              <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} />
+            </Button>
+          )}
           <NewTimerButton cooking={cooking} />
           <TextSizeMenu value={textSize} onChange={setTextSize} />
         </div>
+        {handsFree && (
+          <div
+            role="status"
+            className="order-last flex w-full flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-secondary px-3 py-2 text-sm"
+          >
+            <span className="flex items-center gap-2 font-medium">
+              <span
+                className={cn(
+                  "size-2 rounded-full",
+                  voice.listening
+                    ? "animate-pulse bg-primary"
+                    : "bg-muted-foreground/40"
+                )}
+              />
+              {voice.listening
+                ? t("cook.handsFree.listening")
+                : t("cook.handsFree.label")}
+            </span>
+            {voice.heard && (
+              <span className="text-muted-foreground">
+                {t("cook.handsFree.heard", { said: voice.heard })}
+              </span>
+            )}
+            <span className="text-muted-foreground">
+              {t("cook.handsFree.hint")}
+            </span>
+          </div>
+        )}
       </header>
 
       {pages > 1 && (
@@ -502,7 +668,26 @@ function StepText({
   })
 }
 
-/** Standard, large or extra large steps, kept on this device. */
+/** The ingredient asked about by name: "how much garlic". */
+function findIngredient(food: string, lines: Line[]) {
+  const words = food
+    .toLowerCase()
+    .split(/\s+/)
+    .filter((word) => word.length > 2)
+  if (words.length === 0) return undefined
+  const text = (line: Line) => line.text.toLowerCase()
+  return (
+    lines.find((line) => words.every((word) => text(line).includes(word))) ??
+    lines.find((line) =>
+      words.some((word) => text(line).includes(word.replace(/e?s$/, "")))
+    )
+  )
+}
+
+/**
+ * Standard, large or extra large steps, and the voice that reads them,
+ * kept on this device.
+ */
 function TextSizeMenu({
   value,
   onChange,
@@ -511,6 +696,8 @@ function TextSizeMenu({
   onChange: (size: TextSize) => void
 }) {
   const { t } = useTranslation()
+  const voices = handsFreeSupported()
+  const label = voices ? t("cook.textSize.withVoice") : t("cook.textSize.label")
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -518,14 +705,14 @@ function TextSizeMenu({
           <Button
             variant="outline"
             size="icon"
-            aria-label={t("cook.textSize.label")}
-            title={t("cook.textSize.label")}
+            aria-label={label}
+            title={label}
           />
         }
       >
         <HugeiconsIcon icon={TextFontIcon} strokeWidth={2} />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuGroup>
           <DropdownMenuLabel>{t("cook.textSize.label")}</DropdownMenuLabel>
           <DropdownMenuRadioGroup
@@ -539,7 +726,69 @@ function TextSizeMenu({
             ))}
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
+        {voices && <VoiceChoices />}
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+/** Which of the device's voices reads steps aloud, with a sentence to try it. */
+function VoiceChoices() {
+  const { t } = useTranslation()
+  const voices = useVoices()
+  const [choice, setChoice] = useVoiceChoice()
+  const options = goodVoices(voices, readingLanguage())
+  const best = options[0]
+  // A voice chosen before that's no longer offered shows as the best one.
+  const value =
+    choice === "auto" || options.some((voice) => voice.voiceURI === choice)
+      ? choice
+      : "auto"
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <DropdownMenuGroup>
+        <DropdownMenuLabel>{t("cook.voice.label")}</DropdownMenuLabel>
+        {options.length === 0 ? (
+          <p className="px-3 pb-2 text-sm text-muted-foreground">
+            {t("cook.voice.none")}
+          </p>
+        ) : (
+          <>
+            <DropdownMenuRadioGroup
+              value={value}
+              onValueChange={(next) => setChoice(String(next))}
+            >
+              <DropdownMenuRadioItem value="auto">
+                <span className="grid">
+                  {t("cook.voice.best")}
+                  {best && (
+                    <span className="text-xs text-muted-foreground">
+                      {voiceLabel(best)}
+                    </span>
+                  )}
+                </span>
+              </DropdownMenuRadioItem>
+              {options.map((voice) => (
+                <DropdownMenuRadioItem
+                  key={voice.voiceURI}
+                  value={voice.voiceURI}
+                >
+                  {voiceLabel(voice)}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+            {/* Stays open, to try another. */}
+            <DropdownMenuItem
+              closeOnClick={false}
+              onClick={() => testVoice(value)}
+            >
+              <HugeiconsIcon icon={VolumeHighIcon} strokeWidth={2} />
+              {t("cook.voice.test")}
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuGroup>
+    </>
   )
 }
