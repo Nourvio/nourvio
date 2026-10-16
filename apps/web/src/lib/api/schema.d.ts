@@ -860,6 +860,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/list/usual": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Usual buys due
+         * @description What the household gets every so often, learned from the shopping it's put away (bought on three days or more), now due again: "Milk? You last got some Oct 9." Not what's on the list, at home, bought every week or always on hand, nor what's been passed over until it's due again. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["listUsualBuys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/usual/add": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put usual buys on the list
+         * @description As they were last bought, each in its aisle and on its list. Ones not due are passed over. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["addUsualBuys"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/usual/skip": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Not this time
+         * @description A usual buy isn't offered again until it's next due. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["skipUsualBuy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pantry": {
         parameters: {
             query?: never;
@@ -998,6 +1058,50 @@ export interface paths {
         get: operations["getPlan"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/autoplan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The weekly autoplan
+         * @description When it runs (a day and hour in the household's time zone), the meals it fills, whether it puts them on the list, when it runs next and what it did last. With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["getAutoplan"];
+        /**
+         * Change the weekly autoplan
+         * @description Household admins only. On its day and hour it fills the week ahead's empty meals the way Fill the week does, saying why for each, and can put what they need on the list. Turning it on plans nothing straight away: it waits for its day and hour. A run that's late, with the server off, plans what's left of its week.
+         */
+        put: operations["saveAutoplan"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/autoplan/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Plan the week ahead now
+         * @description What the autoplan does, now: the next week starting today or later, its empty meals filled, and onto the list if the autoplan says so. That week counts as planned, so the autoplan won't plan it again. With an API key, it needs the `plan: write` permission.
+         */
+        post: operations["planAheadNow"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3363,6 +3467,54 @@ export interface components {
          * @example {
          *       "items": [
          *         {
+         *           "food": "milk",
+         *           "name": "milk",
+         *           "amount": "1 gal",
+         *           "every": 6,
+         *           "lastBought": "2026-10-09",
+         *           "dueOn": "2026-10-14"
+         *         }
+         *       ]
+         *     }
+         */
+        UsualBuys: {
+            /** @description Due now, most overdue first. */
+            items: {
+                /** @description Which food it is. */
+                food: string;
+                name: string;
+                /** @description How much it was last time, or empty. */
+                amount: string;
+                /** @description About how many days apart it's bought. */
+                every: number;
+                /** @example 2026-10-15 */
+                lastBought: string;
+                /** @example 2026-10-15 */
+                dueOn: string;
+            }[];
+        };
+        /**
+         * @example {
+         *       "foods": [
+         *         "milk"
+         *       ]
+         *     }
+         */
+        UsualAdd: {
+            foods: string[];
+        };
+        /**
+         * @example {
+         *       "food": "milk"
+         *     }
+         */
+        UsualSkip: {
+            food: string;
+        };
+        /**
+         * @example {
+         *       "items": [
+         *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-000000000026",
          *           "name": "chicken thighs",
          *           "amount": "2 lb",
@@ -3830,6 +3982,89 @@ export interface components {
             /** @enum {string} */
             kind: "quick";
             minutes: number;
+        };
+        /**
+         * @example {
+         *       "enabled": true,
+         *       "day": 6,
+         *       "hour": 9,
+         *       "meals": [
+         *         "dinner"
+         *       ],
+         *       "addToList": true,
+         *       "next": "2026-10-24T16:00:00.000Z",
+         *       "last": {
+         *         "week": "2026-10-19",
+         *         "at": "2026-10-17T16:00:00.000Z",
+         *         "planned": 6,
+         *         "empty": 7,
+         *         "listed": 18
+         *       }
+         *     }
+         */
+        Autoplan: {
+            enabled: boolean;
+            /** @description The day it runs, 0 for Sunday, in the household's time zone. */
+            day: number;
+            /** @description The hour it runs, 0 to 23, in the household's time zone. */
+            hour: number;
+            /** @description The meals it fills, of those the household plans. */
+            meals: components["schemas"]["Meal"][];
+            /** @description Whether it puts what the week needs on the list too. */
+            addToList: boolean;
+            /**
+             * Format: date-time
+             * @description When it runs next; none while it's off.
+             */
+            next: string | null;
+            /** @description What it did last. */
+            last: components["schemas"]["AutoplanRun"] | null;
+        };
+        /**
+         * @example {
+         *       "week": "2026-10-19",
+         *       "at": "2026-10-17T16:00:00.000Z",
+         *       "planned": 6,
+         *       "empty": 7,
+         *       "listed": 18
+         *     }
+         */
+        AutoplanRun: {
+            /**
+             * @description The first day of the week it planned.
+             * @example 2026-10-15
+             */
+            week: string;
+            /** Format: date-time */
+            at: string;
+            /** @description Meals it filled. */
+            planned: number;
+            /** @description Meals that were empty to fill. */
+            empty: number;
+            /** @description Lines it put on the list, new or added to. */
+            listed: number;
+        };
+        /**
+         * @example {
+         *       "enabled": true,
+         *       "day": 6,
+         *       "hour": 9,
+         *       "meals": [
+         *         "dinner"
+         *       ],
+         *       "addToList": true
+         *     }
+         */
+        AutoplanSettings: {
+            enabled: boolean;
+            /** @description The day it runs, 0 for Sunday, in the household's time zone. */
+            day: number;
+            /** @description The hour it runs, 0 to 23, in the household's time zone. */
+            hour: number;
+            /** @description The meals it fills, of those the household plans. */
+            meals: components["schemas"]["Meal"][];
+            /** @description Whether it puts what the week needs on the list too. */
+            addToList: boolean;
         };
         /**
          * @example {
@@ -7770,6 +8005,126 @@ export interface operations {
             };
         };
     };
+    listUsualBuys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Due now. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UsualBuys"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addUsualBuys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsualAdd"];
+            };
+        };
+        responses: {
+            /** @description On the list. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListItems"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    skipUsualBuy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UsualSkip"];
+            };
+        };
+        responses: {
+            /** @description Passed over. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     getPantry: {
         parameters: {
             query?: never;
@@ -8104,6 +8459,124 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getAutoplan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The autoplan. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Autoplan"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    saveAutoplan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoplanSettings"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Autoplan"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    planAheadNow: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Planned. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoplanRun"];
                 };
             };
             /** @description Not signed in. */

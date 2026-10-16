@@ -72,12 +72,21 @@ export async function createTestApp(
   const fetcher: Fetcher =
     options.fetcher ??
     (() => Promise.reject(new Error("Tests don't reach the internet.")))
+  const events = createEventBus()
   // Not started: tests run what's waiting with `jobs.drain()`.
   const jobs = new JobRunner({
-    deps: { config, logger, database, settings, modules, files, fetcher },
+    deps: {
+      config,
+      logger,
+      database,
+      settings,
+      modules,
+      files,
+      fetcher,
+      events,
+    },
     handlers: [...JOB_HANDLERS, ...(options.jobHandlers ?? [])],
   })
-  const events = createEventBus()
   const app = createApp({
     config,
     logger,

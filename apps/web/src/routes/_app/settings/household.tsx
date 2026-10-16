@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/empty"
 import { meQuery } from "@/features/auth/queries"
 import { useActiveHousehold, useMe } from "@/features/auth/use-me"
+import { AutoplanCard } from "@/features/household/autoplan-card"
 import { DetailsCard } from "@/features/household/details-card"
 import { InvitesCard } from "@/features/household/invites-card"
 import { MembersCard } from "@/features/household/members-card"
@@ -27,6 +28,7 @@ import {
 } from "@/features/household/queries"
 import { TastesCard } from "@/features/household/tastes-card"
 import { ThemeNightsCard } from "@/features/household/theme-nights-card"
+import { autoplanQuery } from "@/features/plan/queries"
 
 export const Route = createFileRoute("/_app/settings/household")({
   loader: async ({ context: { queryClient } }) => {
@@ -38,6 +40,7 @@ export const Route = createFileRoute("/_app/settings/household")({
       queryClient.ensureQueryData(membersQuery),
       queryClient.ensureQueryData(tastesQuery),
       isAdminRole(active.role) && queryClient.ensureQueryData(themesQuery),
+      isAdminRole(active.role) && queryClient.ensureQueryData(autoplanQuery),
       isAdminRole(active.role) && queryClient.ensureQueryData(invitesQuery),
     ])
   },
@@ -57,6 +60,7 @@ function HouseholdSettings() {
           {isAdminRole(household.role) && <PlanningCard />}
           <TastesCard />
           {isAdminRole(household.role) && <ThemeNightsCard />}
+          {isAdminRole(household.role) && <AutoplanCard />}
           <MembersCard />
           {isAdminRole(household.role) && <InvitesCard />}
         </>

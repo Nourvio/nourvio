@@ -449,3 +449,80 @@ export const ThemeNightsSchema = z
       ],
     },
   })
+
+// The weekly autoplan.
+
+const AUTOPLAN_RUN = {
+  week: "2026-10-19",
+  at: "2026-10-17T16:00:00.000Z",
+  planned: 6,
+  empty: 7,
+  listed: 18,
+}
+
+export const AutoplanRunSchema = z
+  .object({
+    week: Day.openapi({ description: "The first day of the week it planned." }),
+    at: z.iso.datetime(),
+    planned: z.number().int().openapi({ description: "Meals it filled." }),
+    empty: z
+      .number()
+      .int()
+      .openapi({ description: "Meals that were empty to fill." }),
+    listed: z
+      .number()
+      .int()
+      .openapi({ description: "Lines it put on the list, new or added to." }),
+  })
+  .openapi("AutoplanRun", { example: AUTOPLAN_RUN })
+
+const autoplanSettings = {
+  enabled: z.boolean(),
+  day: z.number().int().min(0).max(6).openapi({
+    description: "The day it runs, 0 for Sunday, in the household's time zone.",
+  }),
+  hour: z.number().int().min(0).max(23).openapi({
+    description: "The hour it runs, 0 to 23, in the household's time zone.",
+  }),
+  meals: z.array(MealSchema).min(1, "Pick a meal to fill.").max(4).openapi({
+    description: "The meals it fills, of those the household plans.",
+  }),
+  addToList: z.boolean().openapi({
+    description: "Whether it puts what the week needs on the list too.",
+  }),
+}
+
+export const AutoplanSettingsSchema = z
+  .object(autoplanSettings)
+  .openapi("AutoplanSettings", {
+    example: {
+      enabled: true,
+      day: 6,
+      hour: 9,
+      meals: ["dinner"],
+      addToList: true,
+    },
+  })
+
+export const AutoplanSchema = z
+  .object({
+    ...autoplanSettings,
+    next: z.iso.datetime().nullable().openapi({
+      description: "When it runs next; none while it's off.",
+    }),
+    // A union, as AutoplanRunSchema.nullable() would make every run nullable.
+    last: z
+      .union([AutoplanRunSchema, z.null()])
+      .openapi({ description: "What it did last." }),
+  })
+  .openapi("Autoplan", {
+    example: {
+      enabled: true,
+      day: 6,
+      hour: 9,
+      meals: ["dinner"],
+      addToList: true,
+      next: "2026-10-24T16:00:00.000Z",
+      last: AUTOPLAN_RUN,
+    },
+  })

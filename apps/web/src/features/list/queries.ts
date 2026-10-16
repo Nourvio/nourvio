@@ -8,11 +8,18 @@ export type ListItem = Schemas["ListItem"]
 export type ListItemSnapshot = Schemas["ListItemSnapshot"]
 export type Aisle = ShoppingList["aisles"][number]
 export type EveryWeekItem = Schemas["EveryWeekItem"]
+export type UsualBuy = Schemas["UsualBuys"]["items"][number]
 
 /** The list, its aisles and its items by aisle. */
 export const listQuery = queryOptions({
   queryKey: ["list"],
   queryFn: () => unwrap(api.GET("/api/list")),
+})
+
+/** What the household buys every so often and is about due for. */
+export const usualQuery = queryOptions({
+  queryKey: ["list", "usual"],
+  queryFn: () => unwrap(api.GET("/api/list/usual")),
 })
 
 export const everyWeekQuery = queryOptions({

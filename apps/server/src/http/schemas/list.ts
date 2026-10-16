@@ -428,3 +428,43 @@ export const OnHandSchema = z
   .openapi("OnHand", {
     example: { items: ["salt", "pepper", "water", "ice", "olive oil"] },
   })
+
+// Usual buys.
+
+const USUAL = {
+  food: "milk",
+  name: "milk",
+  amount: "1 gal",
+  every: 6,
+  lastBought: "2026-10-09",
+  dueOn: "2026-10-14",
+}
+
+export const UsualBuysSchema = z
+  .object({
+    items: z
+      .array(
+        z.object({
+          food: z.string().openapi({ description: "Which food it is." }),
+          name: z.string(),
+          amount: z.string().openapi({
+            description: "How much it was last time, or empty.",
+          }),
+          every: z.number().int().openapi({
+            description: "About how many days apart it's bought.",
+          }),
+          lastBought: Day,
+          dueOn: Day,
+        })
+      )
+      .openapi({ description: "Due now, most overdue first." }),
+  })
+  .openapi("UsualBuys", { example: { items: [USUAL] } })
+
+export const UsualSkipSchema = z
+  .object({ food: z.string().min(1).max(200) })
+  .openapi("UsualSkip", { example: { food: "milk" } })
+
+export const UsualAddSchema = z
+  .object({ foods: z.array(z.string().min(1).max(200)).min(1).max(50) })
+  .openapi("UsualAdd", { example: { foods: ["milk"] } })

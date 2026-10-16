@@ -64,6 +64,7 @@ import {
 import { ListsDialog } from "./lists-dialog"
 import { listQuery, type List, type ListItem } from "./queries"
 import { useListActions } from "./use-list-actions"
+import { UsualBuys } from "./usual-buys"
 
 /** Which list this device last had open. */
 const CHOSEN_LIST = "merran.list"
@@ -258,6 +259,7 @@ export function ListPage() {
         )}
 
         <QuickAdd list={split ? current : undefined} />
+        {!selection.selecting && <UsualBuys />}
 
         {list.isPending ? (
           <div className="grid gap-3">

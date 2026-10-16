@@ -6,6 +6,7 @@ import { Job } from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
 import type { Module } from "../../modules/module.ts"
+import type { EventBus } from "../events/events.ts"
 import type { Fetcher } from "../fetch/public-fetch.ts"
 import type { Settings } from "../settings/settings.ts"
 import type { FileStore } from "../storage/files.ts"
@@ -27,6 +28,8 @@ export type JobDeps = {
   modules: readonly Module[]
   files: FileStore
   fetcher: Fetcher
+  /** What changed in each household, so open pages see what a job did. */
+  events: EventBus
 }
 
 export type JobContext = {

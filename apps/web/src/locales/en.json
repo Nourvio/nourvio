@@ -308,6 +308,29 @@
         "tagPlaceholder": "A tag, like curry or burgers",
         "tag": "{{day}}'s tag",
         "saved": "Saved."
+      },
+      "autoplan": {
+        "title": "Plan each week",
+        "description": "On the day and hour you pick, the week ahead's empty meals fill themselves from your recipes, the way Fill the week does: keeping to your tastes and theme nights, saying why for each, and never changing a meal that's planned.",
+        "on": "Plan the week ahead for us",
+        "off": "Off. Turn it on to have each week planned before it starts.",
+        "next": "Next on {{when}}.",
+        "when": "When",
+        "day": "Day",
+        "hour": "Time",
+        "whenHint": "In the household's time zone. It plans the next week to start that day or later.",
+        "meals": "Meals to fill",
+        "addToList": "Put what those meals need on the list",
+        "last": "Last time: {{what}}",
+        "planned_one": "Planned {{count}} meal for {{week}}.",
+        "planned_other": "Planned {{count}} meals for {{week}}.",
+        "allPlanned": "{{week}} was planned already.",
+        "noIdeas": "No ideas for {{week}}: nothing new in your recipes fits.",
+        "listed_one": "{{count}} thing on the list.",
+        "listed_other": "{{count}} things on the list.",
+        "planNow": "Plan {{week}} now",
+        "seePlan": "See the plan",
+        "saved": "Saved."
       }
     },
     "lockedBy": "Set on the server, by {{env}}",
@@ -1221,7 +1244,23 @@
     "putAwayAll": "Put it all away",
     "putAwayDone_one": "Put {{count}} thing in the pantry.",
     "putAwayDone_other": "Put {{count}} things in the pantry.",
-    "putAwayCleared": "Cleared the cart."
+    "putAwayCleared": "Cleared the cart.",
+    "usual": {
+      "title": "Due about now",
+      "hint": "Things you buy every so often, from the shopping you've put away.",
+      "ask": "<b>{{name}}</b>? You last got some {{date}}.",
+      "add": "Add",
+      "addLabel": "Add {{name}} to the list",
+      "addAll": "Add all",
+      "notNow": "Not now",
+      "notNowLabel": "Not {{name}} this time",
+      "added": "Added {{name}} to the list.",
+      "addedAll_one": "Added {{count}} thing to the list.",
+      "addedAll_other": "Added {{count}} things to the list.",
+      "more_one": "Show {{count}} more",
+      "more_other": "Show {{count}} more",
+      "fewer": "Show fewer"
+    }
   },
   "pantry": {
     "title": "Pantry",

@@ -16,6 +16,7 @@ import { enqueue } from "../jobs/jobs.ts"
 import { JobStopped, type JobDeps, type JobHandler } from "../jobs/runner.ts"
 import { storePhoto } from "../recipes/photos.ts"
 import { importRecipe, type RecipeOrigin } from "../recipes/recipes.ts"
+import { scheduleAutoplan } from "../plan/autoplan.ts"
 import { tagKey } from "../recipes/tags.ts"
 import type { HouseholdFile, RecipeFile } from "./format.ts"
 import { openExport } from "./read-export.ts"
@@ -91,6 +92,8 @@ async function takeDetails(
   household.weekStartsOn = details.weekStartsOn
   household.settings = details.planning
   await em.flush()
+  // An autoplan that was on runs here too.
+  await scheduleAutoplan(em, householdId)
   // Only settings this Merran knows; each on its own, so one it won't take
   // doesn't stop the rest.
   const known = new Set(

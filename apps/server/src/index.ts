@@ -66,6 +66,7 @@ if ((await database.em.fork().count(User)) === 0) {
 
 const files = new LocalFileStore(join(config.dataDir, "files"))
 const fetcher = createPublicFetcher({ version: config.version })
+const events = createEventBus()
 const jobs = new JobRunner({
   deps: {
     config,
@@ -75,12 +76,12 @@ const jobs = new JobRunner({
     modules: MODULES,
     files,
     fetcher,
+    events,
   },
   handlers: JOB_HANDLERS,
   schedules: JOB_SCHEDULES,
 })
 
-const events = createEventBus()
 const app = createApp({
   config,
   logger,

@@ -22,6 +22,12 @@ export const planQuery = (from: string, to: string) =>
       unwrap(api.GET("/api/plan", { params: { query: { from, to } } })),
   })
 
+/** The weekly autoplan: when it runs, what it fills, its next and last run. */
+export const autoplanQuery = queryOptions({
+  queryKey: ["plan", "autoplan"],
+  queryFn: () => unwrap(api.GET("/api/plan/autoplan")),
+})
+
 /** What's next, checked again now and then as the day goes on. */
 export const nextMealQuery = queryOptions({
   queryKey: ["plan", "next"],

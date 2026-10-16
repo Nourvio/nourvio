@@ -8,6 +8,7 @@ import itemsRoutes from "./items/index.ts"
 import listsRoutes from "./lists/index.ts"
 import putAwayRoutes from "./put-away/index.ts"
 import restoreRoutes from "./restore/index.ts"
+import usualRoutes from "./usual/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
   get(router, deps)
@@ -18,4 +19,5 @@ export default (router: Router, deps: AppDeps) => {
   listsRoutes(router, deps)
   putAwayRoutes(router, deps)
   restoreRoutes(router, deps)
+  usualRoutes(router, deps)
 }

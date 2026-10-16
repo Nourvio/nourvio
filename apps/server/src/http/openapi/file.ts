@@ -40,6 +40,7 @@ export async function createOpenApiFile(): Promise<string> {
     // Describing the API never stores, fetches or runs anything.
     const files = new LocalFileStore(join(tmpdir(), "merran-openapi"))
     const fetcher = createPublicFetcher({ version: config.version })
+    const events = createEventBus()
     const app = createApp({
       config,
       logger,
@@ -59,10 +60,11 @@ export async function createOpenApiFile(): Promise<string> {
           modules: MODULES,
           files,
           fetcher,
+          events,
         },
         handlers: [],
       }),
-      events: createEventBus(),
+      events,
     })
     const document = await buildOpenApiDocument(app, auth, {
       version: config.version,

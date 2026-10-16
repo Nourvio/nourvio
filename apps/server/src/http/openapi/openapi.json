@@ -2680,6 +2680,107 @@
           ]
         }
       },
+      "UsualBuys": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "food": {
+                  "type": "string",
+                  "description": "Which food it is."
+                },
+                "name": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "string",
+                  "description": "How much it was last time, or empty."
+                },
+                "every": {
+                  "type": "integer",
+                  "description": "About how many days apart it's bought."
+                },
+                "lastBought": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-15"
+                },
+                "dueOn": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-15"
+                }
+              },
+              "required": [
+                "food",
+                "name",
+                "amount",
+                "every",
+                "lastBought",
+                "dueOn"
+              ]
+            },
+            "description": "Due now, most overdue first."
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "example": {
+          "items": [
+            {
+              "food": "milk",
+              "name": "milk",
+              "amount": "1 gal",
+              "every": 6,
+              "lastBought": "2026-10-09",
+              "dueOn": "2026-10-14"
+            }
+          ]
+        }
+      },
+      "UsualAdd": {
+        "type": "object",
+        "properties": {
+          "foods": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 1,
+            "maxItems": 50
+          }
+        },
+        "required": [
+          "foods"
+        ],
+        "example": {
+          "foods": [
+            "milk"
+          ]
+        }
+      },
+      "UsualSkip": {
+        "type": "object",
+        "properties": {
+          "food": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "required": [
+          "food"
+        ],
+        "example": {
+          "food": "milk"
+        }
+      },
       "Pantry": {
         "type": "object",
         "properties": {
@@ -3703,6 +3804,174 @@
         "example": {
           "kind": "notLately",
           "weeks": 5
+        }
+      },
+      "Autoplan": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "day": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6,
+            "description": "The day it runs, 0 for Sunday, in the household's time zone."
+          },
+          "hour": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23,
+            "description": "The hour it runs, 0 to 23, in the household's time zone."
+          },
+          "meals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Meal"
+            },
+            "minItems": 1,
+            "maxItems": 4,
+            "description": "The meals it fills, of those the household plans."
+          },
+          "addToList": {
+            "type": "boolean",
+            "description": "Whether it puts what the week needs on the list too."
+          },
+          "next": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "description": "When it runs next; none while it's off."
+          },
+          "last": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AutoplanRun"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What it did last."
+          }
+        },
+        "required": [
+          "enabled",
+          "day",
+          "hour",
+          "meals",
+          "addToList",
+          "next",
+          "last"
+        ],
+        "example": {
+          "enabled": true,
+          "day": 6,
+          "hour": 9,
+          "meals": [
+            "dinner"
+          ],
+          "addToList": true,
+          "next": "2026-10-24T16:00:00.000Z",
+          "last": {
+            "week": "2026-10-19",
+            "at": "2026-10-17T16:00:00.000Z",
+            "planned": 6,
+            "empty": 7,
+            "listed": 18
+          }
+        }
+      },
+      "AutoplanRun": {
+        "type": "object",
+        "properties": {
+          "week": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-15",
+            "description": "The first day of the week it planned."
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "planned": {
+            "type": "integer",
+            "description": "Meals it filled."
+          },
+          "empty": {
+            "type": "integer",
+            "description": "Meals that were empty to fill."
+          },
+          "listed": {
+            "type": "integer",
+            "description": "Lines it put on the list, new or added to."
+          }
+        },
+        "required": [
+          "week",
+          "at",
+          "planned",
+          "empty",
+          "listed"
+        ],
+        "example": {
+          "week": "2026-10-19",
+          "at": "2026-10-17T16:00:00.000Z",
+          "planned": 6,
+          "empty": 7,
+          "listed": 18
+        }
+      },
+      "AutoplanSettings": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "day": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 6,
+            "description": "The day it runs, 0 for Sunday, in the household's time zone."
+          },
+          "hour": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 23,
+            "description": "The hour it runs, 0 to 23, in the household's time zone."
+          },
+          "meals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Meal"
+            },
+            "minItems": 1,
+            "maxItems": 4,
+            "description": "The meals it fills, of those the household plans."
+          },
+          "addToList": {
+            "type": "boolean",
+            "description": "Whether it puts what the week needs on the list too."
+          }
+        },
+        "required": [
+          "enabled",
+          "day",
+          "hour",
+          "meals",
+          "addToList"
+        ],
+        "example": {
+          "enabled": true,
+          "day": 6,
+          "hour": 9,
+          "meals": [
+            "dinner"
+          ],
+          "addToList": true
         }
       },
       "WhatsNext": {
@@ -10057,6 +10326,172 @@
         }
       }
     },
+    "/api/list/usual": {
+      "get": {
+        "operationId": "listUsualBuys",
+        "tags": [
+          "List"
+        ],
+        "summary": "Usual buys due",
+        "description": "What the household gets every so often, learned from the shopping it's put away (bought on three days or more), now due again: \"Milk? You last got some Oct 9.\" Not what's on the list, at home, bought every week or always on hand, nor what's been passed over until it's due again. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "responses": {
+          "200": {
+            "description": "Due now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsualBuys"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list/usual/add": {
+      "post": {
+        "operationId": "addUsualBuys",
+        "tags": [
+          "List"
+        ],
+        "summary": "Put usual buys on the list",
+        "description": "As they were last bought, each in its aisle and on its list. Ones not due are passed over. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsualAdd"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "On the list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListItems"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list/usual/skip": {
+      "post": {
+        "operationId": "skipUsualBuy",
+        "tags": [
+          "List"
+        ],
+        "summary": "Not this time",
+        "description": "A usual buy isn't offered again until it's next due. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UsualSkip"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Passed over."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/pantry": {
       "get": {
         "operationId": "getPantry",
@@ -10554,6 +10989,163 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/autoplan": {
+      "get": {
+        "operationId": "getAutoplan",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "The weekly autoplan",
+        "description": "When it runs (a day and hour in the household's time zone), the meals it fills, whether it puts them on the list, when it runs next and what it did last. With an API key, it needs the `plan: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:read",
+        "responses": {
+          "200": {
+            "description": "The autoplan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Autoplan"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "saveAutoplan",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Change the weekly autoplan",
+        "description": "Household admins only. On its day and hour it fills the week ahead's empty meals the way Fill the week does, saying why for each, and can put what they need on the list. Turning it on plans nothing straight away: it waits for its day and hour. A run that's late, with the server off, plans what's left of its week.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoplanSettings"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Autoplan"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/autoplan/run": {
+      "post": {
+        "operationId": "planAheadNow",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Plan the week ahead now",
+        "description": "What the autoplan does, now: the next week starting today or later, its empty meals filled, and onto the list if the autoplan says so. That week counts as planned, so the autoplan won't plan it again. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "responses": {
+          "200": {
+            "description": "Planned.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoplanRun"
                 }
               }
             }
