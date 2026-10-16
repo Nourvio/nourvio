@@ -1,3 +1,4 @@
+import type { MealShare } from "@merran/shared"
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
 import { householdFilter } from "../scope.ts"
 import { aisleRef } from "./aisles.ts"
@@ -28,8 +29,11 @@ export const ShoppingItem = defineEntity({
     checked: p.boolean().default(false),
     checkedAt: p.datetime().nullable(),
     source: p.enum(ITEM_SOURCES),
-    /** Ids of the planned meals it's for. */
-    forMeals: p.json<string[]>().nullable(),
+    /**
+     * The planned meals it's for, and how much is each one's, so taking a
+     * meal off the plan takes its share off the list.
+     */
+    forMeals: p.json<MealShare[]>().nullable(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

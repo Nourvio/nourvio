@@ -1,20 +1,10 @@
-import { ShoppingBasket01Icon } from "@hugeicons/core-free-icons"
 import { createFileRoute } from "@tanstack/react-router"
-import { useTranslation } from "react-i18next"
 
-import { ComingSoon } from "@/components/layout/coming-soon"
+import { ListPage } from "@/features/list/list-page"
+import { listQuery } from "@/features/list/queries"
 
 export const Route = createFileRoute("/_app/list")({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.ensureQueryData(listQuery),
   component: ListPage,
 })
-
-function ListPage() {
-  const { t } = useTranslation()
-  return (
-    <ComingSoon
-      title={t("nav.list")}
-      description={t("comingSoon.list")}
-      icon={ShoppingBasket01Icon}
-    />
-  )
-}

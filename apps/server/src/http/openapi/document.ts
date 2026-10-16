@@ -32,6 +32,16 @@ const TAGS = [
       "The household's recipes, their tags and versions, and Recently deleted. Ingredients and steps are written as lines, as in the editor, and each ingredient line is read into its amount, unit, food and note.",
   },
   {
+    name: "Plan",
+    description:
+      "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone.",
+  },
+  {
+    name: "List",
+    description:
+      "The shopping list, by aisle: from the plan (added up, and following the plan when meals change), typed in, or every week. Changes say what things were before, for Undo.",
+  },
+  {
     name: "Settings",
     description:
       "Settings for the server (its admin only) and the household in use. A setting from an environment variable is locked, and a secret is never sent back: only whether it's set, and its last four characters.",

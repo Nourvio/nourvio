@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
 import { themesQuery } from "@/features/household/queries"
+import { AddFromPlanDialog } from "@/features/list/add-from-plan-dialog"
 import { SelectionBar, SelectionHeader } from "@/features/select/selection-bar"
 import {
   useSelection,
@@ -74,6 +75,7 @@ export function PlanPage({ week: asked }: { week?: string }) {
   const [adding, setAdding] = React.useState<Slot | null>(null)
   const [moving, setMoving] = React.useState(false)
   const [filling, setFilling] = React.useState(false)
+  const [listing, setListing] = React.useState(false)
   const [showPast, setShowPast] = React.useState(false)
 
   const thisWeek = week === clock.thisWeek
@@ -144,6 +146,11 @@ export function PlanPage({ week: asked }: { week?: string }) {
                   <DropdownMenuItem onClick={() => void actions.repeat(week)}>
                     {t("plan.repeat")}
                   </DropdownMenuItem>
+                  {fillable && (
+                    <DropdownMenuItem onClick={() => setListing(true)}>
+                      {t("plan.addToList")}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     variant="destructive"
@@ -258,6 +265,7 @@ export function PlanPage({ week: asked }: { week?: string }) {
           if (!open) setAdding(null)
         }}
       />
+      <AddFromPlanDialog open={listing} onOpenChange={setListing} week={week} />
       <FillWeekDialog
         open={filling}
         onOpenChange={setFilling}

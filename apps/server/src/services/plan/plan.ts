@@ -20,6 +20,7 @@ import {
   type PLAN_STATUSES,
 } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
+import { followPlan, shoppingFor } from "../list/meals.ts"
 import { photoUrls } from "../recipes/photos.ts"
 import {
   inHouseholdTransaction,
@@ -28,7 +29,8 @@ import {
 } from "../recipes/recipes.ts"
 
 // The week plan: meals on days, and the week's pool of meals for any day.
-// "Today" is always the household's, in its own time zone.
+// "Today" is always the household's, in its own time zone. The shopping
+// list follows it: changing a meal on the list changes the list too.
 
 export type PlanStatus = (typeof PLAN_STATUSES)[number]
 
@@ -394,7 +396,6 @@ async function change(
       // Something else: a new meal to shop for and cook, its side kept.
       entry.recipe = em.getReference(Recipe, recipe.id, { wrapped: true })
       entry.note = null
-      entry.listedAt = null
       setStatus(entry, "planned")
       entry.why = changes.why?.length ? changes.why : null
     } else if (!recipe) {
@@ -432,17 +433,28 @@ export async function updateEntry(
 ) {
   const entry = await findEntry(em, entryId)
   const made = madeBy(entry)
+  const was = shoppingFor(entry)
   await change(em, householdId, entry, changes)
   await em.flush()
   await remade(em, [...made, ...madeBy(entry)])
+  await followPlan(em, householdId, [
+    { entry, was, now: was ? shoppingFor(entry) : null },
+  ])
   return describeEntry(await findEntry(em.fork(), entry.id))
 }
 
-/** Takes a meal off the plan; says what it was, to put it back. */
-export async function removeEntry(em: EntityManager, entryId: string) {
+/** Takes a meal off the plan, and the list; says what it was, to put it back. */
+export async function removeEntry(
+  em: EntityManager,
+  householdId: string,
+  entryId: string
+) {
   const entry = await findEntry(em, entryId)
   const before = snapshotOf(entry)
   const made = madeBy(entry)
+  await followPlan(em, householdId, [
+    { entry, was: shoppingFor(entry), now: null },
+  ])
   em.remove(entry)
   await em.flush()
   await remade(em, made)
@@ -473,6 +485,14 @@ export async function bulkPlan(
     const entries = sortEntries(found.filter(shown))
     const before = entries.map(snapshotOf)
     const made = entries.flatMap(madeBy)
+    const was = new Map(entries.map((entry) => [entry, shoppingFor(entry)]))
+    if (action.action === "remove") {
+      await followPlan(
+        tx,
+        householdId,
+        entries.map((entry) => ({ entry, was: was.get(entry)!, now: null }))
+      )
+    }
     for (const entry of entries) {
       if (action.action === "remove") tx.remove(entry)
       else if (action.action === "move") {
@@ -488,6 +508,17 @@ export async function bulkPlan(
     await tx.flush()
     if (action.action !== "remove") made.push(...entries.flatMap(madeBy))
     await remade(tx, made)
+    if (action.action !== "remove") {
+      await followPlan(
+        tx,
+        householdId,
+        entries.map((entry) => ({
+          entry,
+          was: was.get(entry)!,
+          now: was.get(entry) ? shoppingFor(entry) : null,
+        }))
+      )
+    }
     return {
       entries:
         action.action === "remove"
@@ -507,7 +538,7 @@ function cookedWhen(snapshot: EntrySnapshot, entry: PlanEntry, now: Date) {
 
 /**
  * Puts meals back as they were: ones taken off come back with the same id,
- * ones changed go back to how they were.
+ * ones changed go back to how they were, and the list with them.
  */
 export async function restoreEntries(
   em: EntityManager,
@@ -531,12 +562,18 @@ export async function restoreEntries(
     )
     const restored: PlanEntry[] = []
     const made: string[] = []
+    const listing: {
+      entry: PlanEntry
+      was: string | null
+      now: string | null
+    }[] = []
     const now = new Date()
     for (const snapshot of snapshots) {
       if (!UUID.test(snapshot.id) || !isDay(snapshot.date)) continue
       const recipe = snapshot.recipe ? recipes.get(snapshot.recipe) : null
       if (snapshot.recipe && !recipe) continue
       let entry = await tx.findOne(PlanEntry, { id: snapshot.id })
+      const was = entry ? shoppingFor(entry) : null
       if (entry) made.push(...madeBy(entry))
       else {
         // An id another household has can't come back here.
@@ -570,10 +607,12 @@ export async function restoreEntries(
         cookedAt: cookedWhen(snapshot, entry, now),
       })
       made.push(...madeBy(entry))
+      listing.push({ entry, was, now: shoppingFor(entry) })
       restored.push(entry)
     }
     await tx.flush()
     await remade(tx, made)
+    await followPlan(tx, householdId, listing)
     return sortEntries(restored).map(describeEntry)
   })
 }
@@ -670,6 +709,11 @@ export async function clearRest(
       )
     ).filter(shown)
     const before = sortEntries(entries).map(snapshotOf)
+    await followPlan(
+      tx,
+      householdId,
+      entries.map((entry) => ({ entry, was: shoppingFor(entry), now: null }))
+    )
     tx.remove(entries)
     await tx.flush()
     return before

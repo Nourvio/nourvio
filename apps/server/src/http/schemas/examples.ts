@@ -29,6 +29,11 @@ export const IDS = {
   mealieGroup: id(25),
   otherMealieGroup: id(26),
   planEntry: id(27),
+  shoppingList: id(28),
+  listItems: [id(29), id(30), id(31)],
+  aisles: [id(32), id(33), id(34)],
+  everyWeek: id(35),
+  otherPlanEntry: id(36),
 }
 
 export const TIMES = {

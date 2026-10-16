@@ -505,6 +505,30 @@ export interface paths {
         patch: operations["updateMember"];
         trace?: never;
     };
+    "/api/households/current/on-hand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the household always has
+         * @description Left off lists made from the plan: salt, pepper, water and ice to start. Each covers its kinds, so salt is kosher and sea salt too. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["getOnHand"];
+        /**
+         * Change what the household always has
+         * @description Anyone in the household can. Saved tidied: lowercase, without repeats, and "salt and pepper" as salt and pepper. With an API key, it needs the `list: write` permission.
+         */
+        put: operations["setOnHand"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households/current/tastes": {
         parameters: {
             query?: never;
@@ -567,6 +591,202 @@ export interface paths {
          * @description Server admins only, as for starting any household. The body is the export's zip. A household is made with the export's name and details, you become its owner, and it becomes the one in use on this device; its recipes are imported in the background: follow the job at /households/current/jobs/{jobId}.
          */
         post: operations["importHousehold"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The shopping list
+         * @description Everything to buy, by aisle in a walk through the store, with what's checked off. Each item says how much, and which planned meals it's for. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["getList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clear the list
+         * @description Takes off what's checked, or everything. The answer says what was there, for Undo with /list/restore. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["clearList"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/every-week": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What's bought every week
+         * @description Bought whatever's planned (bananas, milk). Adding from the plan puts those not on the list on it. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["listEveryWeek"];
+        put?: never;
+        /**
+         * Buy something every week
+         * @description With an API key, it needs the `list: write` permission.
+         */
+        post: operations["addEveryWeekItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/every-week/{weeklyId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Stop buying something every week
+         * @description What's on the list now stays. With an API key, it needs the `list: write` permission.
+         */
+        delete: operations["removeEveryWeekItem"];
+        options?: never;
+        head?: never;
+        /**
+         * Change something bought every week
+         * @description With an API key, it needs the `list: write` permission.
+         */
+        patch: operations["updateEveryWeekItem"];
+        trace?: never;
+    };
+    "/api/list/from-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What adding from the plan would add
+         * @description Planned meals from one day to another that aren't on the list yet, and how many are: the rest of this week if no days are given. Meals with a recipe only; notes aren't shopped for. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["previewFromPlan"];
+        put?: never;
+        /**
+         * Add planned meals to the list
+         * @description The ingredients of planned meals from one day to another that aren't on the list yet: scaled to their servings, their sides' too, added up across meals and into what's there, leaving off what's always on hand. Every-week items not on the list come along. From then on the list follows the plan: taking a meal off, skipping it or changing it takes its share back off. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["addFromPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put something on the list
+         * @description As typed: "2 lb ground beef" is ground beef, 2 lb; "paper towels" is just that. It goes in the aisle the household last put the food in, else a first guess. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["addListItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/items/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change several things on the list at once
+         * @description Take them off, check them off or not, move them to an aisle (remembered for each food), or buy them every week: all or none. The answer says what they were before, for Undo with /list/restore. Ids not on the list are passed over. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["changeListItems"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/items/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Take something off the list
+         * @description The answer is what it was, for Undo with /list/restore. With an API key, it needs the `list: write` permission.
+         */
+        delete: operations["removeListItem"];
+        options?: never;
+        head?: never;
+        /**
+         * Change something on the list
+         * @description Check it off or not, rename it, change how much, or move it to another aisle, which the household remembers for the food. With an API key, it needs the `list: write` permission.
+         */
+        patch: operations["updateListItem"];
+        trace?: never;
+    };
+    "/api/list/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put things on the list back as they were
+         * @description Undo: items as taking them off or changing them said they were. One taken off comes back with its id. An aisle that's gone is left empty. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["restoreListItems"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2282,6 +2502,21 @@ export interface components {
         };
         /**
          * @example {
+         *       "items": [
+         *         "salt",
+         *         "pepper",
+         *         "water",
+         *         "ice",
+         *         "olive oil"
+         *       ]
+         *     }
+         */
+        OnHand: {
+            /** @description Left off lists made from the plan. Each covers its kinds: "salt" is kosher and sea salt too. */
+            items: string[];
+        };
+        /**
+         * @example {
          *       "avoid": [
          *         {
          *           "food": "peanuts",
@@ -2375,6 +2610,455 @@ export interface components {
         HouseholdImport: {
             household: components["schemas"]["Household"];
             job: components["schemas"]["Job"];
+        };
+        /**
+         * @example {
+         *       "list": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *         "name": "Shopping list"
+         *       },
+         *       "aisles": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000020",
+         *           "name": "Produce",
+         *           "position": 0
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "name": "Meat & seafood",
+         *           "position": 1
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000022",
+         *           "name": "Other",
+         *           "position": 2
+         *         }
+         *       ],
+         *       "items": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001e",
+         *           "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *           "name": "lemons",
+         *           "amount": "2",
+         *           "quantity": 2,
+         *           "unit": null,
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000020",
+         *           "checked": false,
+         *           "source": "plan",
+         *           "meals": [
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "name": "Lemon Chicken"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *           "name": "chicken thighs",
+         *           "amount": "3 lb",
+         *           "quantity": 3,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "checked": false,
+         *           "source": "plan",
+         *           "meals": [
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "name": "Lemon Chicken"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        ShoppingList: {
+            list: {
+                id: string;
+                name: string;
+            };
+            /** @description In a walk through the store, the household's country's to start. */
+            aisles: components["schemas"]["Aisle"][];
+            /** @description By aisle, in the aisles' order, oldest first in each. */
+            items: components["schemas"]["ListItem"][];
+        };
+        Aisle: {
+            id: string;
+            name: string;
+            position: number;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *       "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *       "name": "chicken thighs",
+         *       "amount": "3 lb",
+         *       "quantity": 3,
+         *       "unit": "pound",
+         *       "amountText": null,
+         *       "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *       "checked": false,
+         *       "source": "plan",
+         *       "meals": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "name": "Lemon Chicken"
+         *         }
+         *       ],
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
+        ListItem: {
+            id: string;
+            /** @description The list it's on. */
+            list: string;
+            name: string;
+            /** @description How much, as it shows: "1 ½ cups", "half a bag", or empty. */
+            amount: string;
+            quantity: number | null;
+            /** @description A unit id, like "cup" or "pound"; null for a count. */
+            unit: string | null;
+            /** @description An amount in words ("half a bag"), when it isn't a number. */
+            amountText: string | null;
+            /** @description Its aisle's id. */
+            aisle: string | null;
+            checked: boolean;
+            source: components["schemas"]["ListItemSource"];
+            /** @description The planned meals it's for. */
+            meals: {
+                id: string;
+                name: string;
+            }[];
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @description How it got on the list: from the plan, typed in, every week, a usual buy, or the assistant.
+         * @enum {string}
+         */
+        ListItemSource: "plan" | "typed" | "every-week" | "usual" | "assistant";
+        /**
+         * @description What the items were before, for Undo with /list/restore.
+         * @example {
+         *       "before": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "name": "chicken thighs",
+         *           "foodKey": "chicken thigh",
+         *           "quantity": 3,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "checked": false,
+         *           "source": "plan",
+         *           "forMeals": [
+         *             {
+         *               "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "quantity": 3,
+         *               "unit": "pound"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        ListBefore: {
+            before: components["schemas"]["ListItemSnapshot"][];
+        };
+        /**
+         * @description An item as it was, to put it back (Undo).
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *       "name": "chicken thighs",
+         *       "foodKey": "chicken thigh",
+         *       "quantity": 3,
+         *       "unit": "pound",
+         *       "amountText": null,
+         *       "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *       "checked": false,
+         *       "source": "plan",
+         *       "forMeals": [
+         *         {
+         *           "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "quantity": 3,
+         *           "unit": "pound"
+         *         }
+         *       ],
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
+        ListItemSnapshot: {
+            id: string;
+            name: string;
+            foodKey: string | null;
+            quantity: number | null;
+            unit: string | null;
+            amountText: string | null;
+            aisle: string | null;
+            checked: boolean;
+            source: components["schemas"]["ListItemSource"];
+            forMeals: {
+                meal: string;
+                quantity: number | null;
+                unit: string | null;
+            }[] | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /**
+         * @example {
+         *       "which": "checked"
+         *     }
+         */
+        ClearList: {
+            /**
+             * @description What's checked off, or everything.
+             * @enum {string}
+             */
+            which: "checked" | "all";
+        };
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000023",
+         *           "name": "Bananas",
+         *           "amount": "1 bunch",
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000020"
+         *         }
+         *       ]
+         *     }
+         */
+        EveryWeek: {
+            items: components["schemas"]["EveryWeekItem"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000023",
+         *       "name": "Bananas",
+         *       "amount": "1 bunch",
+         *       "aisle": "0199e8b0-5a10-7a01-8b00-000000000020"
+         *     }
+         */
+        EveryWeekItem: {
+            id: string;
+            name: string;
+            amount: string | null;
+            aisle: string | null;
+        };
+        /**
+         * @example {
+         *       "name": "Bananas",
+         *       "amount": "1 bunch"
+         *     }
+         */
+        NewEveryWeekItem: {
+            name: string;
+            amount?: string | null;
+        };
+        /**
+         * @example {
+         *       "amount": "2 bunches"
+         *     }
+         */
+        EveryWeekChanges: {
+            name?: string;
+            amount?: string | null;
+        };
+        /**
+         * @example {
+         *       "meals": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "date": "2026-10-15",
+         *           "anyDay": false,
+         *           "meal": "dinner",
+         *           "name": "Lemon Chicken"
+         *         }
+         *       ],
+         *       "listed": 2
+         *     }
+         */
+        FromPlanPreview: {
+            /** @description Planned meals not on the list yet. */
+            meals: {
+                id: string;
+                /** @example 2026-10-15 */
+                date: string;
+                anyDay: boolean;
+                /** @enum {string} */
+                meal: "breakfast" | "lunch" | "dinner" | "snack";
+                name: string;
+            }[];
+            /** @description How many are on the list already. */
+            listed: number;
+        };
+        /**
+         * @example {
+         *       "meals": 3,
+         *       "added": 14,
+         *       "merged": 2,
+         *       "everyWeek": 2,
+         *       "onHand": [
+         *         "salt",
+         *         "black pepper"
+         *       ]
+         *     }
+         */
+        FromPlanResult: {
+            /** @description Meals added. */
+            meals: number;
+            /** @description New lines on the list. */
+            added: number;
+            /** @description Lines added to ones already there. */
+            merged: number;
+            /** @description Every-week items added. */
+            everyWeek: number;
+            /** @description Left off: always on hand. */
+            onHand: string[];
+        };
+        /**
+         * @example {
+         *       "from": "2026-10-12",
+         *       "to": "2026-10-18"
+         *     }
+         */
+        FromPlan: {
+            /** @example 2026-10-15 */
+            from: string;
+            /** @example 2026-10-15 */
+            to: string;
+        };
+        /**
+         * @example {
+         *       "text": "2 lb ground beef"
+         *     }
+         */
+        NewListItem: {
+            /** @description "2 lb ground beef", or just "paper towels". */
+            text: string;
+            /** @description An aisle's id; the food's usual aisle when left out. */
+            aisle?: string | null;
+        };
+        /**
+         * @example {
+         *       "changed": 1,
+         *       "before": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "name": "chicken thighs",
+         *           "foodKey": "chicken thigh",
+         *           "quantity": 3,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "checked": false,
+         *           "source": "plan",
+         *           "forMeals": [
+         *             {
+         *               "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "quantity": 3,
+         *               "unit": "pound"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        ListBulkResult: {
+            changed: number;
+            before: components["schemas"]["ListItemSnapshot"][];
+        };
+        /**
+         * @example {
+         *       "ids": [
+         *         "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *         "0199e8b0-5a10-7a01-8b00-00000000001e"
+         *       ],
+         *       "action": "check"
+         *     }
+         */
+        ListBulk: {
+            ids: string[];
+            /** @enum {string} */
+            action: "remove" | "check" | "uncheck" | "aisle" | "every-week";
+            /** @description For aisle: the aisle's id, or null for none. */
+            aisle?: string | null;
+        };
+        /**
+         * @example {
+         *       "checked": true
+         *     }
+         */
+        ListItemChanges: {
+            name?: string;
+            /** @description "2 lb", "half a bag", or empty for none. */
+            amount?: string;
+            checked?: boolean;
+            /** @description An aisle's id, or null. The household's remembered for the food: next time it goes there. */
+            aisle?: string | null;
+        };
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "list": "0199e8b0-5a10-7a01-8b00-00000000001c",
+         *           "name": "chicken thighs",
+         *           "amount": "3 lb",
+         *           "quantity": 3,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "checked": false,
+         *           "source": "plan",
+         *           "meals": [
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "name": "Lemon Chicken"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        ListItems: {
+            items: components["schemas"]["ListItem"][];
+        };
+        /**
+         * @example {
+         *       "items": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "name": "chicken thighs",
+         *           "foodKey": "chicken thigh",
+         *           "quantity": 3,
+         *           "unit": "pound",
+         *           "amountText": null,
+         *           "aisle": "0199e8b0-5a10-7a01-8b00-000000000021",
+         *           "checked": false,
+         *           "source": "plan",
+         *           "forMeals": [
+         *             {
+         *               "meal": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *               "quantity": 3,
+         *               "unit": "pound"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        ListRestore: {
+            items: components["schemas"]["ListItemSnapshot"][];
         };
         /**
          * @example {
@@ -5397,6 +6081,86 @@ export interface operations {
             };
         };
     };
+    getOnHand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What's always on hand. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnHand"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setOnHand: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OnHand"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnHand"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     getTastes: {
         parameters: {
             query?: never;
@@ -5608,6 +6372,613 @@ export interface operations {
             };
             /** @description The file is too big. */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The list. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShoppingList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    clearList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClearList"];
+            };
+        };
+        responses: {
+            /** @description Cleared. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListBefore"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listEveryWeek: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The every-week items. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EveryWeek"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addEveryWeekItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewEveryWeekItem"];
+            };
+        };
+        responses: {
+            /** @description Bought every week now. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EveryWeekItem"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeEveryWeekItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                weeklyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Not bought every week any more. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not bought every week. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateEveryWeekItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                weeklyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EveryWeekChanges"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EveryWeekItem"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not bought every week. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    previewFromPlan: {
+        parameters: {
+            query?: {
+                from?: string;
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The meals. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FromPlanPreview"];
+                };
+            };
+            /** @description Days out of order, or too many at once. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addFromPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FromPlan"];
+            };
+        };
+        responses: {
+            /** @description Added. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FromPlanResult"];
+                };
+            };
+            /** @description Days out of order, or too many at once. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addListItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewListItem"];
+            };
+        };
+        responses: {
+            /** @description On the list. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListItem"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such aisle. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    changeListItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListBulk"];
+            };
+        };
+        responses: {
+            /** @description Done. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListBulkResult"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such aisle. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removeListItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Taken off. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListItemSnapshot"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not on the list. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    updateListItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListItemChanges"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListItem"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not on the list, or no such aisle. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    restoreListItems: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ListRestore"];
+            };
+        };
+        responses: {
+            /** @description Back as they were. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListItems"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

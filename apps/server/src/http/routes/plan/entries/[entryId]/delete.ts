@@ -32,7 +32,10 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { em } = inHousehold(c)
-    return c.json(await removeEntry(em, c.req.valid("param").entryId), 200)
+    const { em, householdId } = inHousehold(c)
+    return c.json(
+      await removeEntry(em, householdId, c.req.valid("param").entryId),
+      200
+    )
   })
 }

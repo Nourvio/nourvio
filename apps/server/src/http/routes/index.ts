@@ -4,6 +4,7 @@ import authRoutes from "./auth/index.ts"
 import capabilitiesRoutes from "./capabilities/index.ts"
 import healthRoutes from "./health/index.ts"
 import householdsRoutes from "./households/index.ts"
+import listRoutes from "./list/index.ts"
 import planRoutes from "./plan/index.ts"
 import recipesRoutes from "./recipes/index.ts"
 import settingsRoutes from "./settings/index.ts"
@@ -20,6 +21,7 @@ export default (router: Router, deps: AppDeps) => {
   capabilitiesRoutes(router, deps)
   healthRoutes(router, deps)
   householdsRoutes(router, deps)
+  listRoutes(router, deps)
   planRoutes(router, deps)
   recipesRoutes(router, deps)
   settingsRoutes(router, deps)
