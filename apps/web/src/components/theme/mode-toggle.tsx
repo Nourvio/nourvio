@@ -2,15 +2,12 @@ import { ComputerIcon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslation } from "react-i18next"
 
-import { Button } from "@/components/ui/button"
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
@@ -22,40 +19,34 @@ const MODE_OPTIONS = [
   { value: "system", labelKey: "theme.system", icon: ComputerIcon },
 ] as const
 
-/** A compact icon button with a menu, for the top bar. */
-export function ModeToggle() {
+/** Light, dark or system, as a submenu of the account menu. */
+export function ModeSubmenu() {
   const { t } = useTranslation()
   const { mode, resolvedMode, setMode } = useTheme()
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="ghost" size="icon" aria-label={t("theme.change")} />
-        }
-      >
+    <DropdownMenuSub>
+      <DropdownMenuSubTrigger>
         <HugeiconsIcon
           icon={resolvedMode === "dark" ? Moon02Icon : Sun03Icon}
           strokeWidth={2}
         />
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuGroup>
-          <DropdownMenuLabel>{t("theme.appearance")}</DropdownMenuLabel>
-          <DropdownMenuRadioGroup
-            value={mode}
-            onValueChange={(value) => setMode(value as Mode)}
-          >
-            {MODE_OPTIONS.map((option) => (
-              <DropdownMenuRadioItem key={option.value} value={option.value}>
-                <HugeiconsIcon icon={option.icon} strokeWidth={2} />
-                {t(option.labelKey)}
-              </DropdownMenuRadioItem>
-            ))}
-          </DropdownMenuRadioGroup>
-        </DropdownMenuGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        {t("theme.appearance")}
+      </DropdownMenuSubTrigger>
+      <DropdownMenuSubContent>
+        <DropdownMenuRadioGroup
+          value={mode}
+          onValueChange={(value) => setMode(value as Mode)}
+        >
+          {MODE_OPTIONS.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              <HugeiconsIcon icon={option.icon} strokeWidth={2} />
+              {t(option.labelKey)}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuSubContent>
+    </DropdownMenuSub>
   )
 }
 

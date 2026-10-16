@@ -1,4 +1,3 @@
-import { Settings01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link, useRouterState } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/sidebar"
 
 import { isSectionActive, PRIMARY_NAV } from "./nav-items"
+import { SidebarUserMenu } from "./user-menu"
 
 export function AppSidebar() {
   const { t } = useTranslation()
@@ -31,9 +31,10 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton
               size="lg"
+              className="group-data-[collapsible=icon]:justify-center"
               render={<Link to="/" aria-label={t("app.home")} />}
             >
-              <Logo />
+              <Logo className="group-data-[collapsible=icon]:[&>span]:hidden" />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -61,18 +62,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              isActive={pathname.startsWith("/settings")}
-              tooltip={t("nav.settings")}
-              render={<Link to="/settings" />}
-            >
-              <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
-              <span>{t("nav.settings")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <SidebarUserMenu />
       </SidebarFooter>
     </Sidebar>
   )

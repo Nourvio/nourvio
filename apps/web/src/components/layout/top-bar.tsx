@@ -2,7 +2,6 @@ import { Link } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 
 import { Logo } from "@/components/brand/logo"
-import { ModeToggle } from "@/components/theme/mode-toggle"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
 import { UserMenu } from "./user-menu"
@@ -16,8 +15,8 @@ export function TopBar() {
         <Link to="/" className="md:hidden" aria-label={t("app.home")}>
           <Logo />
         </Link>
-        <div className="ml-auto flex items-center gap-1">
-          <ModeToggle />
+        {/* iPad and desktop have the account menu at the foot of the sidebar. */}
+        <div className="ml-auto md:hidden">
           <UserMenu />
         </div>
       </div>
