@@ -2,9 +2,7 @@ import { BlockList, isIP } from "node:net"
 import { getConnInfo } from "@hono/node-server/conninfo"
 import type { MiddlewareHandler } from "hono"
 import type { AppEnv } from "../../core/context.ts"
-
-/** Set by Merran, never believed from the client. Better Auth reads it. */
-export const CLIENT_ADDRESS_HEADER = "x-merran-client-ip"
+import { CLIENT_ADDRESS_HEADER } from "../../services/auth/auth.ts"
 
 /** "127.0.0.1, 172.16.0.0/12" as a list to check addresses against. */
 export function trustedProxies(list: string[]): BlockList {

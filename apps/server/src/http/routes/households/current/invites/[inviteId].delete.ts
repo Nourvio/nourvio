@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../../core/context.ts"
 import { InviteLink } from "../../../../../database/entities/index.ts"
-import { ApiError } from "../../../../errors.ts"
+import { AppError } from "../../../../../core/errors.ts"
 import { asHouseholdAdmin } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import { InviteParam } from "../../../../schemas/households.ts"
@@ -34,7 +34,11 @@ export default (router: Router, _deps: AppDeps) => {
       usedAt: null,
     })
     if (removed === 0) {
-      throw new ApiError(404, "invite_not_found", "There's no such invite.")
+      throw new AppError(
+        "not_found",
+        "invite_not_found",
+        "There's no such invite."
+      )
     }
     return c.body(null, 204)
   })

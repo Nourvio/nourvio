@@ -1,6 +1,6 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import type { ApiKeyPermissions } from "../../database/entities/index.ts"
-import { ApiError } from "../../http/errors.ts"
+import { AppError } from "../../core/errors.ts"
 import { resolveActiveHousehold, type ActiveHousehold } from "../households.ts"
 import { API_KEY_PREFIX, verifyApiKey } from "./api-keys.ts"
 import type { Auth } from "./auth.ts"
@@ -71,8 +71,8 @@ async function withApiKey(
     ? await verifyApiKey(em, key)
     : null
   if (!verified) {
-    throw new ApiError(
-      401,
+    throw new AppError(
+      "unauthorized",
       "invalid_api_key",
       "That API key doesn't work. It may have expired or been revoked, or its person left the household."
     )

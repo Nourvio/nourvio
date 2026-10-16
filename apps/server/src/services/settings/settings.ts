@@ -15,7 +15,7 @@ import {
   User,
 } from "../../database/entities/index.ts"
 import { forHousehold, HOUSEHOLD_FILTER } from "../../database/scope.ts"
-import { ApiError } from "../../http/errors.ts"
+import { AppError } from "../../core/errors.ts"
 import {
   SecretBox,
   UnreadableSecretError,
@@ -250,8 +250,8 @@ export class Settings {
       }
     }
     if (Object.keys(fields).length > 0) {
-      throw new ApiError(
-        400,
+      throw new AppError(
+        "invalid",
         "invalid_settings",
         "Some settings need another look.",
         fields

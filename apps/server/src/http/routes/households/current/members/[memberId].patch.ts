@@ -5,7 +5,7 @@ import {
   assertOwnerRemains,
   findMember,
 } from "../../../../../services/households.ts"
-import { ApiError } from "../../../../errors.ts"
+import { AppError } from "../../../../../core/errors.ts"
 import { asHouseholdAdmin } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import {
@@ -53,8 +53,8 @@ export default (router: Router, _deps: AppDeps) => {
     const { role } = c.req.valid("json")
     const member = await findMember(em, c.req.valid("param").memberId)
     if ((role === "owner" || member.role === "owner") && myRole !== "owner") {
-      throw new ApiError(
-        403,
+      throw new AppError(
+        "forbidden",
         "not_owner",
         "Only an owner can make or unmake owners."
       )

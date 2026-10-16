@@ -10,7 +10,7 @@ import type { Auth } from "../../services/auth/auth.ts"
 import { KeyRateLimit } from "../../services/auth/key-rate-limit.ts"
 import { authenticate } from "../../services/auth/session.ts"
 import { isAdminRole } from "../../services/households.ts"
-import { ApiError } from "../errors.ts"
+import { AppError } from "../../core/errors.ts"
 
 /**
  * Reads who sent each request (the auth service does the checking) and puts
@@ -27,8 +27,8 @@ export function authenticateRequests(
       const hit = limit.hit(found.apiKey.id)
       if (!hit.ok) {
         c.header("Retry-After", String(hit.retryAfter))
-        throw new ApiError(
-          429,
+        throw new AppError(
+          "rate_limited",
           "rate_limited",
           `This API key has made too many requests. Try again in ${hit.retryAfter} seconds.`
         )
@@ -50,14 +50,14 @@ export function authenticateRequests(
 export function signedIn(c: Context<AppEnv>) {
   const { user, session, apiKey } = c.var
   if (apiKey) {
-    throw new ApiError(
-      403,
+    throw new AppError(
+      "forbidden",
       "api_key_not_allowed",
       "API keys can't do this. Sign in instead."
     )
   }
   if (!user || !session) {
-    throw new ApiError(401, "signed_out", "Sign in first.")
+    throw new AppError("unauthorized", "signed_out", "Sign in first.")
   }
   return { user, session }
 }
@@ -66,8 +66,8 @@ export function signedIn(c: Context<AppEnv>) {
 export function serverAdmin(c: Context<AppEnv>) {
   const signed = signedIn(c)
   if (signed.user.role !== "admin") {
-    throw new ApiError(
-      403,
+    throw new AppError(
+      "forbidden",
       "not_server_admin",
       "Only the server admin can do that."
     )
@@ -87,15 +87,15 @@ export function inHousehold(
   const { user, apiKey } = c.var
   if (apiKey) {
     if (!permission) {
-      throw new ApiError(
-        403,
+      throw new AppError(
+        "forbidden",
         "api_key_not_allowed",
         "API keys can't do this. Sign in instead."
       )
     }
     if (!allows(apiKey.permissions, permission.area, permission.access)) {
-      throw new ApiError(
-        403,
+      throw new AppError(
+        "forbidden",
         "missing_permission",
         `This API key can't ${permission.access} ${permission.area}.`
       )
@@ -106,7 +106,11 @@ export function inHousehold(
 
   const household = c.var.household
   if (!user || !household) {
-    throw new ApiError(403, "no_household", "You're not in a household.")
+    throw new AppError(
+      "forbidden",
+      "no_household",
+      "You're not in a household."
+    )
   }
   return {
     householdId: household.id,
@@ -121,8 +125,8 @@ export function asHouseholdAdmin(c: Context<AppEnv>) {
   signedIn(c)
   const household = inHousehold(c)
   if (!isAdminRole(household.role)) {
-    throw new ApiError(
-      403,
+    throw new AppError(
+      "forbidden",
       "not_household_admin",
       "Only the household's admins can do that."
     )

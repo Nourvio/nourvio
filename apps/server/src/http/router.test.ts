@@ -1,7 +1,8 @@
 import { createRoute, z } from "@hono/zod-openapi"
 import { pino } from "pino"
 import { describe, expect, test } from "vitest"
-import { ApiError, handleError } from "./errors.ts"
+import { AppError } from "../core/errors.ts"
+import { handleError } from "./errors.ts"
 import { requestLogger } from "./middleware/request-logger.ts"
 import { createRouter } from "./router.ts"
 
@@ -28,7 +29,11 @@ function testRouter() {
     c.json({ count: c.req.valid("query").count }, 200)
   )
   router.get("/refused", () => {
-    throw new ApiError(409, "already_there", "That's already in the library.")
+    throw new AppError(
+      "conflict",
+      "already_there",
+      "That's already in the library."
+    )
   })
   router.get("/broken", () => {
     throw new Error("a bug, with details people shouldn't see")
@@ -58,7 +63,7 @@ describe("routers", () => {
     })
   })
 
-  test("an ApiError keeps its status, code and message", async () => {
+  test("an AppError keeps its status, code and message", async () => {
     const res = await testRouter().request("/refused")
 
     expect(res.status).toBe(409)

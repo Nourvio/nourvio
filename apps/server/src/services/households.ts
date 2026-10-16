@@ -8,7 +8,7 @@ import {
   type HOUSEHOLD_ROLES,
 } from "../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../database/scope.ts"
-import { ApiError } from "../http/errors.ts"
+import { AppError } from "../core/errors.ts"
 
 export type HouseholdRole = (typeof HOUSEHOLD_ROLES)[number]
 
@@ -108,8 +108,8 @@ export async function findMember(em: EntityManager, memberId: string) {
     populate: ["user"],
   })
   if (!member) {
-    throw new ApiError(
-      404,
+    throw new AppError(
+      "not_found",
       "member_not_found",
       "That person isn't in the household."
     )
@@ -129,8 +129,8 @@ export async function assertOwnerRemains(
   if (member.role !== "owner" || newRole === "owner") return
   const owners = await em.count(HouseholdMember, { role: "owner" })
   if (owners <= 1) {
-    throw new ApiError(
-      409,
+    throw new AppError(
+      "conflict",
       "last_owner",
       "Make someone else an owner first. A household always needs one."
     )

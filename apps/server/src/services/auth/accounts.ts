@@ -1,6 +1,6 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { User } from "../../database/entities/index.ts"
-import { ApiError } from "../../http/errors.ts"
+import { AppError } from "../../core/errors.ts"
 import type { Auth } from "./auth.ts"
 
 export type NewAccount = {
@@ -27,8 +27,8 @@ export async function createAccount(
     $or: [{ email }, { username }],
   })
   if (taken) {
-    throw new ApiError(
-      409,
+    throw new AppError(
+      "conflict",
       "account_exists",
       taken.email === email
         ? "There's already an account with that email."
@@ -74,8 +74,8 @@ export async function signInCookies(
     asResponse: true,
   })
   if (!res.ok) {
-    throw new ApiError(
-      500,
+    throw new AppError(
+      "internal",
       "internal",
       "The account was made, but signing in failed."
     )

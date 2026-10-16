@@ -4,10 +4,15 @@ import { admin, openAPI, organization, username } from "better-auth/plugins"
 import { v7 as uuidv7 } from "uuid"
 import type { Config } from "../../core/config.ts"
 import type { Database } from "../../database/orm.ts"
-import { CLIENT_ADDRESS_HEADER } from "../../http/middleware/client-address.ts"
 import { membershipsOf } from "../households.ts"
 
 export const AUTH_BASE = "/api/auth"
+
+/**
+ * Where Better Auth finds the client's address. Set by Merran's own
+ * middleware, never believed from the client.
+ */
+export const CLIENT_ADDRESS_HEADER = "x-merran-client-ip"
 
 /** Sessions last 90 days from their last use, so the kitchen tablet stays signed in. */
 const SESSION_DAYS = 90

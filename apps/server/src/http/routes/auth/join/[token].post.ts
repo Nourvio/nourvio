@@ -9,7 +9,7 @@ import {
   acceptInvite,
   findUsableInvite,
 } from "../../../../services/auth/invites.ts"
-import { ApiError } from "../../../errors.ts"
+import { AppError } from "../../../../core/errors.ts"
 import type { Router } from "../../../router.ts"
 import {
   describeMe,
@@ -68,8 +68,8 @@ export default (router: Router, { auth }: AppDeps) => {
     // Already checked against NewAccountSchema when it was sent.
     const account = (c.req.valid("json") as { account?: NewAccount })?.account
     if (!account) {
-      throw new ApiError(
-        400,
+      throw new AppError(
+        "invalid",
         "account_needed",
         "Sign in, or make an account to join."
       )

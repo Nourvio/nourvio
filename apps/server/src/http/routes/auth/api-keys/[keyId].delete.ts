@@ -1,7 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
 import { revokeApiKey } from "../../../../services/auth/api-keys.ts"
-import { ApiError } from "../../../errors.ts"
+import { AppError } from "../../../../core/errors.ts"
 import { signedIn } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import { ApiKeyParam } from "../../../schemas/api-keys.ts"
@@ -35,7 +35,11 @@ export default (router: Router, _deps: AppDeps) => {
       c.req.valid("param").keyId
     )
     if (!revoked) {
-      throw new ApiError(404, "api_key_not_found", "You have no such key.")
+      throw new AppError(
+        "not_found",
+        "api_key_not_found",
+        "You have no such key."
+      )
     }
     return c.body(null, 204)
   })

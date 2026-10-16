@@ -6,7 +6,7 @@ import {
   type INVITE_ROLES,
 } from "../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
-import { ApiError } from "../../http/errors.ts"
+import { AppError } from "../../core/errors.ts"
 
 const INVITE_DAYS = 7
 
@@ -51,17 +51,21 @@ export async function findUsableInvite(em: EntityManager, token: string) {
     { ...ACROSS_HOUSEHOLDS, populate: ["household"] }
   )
   if (!invite) {
-    throw new ApiError(
-      404,
+    throw new AppError(
+      "not_found",
       "invite_not_found",
       "That invite link doesn't work."
     )
   }
   if (invite.usedAt) {
-    throw new ApiError(410, "invite_used", "That invite link has been used.")
+    throw new AppError("gone", "invite_used", "That invite link has been used.")
   }
   if (invite.expiresAt < new Date()) {
-    throw new ApiError(410, "invite_expired", "That invite link has expired.")
+    throw new AppError(
+      "gone",
+      "invite_expired",
+      "That invite link has expired."
+    )
   }
   return invite
 }
@@ -84,7 +88,11 @@ export async function acceptInvite(
       ACROSS_HOUSEHOLDS
     )
     if (claimed === 0) {
-      throw new ApiError(410, "invite_used", "That invite link has been used.")
+      throw new AppError(
+        "gone",
+        "invite_used",
+        "That invite link has been used."
+      )
     }
     const already = await tx.count(
       HouseholdMember,
@@ -92,8 +100,8 @@ export async function acceptInvite(
       ACROSS_HOUSEHOLDS
     )
     if (already > 0) {
-      throw new ApiError(
-        409,
+      throw new AppError(
+        "conflict",
         "already_member",
         "You're already in this household."
       )

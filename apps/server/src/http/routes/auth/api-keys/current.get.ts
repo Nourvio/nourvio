@@ -2,7 +2,7 @@ import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
 import { ApiKey } from "../../../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../../../database/scope.ts"
-import { ApiError } from "../../../errors.ts"
+import { AppError } from "../../../../core/errors.ts"
 import type { Router } from "../../../router.ts"
 import { ApiKeySchema, describeApiKey } from "../../../schemas/api-keys.ts"
 import {
@@ -29,8 +29,8 @@ const route = createRoute({
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
     if (!c.var.apiKey) {
-      throw new ApiError(
-        400,
+      throw new AppError(
+        "invalid",
         "api_key_needed",
         "Send an API key, as Authorization: Bearer mrn_…, to check it."
       )

@@ -4,6 +4,7 @@ import { HTTPException } from "hono/http-exception"
 import type { ContentfulStatusCode } from "hono/utils/http-status"
 import type { ZodError } from "zod"
 import type { AppEnv } from "../core/context.ts"
+import { AppError, type AppErrorKind } from "../core/errors.ts"
 import { reportError } from "../modules/error-tracking/reporter.ts"
 
 /** The one shape every error response has. */
@@ -30,27 +31,16 @@ export function errorBody(
   return { error: { code, message, ...(fields ? { fields } : {}) } }
 }
 
-/**
- * Throw this from a route or a service. The message is shown to people, so
- * it must be safe and plain. The code is stable, for programs to check.
- */
-export class ApiError extends Error {
-  readonly status: ContentfulStatusCode
-  readonly code: string
-  readonly fields: Record<string, string> | undefined
-
-  constructor(
-    status: ContentfulStatusCode,
-    code: string,
-    message: string,
-    fields?: Record<string, string>
-  ) {
-    super(message)
-    this.name = "ApiError"
-    this.status = status
-    this.code = code
-    this.fields = fields
-  }
+/** The status each kind of AppError is answered with. */
+const STATUSES: Record<AppErrorKind, ContentfulStatusCode> = {
+  invalid: 400,
+  unauthorized: 401,
+  forbidden: 403,
+  not_found: 404,
+  conflict: 409,
+  gone: 410,
+  rate_limited: 429,
+  internal: 500,
 }
 
 /** The first problem for each field, keyed by its path ("steps.2.text"). */
@@ -75,8 +65,11 @@ const CODES: Partial<Record<number, string>> = {
 }
 
 export const handleError: ErrorHandler<AppEnv> = (err, c) => {
-  if (err instanceof ApiError) {
-    return c.json(errorBody(err.code, err.message, err.fields), err.status)
+  if (err instanceof AppError) {
+    return c.json(
+      errorBody(err.code, err.message, err.fields),
+      STATUSES[err.kind]
+    )
   }
   if (err instanceof HTTPException) {
     return c.json(

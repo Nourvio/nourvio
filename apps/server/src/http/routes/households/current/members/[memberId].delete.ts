@@ -6,7 +6,7 @@ import {
   findMember,
   isAdminRole,
 } from "../../../../../services/households.ts"
-import { ApiError } from "../../../../errors.ts"
+import { AppError } from "../../../../../core/errors.ts"
 import { inHousehold } from "../../../../middleware/auth.ts"
 import type { Router } from "../../../../router.ts"
 import { MemberParam } from "../../../../schemas/households.ts"
@@ -40,15 +40,15 @@ export default (router: Router, _deps: AppDeps) => {
     const leaving = member.user.id === userId
     if (!leaving) {
       if (!isAdminRole(myRole)) {
-        throw new ApiError(
-          403,
+        throw new AppError(
+          "forbidden",
           "not_household_admin",
           "Only the household's admins can do that."
         )
       }
       if (member.role === "owner" && myRole !== "owner") {
-        throw new ApiError(
-          403,
+        throw new AppError(
+          "forbidden",
           "not_owner",
           "Only an owner can remove an owner."
         )
