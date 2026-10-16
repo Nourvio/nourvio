@@ -769,6 +769,27 @@
               "type": "string"
             }
           },
+          "photo": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "full": {
+                "type": "string",
+                "description": "For the recipe page."
+              },
+              "card": {
+                "type": "string",
+                "description": "Cropped, for recipe cards."
+              }
+            },
+            "required": [
+              "full",
+              "card"
+            ],
+            "description": "Where its photo is, in each size, or null. The links change with the photo, so they can be kept."
+          },
           "lastMadeAt": {
             "type": [
               "string",
@@ -794,6 +815,7 @@
           "totalMinutes",
           "rating",
           "tags",
+          "photo",
           "lastMadeAt",
           "createdAt",
           "updatedAt"
@@ -1108,6 +1130,22 @@
           }
         ]
       },
+      "ImportResult": {
+        "type": "object",
+        "properties": {
+          "recipe": {
+            "$ref": "#/components/schemas/Recipe"
+          },
+          "duplicate": {
+            "type": "boolean",
+            "description": "True when the link was imported before: this is that recipe, unchanged."
+          }
+        },
+        "required": [
+          "recipe",
+          "duplicate"
+        ]
+      },
       "Tag": {
         "type": "object",
         "properties": {
@@ -1140,6 +1178,23 @@
         },
         "required": [
           "name"
+        ]
+      },
+      "RecipeRatingInput": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 5,
+            "description": "From 1 to 5 stars, or null to clear it."
+          }
+        },
+        "required": [
+          "rating"
         ]
       },
       "RecipeVersion": {
@@ -3031,6 +3086,119 @@
         }
       }
     },
+    "/api/recipes/import": {
+      "post": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Add a recipe from a link",
+        "description": "Reads the recipe data most recipe sites put in their pages, and its photo. A link the household imported before gives back that recipe, unless `force` is set. Pages without recipe data, and video links, can't be imported yet. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "url": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 2000
+                  },
+                  "force": {
+                    "type": "boolean",
+                    "description": "Import it again even if the household has it."
+                  }
+                },
+                "required": [
+                  "url"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Already in the library.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a link Merran can fetch.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The page has no recipe data, or it's a video.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The site couldn't be reached, or turned Merran away.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes/tags": {
       "get": {
         "tags": [
@@ -3416,6 +3584,365 @@
         "responses": {
           "204": {
             "description": "Moved to Recently deleted."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/photo": {
+      "get": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "A recipe's photo",
+        "description": "As WebP: `full` for the recipe page, or `card`, cropped for recipe cards. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "full",
+                "card"
+              ],
+              "default": "full"
+            },
+            "required": false,
+            "name": "size",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "description": "Which photo: the links in `photo` say."
+            },
+            "required": false,
+            "description": "Which photo: the links in `photo` say.",
+            "name": "v",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photo.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe, or it has no photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Give a recipe a photo",
+        "description": "Send the photo itself as the body, as a JPEG, PNG, WebP or GIF of up to 15 MB. It replaces any photo the recipe had. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "image/*": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The recipe, with its new photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "That isn't a photo Merran can read.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The photo is over 15 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Take a recipe's photo away",
+        "description": "The photo is deleted. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The recipe, without a photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/{recipe}/rating": {
+      "put": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Rate a recipe",
+        "description": "Sets the recipe's stars, or clears them. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeRatingInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The recipe, with its new rating.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The rating isn't from 1 to 5.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "401": {
             "description": "Not signed in.",

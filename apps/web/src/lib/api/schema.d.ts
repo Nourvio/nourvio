@@ -1514,6 +1514,107 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recipes/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a recipe from a link
+         * @description Reads the recipe data most recipe sites put in their pages, and its photo. A link the household imported before gives back that recipe, unless `force` is set. Pages without recipe data, and video links, can't be imported yet. With an API key, it needs the `recipes: write` permission.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        url: string;
+                        /** @description Import it again even if the household has it. */
+                        force?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Already in the library. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportResult"];
+                    };
+                };
+                /** @description Added. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ImportResult"];
+                    };
+                };
+                /** @description Not a link Merran can fetch. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The page has no recipe data, or it's a video. */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The site couldn't be reached, or turned Merran away. */
+                502: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/tags": {
         parameters: {
             query?: never;
@@ -1874,6 +1975,289 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A recipe's photo
+         * @description As WebP: `full` for the recipe page, or `card`, cropped for recipe cards. Use the links in the recipe's `photo`, which can be kept for good. With an API key, it needs the `recipes: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: {
+                    size?: "full" | "card";
+                    /** @description Which photo: the links in `photo` say. */
+                    v?: string;
+                };
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The photo. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "image/webp": string;
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe, or it has no photo. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        /**
+         * Give a recipe a photo
+         * @description Send the photo itself as the body, as a JPEG, PNG, WebP or GIF of up to 15 MB. It replaces any photo the recipe had. With an API key, it needs the `recipes: write` permission.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "image/*": string;
+                };
+            };
+            responses: {
+                /** @description The recipe, with its new photo. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Recipe"];
+                    };
+                };
+                /** @description That isn't a photo Merran can read. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description The photo is over 15 MB. */
+                413: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        /**
+         * Take a recipe's photo away
+         * @description The photo is deleted. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The recipe, without a photo. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Recipe"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Rate a recipe
+         * @description Sets the recipe's stars, or clears them. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
+         */
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RecipeRatingInput"];
+                };
+            };
+            responses: {
+                /** @description The recipe, with its new rating. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Recipe"];
+                    };
+                };
+                /** @description The rating isn't from 1 to 5. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3129,6 +3513,13 @@ export interface components {
             totalMinutes: number | null;
             rating: number | null;
             tags: string[];
+            /** @description Where its photo is, in each size, or null. The links change with the photo, so they can be kept. */
+            photo: {
+                /** @description For the recipe page. */
+                full: string;
+                /** @description Cropped, for recipe cards. */
+                card: string;
+            } | null;
             /** Format: date-time */
             lastMadeAt: string | null;
             /** Format: date-time */
@@ -3199,6 +3590,11 @@ export interface components {
              */
             goneAt: string;
         };
+        ImportResult: {
+            recipe: components["schemas"]["Recipe"];
+            /** @description True when the link was imported before: this is that recipe, unchanged. */
+            duplicate: boolean;
+        };
         Tag: {
             id: string;
             name: string;
@@ -3208,6 +3604,10 @@ export interface components {
         TagChanges: {
             /** @description A name another tag already has merges the two. */
             name: string;
+        };
+        RecipeRatingInput: {
+            /** @description From 1 to 5 stars, or null to clear it. */
+            rating: number | null;
         };
         RecipeVersion: {
             id: string;

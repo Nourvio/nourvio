@@ -1,5 +1,4 @@
 import {
-  Add01Icon,
   CookBookIcon,
   Delete02Icon,
   MoreHorizontalIcon,
@@ -29,6 +28,7 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { AddRecipeDialog } from "@/features/recipes/add-recipe-dialog"
 import { ManageTagsDialog } from "@/features/recipes/manage-tags-dialog"
 import {
   RECIPE_SORTS,
@@ -82,10 +82,7 @@ function RecipesPage() {
         title={t("nav.recipes")}
         actions={
           <>
-            <Button render={<Link to="/recipes/new" />}>
-              <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
-              {t("recipes.add")}
-            </Button>
+            <AddRecipeDialog />
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -118,9 +115,9 @@ function RecipesPage() {
         <RecipeFilters search={search} onChange={setSearch} />
 
         {recipes.isPending ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }, (_, index) => (
-              <Skeleton key={index} className="h-36 rounded-3xl" />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {Array.from({ length: 8 }, (_, index) => (
+              <Skeleton key={index} className="h-72 rounded-3xl" />
             ))}
           </div>
         ) : recipes.isError ? (
@@ -165,10 +162,7 @@ function RecipesPage() {
                 <EmptyDescription>{t("recipes.noneHint")}</EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
-                <Button render={<Link to="/recipes/new" />}>
-                  <HugeiconsIcon icon={Add01Icon} strokeWidth={2} />
-                  {t("recipes.add")}
-                </Button>
+                <AddRecipeDialog />
               </EmptyContent>
             </Empty>
           )
@@ -177,7 +171,7 @@ function RecipesPage() {
             <p className="text-sm text-muted-foreground" aria-live="polite">
               {t("recipes.count", { count: total })}
             </p>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {items.map((recipe) => (
                 <RecipeCard key={recipe.id} recipe={recipe} />
               ))}

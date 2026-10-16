@@ -52,7 +52,7 @@ export function RatingInput({
       id={id}
       role="radiogroup"
       aria-label={t("recipes.fields.rating")}
-      className="flex items-center gap-1"
+      className="-ml-1 flex items-center"
     >
       {STARS.map((star) => {
         const on = value !== null && star <= value
@@ -64,7 +64,7 @@ export function RatingInput({
             aria-checked={value === star}
             aria-label={t("recipes.rating.label", { count: star })}
             onClick={() => onChange(value === star ? null : star)}
-            className="rounded-full p-1 text-highlight outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50"
+            className="rounded-full p-1 text-highlight transition-transform outline-none hover:scale-110 focus-visible:ring-[3px] focus-visible:ring-ring/50"
           >
             <HugeiconsIcon
               icon={StarIcon}

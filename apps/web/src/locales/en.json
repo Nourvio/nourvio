@@ -319,7 +319,9 @@
     "clearFilters": "Clear search and tags",
     "serves_one": "Serves {{servings}}",
     "serves_other": "Serves {{servings}}",
-    "times": "{{factor}}× the recipe",
+    "servings_one": "{{servings}} serving",
+    "servings_other": "{{servings}} servings",
+    "times": "{{factor}}×",
     "fewerServings": "Make less",
     "moreServings": "Make more",
     "reset": "Reset",
@@ -355,8 +357,6 @@
       "prepMinutes": "Prep (minutes)",
       "cookMinutes": "Cook (minutes)",
       "totalMinutes": "Total (minutes)",
-      "prep": "prep",
-      "cook": "cook",
       "rating": "Rating",
       "ingredients": "Ingredients",
       "steps": "Steps",
@@ -430,6 +430,36 @@
       "emptyDescription_one": "{{count}} recipe will be deleted for good. This can't be undone.",
       "emptyDescription_other": "{{count}} recipes will be deleted for good. This can't be undone.",
       "emptied": "Recently deleted is empty."
-    }
+    },
+    "import": {
+      "description": "Paste a link to a recipe, and Merran reads it off the page, photo and all.",
+      "link": "Link to a recipe",
+      "linkNeeded": "Paste a link to a recipe.",
+      "submit": "Add from link",
+      "reading": "Reading the page…",
+      "typeIt": "Type one in instead",
+      "added": "Added {{name}}.",
+      "alreadyTitle": "You have this one",
+      "alreadyDescription": "{{name}} came from this link. Open it, or add it again as a separate recipe.",
+      "open": "Open it",
+      "again": "Add it again"
+    },
+    "photo": {
+      "add": "Add a photo",
+      "change": "Change photo",
+      "remove": "Remove photo",
+      "added": "Photo added.",
+      "changed": "Photo changed.",
+      "removed": "Photo removed.",
+      "alt": "{{name}}"
+    },
+    "facts": {
+      "prep": "Prep",
+      "cook": "Cook",
+      "total": "Total",
+      "makes": "Makes"
+    },
+    "lastMade": "Last made {{when}}",
+    "original": "Original recipe: {{site}}"
   }
 }

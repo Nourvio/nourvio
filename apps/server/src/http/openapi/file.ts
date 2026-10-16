@@ -1,3 +1,5 @@
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 import { pino } from "pino"
 import { createApp } from "../../app.ts"
 import { loadConfig } from "../../core/config.ts"
@@ -5,7 +7,9 @@ import { migrate, openDatabase } from "../../database/orm.ts"
 import { MODULES } from "../../modules/index.ts"
 import { createAuth } from "../../services/auth/auth.ts"
 import { SetupCode } from "../../services/auth/setup-code.ts"
+import { createPublicFetcher } from "../../services/fetch/public-fetch.ts"
 import { createSettings } from "../../services/settings/settings.ts"
+import { LocalFileStore } from "../../services/storage/files.ts"
 import { buildOpenApiDocument, DEFAULT_SERVER_URL } from "./document.ts"
 
 /**
@@ -38,6 +42,9 @@ export async function createOpenApiFile(): Promise<string> {
         fromEnv: config.fromEnv,
       }),
       modules: MODULES,
+      // Describing the API never stores or fetches anything.
+      files: new LocalFileStore(join(tmpdir(), "merran-openapi")),
+      fetcher: createPublicFetcher({ version: config.version }),
     })
     const document = await buildOpenApiDocument(app, auth, {
       version: config.version,

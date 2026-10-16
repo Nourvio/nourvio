@@ -5,7 +5,9 @@ import * as React from "react"
 import { useTranslation } from "react-i18next"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { cn } from "@/lib/utils"
 
 import { formatServings } from "./format"
 import type { Recipe } from "./queries"
@@ -46,13 +48,13 @@ export type Servings = ReturnType<typeof useServings>
 export function ServingsStepper({ servings }: { servings: Servings }) {
   const { t } = useTranslation()
   const label = servings.base
-    ? t("recipes.serves", {
+    ? t("recipes.servings", {
         count: servings.amount,
         servings: formatServings(servings.amount),
       })
     : t("recipes.times", { factor: formatServings(servings.amount) })
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-2">
       <Button
         variant="outline"
         size="icon-sm"
@@ -62,7 +64,7 @@ export function ServingsStepper({ servings }: { servings: Servings }) {
         <HugeiconsIcon icon={MinusSignIcon} strokeWidth={2} />
       </Button>
       <span
-        className="min-w-24 text-center text-sm font-medium tabular-nums"
+        className="min-w-20 text-center text-sm font-medium tabular-nums"
         aria-live="polite"
       >
         {label}
@@ -99,9 +101,11 @@ export function convertible(lines: Line[]) {
 export function UnitToggle({
   system,
   onChange,
+  className,
 }: {
   system: UnitSystem
   onChange: (system: UnitSystem) => void
+  className?: string
 }) {
   const { t } = useTranslation()
   return (
@@ -114,9 +118,10 @@ export function UnitToggle({
         if (next) onChange(next)
       }}
       aria-label={t("recipes.units.label")}
+      className={className}
     >
       {(["written", "metric", "us"] as const).map((value) => (
-        <ToggleGroupItem key={value} value={value}>
+        <ToggleGroupItem key={value} value={value} className="flex-1">
           {t(`recipes.units.${value}`)}
         </ToggleGroupItem>
       ))}
@@ -124,7 +129,10 @@ export function UnitToggle({
   )
 }
 
-/** The ingredients, with their amounts scaled and in the chosen units. */
+/**
+ * The ingredients, with their amounts scaled and in the chosen units.
+ * Each can be ticked off while getting things out.
+ */
 export function IngredientList({
   lines,
   factor,
@@ -134,33 +142,50 @@ export function IngredientList({
   factor: number
   system: UnitSystem
 }) {
+  const [ticked, setTicked] = React.useState<ReadonlySet<string>>(new Set())
+  const toggle = (id: string) =>
+    setTicked((current) => {
+      const next = new Set(current)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+
   return (
-    <div className="space-y-5">
+    <div className="-mx-2 grid gap-5">
       {bySection(lines).map((group, index) => (
-        <section key={index} className="space-y-2">
+        <section key={index}>
           {group.section && (
-            <h3 className="font-heading text-base font-semibold">
+            <h3 className="mb-1 px-2 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
               {group.section}
             </h3>
           )}
-          <ul className="space-y-2">
+          <ul className="grid gap-0.5">
             {group.lines.map((line) => {
               const { amount, rest } = displayIngredient(line.text, {
                 factor,
                 system,
               })
+              const done = ticked.has(line.id)
               return (
-                <li key={line.id} className="flex gap-3 leading-relaxed">
-                  <span
-                    aria-hidden
-                    className="mt-2.5 size-1.5 shrink-0 rounded-full bg-primary/60"
-                  />
-                  <span>
-                    {amount && (
-                      <strong className="font-semibold">{amount}</strong>
-                    )}
-                    {rest}
-                  </span>
+                <li key={line.id}>
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl px-2 py-1.5 transition-colors hover:bg-muted/60">
+                    <Checkbox
+                      checked={done}
+                      onCheckedChange={() => toggle(line.id)}
+                      className="mt-0.5"
+                    />
+                    <span
+                      className={cn(
+                        "text-base leading-snug",
+                        done && "text-muted-foreground line-through"
+                      )}
+                    >
+                      {amount && (
+                        <span className="font-semibold">{amount}</span>
+                      )}
+                      {rest}
+                    </span>
+                  </label>
                 </li>
               )
             })}

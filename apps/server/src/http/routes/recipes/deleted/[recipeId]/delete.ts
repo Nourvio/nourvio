@@ -26,10 +26,10 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, { files }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em } = inHousehold(c, { area: "recipes", access: "write" })
-    await deleteForGood(em, c.req.valid("param").recipeId)
+    await deleteForGood(em, files, c.req.valid("param").recipeId)
     return c.body(null, 204)
   })
 }

@@ -1,4 +1,5 @@
 import { serve } from "@hono/node-server"
+import { join } from "node:path"
 import { createApp } from "./app.ts"
 import { createAuth } from "./services/auth/auth.ts"
 import { SetupCode } from "./services/auth/setup-code.ts"
@@ -9,7 +10,9 @@ import { User } from "./database/entities/index.ts"
 import { migrate, openDatabase, type Database } from "./database/orm.ts"
 import { MODULES } from "./modules/index.ts"
 import { startModules } from "./modules/module.ts"
+import { createPublicFetcher } from "./services/fetch/public-fetch.ts"
 import { createSettings } from "./services/settings/settings.ts"
+import { LocalFileStore } from "./services/storage/files.ts"
 
 let config: Config
 try {
@@ -66,6 +69,8 @@ const app = createApp({
   setupCode,
   settings,
   modules: MODULES,
+  files: new LocalFileStore(join(config.dataDir, "files")),
+  fetcher: createPublicFetcher({ version: config.version }),
 })
 
 const server = serve({ fetch: app.fetch, port: config.port }, (info) => {

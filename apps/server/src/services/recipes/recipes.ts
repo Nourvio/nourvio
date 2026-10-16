@@ -10,9 +10,11 @@ import {
   type RECIPE_ORIGINS,
 } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER } from "../../database/scope.ts"
+import type { FileStore } from "../storage/files.ts"
 import { containing } from "../../database/text.ts"
 import { AppError } from "../../core/errors.ts"
 import type { RecipeInput } from "../../http/schemas/recipes.ts"
+import { photoUrls, removePhoto, storePhoto } from "./photos.ts"
 import { uniqueSlug } from "./slugs.ts"
 import { pruneTags, setTags, tagKey, tagsOf } from "./tags.ts"
 import { saveVersion, type VersionSource } from "./versions.ts"
@@ -75,6 +77,7 @@ export function summarize(recipe: Recipe, tags: string[]) {
     totalMinutes: totalMinutes(recipe),
     rating: recipe.rating ?? null,
     tags,
+    photo: photoUrls(recipe),
     lastMadeAt: recipe.lastMadeAt?.toISOString() ?? null,
     createdAt: recipe.createdAt.toISOString(),
     updatedAt: recipe.updatedAt.toISOString(),
@@ -199,6 +202,8 @@ export async function createRecipe(
     userId: string | null
     input: RecipeInput
     origin?: RecipeOrigin
+    /** A photo already stored for it (see photos.ts). */
+    photoId?: string | null
   }
 ) {
   const id = await inHouseholdTransaction(
@@ -210,6 +215,7 @@ export async function createRecipe(
         slug: await uniqueSlug(tx, options.input.name),
         name: options.input.name,
         origin: options.origin ?? "manual",
+        image: options.photoId ?? null,
         createdBy: options.userId,
       })
       await fill(tx, options.householdId, recipe, options.input)
@@ -352,4 +358,46 @@ export async function moveToDeleted(em: EntityManager, idOrSlug: string) {
   }
   recipe.deletedAt = new Date()
   await em.flush()
+}
+
+/** Gives a recipe a new photo, in place of any it had. */
+export async function setPhoto(
+  em: EntityManager,
+  files: FileStore,
+  options: { householdId: string; recipe: string; photo: Buffer }
+) {
+  const recipe = await findRecipe(em, options.recipe)
+  const photoId = await storePhoto(files, options.householdId, options.photo)
+  const old = recipe.image
+  recipe.image = photoId
+  recipe.imageByAi = false
+  await em.flush()
+  await removePhoto(files, options.householdId, old)
+  return loadRecipe(em, recipe.id)
+}
+
+/** Takes a recipe's photo away, and deletes it. */
+export async function clearPhoto(
+  em: EntityManager,
+  files: FileStore,
+  options: { householdId: string; recipe: string }
+) {
+  const recipe = await findRecipe(em, options.recipe)
+  const old = recipe.image
+  recipe.image = null
+  recipe.imageByAi = false
+  await em.flush()
+  await removePhoto(files, options.householdId, old)
+  return loadRecipe(em, recipe.id)
+}
+
+/** Rates a recipe, or clears its rating. Not an edit, so no version is kept. */
+export async function setRating(
+  em: EntityManager,
+  options: { recipe: string; rating: number | null }
+) {
+  const recipe = await findRecipe(em, options.recipe)
+  recipe.rating = options.rating
+  await em.flush()
+  return loadRecipe(em, recipe.id)
 }

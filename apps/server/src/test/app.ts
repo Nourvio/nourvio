@@ -1,8 +1,13 @@
+import { mkdtempSync, rmSync } from "node:fs"
+import { tmpdir } from "node:os"
+import { join as joinPath } from "node:path"
 import { pino } from "pino"
 import { createApp, type App } from "../app.ts"
 import { MODULES } from "../modules/index.ts"
 import { startModules, type Module } from "../modules/module.ts"
+import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import { createSettings } from "../services/settings/settings.ts"
+import { LocalFileStore } from "../services/storage/files.ts"
 import { createAuth } from "../services/auth/auth.ts"
 import { SetupCode } from "../services/auth/setup-code.ts"
 import { loadConfig } from "../core/config.ts"
@@ -22,9 +27,20 @@ export async function createTestApp(
   options: {
     modules?: readonly Module[]
     env?: Record<string, string>
+    /** What fetching from the internet answers with. Tests never reach it. */
+    fetcher?: Fetcher
   } = {}
 ) {
-  const { database, config: databaseConfig, close } = await createTestDatabase()
+  const {
+    database,
+    config: databaseConfig,
+    close: closeDatabase,
+  } = await createTestDatabase()
+  const filesDir = mkdtempSync(joinPath(tmpdir(), "merran-files-"))
+  const close = async () => {
+    await closeDatabase()
+    rmSync(filesDir, { recursive: true, force: true })
+  }
   const modules = [...MODULES, ...(options.modules ?? [])]
   const definitions = modules.flatMap((module) => module.settings)
   const config = {
@@ -53,8 +69,12 @@ export async function createTestApp(
     setupCode,
     settings,
     modules,
+    files: new LocalFileStore(filesDir),
+    fetcher:
+      options.fetcher ??
+      (() => Promise.reject(new Error("Tests don't reach the internet."))),
   })
-  return { app, database, auth, setupCode, settings, close }
+  return { app, database, auth, setupCode, settings, filesDir, close }
 }
 
 /** A response whose JSON tests can read without declaring its type. */
@@ -77,6 +97,25 @@ export class TestClient {
     path: string,
     body?: unknown
   ): Promise<TestResponse> {
+    return this.send(
+      method,
+      path,
+      body === undefined
+        ? undefined
+        : { body: JSON.stringify(body), type: "application/json" }
+    )
+  }
+
+  /** Sends a file as the body, like a photo. */
+  upload(path: string, body: Uint8Array, type: string, method = "PUT") {
+    return this.send(method, path, { body, type })
+  }
+
+  async send(
+    method: string,
+    path: string,
+    content?: { body: string | Uint8Array; type: string }
+  ): Promise<TestResponse> {
     const headers = new Headers({ origin: TEST_ORIGIN })
     if (this.cookies.size > 0) {
       headers.set(
@@ -84,12 +123,12 @@ export class TestClient {
         [...this.cookies].map(([name, value]) => `${name}=${value}`).join("; ")
       )
     }
-    if (body !== undefined) headers.set("content-type", "application/json")
+    if (content) headers.set("content-type", content.type)
 
     const res = await this.app.request(`${TEST_ORIGIN}${path}`, {
       method,
       headers,
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      ...(content ? { body: content.body } : {}),
     })
     for (const cookie of res.headers.getSetCookie()) {
       const [pair = ""] = cookie.split(";")

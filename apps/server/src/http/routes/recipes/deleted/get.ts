@@ -26,9 +26,9 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, { files }: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em } = inHousehold(c, { area: "recipes", access: "read" })
-    return c.json(await listDeleted(em), 200)
+    return c.json(await listDeleted(em, files), 200)
   })
 }

@@ -13,26 +13,24 @@ export function StepList({
 }) {
   let number = 0
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6">
       {bySection(steps).map((group, index) => (
-        <section key={index} className="space-y-3">
+        <section key={index} className="grid gap-4">
           {group.section && (
-            <h3 className="font-heading text-base font-semibold">
-              {group.section}
-            </h3>
+            <h3 className="text-lg font-semibold">{group.section}</h3>
           )}
-          <ol className="space-y-4">
+          <ol className="grid gap-5">
             {group.lines.map((step) => {
               number += 1
               return (
                 <li key={step.id} className="flex gap-4">
                   <span
                     aria-hidden
-                    className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary"
+                    className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-accent-foreground"
                   >
                     {number}
                   </span>
-                  <p className="pt-0.5 leading-relaxed">
+                  <p className="pt-1 text-lg leading-relaxed">
                     {convertTemperatures(step.text, system)}
                   </p>
                 </li>

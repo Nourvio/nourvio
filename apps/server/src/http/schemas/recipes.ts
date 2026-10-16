@@ -82,6 +82,16 @@ export const RecipeSummarySchema = z
     }),
     rating: z.number().nullable(),
     tags: z.array(z.string()),
+    photo: z
+      .object({
+        full: z.string().openapi({ description: "For the recipe page." }),
+        card: z.string().openapi({ description: "Cropped, for recipe cards." }),
+      })
+      .nullable()
+      .openapi({
+        description:
+          "Where its photo is, in each size, or null. The links change with the photo, so they can be kept.",
+      }),
     lastMadeAt: z.iso.datetime().nullable(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
@@ -155,6 +165,14 @@ export const RecipeParam = z.object({
     example: "lemon-chicken",
   }),
 })
+
+export const RatingInputSchema = z
+  .object({
+    rating: z.number().int().min(1).max(5).nullable().openapi({
+      description: "From 1 to 5 stars, or null to clear it.",
+    }),
+  })
+  .openapi("RecipeRatingInput")
 
 export const VersionSchema = z
   .object({

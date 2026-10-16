@@ -39,8 +39,11 @@ const STATUSES: Record<AppErrorKind, ContentfulStatusCode> = {
   not_found: 404,
   conflict: 409,
   gone: 410,
+  too_large: 413,
+  unprocessable: 422,
   rate_limited: 429,
   internal: 500,
+  upstream: 502,
 }
 
 /** The first problem for each field, keyed by its path ("steps.2.text"). */

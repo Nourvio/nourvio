@@ -5,7 +5,9 @@ import type { Module } from "../modules/module.ts"
 import type { Auth } from "../services/auth/auth.ts"
 import type { Authenticated } from "../services/auth/session.ts"
 import type { SetupCode } from "../services/auth/setup-code.ts"
+import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import type { Settings } from "../services/settings/settings.ts"
+import type { FileStore } from "../services/storage/files.ts"
 import type { Config } from "./config.ts"
 
 /** What the app is built from. Tests pass their own. */
@@ -19,6 +21,10 @@ export type AppDeps = {
   settings: Settings
   /** Merran's optional parts (modules/index.ts). Tests can pass their own. */
   modules: readonly Module[]
+  /** Where files like photos are kept. */
+  files: FileStore
+  /** The one way to fetch from the internet: public addresses only. Tests pass a fake. */
+  fetcher: Fetcher
 }
 
 /** Variables set on every request. `requestId` comes from Hono's middleware. */

@@ -6,8 +6,14 @@ export type AppErrorKind =
   | "not_found"
   | "conflict"
   | "gone"
+  /** Too big to take, like a photo over the size limit. */
+  | "too_large"
+  /** Understood, but nothing can be done with it, like a page with no recipe on it. */
+  | "unprocessable"
   | "rate_limited"
   | "internal"
+  /** Another site or service Merran relies on failed, or took too long. */
+  | "upstream"
 
 /**
  * Throw this from a service, a route or middleware. The message is shown to
