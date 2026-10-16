@@ -895,6 +895,19 @@
           "weekStartsOn": {
             "type": "integer"
           },
+          "meals": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "breakfast",
+                "lunch",
+                "dinner",
+                "snack"
+              ]
+            },
+            "description": "The meals it plans, in a day's order: every meal until it opts out of some."
+          },
           "role": {
             "type": "string",
             "enum": [
@@ -911,6 +924,7 @@
           "currency",
           "timeZone",
           "weekStartsOn",
+          "meals",
           "role"
         ],
         "example": {
@@ -920,6 +934,9 @@
           "currency": "USD",
           "timeZone": "America/Phoenix",
           "weekStartsOn": 0,
+          "meals": [
+            "dinner"
+          ],
           "role": "owner"
         }
       },
@@ -952,6 +969,20 @@
             "type": "integer",
             "minimum": 0,
             "maximum": 6
+          },
+          "meals": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "breakfast",
+                "lunch",
+                "dinner",
+                "snack"
+              ]
+            },
+            "minItems": 1,
+            "description": "The meals it plans."
           }
         },
         "example": {
@@ -1369,6 +1400,9 @@
             "currency": "USD",
             "timeZone": "America/Phoenix",
             "weekStartsOn": 0,
+            "meals": [
+              "dinner"
+            ],
             "role": "owner"
           },
           "job": {
@@ -1387,6 +1421,684 @@
             "finishedAt": null,
             "createdAt": "2026-10-15T18:30:00.000Z"
           }
+        }
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanEntry"
+            }
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+              "date": "2026-10-15",
+              "anyDay": false,
+              "meal": "dinner",
+              "position": 0,
+              "status": "planned",
+              "recipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken",
+                "photo": null,
+                "servings": 4,
+                "totalMinutes": 50
+              },
+              "withRecipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                "slug": "garlic-rice",
+                "name": "Garlic Rice"
+              },
+              "note": null,
+              "servings": null,
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "PlanEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-15",
+            "description": "Its day, or for the week's pool, the week's first day."
+          },
+          "anyDay": {
+            "type": "boolean",
+            "description": "In the week's pool: for any day of the week."
+          },
+          "meal": {
+            "$ref": "#/components/schemas/Meal"
+          },
+          "position": {
+            "type": "integer",
+            "description": "Its place among the meal's dishes."
+          },
+          "status": {
+            "$ref": "#/components/schemas/PlanStatus"
+          },
+          "recipe": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "photo": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "servings": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "totalMinutes": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "name",
+              "photo",
+              "servings",
+              "totalMinutes"
+            ],
+            "description": "Null for a note."
+          },
+          "withRecipe": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "slug",
+              "name"
+            ],
+            "description": "What it's made with: \"with peanut sauce\"."
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A meal that isn't a recipe: \"leftovers\"."
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Null for the recipe's own servings."
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "anyDay",
+          "meal",
+          "position",
+          "status",
+          "recipe",
+          "withRecipe",
+          "note",
+          "servings",
+          "createdAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+          "date": "2026-10-15",
+          "anyDay": false,
+          "meal": "dinner",
+          "position": 0,
+          "status": "planned",
+          "recipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+            "slug": "lemon-chicken",
+            "name": "Lemon Chicken",
+            "photo": null,
+            "servings": 4,
+            "totalMinutes": 50
+          },
+          "withRecipe": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+            "slug": "garlic-rice",
+            "name": "Garlic Rice"
+          },
+          "note": null,
+          "servings": null,
+          "createdAt": "2026-10-15T18:30:00.000Z"
+        }
+      },
+      "Meal": {
+        "type": "string",
+        "enum": [
+          "breakfast",
+          "lunch",
+          "dinner",
+          "snack"
+        ]
+      },
+      "PlanStatus": {
+        "type": "string",
+        "enum": [
+          "planned",
+          "cooked",
+          "skipped"
+        ]
+      },
+      "WhatsNext": {
+        "type": "object",
+        "properties": {
+          "today": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-15",
+            "description": "Today, in the household's time zone."
+          },
+          "mealNow": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meal"
+              },
+              {
+                "description": "The meal of the hour: breakfast until 11, lunch until 3."
+              }
+            ]
+          },
+          "entry": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/PlanEntry"
+              },
+              {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "description": "The next meal still planned, or null for none ahead."
+              }
+            ]
+          }
+        },
+        "required": [
+          "today",
+          "mealNow",
+          "entry"
+        ],
+        "example": {
+          "today": "2026-10-15",
+          "mealNow": "dinner",
+          "entry": {
+            "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+            "date": "2026-10-15",
+            "anyDay": false,
+            "meal": "dinner",
+            "position": 0,
+            "status": "planned",
+            "recipe": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "slug": "lemon-chicken",
+              "name": "Lemon Chicken",
+              "photo": null,
+              "servings": 4,
+              "totalMinutes": 50
+            },
+            "withRecipe": {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "slug": "garlic-rice",
+              "name": "Garlic Rice"
+            },
+            "note": null,
+            "servings": null,
+            "createdAt": "2026-10-15T18:30:00.000Z"
+          }
+        }
+      },
+      "NewPlanEntry": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-15"
+          },
+          "meal": {
+            "$ref": "#/components/schemas/Meal"
+          },
+          "anyDay": {
+            "type": "boolean",
+            "description": "For the week's pool: any day of the week `date` is in."
+          },
+          "recipe": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The recipe, by id or address. Or give a note instead."
+          },
+          "withRecipe": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A side or sauce it's made with, by id or address."
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 1000
+          }
+        },
+        "required": [
+          "date",
+          "meal"
+        ],
+        "example": {
+          "date": "2026-10-15",
+          "meal": "dinner",
+          "recipe": "lemon-chicken",
+          "withRecipe": "garlic-rice"
+        }
+      },
+      "PlanBulkResult": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanEntry"
+            },
+            "description": "The meals as they are now; none when they were taken off."
+          },
+          "before": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanEntrySnapshot"
+            },
+            "description": "The meals as they were, for Undo."
+          }
+        },
+        "required": [
+          "entries",
+          "before"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+              "date": "2026-10-15",
+              "anyDay": false,
+              "meal": "dinner",
+              "position": 0,
+              "status": "cooked",
+              "recipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken",
+                "photo": null,
+                "servings": 4,
+                "totalMinutes": 50
+              },
+              "withRecipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                "slug": "garlic-rice",
+                "name": "Garlic Rice"
+              },
+              "note": null,
+              "servings": null,
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ],
+          "before": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+              "date": "2026-10-15",
+              "anyDay": false,
+              "meal": "dinner",
+              "position": 0,
+              "status": "planned",
+              "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "note": null,
+              "servings": null,
+              "listedAt": null
+            }
+          ]
+        }
+      },
+      "PlanEntrySnapshot": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-15"
+          },
+          "anyDay": {
+            "type": "boolean"
+          },
+          "meal": {
+            "$ref": "#/components/schemas/Meal"
+          },
+          "position": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/PlanStatus"
+          },
+          "recipe": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "withRecipe": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 200
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 1000
+          },
+          "listedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "date",
+          "anyDay",
+          "meal",
+          "position",
+          "status",
+          "recipe",
+          "withRecipe",
+          "note",
+          "servings",
+          "listedAt"
+        ],
+        "description": "A meal as it was, to put back with /plan/restore: what taking it off or changing it answers with.",
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+          "date": "2026-10-15",
+          "anyDay": false,
+          "meal": "dinner",
+          "position": 0,
+          "status": "planned",
+          "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+          "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+          "note": null,
+          "servings": null,
+          "listedAt": null
+        }
+      },
+      "PlanBulk": {
+        "type": "object",
+        "properties": {
+          "ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "minItems": 1,
+            "maxItems": 200
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "remove",
+              "move",
+              "status"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-15",
+            "description": "Where to move them."
+          },
+          "meal": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Meal"
+              },
+              {
+                "description": "The meal to move them to; their own if left out."
+              }
+            ]
+          },
+          "anyDay": {
+            "type": "boolean",
+            "description": "Into the pool of the week `date` is in."
+          },
+          "status": {
+            "$ref": "#/components/schemas/PlanStatus"
+          }
+        },
+        "required": [
+          "ids",
+          "action"
+        ],
+        "example": {
+          "ids": [
+            "0199e8b0-5a10-7a01-8b00-00000000001b"
+          ],
+          "action": "status",
+          "status": "cooked"
+        }
+      },
+      "PlanEntryChanges": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-15"
+          },
+          "meal": {
+            "$ref": "#/components/schemas/Meal"
+          },
+          "anyDay": {
+            "type": "boolean"
+          },
+          "recipe": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Another recipe (Something else): it's planned afresh, its side kept."
+          },
+          "withRecipe": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "note": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "servings": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "exclusiveMinimum": 0,
+            "maximum": 1000
+          },
+          "status": {
+            "$ref": "#/components/schemas/PlanStatus"
+          }
+        },
+        "example": {
+          "date": "2026-10-16",
+          "status": "planned"
+        }
+      },
+      "PlanWeek": {
+        "type": "object",
+        "properties": {
+          "week": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+            "example": "2026-10-15",
+            "description": "The week's first day."
+          }
+        },
+        "required": [
+          "week"
+        ],
+        "example": {
+          "week": "2026-10-11"
+        }
+      },
+      "PlanCleared": {
+        "type": "object",
+        "properties": {
+          "before": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanEntrySnapshot"
+            },
+            "description": "The meals taken off, for Undo."
+          }
+        },
+        "required": [
+          "before"
+        ],
+        "example": {
+          "before": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+              "date": "2026-10-15",
+              "anyDay": false,
+              "meal": "dinner",
+              "position": 0,
+              "status": "planned",
+              "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "note": null,
+              "servings": null,
+              "listedAt": null
+            }
+          ]
+        }
+      },
+      "PlanRestore": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanEntrySnapshot"
+            },
+            "minItems": 1,
+            "maxItems": 500
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+              "date": "2026-10-15",
+              "anyDay": false,
+              "meal": "dinner",
+              "position": 0,
+              "status": "planned",
+              "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "note": null,
+              "servings": null,
+              "listedAt": null
+            }
+          ]
         }
       },
       "RecipeList": {
@@ -5525,6 +6237,611 @@
         }
       }
     },
+    "/api/plan": {
+      "get": {
+        "operationId": "getPlan",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "The plan for some days",
+        "description": "Meals from one day to another, up to 62 days apart, in a day's order: this week's if no days are given. A week's pool (meals for any day of it) is dated to the week's first day, with `anyDay` set. Meals of recipes in Recently deleted are left out until they're restored. With an API key, it needs the `plan: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-10-15",
+              "description": "The first day. This week's first day if left out."
+            },
+            "required": false,
+            "description": "The first day. This week's first day if left out.",
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "example": "2026-10-15",
+              "description": "The last day. Six days after `from` if left out."
+            },
+            "required": false,
+            "description": "The last day. Six days after `from` if left out.",
+            "name": "to",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The meals.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Plan"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not days, or too many of them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/next": {
+      "get": {
+        "operationId": "getWhatsNext",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "What's next",
+        "description": "The next meal still planned, by the household's clock: today's from the meal of the hour on (breakfast until 11, lunch until 3, then dinner), then the days after. Snacks and the week's pool aren't counted. With an API key, it needs the `plan: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:read",
+        "responses": {
+          "200": {
+            "description": "What's next.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WhatsNext"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/entries": {
+      "post": {
+        "operationId": "addPlanEntry",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Put a meal on the plan",
+        "description": "A recipe or a note, on a day's meal, after any dishes already there. With `anyDay`, it goes in the pool of the week the date is in. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPlanEntry"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "On the plan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanEntry"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/entries/bulk": {
+      "post": {
+        "operationId": "changePlanEntries",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Change several meals at once",
+        "description": "Take them off, move them (to another day or meal, or the week's pool), or mark them planned, cooked or skipped: all or none. The answer says what they were before, for Undo with /plan/restore. Ids not on the plan are passed over. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanBulk"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanBulkResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/entries/{entryId}": {
+      "patch": {
+        "operationId": "changePlanEntry",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Change a meal",
+        "description": "Move it (it goes after any dishes in its new slot), swap its recipe, give it a side, change its servings, or mark it planned, cooked or skipped. Cooked sets when its recipe and side were last made. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "entryId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanEntryChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Changed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanEntry"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such meal on the plan, or no such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removePlanEntry",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Take a meal off the plan",
+        "description": "The answer is the meal as it was, to put back with /plan/restore (Undo). With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "required": true,
+            "name": "entryId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Taken off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanEntrySnapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such meal on the plan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/repeat": {
+      "post": {
+        "operationId": "repeatLastWeek",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Repeat last week",
+        "description": "The week before's meals, again: each on the same weekday and meal where that slot is still empty, and its pool into this week's pool. Skipped meals stay behind; the copies start as planned. The answer is what was added, for Undo (take them off in bulk). With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanWeek"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "What was added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Plan"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/clear": {
+      "post": {
+        "operationId": "clearPlan",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Clear the rest of the week",
+        "description": "Takes off the meals still planned for the rest of the week (from today, in this week; all of it, in another) and its pool. Cooked and skipped meals stay. The answer is what went, to put back with /plan/restore. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanWeek"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cleared.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanCleared"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/restore": {
+      "post": {
+        "operationId": "restorePlanEntries",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Put meals back as they were",
+        "description": "Undo: meals as other changes said they were. Ones taken off come back with the same id; ones changed go back to how they were. A meal whose recipe is gone is passed over. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRestore"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "As they were.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Plan"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes": {
       "get": {
         "operationId": "listRecipes",
@@ -7364,7 +8681,7 @@
           "Recipes"
         ],
         "summary": "Mark a recipe made",
-        "description": "The recipe was made now: its `lastMadeAt` is set. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
+        "description": "The recipe was made now: its `lastMadeAt` is set, and today's meal of it on the plan is marked cooked (or, failing that, one in this week's pool becomes today's, cooked). It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.",
         "security": [
           {
             "session": []

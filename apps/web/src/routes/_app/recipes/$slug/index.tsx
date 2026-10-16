@@ -9,6 +9,7 @@ import {
   LinkSquare02Icon,
   MoreHorizontalIcon,
   Tick02Icon,
+  Calendar03Icon,
   Time04Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -54,6 +55,7 @@ import { RecipePhoto, usePhotoActions } from "@/features/recipes/recipe-photo"
 import { StepList } from "@/features/recipes/step-list"
 import { useUnitSystem } from "@/features/recipes/use-unit-system"
 import { VersionsDialog } from "@/features/recipes/versions-dialog"
+import { PlanItDialog } from "@/features/plan/plan-it-dialog"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
 
@@ -131,6 +133,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
   }
 
   const [marking, setMarking] = React.useState(false)
+  const [planning, setPlanning] = React.useState(false)
 
   async function markMade() {
     setMarking(true)
@@ -304,6 +307,31 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               />
               {t("recipes.madeIt")}
             </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              onClick={() => setPlanning(true)}
+            >
+              <HugeiconsIcon
+                icon={Calendar03Icon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+              {t("plan.planIt")}
+            </Button>
+            {planning && (
+              <PlanItDialog
+                recipe={recipe}
+                servings={
+                  servings.changed && recipe.servings
+                    ? Math.round(recipe.servings * servings.factor * 100) / 100
+                    : null
+                }
+                withRecipe={paired ?? null}
+                open={planning}
+                onOpenChange={setPlanning}
+              />
+            )}
             <Button
               size="lg"
               variant="outline"

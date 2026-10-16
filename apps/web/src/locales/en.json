@@ -217,6 +217,13 @@
     },
     "household": {
       "tab": "Household",
+      "planning": {
+        "title": "Planning",
+        "description": "The meals your household plans: all of them, unless you turn some off. A meal you turn off keeps anything already planned in it.",
+        "meals": "Meals",
+        "save": "Save",
+        "saved": "Saved."
+      },
       "none": "You're not in a household",
       "noneHint": "Ask someone in a household for an invite link.",
       "roles": {
@@ -424,6 +431,129 @@
         "change": "Change"
       }
     }
+  },
+  "plan": {
+    "title": "Plan",
+    "weekLabel": "{{label}}, {{range}}",
+    "filled": "<b>{{filled}}</b> of {{total}} meals planned",
+    "selectMeals": "Select meals",
+    "thisWeek": "This week",
+    "nextWeek": "Next week",
+    "lastWeek": "Last week",
+    "previous": "The week before",
+    "following": "The week after",
+    "toThisWeek": "This week",
+    "more": "More for the week",
+    "meals": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack"
+    },
+    "add": {
+      "breakfast": "Add breakfast",
+      "lunch": "Add lunch",
+      "dinner": "Add dinner",
+      "snack": "Add a snack"
+    },
+    "today": "Today",
+    "pool": "This week, any day",
+    "poolHint": "Meals for the week without a day yet. Put one on a day, or make it tonight.",
+    "addToPool": "Add a meal",
+    "pastCooked_one": "{{count}} cooked: {{names}}",
+    "pastCooked_other": "{{count}} cooked: {{names}}",
+    "pastPlanned_one": "{{count}} planned, none marked cooked",
+    "pastPlanned_other": "{{count}} planned, none marked cooked",
+    "pastNothing": "Nothing was planned",
+    "show": "Show",
+    "hide": "Hide",
+    "cooked": "Cooked",
+    "skipped": "Skipped",
+    "withName": "with {{name}}",
+    "aNote": "A note",
+    "servings_one": "{{count}} serving",
+    "servings_other": "{{count}} servings",
+    "menu": "More for {{name}}",
+    "startCooking": "Start cooking",
+    "markCooked": "Mark cooked",
+    "done": "Done",
+    "notCooked": "Not cooked yet",
+    "skip": "Skip",
+    "unskip": "Plan it again",
+    "tonight": "Tonight",
+    "change": "Move or change",
+    "remove": "Remove",
+    "undo": "Undo",
+    "removed": "Took {{name}} off the plan.",
+    "added": "Added {{name}}.",
+    "addedTonight": "{{name}} is tonight's now.",
+    "repeat": "Repeat last week",
+    "repeated_one": "Added {{count}} meal from last week.",
+    "repeated_other": "Added {{count}} meals from last week.",
+    "repeatedNone": "Nothing to repeat: last week was empty, or its days are planned already.",
+    "clear": "Clear the rest of the week",
+    "clearWeek": "Clear the week",
+    "cleared_one": "Cleared {{count}} meal.",
+    "cleared_other": "Cleared {{count}} meals.",
+    "clearedNone": "Nothing left to clear.",
+    "bulk": {
+      "move": "Move",
+      "cooked": "Cooked",
+      "skipped": "Skipped",
+      "remove": "Remove",
+      "moved_one": "Moved {{count}} meal.",
+      "moved_other": "Moved {{count}} meals.",
+      "marked_one": "Marked {{count}} meal.",
+      "marked_other": "Marked {{count}} meals.",
+      "removed_one": "Took {{count}} meal off the plan.",
+      "removed_other": "Took {{count}} meals off the plan."
+    },
+    "pick": {
+      "recipe": "A recipe",
+      "note": "A note",
+      "find": "Find a recipe",
+      "none": "No recipes match.",
+      "notePlaceholder": "Leftovers, eating out…",
+      "addNote": "Add"
+    },
+    "addTo": "Add to {{when}}",
+    "moveTo": "Move to",
+    "anyDayOf": "Any day, {{week}}",
+    "keepMeal": "Each one's own",
+    "when": "When",
+    "meal": "Meal",
+    "servings": "Servings",
+    "servingsHint": "Leave it empty for the recipe's {{count}}.",
+    "side": "With",
+    "noSide": "Nothing else",
+    "pickSide": "Pick a side",
+    "note": "Note",
+    "save": "Save",
+    "next": {
+      "title": "What's next",
+      "nothing": "Nothing planned ahead.",
+      "today": {
+        "breakfast": "This morning",
+        "lunch": "Lunch today",
+        "dinner": "Tonight",
+        "snack": "Today"
+      },
+      "tomorrow": {
+        "breakfast": "Tomorrow morning",
+        "lunch": "Lunch tomorrow",
+        "dinner": "Tomorrow night",
+        "snack": "Tomorrow"
+      },
+      "later": {
+        "breakfast": "{{day}} morning",
+        "lunch": "{{day}} lunch",
+        "dinner": "{{day}} night",
+        "snack": "{{day}}"
+      }
+    },
+    "planIt": "Plan it",
+    "planItTitle": "Plan {{name}}",
+    "planned": "Planned {{name}}."
   },
   "share": {
     "title": "Shared to Merran",

@@ -1,7 +1,9 @@
 import { z } from "@hono/zod-openapi"
+import { plannedMeals } from "@merran/shared"
 import {
   HOUSEHOLD_ROLES,
   INVITE_ROLES,
+  MEALS,
   type Household,
   type HouseholdMember,
   type InviteLink,
@@ -26,6 +28,10 @@ export const HouseholdSchema = z
     currency: z.string().nullable(),
     timeZone: z.string(),
     weekStartsOn: z.number().int(),
+    meals: z.array(z.enum(MEALS)).openapi({
+      description:
+        "The meals it plans, in a day's order: every meal until it opts out of some.",
+    }),
     /** Your role in it. */
     role: z.enum(HOUSEHOLD_ROLES),
   })
@@ -50,6 +56,10 @@ export const HouseholdChangesSchema = z
       .nullable(),
     timeZone: z.string().refine(isTimeZone, "That isn't a time zone."),
     weekStartsOn: z.number().int().min(0).max(6),
+    meals: z
+      .array(z.enum(MEALS))
+      .min(1, "Plan at least one meal.")
+      .openapi({ description: "The meals it plans." }),
   })
   .partial()
   .openapi("HouseholdChanges", {
@@ -102,6 +112,7 @@ export function describeHousehold(household: Household, role: HouseholdRole) {
     currency: household.currency ?? null,
     timeZone: household.timeZone,
     weekStartsOn: household.weekStartsOn,
+    meals: plannedMeals(household.settings?.meals),
     role,
   }
 }

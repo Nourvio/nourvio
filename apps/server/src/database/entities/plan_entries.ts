@@ -1,10 +1,12 @@
+import { MEALS } from "@merran/shared"
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
 import { householdFilter } from "../scope.ts"
 import { createdAt, day, id, updatedAt } from "./base.ts"
 import { householdRef } from "./households.ts"
 import { Recipe } from "./recipes.ts"
 
-export const MEALS = ["breakfast", "lunch", "dinner", "snack"] as const
+// The meals a household can plan; shared with the web app.
+export { MEALS }
 export const PLAN_STATUSES = ["planned", "cooked", "skipped"] as const
 
 /** Pantry rows as they were before a meal was cooked, to put back if it wasn't. */

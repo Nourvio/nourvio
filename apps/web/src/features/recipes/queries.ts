@@ -124,13 +124,15 @@ export const tagsQuery = queryOptions({
   queryFn: () => unwrap(api.GET("/api/recipes/tags")),
 })
 
-/** After any change to recipes: everything about them is loaded again. */
+/** After any change to recipes: everything about them, the plan too, is loaded again. */
 export function useRefreshRecipes() {
   const queryClient = useQueryClient()
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ["recipes"] }),
       queryClient.invalidateQueries({ queryKey: tagsQuery.queryKey }),
+      // The plan shows recipes too, and making one marks its meal cooked.
+      queryClient.invalidateQueries({ queryKey: ["plan"] }),
     ])
 }
 

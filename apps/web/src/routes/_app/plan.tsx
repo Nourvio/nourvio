@@ -1,20 +1,22 @@
-import { Calendar03Icon } from "@hugeicons/core-free-icons"
+import { isDay } from "@merran/shared"
 import { createFileRoute } from "@tanstack/react-router"
-import { useTranslation } from "react-i18next"
 
-import { ComingSoon } from "@/components/layout/coming-soon"
+import { householdQuery } from "@/features/household/queries"
+import { PlanPage } from "@/features/plan/plan-page"
 
+type PlanSearch = { week?: string }
+
+/** The week plan; `?week=` is any day of the week to show. */
 export const Route = createFileRoute("/_app/plan")({
-  component: PlanPage,
+  validateSearch: (search: Record<string, unknown>): PlanSearch =>
+    typeof search.week === "string" && isDay(search.week)
+      ? { week: search.week }
+      : {},
+  loader: ({ context }) => context.queryClient.ensureQueryData(householdQuery),
+  component: PlanRoute,
 })
 
-function PlanPage() {
-  const { t } = useTranslation()
-  return (
-    <ComingSoon
-      title={t("nav.plan")}
-      description={t("comingSoon.plan")}
-      icon={Calendar03Icon}
-    />
-  )
+function PlanRoute() {
+  const { week } = Route.useSearch()
+  return <PlanPage week={week} />
 }

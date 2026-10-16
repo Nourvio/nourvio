@@ -525,6 +525,170 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The plan for some days
+         * @description Meals from one day to another, up to 62 days apart, in a day's order: this week's if no days are given. A week's pool (meals for any day of it) is dated to the week's first day, with `anyDay` set. Meals of recipes in Recently deleted are left out until they're restored. With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["getPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/next": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What's next
+         * @description The next meal still planned, by the household's clock: today's from the meal of the hour on (breakfast until 11, lunch until 3, then dinner), then the days after. Snacks and the week's pool aren't counted. With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["getWhatsNext"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put a meal on the plan
+         * @description A recipe or a note, on a day's meal, after any dishes already there. With `anyDay`, it goes in the pool of the week the date is in. With an API key, it needs the `plan: write` permission.
+         */
+        post: operations["addPlanEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/entries/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change several meals at once
+         * @description Take them off, move them (to another day or meal, or the week's pool), or mark them planned, cooked or skipped: all or none. The answer says what they were before, for Undo with /plan/restore. Ids not on the plan are passed over. With an API key, it needs the `plan: write` permission.
+         */
+        post: operations["changePlanEntries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/entries/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Take a meal off the plan
+         * @description The answer is the meal as it was, to put back with /plan/restore (Undo). With an API key, it needs the `plan: write` permission.
+         */
+        delete: operations["removePlanEntry"];
+        options?: never;
+        head?: never;
+        /**
+         * Change a meal
+         * @description Move it (it goes after any dishes in its new slot), swap its recipe, give it a side, change its servings, or mark it planned, cooked or skipped. Cooked sets when its recipe and side were last made. With an API key, it needs the `plan: write` permission.
+         */
+        patch: operations["changePlanEntry"];
+        trace?: never;
+    };
+    "/api/plan/repeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Repeat last week
+         * @description The week before's meals, again: each on the same weekday and meal where that slot is still empty, and its pool into this week's pool. Skipped meals stay behind; the copies start as planned. The answer is what was added, for Undo (take them off in bulk). With an API key, it needs the `plan: write` permission.
+         */
+        post: operations["repeatLastWeek"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Clear the rest of the week
+         * @description Takes off the meals still planned for the rest of the week (from today, in this week; all of it, in another) and its pool. Cooked and skipped meals stay. The answer is what went, to put back with /plan/restore. With an API key, it needs the `plan: write` permission.
+         */
+        post: operations["clearPlan"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put meals back as they were
+         * @description Undo: meals as other changes said they were. Ones taken off come back with the same id; ones changed go back to how they were. A meal whose recipe is gone is passed over. With an API key, it needs the `plan: write` permission.
+         */
+        post: operations["restorePlanEntries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes": {
         parameters: {
             query?: never;
@@ -904,7 +1068,7 @@ export interface paths {
         put?: never;
         /**
          * Mark a recipe made
-         * @description The recipe was made now: its `lastMadeAt` is set. It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
+         * @description The recipe was made now: its `lastMadeAt` is set, and today's meal of it on the plan is marked cooked (or, failing that, one in this week's pool becomes today's, cooked). It isn't an edit, so no version is kept. With an API key, it needs the `recipes: write` permission.
          */
         post: operations["markRecipeMade"];
         delete?: never;
@@ -1812,6 +1976,9 @@ export interface components {
          *       "currency": "USD",
          *       "timeZone": "America/Phoenix",
          *       "weekStartsOn": 0,
+         *       "meals": [
+         *         "dinner"
+         *       ],
          *       "role": "owner"
          *     }
          */
@@ -1822,6 +1989,8 @@ export interface components {
             currency: string | null;
             timeZone: string;
             weekStartsOn: number;
+            /** @description The meals it plans, in a day's order: every meal until it opts out of some. */
+            meals: ("breakfast" | "lunch" | "dinner" | "snack")[];
             /** @enum {string} */
             role: "owner" | "admin" | "member";
         };
@@ -1837,6 +2006,8 @@ export interface components {
             currency?: string | null;
             timeZone?: string;
             weekStartsOn?: number;
+            /** @description The meals it plans. */
+            meals?: ("breakfast" | "lunch" | "dinner" | "snack")[];
         };
         /**
          * @example {
@@ -2030,6 +2201,9 @@ export interface components {
          *         "currency": "USD",
          *         "timeZone": "America/Phoenix",
          *         "weekStartsOn": 0,
+         *         "meals": [
+         *           "dinner"
+         *         ],
          *         "role": "owner"
          *       },
          *       "job": {
@@ -2053,6 +2227,345 @@ export interface components {
         HouseholdImport: {
             household: components["schemas"]["Household"];
             job: components["schemas"]["Job"];
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "date": "2026-10-15",
+         *           "anyDay": false,
+         *           "meal": "dinner",
+         *           "position": 0,
+         *           "status": "planned",
+         *           "recipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken",
+         *             "photo": null,
+         *             "servings": 4,
+         *             "totalMinutes": 50
+         *           },
+         *           "withRecipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *             "slug": "garlic-rice",
+         *             "name": "Garlic Rice"
+         *           },
+         *           "note": null,
+         *           "servings": null,
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        Plan: {
+            entries: components["schemas"]["PlanEntry"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *       "date": "2026-10-15",
+         *       "anyDay": false,
+         *       "meal": "dinner",
+         *       "position": 0,
+         *       "status": "planned",
+         *       "recipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *         "slug": "lemon-chicken",
+         *         "name": "Lemon Chicken",
+         *         "photo": null,
+         *         "servings": 4,
+         *         "totalMinutes": 50
+         *       },
+         *       "withRecipe": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *         "slug": "garlic-rice",
+         *         "name": "Garlic Rice"
+         *       },
+         *       "note": null,
+         *       "servings": null,
+         *       "createdAt": "2026-10-15T18:30:00.000Z"
+         *     }
+         */
+        PlanEntry: {
+            id: string;
+            /**
+             * @description Its day, or for the week's pool, the week's first day.
+             * @example 2026-10-15
+             */
+            date: string;
+            /** @description In the week's pool: for any day of the week. */
+            anyDay: boolean;
+            meal: components["schemas"]["Meal"];
+            /** @description Its place among the meal's dishes. */
+            position: number;
+            status: components["schemas"]["PlanStatus"];
+            /** @description Null for a note. */
+            recipe: {
+                id: string;
+                slug: string;
+                name: string;
+                photo: string | null;
+                servings: number | null;
+                totalMinutes: number | null;
+            } | null;
+            /** @description What it's made with: "with peanut sauce". */
+            withRecipe: {
+                id: string;
+                slug: string;
+                name: string;
+            } | null;
+            /** @description A meal that isn't a recipe: "leftovers". */
+            note: string | null;
+            /** @description Null for the recipe's own servings. */
+            servings: number | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        /** @enum {string} */
+        Meal: "breakfast" | "lunch" | "dinner" | "snack";
+        /** @enum {string} */
+        PlanStatus: "planned" | "cooked" | "skipped";
+        /**
+         * @example {
+         *       "today": "2026-10-15",
+         *       "mealNow": "dinner",
+         *       "entry": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *         "date": "2026-10-15",
+         *         "anyDay": false,
+         *         "meal": "dinner",
+         *         "position": 0,
+         *         "status": "planned",
+         *         "recipe": {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "slug": "lemon-chicken",
+         *           "name": "Lemon Chicken",
+         *           "photo": null,
+         *           "servings": 4,
+         *           "totalMinutes": 50
+         *         },
+         *         "withRecipe": {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *           "slug": "garlic-rice",
+         *           "name": "Garlic Rice"
+         *         },
+         *         "note": null,
+         *         "servings": null,
+         *         "createdAt": "2026-10-15T18:30:00.000Z"
+         *       }
+         *     }
+         */
+        WhatsNext: {
+            /**
+             * @description Today, in the household's time zone.
+             * @example 2026-10-15
+             */
+            today: string;
+            mealNow: components["schemas"]["Meal"] & unknown;
+            entry: components["schemas"]["PlanEntry"] & (Record<string, never> | null);
+        };
+        /**
+         * @example {
+         *       "date": "2026-10-15",
+         *       "meal": "dinner",
+         *       "recipe": "lemon-chicken",
+         *       "withRecipe": "garlic-rice"
+         *     }
+         */
+        NewPlanEntry: {
+            /** @example 2026-10-15 */
+            date: string;
+            meal: components["schemas"]["Meal"];
+            /** @description For the week's pool: any day of the week `date` is in. */
+            anyDay?: boolean;
+            /** @description The recipe, by id or address. Or give a note instead. */
+            recipe?: string | null;
+            /** @description A side or sauce it's made with, by id or address. */
+            withRecipe?: string | null;
+            note?: string | null;
+            servings?: number | null;
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "date": "2026-10-15",
+         *           "anyDay": false,
+         *           "meal": "dinner",
+         *           "position": 0,
+         *           "status": "cooked",
+         *           "recipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken",
+         *             "photo": null,
+         *             "servings": 4,
+         *             "totalMinutes": 50
+         *           },
+         *           "withRecipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *             "slug": "garlic-rice",
+         *             "name": "Garlic Rice"
+         *           },
+         *           "note": null,
+         *           "servings": null,
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ],
+         *       "before": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "date": "2026-10-15",
+         *           "anyDay": false,
+         *           "meal": "dinner",
+         *           "position": 0,
+         *           "status": "planned",
+         *           "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *           "note": null,
+         *           "servings": null,
+         *           "listedAt": null
+         *         }
+         *       ]
+         *     }
+         */
+        PlanBulkResult: {
+            /** @description The meals as they are now; none when they were taken off. */
+            entries: components["schemas"]["PlanEntry"][];
+            /** @description The meals as they were, for Undo. */
+            before: components["schemas"]["PlanEntrySnapshot"][];
+        };
+        /**
+         * @description A meal as it was, to put back with /plan/restore: what taking it off or changing it answers with.
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *       "date": "2026-10-15",
+         *       "anyDay": false,
+         *       "meal": "dinner",
+         *       "position": 0,
+         *       "status": "planned",
+         *       "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *       "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *       "note": null,
+         *       "servings": null,
+         *       "listedAt": null
+         *     }
+         */
+        PlanEntrySnapshot: {
+            /** Format: uuid */
+            id: string;
+            /** @example 2026-10-15 */
+            date: string;
+            anyDay: boolean;
+            meal: components["schemas"]["Meal"];
+            position: number;
+            status: components["schemas"]["PlanStatus"];
+            recipe: string | null;
+            withRecipe: string | null;
+            note: string | null;
+            servings: number | null;
+            /** Format: date-time */
+            listedAt: string | null;
+        };
+        /**
+         * @example {
+         *       "ids": [
+         *         "0199e8b0-5a10-7a01-8b00-00000000001b"
+         *       ],
+         *       "action": "status",
+         *       "status": "cooked"
+         *     }
+         */
+        PlanBulk: {
+            ids: string[];
+            /** @enum {string} */
+            action: "remove" | "move" | "status";
+            /**
+             * @description Where to move them.
+             * @example 2026-10-15
+             */
+            date?: string;
+            meal?: components["schemas"]["Meal"] & unknown;
+            /** @description Into the pool of the week `date` is in. */
+            anyDay?: boolean;
+            status?: components["schemas"]["PlanStatus"];
+        };
+        /**
+         * @example {
+         *       "date": "2026-10-16",
+         *       "status": "planned"
+         *     }
+         */
+        PlanEntryChanges: {
+            /** @example 2026-10-15 */
+            date?: string;
+            meal?: components["schemas"]["Meal"];
+            anyDay?: boolean;
+            /** @description Another recipe (Something else): it's planned afresh, its side kept. */
+            recipe?: string | null;
+            withRecipe?: string | null;
+            note?: string | null;
+            servings?: number | null;
+            status?: components["schemas"]["PlanStatus"];
+        };
+        /**
+         * @example {
+         *       "week": "2026-10-11"
+         *     }
+         */
+        PlanWeek: {
+            /**
+             * @description The week's first day.
+             * @example 2026-10-15
+             */
+            week: string;
+        };
+        /**
+         * @example {
+         *       "before": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "date": "2026-10-15",
+         *           "anyDay": false,
+         *           "meal": "dinner",
+         *           "position": 0,
+         *           "status": "planned",
+         *           "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *           "note": null,
+         *           "servings": null,
+         *           "listedAt": null
+         *         }
+         *       ]
+         *     }
+         */
+        PlanCleared: {
+            /** @description The meals taken off, for Undo. */
+            before: components["schemas"]["PlanEntrySnapshot"][];
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "date": "2026-10-15",
+         *           "anyDay": false,
+         *           "meal": "dinner",
+         *           "position": 0,
+         *           "status": "planned",
+         *           "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *           "note": null,
+         *           "servings": null,
+         *           "listedAt": null
+         *         }
+         *       ]
+         *     }
+         */
+        PlanRestore: {
+            entries: components["schemas"]["PlanEntrySnapshot"][];
         };
         /**
          * @example {
@@ -4575,6 +5088,417 @@ export interface operations {
             };
             /** @description The file is too big. */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getPlan: {
+        parameters: {
+            query?: {
+                /** @description The first day. This week's first day if left out. */
+                from?: string;
+                /** @description The last day. Six days after `from` if left out. */
+                to?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The meals. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            /** @description Not days, or too many of them. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getWhatsNext: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What's next. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WhatsNext"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addPlanEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPlanEntry"];
+            };
+        };
+        responses: {
+            /** @description On the plan. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanEntry"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    changePlanEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanBulk"];
+            };
+        };
+        responses: {
+            /** @description Done. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanBulkResult"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    removePlanEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Taken off. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanEntrySnapshot"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such meal on the plan. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    changePlanEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanEntryChanges"];
+            };
+        };
+        responses: {
+            /** @description Changed. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanEntry"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such meal on the plan, or no such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    repeatLastWeek: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanWeek"];
+            };
+        };
+        responses: {
+            /** @description What was added. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    clearPlan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanWeek"];
+            };
+        };
+        responses: {
+            /** @description Cleared. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanCleared"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    restorePlanEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanRestore"];
+            };
+        };
+        responses: {
+            /** @description As they were. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Plan"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

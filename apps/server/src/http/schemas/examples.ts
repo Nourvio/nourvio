@@ -28,6 +28,7 @@ export const IDS = {
   importFile: id(24),
   mealieGroup: id(25),
   otherMealieGroup: id(26),
+  planEntry: id(27),
 }
 
 export const TIMES = {
@@ -45,6 +46,7 @@ export const HOUSEHOLD = {
   currency: "USD",
   timeZone: "America/Phoenix",
   weekStartsOn: 0,
+  meals: ["dinner" as const],
   role: "owner" as const,
 }
 

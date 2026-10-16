@@ -16,6 +16,7 @@ import { DetailsCard } from "@/features/household/details-card"
 import { InvitesCard } from "@/features/household/invites-card"
 import { MembersCard } from "@/features/household/members-card"
 import { NewHouseholdCard } from "@/features/household/new-household-card"
+import { PlanningCard } from "@/features/household/planning-card"
 import {
   householdQuery,
   invitesQuery,
@@ -47,6 +48,7 @@ function HouseholdSettings() {
       {household ? (
         <>
           <DetailsCard />
+          {isAdminRole(household.role) && <PlanningCard />}
           <MembersCard />
           {isAdminRole(household.role) && <InvitesCard />}
         </>
