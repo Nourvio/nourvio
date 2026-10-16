@@ -263,7 +263,9 @@ export async function updateRecipe(
 export type RecipeListOptions = {
   q?: string | undefined
   tag: string[]
-  sort: "newest" | "name" | "updated" | "rating"
+  /** Only recipes not made yet, or only ones made. */
+  new?: boolean | undefined
+  sort: keyof typeof ORDER
   limit: number
   offset: number
 }
@@ -274,15 +276,19 @@ const ORDER = {
   name: { name: "asc", id: "desc" },
   updated: { updatedAt: "desc", id: "desc" },
   rating: { rating: "desc nulls last", name: "asc", id: "desc" },
+  made: { lastMadeAt: "desc nulls last", name: "asc", id: "desc" },
 } as const
 
 /** Recipes matching a search and tags, a page at a time. */
 export async function listRecipes(
   em: EntityManager,
-  { q, tag, sort, limit, offset }: RecipeListOptions
+  { q, tag, new: fresh, sort, limit, offset }: RecipeListOptions
 ) {
   const where: FilterQuery<Recipe> = {}
   const and: FilterQuery<Recipe>[] = []
+  if (fresh !== undefined) {
+    and.push({ lastMadeAt: fresh ? null : { $ne: null } })
+  }
 
   const words = q?.trim()
   if (words) {

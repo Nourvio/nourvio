@@ -27,6 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { CookNotes } from "@/features/recipes/cook-notes"
 import { formatMinutes, sourceName } from "@/features/recipes/format"
 import {
   convertible,
@@ -363,6 +364,7 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
               </p>
             </section>
           )}
+          <CookNotes recipe={recipe} />
           {recipe.sourceUrl && (
             <a
               href={recipe.sourceUrl}

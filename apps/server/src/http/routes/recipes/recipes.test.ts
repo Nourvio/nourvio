@@ -238,6 +238,25 @@ describe("finding recipes", () => {
     expect(second.recipes[0].name).toBe("Lemon Chicken")
   })
 
+  test("new ones, not made yet, or by when they were last made", async () => {
+    await kyle.post("/api/recipes/apple-pie/made")
+    await kyle.post("/api/recipes/lemon-chicken/made")
+    const names = (found: { recipes: { name: string }[] }) =>
+      found.recipes.map((r) => r.name)
+
+    const fresh = await list(kyle, "?new=true")
+    expect(fresh.total).toBe(3)
+    expect(names(fresh)).not.toContain("apple pie")
+    expect(names(await list(kyle, "?new=false"))).toEqual([
+      "apple pie",
+      "Lemon Chicken",
+    ])
+    expect(names(await list(kyle, "?sort=made&limit=2"))).toEqual([
+      "Lemon Chicken",
+      "apple pie",
+    ])
+  })
+
   test("only in the household's own recipes", async () => {
     // A second household, which the server admin switches to on starting it.
     await kyle.post("/api/households", { name: "Cabin" })

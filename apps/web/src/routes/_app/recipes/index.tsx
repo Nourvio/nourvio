@@ -46,6 +46,9 @@ export const Route = createFileRoute("/_app/recipes/")({
     return {
       ...(q ? { q } : {}),
       ...(tags ? { tags } : {}),
+      ...(search.new === true || search.new === "true"
+        ? { new: true as const }
+        : {}),
       ...((RECIPE_SORTS as readonly unknown[]).includes(search.sort)
         ? { sort: search.sort as RecipeSort }
         : {}),
@@ -72,7 +75,7 @@ function RecipesPage() {
     (next: RecipeSearch) => void navigate({ search: next, replace: true }),
     [navigate]
   )
-  const filtered = Boolean(search.q || search.tags)
+  const filtered = Boolean(search.q || search.tags || search.new)
   const total = recipes.data?.pages[0]?.total ?? 0
   const items = recipes.data?.pages.flatMap((page) => page.recipes) ?? []
 

@@ -108,32 +108,49 @@ export function RecipeFilters({
           />
         </div>
       </div>
-      {tags.length > 0 && (
-        <div
-          role="group"
-          aria-label={t("recipes.tags")}
-          className="flex flex-wrap gap-2"
+      <div
+        role="group"
+        aria-label={t("recipes.filters")}
+        className="flex flex-wrap gap-2"
+      >
+        <Toggle
+          size="sm"
+          variant="outline"
+          pressed={Boolean(search.new)}
+          onPressedChange={(pressed) =>
+            onChange({ ...search, new: pressed ? true : undefined })
+          }
+          title={t("recipes.notMadeYet")}
+          className={CHIP}
         >
-          {tags.map((tag) => {
-            const on = chosen.some(
-              (name) => name.toLowerCase() === tag.name.toLowerCase()
-            )
-            return (
-              <Toggle
-                key={tag.id}
-                size="sm"
-                variant="outline"
-                pressed={on}
-                onPressedChange={() => toggleTag(tag.name)}
-                className="rounded-full aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"
-              >
-                {tag.name}
-                <span className="text-xs opacity-70">{tag.recipes}</span>
-              </Toggle>
-            )
-          })}
-        </div>
-      )}
+          {t("recipes.new")}
+        </Toggle>
+        {tags.length > 0 && (
+          <span aria-hidden className="mx-1 my-1.5 w-px bg-border" />
+        )}
+        {tags.map((tag) => {
+          const on = chosen.some(
+            (name) => name.toLowerCase() === tag.name.toLowerCase()
+          )
+          return (
+            <Toggle
+              key={tag.id}
+              size="sm"
+              variant="outline"
+              pressed={on}
+              onPressedChange={() => toggleTag(tag.name)}
+              className={CHIP}
+            >
+              {tag.name}
+              <span className="text-xs opacity-70">{tag.recipes}</span>
+            </Toggle>
+          )
+        })}
+      </div>
     </div>
   )
 }
+
+/** A filter chip, filled in while it's on. */
+const CHIP =
+  "rounded-full aria-pressed:border-primary aria-pressed:bg-primary aria-pressed:text-primary-foreground"

@@ -44,6 +44,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet"
+import { CookNoteDialog, LastCookNote } from "@/features/recipes/cook-notes"
 import { formatServings } from "@/features/recipes/format"
 import {
   convertible,
@@ -107,6 +108,7 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
   const [textSize, setTextSize] = useTextSize()
   const screenOn = useWakeLock()
   const [finishing, setFinishing] = React.useState(false)
+  const [asking, setAsking] = React.useState(false)
   const swipe = React.useRef<{ x: number; y: number } | null>(null)
 
   const onPrep = hasPrep && page === 0
@@ -191,7 +193,8 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
       saveProgress(recipe.id, null)
       await refresh()
       toast.success(t("cook.made"))
-      leave()
+      // Then "How did it go?", and back where cooking started.
+      setAsking(true)
     } catch (error) {
       if (!(error instanceof ApiError)) throw error
       toast.error(error.message)
@@ -490,6 +493,7 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
                     })}`}
                 </p>
               </div>
+              <LastCookNote recipeId={recipe.id} />
               {showUnits && (
                 <UnitToggle
                   system={system}
@@ -626,6 +630,15 @@ export function CookView({ recipe, scale }: { recipe: Recipe; scale: number }) {
           </Button>
         )}
       </footer>
+
+      <CookNoteDialog
+        recipe={recipe}
+        open={asking}
+        onDone={() => {
+          setAsking(false)
+          leave()
+        }}
+      />
     </div>
   )
 }

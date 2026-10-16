@@ -1183,7 +1183,10 @@ export interface paths {
                     q?: string;
                     /** @description Only recipes with this tag. Repeat it for all of several. */
                     tag?: string | string[];
-                    sort?: "newest" | "name" | "updated" | "rating";
+                    /** @description Only recipes not made yet (true), or only ones made (false). */
+                    new?: string;
+                    /** @description Newest added, name, recently changed, top rated, or recently made. */
+                    sort?: "newest" | "name" | "updated" | "rating" | "made";
                     limit?: number;
                     offset?: number | null;
                 };
@@ -1965,6 +1968,209 @@ export interface paths {
                     };
                 };
                 /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/cook-notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * How cooking a recipe went
+         * @description Each time it was cooked and someone said how it went: stars, a note, or both. Newest first, the latest 50. With an API key, it needs the `recipes: read` permission.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The notes. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CookNote"][];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /**
+         * Say how cooking a recipe went
+         * @description Stars, a note for next time, or both. The stars become the recipe's rating, without keeping a version. With an API key, it needs the `recipes: write` permission.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CookNoteInput"];
+                };
+            };
+            responses: {
+                /** @description Saved. */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CookNote"];
+                    };
+                };
+                /** @description Neither stars nor a note, or something else is off. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe. */
+                404: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/cook-notes/{noteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a cooking note
+         * @description The recipe keeps its rating. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    /** @description The recipe's id, or its slug. */
+                    recipe: string;
+                    noteId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted. */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description No such recipe or note. */
                 404: {
                     headers: {
                         [name: string]: unknown;
@@ -3673,6 +3879,23 @@ export interface components {
         TagChanges: {
             /** @description A name another tag already has merges the two. */
             name: string;
+        };
+        CookNote: {
+            id: string;
+            /** @description 1 to 5 stars. */
+            rating: number | null;
+            /** @description For next time. */
+            note: string | null;
+            /** @description Who cooked it, if they're still here. */
+            by: string | null;
+            /** Format: date-time */
+            createdAt: string;
+        };
+        CookNoteInput: {
+            /** @description 1 to 5 stars. They become the recipe's rating. */
+            rating?: number | null;
+            /** @description Anything to change next time. */
+            note?: string | null;
         };
         RecipeRatingInput: {
             /** @description From 1 to 5 stars, or null to clear it. */

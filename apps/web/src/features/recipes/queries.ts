@@ -12,8 +12,15 @@ export type RecipeInput = Schemas["RecipeInput"]
 export type RecipeVersion = Schemas["RecipeVersion"]
 export type DeletedRecipe = Schemas["DeletedRecipe"]
 export type Tag = Schemas["Tag"]
+export type CookNote = Schemas["CookNote"]
 
-export const RECIPE_SORTS = ["newest", "name", "updated", "rating"] as const
+export const RECIPE_SORTS = [
+  "newest",
+  "name",
+  "updated",
+  "rating",
+  "made",
+] as const
 export type RecipeSort = (typeof RECIPE_SORTS)[number]
 
 /**
@@ -23,6 +30,8 @@ export type RecipeSort = (typeof RECIPE_SORTS)[number]
 export type RecipeSearch = {
   q?: string
   tags?: string
+  /** Only recipes not made yet. */
+  new?: true
   sort?: RecipeSort
 }
 
@@ -48,6 +57,7 @@ export const recipesQuery = (search: RecipeSearch) =>
               ...(searchTags(search).length > 0
                 ? { tag: searchTags(search) }
                 : {}),
+              ...(search.new ? { new: "true" } : {}),
               sort: search.sort ?? "newest",
               limit: PAGE,
               offset: pageParam,
@@ -103,3 +113,14 @@ export function useRefreshRecipes() {
       queryClient.invalidateQueries({ queryKey: tagsQuery.queryKey }),
     ])
 }
+
+export const cookNotesQuery = (recipeId: string) =>
+  queryOptions({
+    queryKey: ["recipes", "cook-notes", recipeId],
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/recipes/{recipe}/cook-notes", {
+          params: { path: { recipe: recipeId } },
+        })
+      ),
+  })

@@ -306,7 +306,8 @@
       "newest": "Newest",
       "name": "Name",
       "updated": "Recently changed",
-      "rating": "Rating"
+      "rating": "Rating",
+      "made": "Recently made"
     },
     "tags": "Tags",
     "count_one": "{{count}} recipe",
@@ -463,7 +464,27 @@
     "original": "Original recipe: {{site}}",
     "startCooking": "Start cooking",
     "madeIt": "Made it",
-    "markedMade": "Marked as made today."
+    "markedMade": "Marked as made today.",
+    "filters": "Filters",
+    "new": "New",
+    "notMadeYet": "Not made yet",
+    "madeWhen": "Made {{when}}",
+    "cookNotes": {
+      "title": "Cooking notes",
+      "add": "Add a note",
+      "none": "How it went each time it was made. Finish cooking in the cook view to be asked.",
+      "ask": "How did it go?",
+      "askDescription": "Rate {{name}}, and note anything to change next time.",
+      "placeholder": "Anything to change next time? Like “needed more salt” or “5 minutes less in the oven”.",
+      "noteLabel": "A note for next time",
+      "skip": "Skip",
+      "save": "Save",
+      "saved": "Saved.",
+      "delete": "Delete this note",
+      "deleted": "Note deleted.",
+      "byWhen": "{{when}} · {{name}}",
+      "lastTime": "Last time:"
+    }
   },
   "cook": {
     "exit": "Exit",

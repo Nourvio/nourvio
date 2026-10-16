@@ -8,6 +8,7 @@ import { Link } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 
 import { Badge } from "@/components/ui/badge"
+import { formatRelativeDate } from "@/lib/format"
 
 import { formatMinutes, formatServings } from "./format"
 import type { RecipeSummary } from "./queries"
@@ -15,7 +16,7 @@ import { RatingStars } from "./rating-stars"
 
 /** A recipe in the library: its photo, its name, a little about it, and its tags. */
 export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   return (
     <Link
       to="/recipes/$slug"
@@ -77,15 +78,23 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
           )}
           {recipe.rating !== null && <RatingStars rating={recipe.rating} />}
         </div>
-        {recipe.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {recipe.tags.map((tag) => (
-              <Badge key={tag} variant="secondary">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <div className="flex flex-wrap gap-1.5">
+          {/* New until it's made, then when it last was. */}
+          {recipe.lastMadeAt ? (
+            <Badge className="bg-accent text-accent-foreground">
+              {t("recipes.madeWhen", {
+                when: formatRelativeDate(recipe.lastMadeAt, i18n.language),
+              })}
+            </Badge>
+          ) : (
+            <Badge title={t("recipes.notMadeYet")}>{t("recipes.new")}</Badge>
+          )}
+          {recipe.tags.map((tag) => (
+            <Badge key={tag} variant="secondary">
+              {tag}
+            </Badge>
+          ))}
+        </div>
       </div>
     </Link>
   )

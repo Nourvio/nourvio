@@ -130,7 +130,13 @@ export const RecipeSchema = RecipeSummarySchema.extend({
   steps: z.array(StepSchema),
 }).openapi("Recipe")
 
-export const RECIPE_SORTS = ["newest", "name", "updated", "rating"] as const
+export const RECIPE_SORTS = [
+  "newest",
+  "name",
+  "updated",
+  "rating",
+  "made",
+] as const
 
 export const RecipeListQuerySchema = z.object({
   q: z
@@ -146,7 +152,13 @@ export const RecipeListQuerySchema = z.object({
     .openapi({
       description: "Only recipes with this tag. Repeat it for all of several.",
     }),
-  sort: z.enum(RECIPE_SORTS).default("newest"),
+  new: z.stringbool().optional().openapi({
+    description: "Only recipes not made yet (true), or only ones made (false).",
+  }),
+  sort: z.enum(RECIPE_SORTS).default("newest").openapi({
+    description:
+      "Newest added, name, recently changed, top rated, or recently made.",
+  }),
   limit: z.coerce.number().int().min(1).max(100).default(48),
   offset: z.coerce.number().int().min(0).default(0),
 })
@@ -164,6 +176,49 @@ export const RecipeParam = z.object({
     description: "The recipe's id, or its slug.",
     example: "lemon-chicken",
   }),
+})
+
+export const CookNoteSchema = z
+  .object({
+    id: z.string(),
+    rating: z.number().nullable().openapi({ description: "1 to 5 stars." }),
+    note: z.string().nullable().openapi({ description: "For next time." }),
+    by: z
+      .string()
+      .nullable()
+      .openapi({ description: "Who cooked it, if they're still here." }),
+    createdAt: z.iso.datetime(),
+  })
+  .openapi("CookNote")
+
+export const CookNoteInputSchema = z
+  .object({
+    rating: z
+      .number()
+      .int()
+      .min(1)
+      .max(5)
+      .nullish()
+      .transform((value) => value ?? null)
+      .openapi({
+        description: "1 to 5 stars. They become the recipe's rating.",
+      }),
+    note: z
+      .string()
+      .trim()
+      .max(1000, "Keep the note under 1,000 characters.")
+      .nullish()
+      .transform((value) => value || null)
+      .openapi({ description: "Anything to change next time." }),
+  })
+  .refine((input) => input.rating !== null || input.note !== null, {
+    message: "Give it stars, a note, or both.",
+  })
+  .openapi("CookNoteInput")
+export type CookNoteInput = z.infer<typeof CookNoteInputSchema>
+
+export const CookNoteParam = RecipeParam.extend({
+  noteId: z.string().openapi({ param: { name: "noteId", in: "path" } }),
 })
 
 export const RatingInputSchema = z
