@@ -4,11 +4,18 @@ import {
   ArrowRight01Icon,
   Cancel01Icon,
   Delete02Icon,
+  MagicWand01Icon,
   MoreHorizontalIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { addDays, weekDays, weekStartOf } from "@merran/shared"
+import {
+  addDays,
+  dayOfWeek,
+  NO_THEMES,
+  weekDays,
+  weekStartOf,
+} from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import * as React from "react"
@@ -24,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Skeleton } from "@/components/ui/skeleton"
+import { themesQuery } from "@/features/household/queries"
 import { SelectionBar, SelectionHeader } from "@/features/select/selection-bar"
 import {
   useSelection,
@@ -33,6 +41,7 @@ import {
 import { AddMealDialog, type Slot } from "./add-meal-dialog"
 import { MoveMealsDialog } from "./change-meal-dialog"
 import { DayCard, PastDays, PoolCard } from "./day-card"
+import { FillWeekDialog } from "./fill-week-dialog"
 import { formatDay, formatWeek } from "./format"
 import { NextMealCard } from "./next-meal-card"
 import {
@@ -56,6 +65,7 @@ export function PlanPage({ week: asked }: { week?: string }) {
   const days = weekDays(week)
   const plan = useQuery(planQuery(week, addDays(week, 6)))
   const entries = plan.data?.entries ?? []
+  const themes = useQuery(themesQuery).data?.themes ?? NO_THEMES
   const selection = useSelection()
   useSelectionKeepOnly(
     selection,
@@ -63,6 +73,7 @@ export function PlanPage({ week: asked }: { week?: string }) {
   )
   const [adding, setAdding] = React.useState<Slot | null>(null)
   const [moving, setMoving] = React.useState(false)
+  const [filling, setFilling] = React.useState(false)
   const [showPast, setShowPast] = React.useState(false)
 
   const thisWeek = week === clock.thisWeek
@@ -81,6 +92,8 @@ export function PlanPage({ week: asked }: { week?: string }) {
   const onDay = (day: string) =>
     entries.filter((entry) => !entry.anyDay && entry.date === day)
   const picked = [...selection.picked]
+  // A week with days still to come can be filled.
+  const fillable = days.at(-1)! >= clock.today
 
   const bulk = async (action: Parameters<typeof actions.bulk>[1]) => {
     if (await actions.bulk(picked, action)) selection.done()
@@ -98,37 +111,49 @@ export function PlanPage({ week: asked }: { week?: string }) {
               allIds={entries.map((entry) => entry.id)}
             />
           ) : (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label={t("plan.more")}
+            <div className="flex gap-2">
+              {fillable && (
+                <Button variant="outline" onClick={() => setFilling(true)}>
+                  <HugeiconsIcon
+                    icon={MagicWand01Icon}
+                    strokeWidth={2}
+                    data-icon="inline-start"
                   />
-                }
-              >
-                <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem
-                  disabled={entries.length === 0}
-                  onClick={() => selection.start()}
+                  {t("plan.fill.button")}
+                </Button>
+              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label={t("plan.more")}
+                    />
+                  }
                 >
-                  {t("plan.selectMeals")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void actions.repeat(week)}>
-                  {t("plan.repeat")}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => void actions.clear(week)}
-                >
-                  {thisWeek ? t("plan.clear") : t("plan.clearWeek")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem
+                    disabled={entries.length === 0}
+                    onClick={() => selection.start()}
+                  >
+                    {t("plan.selectMeals")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => void actions.repeat(week)}>
+                    {t("plan.repeat")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => void actions.clear(week)}
+                  >
+                    {thisWeek ? t("plan.clear") : t("plan.clearWeek")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           )
         }
       />
@@ -210,6 +235,7 @@ export function PlanPage({ week: asked }: { week?: string }) {
                 day={day}
                 today={clock.today}
                 meals={clock.meals}
+                theme={themes[dayOfWeek(day)] ?? null}
                 entries={onDay(day)}
                 selection={selection}
                 onAdd={(meal) =>
@@ -231,6 +257,13 @@ export function PlanPage({ week: asked }: { week?: string }) {
         onOpenChange={(open) => {
           if (!open) setAdding(null)
         }}
+      />
+      <FillWeekDialog
+        open={filling}
+        onOpenChange={setFilling}
+        days={days}
+        entries={entries}
+        themes={themes}
       />
       {moving && (
         <MoveMealsDialog

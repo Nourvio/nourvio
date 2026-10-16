@@ -284,6 +284,32 @@
         "description": "As a server admin, you can start more households. You'll own it and switch to it.",
         "submit": "Start household",
         "started": "Started {{name}}."
+      },
+      "tastes": {
+        "title": "Tastes",
+        "description": "What your household eats and doesn't. Fill the week keeps to it. Anyone in the household can change it.",
+        "avoid": "Foods to avoid",
+        "avoidHint": "Nuts, dairy, gluten, eggs and meat get the same careful check as the diet labels: pesto has nuts, butter is dairy. An allergy is never suggested.",
+        "food": "Food to avoid",
+        "foodPlaceholder": "A food, like mushrooms",
+        "allergy": "Allergy",
+        "add": "Add",
+        "stopAvoiding": "Stop avoiding {{food}}",
+        "diets": "Every meal must be",
+        "weeknight": "Weeknight dinners, Monday to Thursday",
+        "anyLength": "Any length",
+        "upTo": "{{minutes}} min or less",
+        "anHour": "An hour or less",
+        "saved": "Saved."
+      },
+      "themes": {
+        "title": "Theme nights",
+        "description": "A theme for each night's dinner, like taco night or fish on Friday. Fill the week suggests dinners that fit: tagged or named for it, vegetarian for meatless, never made for something new. Leftovers and eat-out nights stay empty.",
+        "none": "No theme",
+        "custom": "A tag of your own…",
+        "tagPlaceholder": "A tag, like curry or burgers",
+        "tag": "{{day}}'s tag",
+        "saved": "Saved."
       }
     },
     "lockedBy": "Set on the server, by {{env}}",
@@ -553,7 +579,42 @@
     },
     "planIt": "Plan it",
     "planItTitle": "Plan {{name}}",
-    "planned": "Planned {{name}}."
+    "planned": "Planned {{name}}.",
+    "fill": {
+      "button": "Fill the week",
+      "title": "Fill the week",
+      "description": "Ideas from your recipes for the empty meals, from today on. Swap any you don't fancy.",
+      "meals": "Meals to fill",
+      "over": "This week is over. Go to a later week to fill it.",
+      "allPlanned": "Those meals are all planned for the rest of the week.",
+      "failed": "Couldn't get ideas. Try again in a moment.",
+      "nothing": "Nothing new to suggest. Ideas come from your recipes, leaving out anything planned or made in the last two weeks and anything your tastes rule out, so add a few more. Tag breakfast and lunch recipes to have them suggested.",
+      "nothingLeft": "Nothing left to add.",
+      "unfilled_one": "No idea for {{count}} meal: nothing new in your recipes fits.",
+      "unfilled_other": "No idea for {{count}} meals: nothing new in your recipes fits.",
+      "reroll": "Something else for {{when}}",
+      "leaveOut": "Leave {{when}} empty",
+      "noOther": "No other ideas for {{when}}.",
+      "add_one": "Add {{count}} meal",
+      "add_other": "Add {{count}} meals",
+      "added_one": "Added {{count}} meal to the plan.",
+      "added_other": "Added {{count}} meals to the plan.",
+      "cancel": "Cancel",
+      "close": "Close"
+    },
+    "why": {
+      "theme": "{{label}}",
+      "themeMissed": "{{label}}: nothing fits yet",
+      "new": "Never made",
+      "notLately_one": "Not had in {{count}} week",
+      "notLately_other": "Not had in {{count}} weeks",
+      "rated_one": "Rated {{count}} star",
+      "rated_other": "Rated {{count}} stars",
+      "quick": "Quick: {{time}}"
+    },
+    "somethingElse": "Something else",
+    "swapped": "Swapped in {{name}}.",
+    "noOther": "No other ideas for this meal."
   },
   "share": {
     "title": "Shared to Merran",

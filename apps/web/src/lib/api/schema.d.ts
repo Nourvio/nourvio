@@ -505,6 +505,54 @@ export interface paths {
         patch: operations["updateMember"];
         trace?: never;
     };
+    "/api/households/current/tastes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the household eats
+         * @description Foods it avoids (an allergy is never suggested), diets every meal must fit, and how long a weeknight dinner can take. Fill the week keeps to them. With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["getTastes"];
+        /**
+         * Change what the household eats
+         * @description Anyone in the household can: everyone eats. Replaces them all; a food listed twice is kept once, as an allergy if either says so. With an API key, it needs the `plan: write` permission.
+         */
+        put: operations["setTastes"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/households/current/themes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's theme nights
+         * @description Dinner's theme each weekday, Sunday first: taco night, fish on Friday, eat out on Saturday. Fill the week keeps to them. With an API key, it needs the `plan: read` permission.
+         */
+        get: operations["getThemeNights"];
+        /**
+         * Change the household's theme nights
+         * @description Household admins only. Replaces the whole week.
+         */
+        put: operations["setThemeNights"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/households/import": {
         parameters: {
             query?: never;
@@ -579,6 +627,26 @@ export interface paths {
          * @description A recipe or a note, on a day's meal, after any dishes already there. With `anyDay`, it goes in the pool of the week the date is in. With an API key, it needs the `plan: write` permission.
          */
         post: operations["addPlanEntry"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/entries/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put several meals on the plan
+         * @description Like putting each on, but all or none: what Fill the week adds. Each goes after any dishes already in its slot. With an API key, it needs the `plan: write` permission.
+         */
+        post: operations["addPlanEntries"];
         delete?: never;
         options?: never;
         head?: never;
@@ -683,6 +751,26 @@ export interface paths {
          * @description Undo: meals as other changes said they were. Ones taken off come back with the same id; ones changed go back to how they were. A meal whose recipe is gone is passed over. With an API key, it needs the `plan: write` permission.
          */
         post: operations["restorePlanEntries"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/plan/suggest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Suggest meals for open slots
+         * @description A recipe for each slot, saying why: Fill the week and Something else. Keeps to the household's tastes and theme nights, doesn't repeat a dish within two weeks, and pairs a side when one goes with it. Nothing is planned; slots with nothing suitable are left out. Asking again gives other ideas. With an API key, it needs the `plan: read` permission.
+         */
+        post: operations["suggestMeals"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2194,6 +2282,66 @@ export interface components {
         };
         /**
          * @example {
+         *       "avoid": [
+         *         {
+         *           "food": "peanuts",
+         *           "allergy": true
+         *         },
+         *         {
+         *           "food": "mushrooms",
+         *           "allergy": false
+         *         }
+         *       ],
+         *       "diets": [],
+         *       "weeknightMinutes": 45
+         *     }
+         */
+        Tastes: {
+            /** @description Foods the household doesn't eat. */
+            avoid: {
+                food: string;
+                allergy: boolean;
+            }[];
+            /** @description Diets every meal must fit. */
+            diets: ("vegetarian" | "vegan" | "gluten-free" | "dairy-free" | "egg-free" | "nut-free")[];
+            /** @description The longest a dinner Monday to Thursday can take. */
+            weeknightMinutes: number | null;
+        };
+        /**
+         * @example {
+         *       "themes": [
+         *         null,
+         *         null,
+         *         {
+         *           "kind": "tag",
+         *           "name": "Tacos",
+         *           "tag": "taco"
+         *         },
+         *         null,
+         *         null,
+         *         {
+         *           "kind": "fish",
+         *           "name": "Fish"
+         *         },
+         *         {
+         *           "kind": "skip",
+         *           "name": "Eat out"
+         *         }
+         *       ]
+         *     }
+         */
+        ThemeNights: {
+            /** @description Dinner's theme each weekday, Sunday first; null for none. */
+            themes: components["schemas"]["NightTheme"][];
+        };
+        NightTheme: {
+            /** @enum {string} */
+            kind: "tag" | "meatless" | "fish" | "new" | "quick" | "skip";
+            name: string;
+            tag?: string;
+        } | null;
+        /**
+         * @example {
          *       "household": {
          *         "id": "0199e8b0-5a10-7a01-8b00-000000000003",
          *         "name": "The Riveras",
@@ -2253,6 +2401,12 @@ export interface components {
          *           },
          *           "note": null,
          *           "servings": null,
+         *           "why": [
+         *             {
+         *               "kind": "theme",
+         *               "label": "Taco night"
+         *             }
+         *           ],
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ]
@@ -2284,6 +2438,12 @@ export interface components {
          *       },
          *       "note": null,
          *       "servings": null,
+         *       "why": [
+         *         {
+         *           "kind": "theme",
+         *           "label": "Taco night"
+         *         }
+         *       ],
          *       "createdAt": "2026-10-15T18:30:00.000Z"
          *     }
          */
@@ -2319,6 +2479,8 @@ export interface components {
             note: string | null;
             /** @description Null for the recipe's own servings. */
             servings: number | null;
+            /** @description Why it was picked, when Fill the week picked it: none otherwise. */
+            why: components["schemas"]["Reason"][];
             /** Format: date-time */
             createdAt: string;
         };
@@ -2326,6 +2488,37 @@ export interface components {
         Meal: "breakfast" | "lunch" | "dinner" | "snack";
         /** @enum {string} */
         PlanStatus: "planned" | "cooked" | "skipped";
+        /**
+         * @description Why a meal was picked: the night's theme ("Taco night"), or one nothing fitted; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.
+         * @example {
+         *       "kind": "notLately",
+         *       "weeks": 5
+         *     }
+         */
+        Reason: {
+            /** @enum {string} */
+            kind: "theme";
+            label: string;
+        } | {
+            /** @enum {string} */
+            kind: "themeMissed";
+            label: string;
+        } | {
+            /** @enum {string} */
+            kind: "new";
+        } | {
+            /** @enum {string} */
+            kind: "notLately";
+            weeks: number;
+        } | {
+            /** @enum {string} */
+            kind: "rated";
+            stars: number;
+        } | {
+            /** @enum {string} */
+            kind: "quick";
+            minutes: number;
+        };
         /**
          * @example {
          *       "today": "2026-10-15",
@@ -2352,6 +2545,12 @@ export interface components {
          *         },
          *         "note": null,
          *         "servings": null,
+         *         "why": [
+         *           {
+         *             "kind": "theme",
+         *             "label": "Taco night"
+         *           }
+         *         ],
          *         "createdAt": "2026-10-15T18:30:00.000Z"
          *       }
          *     }
@@ -2385,6 +2584,68 @@ export interface components {
             withRecipe?: string | null;
             note?: string | null;
             servings?: number | null;
+            /** @description Why it was picked, as Fill the week said. */
+            why?: components["schemas"]["Reason"][] | null;
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+         *           "date": "2026-10-15",
+         *           "anyDay": false,
+         *           "meal": "dinner",
+         *           "position": 0,
+         *           "status": "planned",
+         *           "recipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken",
+         *             "photo": null,
+         *             "servings": 4,
+         *             "totalMinutes": 50
+         *           },
+         *           "withRecipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *             "slug": "garlic-rice",
+         *             "name": "Garlic Rice"
+         *           },
+         *           "note": null,
+         *           "servings": null,
+         *           "why": [
+         *             {
+         *               "kind": "theme",
+         *               "label": "Taco night"
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-15T18:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        PlanEntries: {
+            entries: components["schemas"]["PlanEntry"][];
+        };
+        /**
+         * @example {
+         *       "entries": [
+         *         {
+         *           "date": "2026-10-15",
+         *           "meal": "dinner",
+         *           "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *           "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *           "why": [
+         *             {
+         *               "kind": "notLately",
+         *               "weeks": 5
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        NewPlanEntries: {
+            entries: components["schemas"]["NewPlanEntry"][];
         };
         /**
          * @example {
@@ -2411,6 +2672,12 @@ export interface components {
          *           },
          *           "note": null,
          *           "servings": null,
+         *           "why": [
+         *             {
+         *               "kind": "theme",
+         *               "label": "Taco night"
+         *             }
+         *           ],
          *           "createdAt": "2026-10-15T18:30:00.000Z"
          *         }
          *       ],
@@ -2426,7 +2693,8 @@ export interface components {
          *           "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
          *           "note": null,
          *           "servings": null,
-         *           "listedAt": null
+         *           "listedAt": null,
+         *           "why": null
          *         }
          *       ]
          *     }
@@ -2450,7 +2718,8 @@ export interface components {
          *       "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
          *       "note": null,
          *       "servings": null,
-         *       "listedAt": null
+         *       "listedAt": null,
+         *       "why": null
          *     }
          */
         PlanEntrySnapshot: {
@@ -2468,6 +2737,7 @@ export interface components {
             servings: number | null;
             /** Format: date-time */
             listedAt: string | null;
+            why?: components["schemas"]["Reason"][] | null;
         };
         /**
          * @example {
@@ -2509,6 +2779,8 @@ export interface components {
             note?: string | null;
             servings?: number | null;
             status?: components["schemas"]["PlanStatus"];
+            /** @description Why a new recipe was picked, as Something else said. */
+            why?: components["schemas"]["Reason"][] | null;
         };
         /**
          * @example {
@@ -2536,7 +2808,8 @@ export interface components {
          *           "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
          *           "note": null,
          *           "servings": null,
-         *           "listedAt": null
+         *           "listedAt": null,
+         *           "why": null
          *         }
          *       ]
          *     }
@@ -2559,13 +2832,91 @@ export interface components {
          *           "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
          *           "note": null,
          *           "servings": null,
-         *           "listedAt": null
+         *           "listedAt": null,
+         *           "why": null
          *         }
          *       ]
          *     }
          */
         PlanRestore: {
             entries: components["schemas"]["PlanEntrySnapshot"][];
+        };
+        /**
+         * @example {
+         *       "suggestions": [
+         *         {
+         *           "date": "2026-10-15",
+         *           "meal": "dinner",
+         *           "recipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken",
+         *             "photo": null,
+         *             "servings": 4,
+         *             "totalMinutes": 50
+         *           },
+         *           "withRecipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *             "slug": "garlic-rice",
+         *             "name": "Garlic Rice"
+         *           },
+         *           "why": [
+         *             {
+         *               "kind": "notLately",
+         *               "weeks": 5
+         *             },
+         *             {
+         *               "kind": "rated",
+         *               "stars": 5
+         *             }
+         *           ]
+         *         }
+         *       ]
+         *     }
+         */
+        Suggestions: {
+            suggestions: {
+                /** @example 2026-10-15 */
+                date: string;
+                meal: components["schemas"]["Meal"];
+                recipe: {
+                    id: string;
+                    slug: string;
+                    name: string;
+                    photo: string | null;
+                    servings: number | null;
+                    totalMinutes: number | null;
+                };
+                withRecipe: {
+                    id: string;
+                    slug: string;
+                    name: string;
+                } | null;
+                why: components["schemas"]["Reason"][];
+            }[];
+        };
+        /**
+         * @example {
+         *       "slots": [
+         *         {
+         *           "date": "2026-10-15",
+         *           "meal": "dinner"
+         *         },
+         *         {
+         *           "date": "2026-10-16",
+         *           "meal": "dinner"
+         *         }
+         *       ]
+         *     }
+         */
+        SuggestRequest: {
+            slots: {
+                /** @example 2026-10-15 */
+                date: string;
+                meal: components["schemas"]["Meal"];
+            }[];
+            /** @description Recipes not to suggest: ideas already showing, or ones passed over. */
+            exclude?: string[];
         };
         /**
          * @example {
@@ -5037,6 +5388,166 @@ export interface operations {
             };
         };
     };
+    getTastes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its tastes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tastes"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setTastes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Tastes"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Tastes"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getThemeNights: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its theme nights. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThemeNights"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setThemeNights: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ThemeNights"];
+            };
+        };
+        responses: {
+            /** @description Saved. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ThemeNights"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     importHousehold: {
         parameters: {
             query?: never;
@@ -5207,6 +5718,57 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanEntry"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    addPlanEntries: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NewPlanEntries"];
+            };
+        };
+        responses: {
+            /** @description On the plan. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanEntries"];
                 };
             };
             /** @description Not signed in. */
@@ -5486,6 +6048,48 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Plan"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    suggestMeals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuggestRequest"];
+            };
+        };
+        responses: {
+            /** @description Ideas, in the slots' order. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Suggestions"];
                 };
             };
             /** @description Not signed in. */

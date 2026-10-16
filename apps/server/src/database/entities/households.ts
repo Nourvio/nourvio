@@ -1,13 +1,17 @@
+import type { HouseholdTastes, Meal, WeekThemes } from "@merran/shared"
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
 import { createdAt, id } from "./base.ts"
 
 /** Planning settings a household reads and saves as a whole. */
 export type HouseholdSettings = {
-  meals?: ("breakfast" | "lunch" | "dinner" | "snack")[]
+  /** The meals it plans: every meal until it opts out of some. */
+  meals?: Meal[]
   alwaysOnHand?: string[]
-  tastes?: Record<string, unknown>
+  /** What it eats and doesn't. */
+  tastes?: HouseholdTastes
   autoplan?: Record<string, unknown>
-  themes?: Record<string, string>
+  /** Dinner's theme each weekday, Sunday first. */
+  themes?: WeekThemes
   weeklyBudget?: { amount: number; currency: string } | null
 }
 

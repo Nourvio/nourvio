@@ -9,6 +9,7 @@ import {
   plannedMeals,
   weekStartOf,
   type Meal,
+  type Reason,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
@@ -87,6 +88,7 @@ export function describeEntry(entry: PlanEntry) {
         : null,
     note: entry.note ?? null,
     servings: toNumber(entry.servings),
+    why: entry.why ?? [],
     createdAt: entry.createdAt.toISOString(),
   }
 }
@@ -107,6 +109,7 @@ export function snapshotOf(entry: PlanEntry) {
     note: entry.note ?? null,
     servings: toNumber(entry.servings),
     listedAt: entry.listedAt?.toISOString() ?? null,
+    why: entry.why ?? null,
   }
 }
 
@@ -244,22 +247,20 @@ export type NewEntry = {
   withRecipe?: string | null
   note?: string | null
   servings?: number | null
+  /** Why it was picked, by Fill the week. */
+  why?: Reason[] | null
 }
 
-/** Puts a meal on the plan, after any already in its slot. */
-export async function addEntry(
+/** Makes a meal, after any already in its slot, ready to save. */
+async function createEntry(
   em: EntityManager,
   householdId: string,
-  input: NewEntry
+  input: NewEntry,
+  weekStartsOn: number
 ) {
   checkDay(input.date, "date")
   const anyDay = input.anyDay ?? false
-  const date = anyDay
-    ? weekStartOf(
-        input.date,
-        (await householdClock(em, householdId)).weekStartsOn
-      )
-    : input.date
+  const date = anyDay ? weekStartOf(input.date, weekStartsOn) : input.date
   const recipe = input.recipe
     ? await recipeFor(em, input.recipe, "recipe")
     : null
@@ -277,10 +278,40 @@ export async function addEntry(
     note: input.note?.trim() || null,
     servings: input.servings ?? null,
     status: "planned",
+    why: input.why?.length ? input.why : null,
   })
   checkShape(entry)
+  return entry
+}
+
+/** Puts a meal on the plan, after any already in its slot. */
+export async function addEntry(
+  em: EntityManager,
+  householdId: string,
+  input: NewEntry
+) {
+  const { weekStartsOn } = await householdClock(em, householdId)
+  const entry = await createEntry(em, householdId, input, weekStartsOn)
   await em.flush()
   return describeEntry(entry)
+}
+
+/** Several meals at once, like Fill the week's: all or none. */
+export async function addEntries(
+  em: EntityManager,
+  householdId: string,
+  inputs: readonly NewEntry[]
+) {
+  const { weekStartsOn } = await householdClock(em, householdId)
+  return inHouseholdTransaction(em, householdId, async (tx) => {
+    const added: PlanEntry[] = []
+    for (const input of inputs) {
+      added.push(await createEntry(tx, householdId, input, weekStartsOn))
+      // Each after the one added before it in the same slot.
+      await tx.flush()
+    }
+    return sortEntries(added).map(describeEntry)
+  })
 }
 
 export type EntryChanges = Partial<{
@@ -292,6 +323,8 @@ export type EntryChanges = Partial<{
   note: string | null
   servings: number | null
   status: PlanStatus
+  /** Why it was picked: Something else says so. */
+  why: Reason[] | null
 }>
 
 /** Moves, swaps or changes a meal. Moving it puts it after any in its new slot. */
@@ -329,6 +362,7 @@ async function change(
       entry.note = null
       entry.listedAt = null
       entry.status = "planned"
+      entry.why = changes.why?.length ? changes.why : null
     } else if (!recipe) {
       entry.recipe = null
       entry.withRecipe = null
@@ -339,6 +373,7 @@ async function change(
     if (entry.note) {
       entry.recipe = null
       entry.withRecipe = null
+      entry.why = null
     }
   }
   if (changes.withRecipe !== undefined) {
@@ -480,6 +515,7 @@ export async function restoreEntries(
         note: snapshot.note,
         servings: snapshot.servings,
         listedAt: snapshot.listedAt ? new Date(snapshot.listedAt) : null,
+        why: snapshot.why ?? null,
       })
       restored.push(entry)
     }

@@ -7,6 +7,12 @@ import { api, unwrap, type Schemas } from "@/lib/api/client"
 export type PlanEntry = Schemas["PlanEntry"]
 export type PlanSnapshot = Schemas["PlanEntrySnapshot"]
 export type Meal = PlanEntry["meal"]
+export type Suggestion = Schemas["Suggestions"]["suggestions"][number]
+export type PlanSlot = { date: string; meal: Meal }
+
+/** Recipes for a meal or more, saying why. */
+export const suggest = (slots: PlanSlot[], exclude: string[] = []) =>
+  unwrap(api.POST("/api/plan/suggest", { body: { slots, exclude } }))
 
 /** The plan from one day to another, the week's pool included. */
 export const planQuery = (from: string, to: string) =>

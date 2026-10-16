@@ -6,6 +6,7 @@ import {
   MoreHorizontalIcon,
   Moon02Icon,
   NoteIcon,
+  RefreshIcon,
   RotateLeft01Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
@@ -30,6 +31,7 @@ import { cn } from "@/lib/utils"
 import { ChangeMealDialog } from "./change-meal-dialog"
 import { useHouseholdClock, type PlanEntry } from "./queries"
 import { usePlanActions } from "./use-plan-actions"
+import { useWhyText } from "./why"
 
 /** Cooking a planned meal: its servings, and its side alongside. */
 export function cookSearch(entry: PlanEntry) {
@@ -60,6 +62,7 @@ export function MealTile({
   selection: Selection
 }) {
   const { t } = useTranslation()
+  const whyText = useWhyText()
   const press = useLongPress(
     () => selection.start(entry.id),
     !selection.selecting
@@ -183,6 +186,11 @@ export function MealTile({
                 .join(" · ")
             : !cooked && !skipped && t("plan.aNote")}
         </span>
+        {entry.why.length > 0 && entry.status === "planned" && (
+          <span className="truncate text-xs font-medium text-primary">
+            {whyText(entry.why)}
+          </span>
+        )}
       </div>
       <MealMenu entry={entry} name={name} />
     </li>
@@ -283,6 +291,12 @@ export function MealMenu({
             >
               <HugeiconsIcon icon={Moon02Icon} strokeWidth={2} />
               {t("plan.tonight")}
+            </DropdownMenuItem>
+          )}
+          {entry.recipe && entry.status === "planned" && !entry.anyDay && (
+            <DropdownMenuItem onClick={() => void actions.somethingElse(entry)}>
+              <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} />
+              {t("plan.somethingElse")}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem onClick={() => setChanging(true)}>

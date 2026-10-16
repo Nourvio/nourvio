@@ -22,7 +22,11 @@ import {
   invitesQuery,
   isAdminRole,
   membersQuery,
+  tastesQuery,
+  themesQuery,
 } from "@/features/household/queries"
+import { TastesCard } from "@/features/household/tastes-card"
+import { ThemeNightsCard } from "@/features/household/theme-nights-card"
 
 export const Route = createFileRoute("/_app/settings/household")({
   loader: async ({ context: { queryClient } }) => {
@@ -32,6 +36,8 @@ export const Route = createFileRoute("/_app/settings/household")({
     await Promise.all([
       queryClient.ensureQueryData(householdQuery),
       queryClient.ensureQueryData(membersQuery),
+      queryClient.ensureQueryData(tastesQuery),
+      isAdminRole(active.role) && queryClient.ensureQueryData(themesQuery),
       isAdminRole(active.role) && queryClient.ensureQueryData(invitesQuery),
     ])
   },
@@ -49,6 +55,8 @@ function HouseholdSettings() {
         <>
           <DetailsCard />
           {isAdminRole(household.role) && <PlanningCard />}
+          <TastesCard />
+          {isAdminRole(household.role) && <ThemeNightsCard />}
           <MembersCard />
           {isAdminRole(household.role) && <InvitesCard />}
         </>

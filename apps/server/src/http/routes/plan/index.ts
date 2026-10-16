@@ -6,6 +6,7 @@ import get from "./get.ts"
 import nextRoutes from "./next/index.ts"
 import repeatRoutes from "./repeat/index.ts"
 import restoreRoutes from "./restore/index.ts"
+import suggestRoutes from "./suggest/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
   get(router, deps)
@@ -14,4 +15,5 @@ export default (router: Router, deps: AppDeps) => {
   repeatRoutes(router, deps)
   clearRoutes(router, deps)
   restoreRoutes(router, deps)
+  suggestRoutes(router, deps)
 }

@@ -13,6 +13,7 @@ import { formatWeekday } from "./format"
 import { cookSearch, MealMenu, servingsOf } from "./meal-tile"
 import { nextMealQuery } from "./queries"
 import { usePlanActions } from "./use-plan-actions"
+import { useWhyText } from "./why"
 
 /** A little fact about a meal: "4 servings", "50 min". */
 function Fact({ children }: { children: React.ReactNode }) {
@@ -30,6 +31,7 @@ function Fact({ children }: { children: React.ReactNode }) {
 export function NextMealCard() {
   const { t, i18n } = useTranslation()
   const actions = usePlanActions()
+  const whyText = useWhyText()
   const id = React.useId()
   const { data } = useQuery(nextMealQuery)
   const entry = data?.entry
@@ -96,6 +98,11 @@ export function NextMealCard() {
               </span>
             )}
           </h2>
+          {entry.why.length > 0 && (
+            <p className="text-sm font-medium text-primary">
+              {whyText(entry.why)}
+            </p>
+          )}
           {(servings != null || minutes != null) && (
             <div className="flex flex-wrap gap-1.5">
               {servings != null && (

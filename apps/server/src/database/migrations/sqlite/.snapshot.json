@@ -3098,6 +3098,23 @@
           "enumItems": [],
           "mappedType": "datetime"
         },
+        "why": {
+          "name": "why",
+          "type": "json",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": true,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": null,
+          "comment": null,
+          "collation": null,
+          "enumItems": [],
+          "mappedType": "json"
+        },
         "with_recipe_id": {
           "name": "with_recipe_id",
           "type": "text",

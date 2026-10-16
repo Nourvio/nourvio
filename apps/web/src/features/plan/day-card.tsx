@@ -1,6 +1,6 @@
 import { Add01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { MEALS } from "@merran/shared"
+import { MEALS, themeLabel, type NightTheme } from "@merran/shared"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 
@@ -47,6 +47,7 @@ export function DayCard({
   day,
   today,
   meals,
+  theme,
   entries,
   selection,
   onAdd,
@@ -54,6 +55,8 @@ export function DayCard({
   day: string
   today: string
   meals: readonly Meal[]
+  /** Dinner's theme that night. */
+  theme: NightTheme | null
   entries: PlanEntry[]
   selection: Selection
   onAdd: (meal: Meal) => void
@@ -85,6 +88,11 @@ export function DayCard({
           {formatMonthDay(day, i18n.language)}
         </span>
         {isToday && <Badge className="self-center">{t("plan.today")}</Badge>}
+        {theme && shown.includes("dinner") && (
+          <Badge variant="secondary" className="self-center">
+            {themeLabel(theme)}
+          </Badge>
+        )}
       </header>
 
       <div

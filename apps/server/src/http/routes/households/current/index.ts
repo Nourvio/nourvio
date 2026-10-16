@@ -7,6 +7,8 @@ import importRoutes from "./import/index.ts"
 import invitesRoutes from "./invites/index.ts"
 import jobsRoutes from "./jobs/index.ts"
 import membersRoutes from "./members/index.ts"
+import tastesRoutes from "./tastes/index.ts"
+import themesRoutes from "./themes/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
   get(router, deps)
@@ -16,4 +18,6 @@ export default (router: Router, deps: AppDeps) => {
   invitesRoutes(router, deps)
   jobsRoutes(router, deps)
   membersRoutes(router, deps)
+  tastesRoutes(router, deps)
+  themesRoutes(router, deps)
 }

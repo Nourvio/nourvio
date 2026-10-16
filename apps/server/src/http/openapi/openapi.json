@@ -1378,6 +1378,146 @@
           "joinedAt": "2026-10-01T17:30:00.000Z"
         }
       },
+      "Tastes": {
+        "type": "object",
+        "properties": {
+          "avoid": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "food": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 60
+                },
+                "allergy": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "food",
+                "allergy"
+              ]
+            },
+            "maxItems": 100,
+            "description": "Foods the household doesn't eat."
+          },
+          "diets": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "vegetarian",
+                "vegan",
+                "gluten-free",
+                "dairy-free",
+                "egg-free",
+                "nut-free"
+              ]
+            },
+            "maxItems": 6,
+            "description": "Diets every meal must fit."
+          },
+          "weeknightMinutes": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 10,
+            "maximum": 240,
+            "description": "The longest a dinner Monday to Thursday can take."
+          }
+        },
+        "required": [
+          "avoid",
+          "diets",
+          "weeknightMinutes"
+        ],
+        "example": {
+          "avoid": [
+            {
+              "food": "peanuts",
+              "allergy": true
+            },
+            {
+              "food": "mushrooms",
+              "allergy": false
+            }
+          ],
+          "diets": [],
+          "weeknightMinutes": 45
+        }
+      },
+      "ThemeNights": {
+        "type": "object",
+        "properties": {
+          "themes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NightTheme"
+            },
+            "description": "Dinner's theme each weekday, Sunday first; null for none."
+          }
+        },
+        "required": [
+          "themes"
+        ],
+        "example": {
+          "themes": [
+            null,
+            null,
+            {
+              "kind": "tag",
+              "name": "Tacos",
+              "tag": "taco"
+            },
+            null,
+            null,
+            {
+              "kind": "fish",
+              "name": "Fish"
+            },
+            {
+              "kind": "skip",
+              "name": "Eat out"
+            }
+          ]
+        }
+      },
+      "NightTheme": {
+        "type": [
+          "object",
+          "null"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "tag",
+              "meatless",
+              "fish",
+              "new",
+              "quick",
+              "skip"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 30
+          },
+          "tag": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "kind",
+          "name"
+        ]
+      },
       "HouseholdImport": {
         "type": "object",
         "properties": {
@@ -1460,6 +1600,12 @@
               },
               "note": null,
               "servings": null,
+              "why": [
+                {
+                  "kind": "theme",
+                  "label": "Taco night"
+                }
+              ],
               "createdAt": "2026-10-15T18:30:00.000Z"
             }
           ]
@@ -1572,6 +1718,14 @@
             ],
             "description": "Null for the recipe's own servings."
           },
+          "why": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "maxItems": 5,
+            "description": "Why it was picked, when Fill the week picked it: none otherwise."
+          },
           "createdAt": {
             "type": "string",
             "format": "date-time"
@@ -1588,6 +1742,7 @@
           "withRecipe",
           "note",
           "servings",
+          "why",
           "createdAt"
         ],
         "example": {
@@ -1612,6 +1767,12 @@
           },
           "note": null,
           "servings": null,
+          "why": [
+            {
+              "kind": "theme",
+              "label": "Taco night"
+            }
+          ],
           "createdAt": "2026-10-15T18:30:00.000Z"
         }
       },
@@ -1631,6 +1792,125 @@
           "cooked",
           "skipped"
         ]
+      },
+      "Reason": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "theme"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 60
+              }
+            },
+            "required": [
+              "kind",
+              "label"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "themeMissed"
+                ]
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 60
+              }
+            },
+            "required": [
+              "kind",
+              "label"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "new"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "notLately"
+                ]
+              },
+              "weeks": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "kind",
+              "weeks"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "rated"
+                ]
+              },
+              "stars": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5
+              }
+            },
+            "required": [
+              "kind",
+              "stars"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "quick"
+                ]
+              },
+              "minutes": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "kind",
+              "minutes"
+            ]
+          }
+        ],
+        "description": "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.",
+        "example": {
+          "kind": "notLately",
+          "weeks": 5
+        }
       },
       "WhatsNext": {
         "type": "object",
@@ -1696,6 +1976,12 @@
             },
             "note": null,
             "servings": null,
+            "why": [
+              {
+                "kind": "theme",
+                "label": "Taco night"
+              }
+            ],
             "createdAt": "2026-10-15T18:30:00.000Z"
           }
         }
@@ -1744,6 +2030,17 @@
             ],
             "exclusiveMinimum": 0,
             "maximum": 1000
+          },
+          "why": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "maxItems": 5,
+            "description": "Why it was picked, as Fill the week said."
           }
         },
         "required": [
@@ -1755,6 +2052,86 @@
           "meal": "dinner",
           "recipe": "lemon-chicken",
           "withRecipe": "garlic-rice"
+        }
+      },
+      "PlanEntries": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PlanEntry"
+            }
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "example": {
+          "entries": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
+              "date": "2026-10-15",
+              "anyDay": false,
+              "meal": "dinner",
+              "position": 0,
+              "status": "planned",
+              "recipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken",
+                "photo": null,
+                "servings": 4,
+                "totalMinutes": 50
+              },
+              "withRecipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                "slug": "garlic-rice",
+                "name": "Garlic Rice"
+              },
+              "note": null,
+              "servings": null,
+              "why": [
+                {
+                  "kind": "theme",
+                  "label": "Taco night"
+                }
+              ],
+              "createdAt": "2026-10-15T18:30:00.000Z"
+            }
+          ]
+        }
+      },
+      "NewPlanEntries": {
+        "type": "object",
+        "properties": {
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NewPlanEntry"
+            },
+            "minItems": 1,
+            "maxItems": 56
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "example": {
+          "entries": [
+            {
+              "date": "2026-10-15",
+              "meal": "dinner",
+              "recipe": "0199e8b0-5a10-7a01-8b00-000000000006",
+              "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
+              "why": [
+                {
+                  "kind": "notLately",
+                  "weeks": 5
+                }
+              ]
+            }
+          ]
         }
       },
       "PlanBulkResult": {
@@ -1803,6 +2180,12 @@
               },
               "note": null,
               "servings": null,
+              "why": [
+                {
+                  "kind": "theme",
+                  "label": "Taco night"
+                }
+              ],
               "createdAt": "2026-10-15T18:30:00.000Z"
             }
           ],
@@ -1818,7 +2201,8 @@
               "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
               "note": null,
               "servings": null,
-              "listedAt": null
+              "listedAt": null,
+              "why": null
             }
           ]
         }
@@ -1881,6 +2265,16 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "why": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "maxItems": 5
           }
         },
         "required": [
@@ -1908,7 +2302,8 @@
           "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
           "note": null,
           "servings": null,
-          "listedAt": null
+          "listedAt": null,
+          "why": null
         }
       },
       "PlanBulk": {
@@ -2012,6 +2407,17 @@
           },
           "status": {
             "$ref": "#/components/schemas/PlanStatus"
+          },
+          "why": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "maxItems": 5,
+            "description": "Why a new recipe was picked, as Something else said."
           }
         },
         "example": {
@@ -2063,7 +2469,8 @@
               "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
               "note": null,
               "servings": null,
-              "listedAt": null
+              "listedAt": null,
+              "why": null
             }
           ]
         }
@@ -2096,7 +2503,189 @@
               "withRecipe": "0199e8b0-5a10-7a01-8b00-000000000007",
               "note": null,
               "servings": null,
-              "listedAt": null
+              "listedAt": null,
+              "why": null
+            }
+          ]
+        }
+      },
+      "Suggestions": {
+        "type": "object",
+        "properties": {
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-15"
+                },
+                "meal": {
+                  "$ref": "#/components/schemas/Meal"
+                },
+                "recipe": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "photo": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "servings": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "totalMinutes": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slug",
+                    "name",
+                    "photo",
+                    "servings",
+                    "totalMinutes"
+                  ]
+                },
+                "withRecipe": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slug",
+                    "name"
+                  ]
+                },
+                "why": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Reason"
+                  },
+                  "maxItems": 5
+                }
+              },
+              "required": [
+                "date",
+                "meal",
+                "recipe",
+                "withRecipe",
+                "why"
+              ]
+            }
+          }
+        },
+        "required": [
+          "suggestions"
+        ],
+        "example": {
+          "suggestions": [
+            {
+              "date": "2026-10-15",
+              "meal": "dinner",
+              "recipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000006",
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken",
+                "photo": null,
+                "servings": 4,
+                "totalMinutes": 50
+              },
+              "withRecipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                "slug": "garlic-rice",
+                "name": "Garlic Rice"
+              },
+              "why": [
+                {
+                  "kind": "notLately",
+                  "weeks": 5
+                },
+                {
+                  "kind": "rated",
+                  "stars": 5
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "SuggestRequest": {
+        "type": "object",
+        "properties": {
+          "slots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "date": {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "example": "2026-10-15"
+                },
+                "meal": {
+                  "$ref": "#/components/schemas/Meal"
+                }
+              },
+              "required": [
+                "date",
+                "meal"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 56
+          },
+          "exclude": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 200,
+            "description": "Recipes not to suggest: ideas already showing, or ones passed over."
+          }
+        },
+        "required": [
+          "slots"
+        ],
+        "example": {
+          "slots": [
+            {
+              "date": "2026-10-15",
+              "meal": "dinner"
+            },
+            {
+              "date": "2026-10-16",
+              "meal": "dinner"
             }
           ]
         }
@@ -6159,6 +6748,222 @@
         }
       }
     },
+    "/api/households/current/tastes": {
+      "get": {
+        "operationId": "getTastes",
+        "tags": [
+          "Households"
+        ],
+        "summary": "What the household eats",
+        "description": "Foods it avoids (an allergy is never suggested), diets every meal must fit, and how long a weeknight dinner can take. Fill the week keeps to them. With an API key, it needs the `plan: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:read",
+        "responses": {
+          "200": {
+            "description": "Its tastes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tastes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "setTastes",
+        "tags": [
+          "Households"
+        ],
+        "summary": "Change what the household eats",
+        "description": "Anyone in the household can: everyone eats. Replaces them all; a food listed twice is kept once, as an allergy if either says so. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Tastes"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Tastes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/households/current/themes": {
+      "get": {
+        "operationId": "getThemeNights",
+        "tags": [
+          "Households"
+        ],
+        "summary": "The household's theme nights",
+        "description": "Dinner's theme each weekday, Sunday first: taco night, fish on Friday, eat out on Saturday. Fill the week keeps to them. With an API key, it needs the `plan: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:read",
+        "responses": {
+          "200": {
+            "description": "Its theme nights.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThemeNights"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "setThemeNights",
+        "tags": [
+          "Households"
+        ],
+        "summary": "Change the household's theme nights",
+        "description": "Household admins only. Replaces the whole week.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThemeNights"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThemeNights"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/households/import": {
       "post": {
         "operationId": "importHousehold",
@@ -6409,6 +7214,77 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/PlanEntry"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/entries/batch": {
+      "post": {
+        "operationId": "addPlanEntries",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Put several meals on the plan",
+        "description": "Like putting each on, but all or none: what Fill the week adds. Each goes after any dishes already in its slot. With an API key, it needs the `plan: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NewPlanEntries"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "On the plan.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanEntries"
                 }
               }
             }
@@ -6815,6 +7691,67 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Plan"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/plan/suggest": {
+      "post": {
+        "operationId": "suggestMeals",
+        "tags": [
+          "Plan"
+        ],
+        "summary": "Suggest meals for open slots",
+        "description": "A recipe for each slot, saying why: Fill the week and Something else. Keeps to the household's tastes and theme nights, doesn't repeat a dish within two weeks, and pairs a side when one goes with it. Nothing is planned; slots with nothing suitable are left out. Asking again gives other ideas. With an API key, it needs the `plan: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "plan:read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuggestRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Ideas, in the slots' order.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Suggestions"
                 }
               }
             }

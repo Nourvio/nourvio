@@ -17,6 +17,18 @@ export const membersQuery = queryOptions({
   queryFn: () => unwrap(api.GET("/api/households/current/members")),
 })
 
+/** What the household eats and doesn't, which Fill the week keeps to. */
+export const tastesQuery = queryOptions({
+  queryKey: ["household", "tastes"],
+  queryFn: () => unwrap(api.GET("/api/households/current/tastes")),
+})
+
+/** Dinner's theme each weekday, Sunday first. */
+export const themesQuery = queryOptions({
+  queryKey: ["household", "themes"],
+  queryFn: () => unwrap(api.GET("/api/households/current/themes")),
+})
+
 export const invitesQuery = queryOptions({
   queryKey: ["household", "invites"],
   queryFn: () => unwrap(api.GET("/api/households/current/invites")),

@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi"
+import { DIETS, THEME_KINDS } from "@merran/shared"
 import { MEALS, PLAN_STATUSES } from "../../database/entities/index.ts"
 import { IDS, TIMES } from "./examples.ts"
 
@@ -11,6 +12,29 @@ const Day = z
 
 const MealSchema = z.enum(MEALS).openapi("Meal")
 const StatusSchema = z.enum(PLAN_STATUSES).openapi("PlanStatus")
+
+const label = z.string().max(60)
+
+/** Why a meal was picked: data, for the app to say in the reader's language. */
+export const ReasonSchema = z
+  .discriminatedUnion("kind", [
+    z.object({ kind: z.literal("theme"), label }),
+    z.object({ kind: z.literal("themeMissed"), label }),
+    z.object({ kind: z.literal("new") }),
+    z.object({ kind: z.literal("notLately"), weeks: z.number().int().min(0) }),
+    z.object({
+      kind: z.literal("rated"),
+      stars: z.number().int().min(1).max(5),
+    }),
+    z.object({ kind: z.literal("quick"), minutes: z.number().int().min(0) }),
+  ])
+  .openapi("Reason", {
+    description:
+      'Why a meal was picked: the night\'s theme ("Taco night"), or one nothing fitted; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight.',
+    example: { kind: "notLately", weeks: 5 },
+  })
+
+const why = z.array(ReasonSchema).max(5)
 
 const PLAN_ENTRY = {
   id: IDS.planEntry,
@@ -30,6 +54,7 @@ const PLAN_ENTRY = {
   withRecipe: { id: IDS.garlicRice, slug: "garlic-rice", name: "Garlic Rice" },
   note: null,
   servings: null,
+  why: [{ kind: "theme" as const, label: "Taco night" }],
   createdAt: TIMES.now,
 }
 
@@ -45,6 +70,7 @@ const SNAPSHOT = {
   note: null,
   servings: null,
   listedAt: null,
+  why: null,
 }
 
 export const PlanEntrySchema = z
@@ -83,6 +109,10 @@ export const PlanEntrySchema = z
     servings: z.number().nullable().openapi({
       description: "Null for the recipe's own servings.",
     }),
+    why: why.openapi({
+      description:
+        "Why it was picked, when Fill the week picked it: none otherwise.",
+    }),
     createdAt: z.iso.datetime(),
   })
   .openapi("PlanEntry", { example: PLAN_ENTRY })
@@ -100,6 +130,7 @@ export const PlanEntrySnapshotSchema = z
     note: z.string().max(200).nullable(),
     servings: z.number().positive().max(1000).nullable(),
     listedAt: z.iso.datetime().nullable(),
+    why: why.nullish().transform((value) => value ?? null),
   })
   .openapi("PlanEntrySnapshot", {
     description:
@@ -147,6 +178,9 @@ export const NewPlanEntrySchema = z
     }),
     note: note.nullish(),
     servings: servings.nullish(),
+    why: why.nullish().openapi({
+      description: "Why it was picked, as Fill the week said.",
+    }),
   })
   .refine((entry) => !entry.recipe !== !entry.note, {
     message: "Give a recipe or a note.",
@@ -174,6 +208,9 @@ export const PlanEntryChangesSchema = z
     note: note.nullable(),
     servings: servings.nullable(),
     status: StatusSchema,
+    why: why.nullable().openapi({
+      description: "Why a new recipe was picked, as Something else said.",
+    }),
   })
   .partial()
   .openapi("PlanEntryChanges", {
@@ -253,4 +290,149 @@ export const WhatsNextSchema = z
   })
   .openapi("WhatsNext", {
     example: { today: "2026-10-15", mealNow: "dinner", entry: PLAN_ENTRY },
+  })
+
+// Fill the week.
+
+const SlotSchema = z.object({ date: Day, meal: MealSchema })
+
+export const SuggestRequestSchema = z
+  .object({
+    slots: z.array(SlotSchema).min(1).max(56),
+    exclude: z.array(z.string()).max(200).optional().openapi({
+      description:
+        "Recipes not to suggest: ideas already showing, or ones passed over.",
+    }),
+  })
+  .openapi("SuggestRequest", {
+    example: {
+      slots: [
+        { date: "2026-10-15", meal: "dinner" },
+        { date: "2026-10-16", meal: "dinner" },
+      ],
+    },
+  })
+
+const SUGGESTION = {
+  date: "2026-10-15",
+  meal: "dinner" as const,
+  recipe: {
+    id: IDS.lemonChicken,
+    slug: "lemon-chicken",
+    name: "Lemon Chicken",
+    photo: null,
+    servings: 4,
+    totalMinutes: 50,
+  },
+  withRecipe: { id: IDS.garlicRice, slug: "garlic-rice", name: "Garlic Rice" },
+  why: [
+    { kind: "notLately" as const, weeks: 5 },
+    { kind: "rated" as const, stars: 5 },
+  ],
+}
+
+export const SuggestionsSchema = z
+  .object({
+    suggestions: z.array(
+      z.object({
+        date: Day,
+        meal: MealSchema,
+        recipe: z.object({
+          id: z.string(),
+          slug: z.string(),
+          name: z.string(),
+          photo: z.string().nullable(),
+          servings: z.number().nullable(),
+          totalMinutes: z.number().int().nullable(),
+        }),
+        withRecipe: z
+          .object({ id: z.string(), slug: z.string(), name: z.string() })
+          .nullable(),
+        why,
+      })
+    ),
+  })
+  .openapi("Suggestions", { example: { suggestions: [SUGGESTION] } })
+
+export const NewPlanEntriesSchema = z
+  .object({ entries: z.array(NewPlanEntrySchema).min(1).max(56) })
+  .openapi("NewPlanEntries", {
+    example: {
+      entries: [
+        {
+          date: "2026-10-15",
+          meal: "dinner",
+          recipe: IDS.lemonChicken,
+          withRecipe: IDS.garlicRice,
+          why: [{ kind: "notLately", weeks: 5 }],
+        },
+      ],
+    },
+  })
+
+export const PlanEntriesSchema = z
+  .object({ entries: z.array(PlanEntrySchema) })
+  .openapi("PlanEntries", { example: { entries: [PLAN_ENTRY] } })
+
+// Tastes and theme nights.
+
+export const TastesSchema = z
+  .object({
+    avoid: z
+      .array(
+        z.object({
+          food: z.string().trim().min(1, "Name the food.").max(60),
+          allergy: z.boolean(),
+        })
+      )
+      .max(100)
+      .openapi({ description: "Foods the household doesn't eat." }),
+    diets: z.array(z.enum(DIETS)).max(DIETS.length).openapi({
+      description: "Diets every meal must fit.",
+    }),
+    weeknightMinutes: z.number().int().min(10).max(240).nullable().openapi({
+      description: "The longest a dinner Monday to Thursday can take.",
+    }),
+  })
+  .openapi("Tastes", {
+    example: {
+      avoid: [
+        { food: "peanuts", allergy: true },
+        { food: "mushrooms", allergy: false },
+      ],
+      diets: [],
+      weeknightMinutes: 45,
+    },
+  })
+
+export const NightThemeSchema = z
+  .object({
+    kind: z.enum(THEME_KINDS),
+    name: z.string().trim().min(1, "Name the theme.").max(30),
+    tag: z.string().trim().min(1).max(40).optional(),
+  })
+  .refine((theme) => theme.kind !== "tag" || Boolean(theme.tag), {
+    message: "A tag theme needs a tag.",
+    path: ["tag"],
+  })
+  .openapi("NightTheme")
+
+export const ThemeNightsSchema = z
+  .object({
+    themes: z.array(NightThemeSchema.nullable()).length(7).openapi({
+      description: "Dinner's theme each weekday, Sunday first; null for none.",
+    }),
+  })
+  .openapi("ThemeNights", {
+    example: {
+      themes: [
+        null,
+        null,
+        { kind: "tag", name: "Tacos", tag: "taco" },
+        null,
+        null,
+        { kind: "fish", name: "Fish" },
+        { kind: "skip", name: "Eat out" },
+      ],
+    },
   })

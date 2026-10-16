@@ -1,0 +1,356 @@
+import {
+  addDays,
+  avoidedIn,
+  clockIn,
+  dayOfWeek,
+  fitsTheme,
+  missingDiets,
+  NO_TASTES,
+  NO_THEMES,
+  reasonsFor,
+  themeLabel,
+  WEEKNIGHTS,
+  type Diet,
+  type Meal,
+  type NightTheme,
+  type Reason,
+} from "@merran/shared"
+import type { EntityManager } from "@mikro-orm/sql"
+import {
+  Household,
+  PlanEntry,
+  Recipe,
+  RecipeIngredient,
+  RecipePairing,
+} from "../../database/entities/index.ts"
+import { decodeDiets } from "../recipes/diet-labels.ts"
+import { photoUrls } from "../recipes/photos.ts"
+import { toNumber, totalMinutes } from "../recipes/recipes.ts"
+import { tagKey, tagsOf } from "../recipes/tags.ts"
+
+// Fill the week, without AI: a recipe for each empty meal, by the
+// household's tastes and theme nights, not repeating a dish within two
+// weeks, picked at random with a lean towards well-rated recipes, ones
+// tagged for the meal and quick ones on weeknights. Each says why.
+
+/** Don't suggest what was planned (and not skipped) or made this many days around. */
+const NO_REPEAT_DAYS = 14
+
+/** Tags that say which meal a recipe is for. */
+const MEAL_TAGS: Record<Meal, string[]> = {
+  breakfast: ["breakfast", "brunch"],
+  lunch: ["lunch", "salad", "sandwich", "soup"],
+  dinner: ["dinner", "main", "main course", "main dish", "entree", "supper"],
+  snack: ["snack", "appetizer", "dessert"],
+}
+
+/** Tags for parts of a meal rather than meals: never suggested on their own. */
+const PART_TAGS = [
+  "sauce",
+  "sauces",
+  "dressing",
+  "dressings",
+  "condiment",
+  "condiments",
+  "marinade",
+  "seasoning",
+  "spice blend",
+  "spice mix",
+  "glaze",
+  "frosting",
+  "topping",
+]
+
+export type Slot = { date: string; meal: Meal }
+
+/** A recipe as the suggester sees it. */
+type Candidate = {
+  id: string
+  slug: string
+  name: string
+  photo: string | null
+  servings: number | null
+  totalMinutes: number | null
+  rating: number | null
+  lastMadeAt: Date | null
+  /** Its tag names, lowercased. */
+  tags: string[]
+  diets: Diet[]
+  lines: string[]
+}
+
+export type Suggestion = Slot & {
+  recipe: Pick<
+    Candidate,
+    "id" | "slug" | "name" | "photo" | "servings" | "totalMinutes"
+  >
+  /** A sauce or side it goes with, picked to go with it. */
+  withRecipe: { id: string; slug: string; name: string } | null
+  why: Reason[]
+}
+
+/**
+ * Which recipes suit a meal. Breakfast, lunch and snacks only take recipes
+ * tagged for them; dinner takes anything that isn't clearly another meal.
+ */
+function fitsMeal(recipe: Candidate, meal: Meal) {
+  if (MEAL_TAGS[meal].some((tag) => recipe.tags.includes(tag))) return true
+  if (meal !== "dinner") return false
+  const other = [
+    ...MEAL_TAGS.breakfast,
+    ...MEAL_TAGS.snack,
+    "drink",
+    "cocktail",
+  ]
+  return !other.some((tag) => recipe.tags.includes(tag))
+}
+
+const isWeeknightDinner = (slot: Slot) =>
+  slot.meal === "dinner" && WEEKNIGHTS.includes(dayOfWeek(slot.date))
+
+/** Higher is likelier: well rated, tagged for the meal, quick on weeknights. */
+function weight(recipe: Candidate, slot: Slot) {
+  let score = 1
+  if (recipe.rating) {
+    score += recipe.rating >= 4 ? 2 : recipe.rating <= 2 ? -0.75 : 0.5
+  } else if (!recipe.lastMadeAt) score += 0.5 // something new to try
+  if (MEAL_TAGS[slot.meal].some((tag) => recipe.tags.includes(tag))) score += 1
+  if (isWeeknightDinner(slot) && recipe.totalMinutes) {
+    score += recipe.totalMinutes <= 45 ? 1 : recipe.totalMinutes > 75 ? -0.5 : 0
+  }
+  return Math.max(score, 0.1)
+}
+
+function pick<T>(
+  items: readonly T[],
+  weightOf: (item: T) => number,
+  random: () => number
+) {
+  const total = items.reduce((sum, item) => sum + weightOf(item), 0)
+  let roll = random() * total
+  for (const item of items) {
+    roll -= weightOf(item)
+    if (roll <= 0) return item
+  }
+  return items.at(-1)
+}
+
+/**
+ * A recipe and its versions ("Pancakes" and "Pancakes (dairy-free)") count
+ * as one dish, so they aren't suggested in the same fortnight.
+ */
+const dish = (name: string) =>
+  name
+    .replace(/\s*\([^)]*\)\s*$/, "")
+    .trim()
+    .toLowerCase()
+
+/** Every recipe in the household, with what the suggester needs of it. */
+async function candidates(em: EntityManager): Promise<Candidate[]> {
+  const recipes = await em.find(Recipe, {})
+  const ids = recipes.map((recipe) => recipe.id)
+  const tags = await tagsOf(em, ids)
+  const lines = new Map<string, string[]>()
+  if (ids.length > 0) {
+    for (const line of await em.find(RecipeIngredient, {
+      recipe: { $in: ids },
+    })) {
+      const list = lines.get(line.recipe.id)
+      if (list) list.push(line.rawText)
+      else lines.set(line.recipe.id, [line.rawText])
+    }
+  }
+  return recipes.map((recipe) => ({
+    id: recipe.id,
+    slug: recipe.slug,
+    name: recipe.name,
+    photo: photoUrls(recipe)?.card ?? null,
+    servings: toNumber(recipe.servings),
+    totalMinutes: totalMinutes(recipe),
+    rating: recipe.rating ?? null,
+    lastMadeAt: recipe.lastMadeAt ?? null,
+    tags: (tags.get(recipe.id) ?? []).map(tagKey),
+    diets: decodeDiets(recipe.diets),
+    lines: lines.get(recipe.id) ?? [],
+  }))
+}
+
+/** What each recipe goes with: the recipes it pairs with, a tag's included. */
+async function pairingOptions(em: EntityManager, recipes: Candidate[]) {
+  const rules = await em.find(RecipePairing, {})
+  const options = new Map<string, Set<string>>()
+  for (const rule of rules) {
+    const ids = rule.pairedRecipe
+      ? [rule.pairedRecipe.id]
+      : recipes
+          .filter((recipe) => rule.tagKey && recipe.tags.includes(rule.tagKey))
+          .map((recipe) => recipe.id)
+    const set = options.get(rule.recipe.id) ?? new Set<string>()
+    for (const id of ids) if (id !== rule.recipe.id) set.add(id)
+    options.set(rule.recipe.id, set)
+  }
+  return options
+}
+
+/**
+ * Suggests a recipe for each slot without repeating a dish across the
+ * slots or within two weeks of being planned or made. Theme nights are
+ * filled first, those with the fewest recipes that fit before the others.
+ * Slots with nothing suitable are left out.
+ */
+export async function suggestMeals(
+  em: EntityManager,
+  householdId: string,
+  slots: readonly Slot[],
+  options: { exclude?: readonly string[]; random?: () => number } = {}
+): Promise<Suggestion[]> {
+  if (slots.length === 0) return []
+  const random = options.random ?? Math.random
+  const household = await em.findOneOrFail(Household, { id: householdId })
+  const tastes = { ...NO_TASTES, ...household.settings?.tastes }
+  const themes = household.settings?.themes ?? NO_THEMES
+  const { today } = clockIn(household.timeZone)
+
+  const recipes = await candidates(em)
+  const byId = new Map(recipes.map((recipe) => [recipe.id, recipe]))
+  const dates = slots.map((slot) => slot.date).sort()
+  const nearby = await em.find(PlanEntry, {
+    date: {
+      $gte: addDays(dates[0]!, -NO_REPEAT_DAYS),
+      $lte: addDays(dates.at(-1)!, NO_REPEAT_DAYS),
+    },
+    // A skipped meal wasn't eaten, so it can come round again.
+    status: { $ne: "skipped" },
+  })
+  const used = new Set<string>(
+    [
+      ...(options.exclude ?? []),
+      ...nearby.flatMap((entry) => (entry.recipe ? [entry.recipe.id] : [])),
+    ]
+      .map((id) => byId.get(id))
+      .filter((recipe) => recipe !== undefined)
+      .map((recipe) => dish(recipe.name))
+  )
+  const madeLately = new Date(
+    new Date(`${today}T00:00:00Z`).getTime() - NO_REPEAT_DAYS * 86_400_000
+  )
+
+  // The household's rules: foods nobody should get, diets every meal fits,
+  // and how long weeknight dinners can take.
+  const ruledOut = new Set(
+    recipes
+      .filter(
+        (recipe) =>
+          missingDiets(recipe.diets, tastes.diets).length > 0 ||
+          avoidedIn(recipe.lines, tastes.avoid, recipe.diets).length > 0
+      )
+      .map((recipe) => recipe.id)
+  )
+  const tooLong = (recipe: Candidate, slot: Slot) =>
+    tastes.weeknightMinutes !== null &&
+    isWeeknightDinner(slot) &&
+    recipe.totalMinutes !== null &&
+    recipe.totalMinutes > tastes.weeknightMinutes
+
+  // What goes with what. Anything offered with another recipe is a part of
+  // a meal (a sauce), not a meal.
+  const pairings = await pairingOptions(em, recipes)
+  const parts = new Set([...pairings.values()].flatMap((ids) => [...ids]))
+  const isPart = (recipe: Candidate) =>
+    parts.has(recipe.id) || recipe.tags.some((tag) => PART_TAGS.includes(tag))
+  const pairedLately = new Set(
+    nearby.flatMap((entry) => (entry.withRecipe ? [entry.withRecipe.id] : []))
+  )
+
+  // Theme nights are for dinner: tacos on Tuesday, eat out on Friday.
+  const themeOf = (slot: Slot): NightTheme | null =>
+    slot.meal === "dinner" ? (themes[dayOfWeek(slot.date)] ?? null) : null
+
+  /**
+   * What could go in a slot. On a theme night, what fits the theme; when
+   * nothing does, everything else, unless `strict`.
+   */
+  const candidatesFor = (slot: Slot, strict = false) => {
+    const all = recipes.filter(
+      (recipe) =>
+        !isPart(recipe) &&
+        !ruledOut.has(recipe.id) &&
+        !tooLong(recipe, slot) &&
+        !used.has(dish(recipe.name)) &&
+        fitsMeal(recipe, slot.meal) &&
+        !(recipe.lastMadeAt && recipe.lastMadeAt > madeLately)
+    )
+    const theme = themeOf(slot)
+    if (!theme) return all
+    if (theme.kind === "skip") return []
+    const themed = all.filter((recipe) => fitsTheme(recipe, theme))
+    return themed.length > 0 || strict ? themed : all
+  }
+
+  // Theme nights first, those with the fewest recipes that fit before the
+  // others, so a fish night isn't left without the one fish recipe because
+  // a night with no theme took it.
+  const UNTHEMED = 1_000_000
+  const themedCount = (slot: Slot) => {
+    const theme = themeOf(slot)
+    if (!theme || theme.kind === "skip") return UNTHEMED
+    return candidatesFor(slot, true).length || UNTHEMED
+  }
+  const order = [...slots.entries()].sort(
+    ([, a], [, b]) => themedCount(a) - themedCount(b)
+  )
+  const chosen = new Map<number, Candidate>()
+  for (const [index, slot] of order) {
+    const recipe = pick(candidatesFor(slot), (r) => weight(r, slot), random)
+    if (!recipe) continue
+    chosen.set(index, recipe)
+    used.add(dish(recipe.name))
+  }
+
+  /** A sauce or side for it, one not had lately, different each night. */
+  const pickedWith = new Set<string>()
+  function pairWith(recipe: Candidate) {
+    const found = [...(pairings.get(recipe.id) ?? [])].flatMap((id) => {
+      const option = byId.get(id)
+      return option && !ruledOut.has(option.id) ? [option] : []
+    })
+    if (found.length === 0) return null
+    const fresh = found.filter(
+      (option) => !pairedLately.has(option.id) && !pickedWith.has(option.id)
+    )
+    const option = pick(
+      fresh.length > 0 ? fresh : found,
+      (o) => o.rating ?? 3,
+      random
+    )!
+    pickedWith.add(option.id)
+    return { id: option.id, slug: option.slug, name: option.name }
+  }
+
+  return slots.flatMap((slot, index) => {
+    const recipe = chosen.get(index)
+    if (!recipe) return []
+    const theme = themeOf(slot)
+    return [
+      {
+        ...slot,
+        recipe: {
+          id: recipe.id,
+          slug: recipe.slug,
+          name: recipe.name,
+          photo: recipe.photo,
+          servings: recipe.servings,
+          totalMinutes: recipe.totalMinutes,
+        },
+        withRecipe: pairWith(recipe),
+        why: reasonsFor(recipe, {
+          today,
+          theme: theme
+            ? { label: themeLabel(theme), fits: fitsTheme(recipe, theme) }
+            : null,
+          weeknightDinner: isWeeknightDinner(slot),
+        }),
+      },
+    ]
+  })
+}
