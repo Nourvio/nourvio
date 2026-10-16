@@ -1291,6 +1291,76 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recipes/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Change several recipes at once
+         * @description Moves recipes to Recently deleted, or adds or takes off tags, up to 500 at a time. Ones that aren't there are skipped. With an API key, it needs the `recipes: write` permission.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["RecipeBulkInput"];
+                };
+            };
+            responses: {
+                /** @description Done. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BulkResult"];
+                    };
+                };
+                /** @description Nothing picked, or something else is off. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/deleted": {
         parameters: {
             query?: never;
@@ -1382,6 +1452,76 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/deleted/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Put back, or delete for good, several recipes at once
+         * @description For recipes in Recently deleted, up to 500 at a time. Ones that aren't there are skipped. With an API key, it needs the `recipes: write` permission.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["DeletedBulkInput"];
+                };
+            };
+            responses: {
+                /** @description Done. */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["BulkResult"];
+                    };
+                };
+                /** @description Nothing picked, or something else is off. */
+                400: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not signed in. */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+                /** @description Not allowed. */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Error"];
+                    };
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -4161,6 +4301,25 @@ export interface components {
             /** @default [] */
             steps: string[];
         };
+        BulkResult: {
+            /** @description How many it changed. Ones not there, or already that way, are skipped. */
+            changed: number;
+        };
+        RecipeBulkInput: {
+            /** @enum {string} */
+            action: "delete";
+            ids: string[];
+        } | {
+            /** @enum {string} */
+            action: "addTags";
+            ids: string[];
+            tags: string[];
+        } | {
+            /** @enum {string} */
+            action: "removeTags";
+            ids: string[];
+            tags: string[];
+        };
         DeletedRecipe: components["schemas"]["RecipeSummary"] & {
             /** Format: date-time */
             deletedAt: string;
@@ -4169,6 +4328,15 @@ export interface components {
              * @description When it's deleted for good.
              */
             goneAt: string;
+        };
+        DeletedBulkInput: {
+            /** @enum {string} */
+            action: "restore";
+            ids: string[];
+        } | {
+            /** @enum {string} */
+            action: "purge";
+            ids: string[];
         };
         ImportResult: {
             recipe: components["schemas"]["Recipe"];

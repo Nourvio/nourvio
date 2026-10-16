@@ -1152,6 +1152,117 @@
           "name"
         ]
       },
+      "BulkResult": {
+        "type": "object",
+        "properties": {
+          "changed": {
+            "type": "number",
+            "description": "How many it changed. Ones not there, or already that way, are skipped."
+          }
+        },
+        "required": [
+          "changed"
+        ]
+      },
+      "RecipeBulkInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "delete"
+                ]
+              },
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "minItems": 1,
+                "maxItems": 500
+              }
+            },
+            "required": [
+              "action",
+              "ids"
+            ],
+            "description": "To Recently deleted, for 30 days."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "addTags"
+                ]
+              },
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "minItems": 1,
+                "maxItems": 500
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "minItems": 1,
+                "maxItems": 20
+              }
+            },
+            "required": [
+              "action",
+              "ids",
+              "tags"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "removeTags"
+                ]
+              },
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "minItems": 1,
+                "maxItems": 500
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 40
+                },
+                "minItems": 1,
+                "maxItems": 20
+              }
+            },
+            "required": [
+              "action",
+              "ids",
+              "tags"
+            ]
+          }
+        ]
+      },
       "DeletedRecipe": {
         "allOf": [
           {
@@ -1174,6 +1285,60 @@
               "deletedAt",
               "goneAt"
             ]
+          }
+        ]
+      },
+      "DeletedBulkInput": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "restore"
+                ]
+              },
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "minItems": 1,
+                "maxItems": 500
+              }
+            },
+            "required": [
+              "action",
+              "ids"
+            ],
+            "description": "Back where they were."
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "purge"
+                ]
+              },
+              "ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "minItems": 1,
+                "maxItems": 500
+              }
+            },
+            "required": [
+              "action",
+              "ids"
+            ],
+            "description": "Gone for good, photos and all."
           }
         ]
       },
@@ -3175,6 +3340,75 @@
         }
       }
     },
+    "/api/recipes/bulk": {
+      "post": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Change several recipes at once",
+        "description": "Moves recipes to Recently deleted, or adds or takes off tags, up to 500 at a time. Ones that aren't there are skipped. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeBulkInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nothing picked, or something else is off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes/deleted": {
       "get": {
         "tags": [
@@ -3243,6 +3477,75 @@
         "responses": {
           "204": {
             "description": "Emptied."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/deleted/bulk": {
+      "post": {
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Put back, or delete for good, several recipes at once",
+        "description": "For recipes in Recently deleted, up to 500 at a time. Ones that aren't there are skipped. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeletedBulkInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Done.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Nothing picked, or something else is off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
           },
           "401": {
             "description": "Not signed in.",

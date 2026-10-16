@@ -322,6 +322,53 @@ export const PairingParam = RecipeParam.extend({
   pairingId: z.string().openapi({ param: { name: "pairingId", in: "path" } }),
 })
 
+/** Recipes picked in select mode, by id. */
+const BulkIds = z
+  .array(z.uuid())
+  .min(1, "Pick something first.")
+  .max(500, "Up to 500 at a time.")
+
+const BulkTags = z
+  .array(z.string().trim().min(1).max(40, "Keep tags under 40 characters."))
+  .min(1, "Name a tag.")
+  .max(20, "Up to 20 tags at a time.")
+
+export const RecipeBulkInputSchema = z
+  .discriminatedUnion("action", [
+    z.object({ action: z.literal("delete"), ids: BulkIds }).openapi({
+      description: "To Recently deleted, for 30 days.",
+    }),
+    z.object({ action: z.literal("addTags"), ids: BulkIds, tags: BulkTags }),
+    z.object({
+      action: z.literal("removeTags"),
+      ids: BulkIds,
+      tags: BulkTags,
+    }),
+  ])
+  .openapi("RecipeBulkInput")
+export type RecipeBulkInput = z.infer<typeof RecipeBulkInputSchema>
+
+export const DeletedBulkInputSchema = z
+  .discriminatedUnion("action", [
+    z.object({ action: z.literal("restore"), ids: BulkIds }).openapi({
+      description: "Back where they were.",
+    }),
+    z.object({ action: z.literal("purge"), ids: BulkIds }).openapi({
+      description: "Gone for good, photos and all.",
+    }),
+  ])
+  .openapi("DeletedBulkInput")
+export type DeletedBulkInput = z.infer<typeof DeletedBulkInputSchema>
+
+export const BulkResultSchema = z
+  .object({
+    changed: z.number().openapi({
+      description:
+        "How many it changed. Ones not there, or already that way, are skipped.",
+    }),
+  })
+  .openapi("BulkResult")
+
 export const RatingInputSchema = z
   .object({
     rating: z.number().int().min(1).max(5).nullable().openapi({

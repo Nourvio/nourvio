@@ -424,11 +424,16 @@ describe("API keys", () => {
 })
 
 describe("paths under /recipes", () => {
-  test("Recently deleted and tags aren't taken for a recipe", async () => {
+  test("Recently deleted, tags and bulk aren't taken for a recipe", async () => {
     const deleted = await add(kyle, { name: "Deleted" })
     const tags = await add(kyle, { name: "Tags" })
+    const bulk = await add(kyle, { name: "Bulk" })
 
-    expect([deleted.slug, tags.slug]).toEqual(["deleted-2", "tags-2"])
+    expect([deleted.slug, tags.slug, bulk.slug]).toEqual([
+      "deleted-2",
+      "tags-2",
+      "bulk-2",
+    ])
     expect(
       Array.isArray(await (await kyle.get("/api/recipes/deleted")).json())
     ).toBe(true)

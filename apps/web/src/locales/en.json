@@ -541,6 +541,35 @@
       "noTags": "No tags yet. Tag your sauces “Sauce” to pair them all at once.",
       "tagAdded": "Any {{tag}} goes with {{name}}.",
       "tagLinked": "Added"
+    },
+    "bulk": {
+      "tags": "Tags",
+      "tagsTitle_one": "Tags for {{count}} recipe",
+      "tagsTitle_other": "Tags for {{count}} recipes",
+      "tagsDescription": "Several at once, separated by commas.",
+      "tagsPlaceholder": "to try, weeknight",
+      "takeOff": "Take off",
+      "addTo": "Add to {{count}}",
+      "tagged_one": "Tagged {{count}} recipe.",
+      "tagged_other": "Tagged {{count}} recipes.",
+      "untagged_one": "Took the tags off {{count}} recipe.",
+      "untagged_other": "Took the tags off {{count}} recipes.",
+      "deleteOne": "Delete {{name}}?",
+      "deleteMany": "Delete {{count}} recipes?",
+      "deleteDescription_one": "It goes to Recently deleted for 30 days, then it's gone for good.",
+      "deleteDescription_other": "They go to Recently deleted for 30 days, then they're gone for good.",
+      "deleted_one": "Moved {{count}} recipe to Recently deleted.",
+      "deleted_other": "Moved {{count}} recipes to Recently deleted.",
+      "andMore": "{{names}} and {{count}} more",
+      "restore": "Restore",
+      "restored_one": "Put back {{count}} recipe.",
+      "restored_other": "Put back {{count}} recipes.",
+      "purge": "Delete for good",
+      "purgeOne": "Delete {{name}} for good?",
+      "purgeMany": "Delete {{count}} recipes for good?",
+      "purgeDescription": "There's no way back, and their photos go too.",
+      "purged_one": "Deleted {{count}} recipe for good.",
+      "purged_other": "Deleted {{count}} recipes for good."
     }
   },
   "cook": {
@@ -627,5 +656,17 @@
       "none": "This device has no voices for reading aloud.",
       "sample": "Preheat the oven to 425 degrees, and season the chicken while it heats."
     }
+  },
+  "select": {
+    "start": "Select",
+    "selected_one": "{{count}} selected",
+    "selected_other": "{{count}} selected",
+    "pickSome": "Pick some",
+    "selectAll": "Select all {{count}}",
+    "selectNone": "Select none",
+    "done": "Done",
+    "actions": "Actions for {{count}} selected",
+    "pick": "Select {{name}}",
+    "unpick": "Unselect {{name}}"
   }
 }

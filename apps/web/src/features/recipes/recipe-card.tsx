@@ -8,22 +8,90 @@ import { Link } from "@tanstack/react-router"
 import { useTranslation } from "react-i18next"
 
 import { Badge } from "@/components/ui/badge"
+import { SelectMark } from "@/features/select/select-mark"
+import { useLongPress } from "@/features/select/use-selection"
 import { formatRelativeDate } from "@/lib/format"
+import { cn } from "@/lib/utils"
 
 import { formatMinutes, formatServings } from "./format"
 import type { RecipeSummary } from "./queries"
 import { RatingStars } from "./rating-stars"
 
-/** A recipe in the library: its photo, its name, a little about it, and its tags. */
-export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
-  const { t, i18n } = useTranslation()
+/** How a card takes part in select mode. */
+export type CardSelect = {
+  selecting: boolean
+  picked: boolean
+  onToggle: () => void
+  /** A long press on a phone, which starts selecting with this one. */
+  onLongPress: () => void
+}
+
+const CARD =
+  "group flex h-full w-full flex-col overflow-hidden rounded-3xl border bg-card text-left text-card-foreground transition-colors outline-none hover:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+
+/**
+ * A recipe in the library: its photo, its name, a little about it, and its
+ * tags. A link to it, or while selecting, a button that picks it.
+ */
+export function RecipeCard({
+  recipe,
+  select,
+}: {
+  recipe: RecipeSummary
+  select?: CardSelect
+}) {
+  const { t } = useTranslation()
+  const press = useLongPress(
+    () => select?.onLongPress(),
+    Boolean(select && !select.selecting)
+  )
+  if (select?.selecting) {
+    return (
+      <button
+        type="button"
+        aria-pressed={select.picked}
+        aria-label={
+          select.picked
+            ? t("select.unpick", { name: recipe.name })
+            : t("select.pick", { name: recipe.name })
+        }
+        onClick={select.onToggle}
+        className={cn(
+          CARD,
+          select.picked && "border-primary ring-2 ring-primary"
+        )}
+      >
+        <CardContent recipe={recipe} picked={select.picked} />
+      </button>
+    )
+  }
   return (
     <Link
       to="/recipes/$slug"
       params={{ slug: recipe.slug }}
-      className="group flex h-full flex-col overflow-hidden rounded-3xl border bg-card text-card-foreground transition-colors outline-none hover:border-primary/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+      className={CARD}
+      {...press}
     >
-      <div className="aspect-[4/3] overflow-hidden bg-muted">
+      <CardContent recipe={recipe} />
+    </Link>
+  )
+}
+
+function CardContent({
+  recipe,
+  picked,
+}: {
+  recipe: RecipeSummary
+  /** Picked or not, while selecting. */
+  picked?: boolean
+}) {
+  const { t, i18n } = useTranslation()
+  return (
+    <>
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
+        {picked !== undefined && (
+          <SelectMark picked={picked} className="absolute top-3 left-3 z-10" />
+        )}
         {recipe.photo ? (
           <img
             src={recipe.photo.card}
@@ -96,6 +164,6 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
           ))}
         </div>
       </div>
-    </Link>
+    </>
   )
 }

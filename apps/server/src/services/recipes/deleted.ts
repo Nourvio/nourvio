@@ -1,6 +1,7 @@
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../core/errors.ts"
 import { Recipe } from "../../database/entities/index.ts"
+import type { DeletedBulkInput } from "../../http/schemas/recipes.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
 import type { FileStore } from "../storage/files.ts"
 import { removePhoto } from "./photos.ts"
@@ -103,4 +104,24 @@ export async function emptyDeleted(em: EntityManager, files: FileStore) {
     SEE_DELETED
   )
   await deleteRecipes(em, files, recipes)
+}
+
+/** Puts back, or deletes for good, recipes picked in Recently deleted. */
+export async function bulkDeleted(
+  em: EntityManager,
+  files: FileStore,
+  input: DeletedBulkInput
+) {
+  const recipes = await em.find(
+    Recipe,
+    { id: { $in: input.ids }, deletedAt: { $ne: null } },
+    SEE_DELETED
+  )
+  if (input.action === "restore") {
+    for (const recipe of recipes) recipe.deletedAt = null
+    await em.flush()
+  } else {
+    await deleteRecipes(em, files, recipes)
+  }
+  return { changed: recipes.length }
 }

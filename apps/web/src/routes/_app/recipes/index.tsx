@@ -29,6 +29,10 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
 import { AddRecipeDialog } from "@/features/recipes/add-recipe-dialog"
+import {
+  DeleteRecipesDialog,
+  TagRecipesDialog,
+} from "@/features/recipes/bulk-dialogs"
 import { ManageTagsDialog } from "@/features/recipes/manage-tags-dialog"
 import {
   RECIPE_SORTS,
@@ -41,6 +45,15 @@ import {
 } from "@/features/recipes/queries"
 import { RecipeCard } from "@/features/recipes/recipe-card"
 import { RecipeFilters } from "@/features/recipes/recipe-filters"
+import {
+  SelectButton,
+  SelectionBar,
+  SelectionHeader,
+} from "@/features/select/selection-bar"
+import {
+  useSelection,
+  useSelectionKeepOnly,
+} from "@/features/select/use-selection"
 
 export const Route = createFileRoute("/_app/recipes/")({
   validateSearch: (search: Record<string, unknown>): RecipeSearch => {
@@ -84,43 +97,62 @@ function RecipesPage() {
     (next: RecipeSearch) => void navigate({ search: next, replace: true }),
     [navigate]
   )
+  // Select mode: pick recipes, then act on them all.
+  const selection = useSelection()
+  const [dialog, setDialog] = React.useState<"tags" | "delete" | null>(null)
+  const shownIds = recipes.data?.pages.flatMap((page) =>
+    page.recipes.map((recipe) => recipe.id)
+  )
+  useSelectionKeepOnly(selection, shownIds ?? [])
   const filtered = Boolean(
     search.q || search.tags || search.diets || search.time || search.new
   )
   const total = recipes.data?.pages[0]?.total ?? 0
   const items = recipes.data?.pages.flatMap((page) => page.recipes) ?? []
+  const picked = items.filter((recipe) => selection.isPicked(recipe.id))
 
   return (
     <>
       <PageHeader
         title={t("nav.recipes")}
         actions={
-          <>
-            <AddRecipeDialog />
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    aria-label={t("recipes.more")}
-                  />
-                }
-              >
-                <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setManagingTags(true)}>
-                  <HugeiconsIcon icon={Tag01Icon} strokeWidth={2} />
-                  {t("recipes.manageTags")}
-                </DropdownMenuItem>
-                <DropdownMenuItem render={<Link to="/recipes/deleted" />}>
-                  <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-                  {t("recipes.deleted.title")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </>
+          selection.selecting ? (
+            <SelectionHeader
+              selection={selection}
+              allIds={items.map((recipe) => recipe.id)}
+            />
+          ) : (
+            <>
+              <SelectButton
+                selection={selection}
+                disabled={items.length === 0}
+              />
+              <AddRecipeDialog />
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      aria-label={t("recipes.more")}
+                    />
+                  }
+                >
+                  <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setManagingTags(true)}>
+                    <HugeiconsIcon icon={Tag01Icon} strokeWidth={2} />
+                    {t("recipes.manageTags")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem render={<Link to="/recipes/deleted" />}>
+                    <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+                    {t("recipes.deleted.title")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          )
         }
       />
       <ManageTagsDialog open={managingTags} onOpenChange={setManagingTags} />
@@ -187,7 +219,16 @@ function RecipesPage() {
             </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {items.map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
+                <RecipeCard
+                  key={recipe.id}
+                  recipe={recipe}
+                  select={{
+                    selecting: selection.selecting,
+                    picked: selection.isPicked(recipe.id),
+                    onToggle: () => selection.toggle(recipe.id),
+                    onLongPress: () => selection.start(recipe.id),
+                  }}
+                />
               ))}
             </div>
             {recipes.hasNextPage && (
@@ -204,7 +245,40 @@ function RecipesPage() {
             )}
           </>
         )}
+        {/* Room for the action bar, so it doesn't cover the last cards. */}
+        {selection.selecting && <div aria-hidden className="h-16" />}
       </div>
+
+      <SelectionBar
+        selection={selection}
+        actions={[
+          {
+            label: t("recipes.bulk.tags"),
+            icon: Tag01Icon,
+            onSelect: () => setDialog("tags"),
+          },
+          {
+            label: t("recipes.delete"),
+            icon: Delete02Icon,
+            destructive: true,
+            onSelect: () => setDialog("delete"),
+          },
+        ]}
+      />
+      <TagRecipesDialog
+        ids={[...selection.picked]}
+        open={dialog === "tags"}
+        onOpenChange={(open) => setDialog(open ? "tags" : null)}
+      />
+      <DeleteRecipesDialog
+        recipes={picked}
+        open={dialog === "delete"}
+        onOpenChange={(open) => setDialog(open ? "delete" : null)}
+        onDeleted={() => {
+          setDialog(null)
+          selection.done()
+        }}
+      />
     </>
   )
 }

@@ -75,6 +75,77 @@ export async function setTags(
   }
 }
 
+/**
+ * Adds these tags to recipes, keeping the ones they have, making any tags
+ * that don't exist yet. Says how many recipes gained one.
+ */
+export async function addTagsTo(
+  tx: EntityManager,
+  householdId: string,
+  recipes: readonly Recipe[],
+  names: readonly string[]
+) {
+  const wanted = new Map<string, string>()
+  for (const name of names) {
+    const key = tagKey(name)
+    if (key && !wanted.has(key)) wanted.set(key, name.trim())
+  }
+  const tags = new Map(
+    (await tx.find(Tag, { nameKey: { $in: [...wanted.keys()] } })).map(
+      (tag) => [tag.nameKey, tag]
+    )
+  )
+  for (const [key, name] of wanted) {
+    if (!tags.has(key)) {
+      tags.set(
+        key,
+        tx.create(Tag, { household: householdId, name, nameKey: key })
+      )
+    }
+  }
+  const have = new Set(
+    (
+      await tx.find(
+        RecipeTag,
+        { recipe: { $in: recipes.map((recipe) => recipe.id) } },
+        { populate: ["tag"] }
+      )
+    ).map((row) => `${row.recipe.id} ${row.tag.getEntity().nameKey}`)
+  )
+  let changed = 0
+  for (const recipe of recipes) {
+    let gained = false
+    for (const [key, tag] of tags) {
+      if (have.has(`${recipe.id} ${key}`)) continue
+      tx.create(RecipeTag, { recipe, tag, household: householdId })
+      gained = true
+    }
+    if (gained) changed++
+  }
+  await tx.flush()
+  return changed
+}
+
+/** Takes these tags off recipes. Says how many recipes lost one. */
+export async function removeTagsFrom(
+  tx: EntityManager,
+  recipes: readonly Recipe[],
+  names: readonly string[]
+) {
+  const keys = [...new Set(names.map(tagKey).filter(Boolean))]
+  const tags = await tx.find(Tag, { nameKey: { $in: keys } })
+  if (tags.length === 0) return 0
+  const rows = await tx.find(RecipeTag, {
+    recipe: { $in: recipes.map((recipe) => recipe.id) },
+    tag: { $in: tags.map((tag) => tag.id) },
+  })
+  const changed = new Set(rows.map((row) => row.recipe.id)).size
+  tx.remove(rows)
+  await tx.flush()
+  await pruneTags(tx)
+  return changed
+}
+
 /** Deletes tags no recipe has, Recently deleted ones included. */
 export async function pruneTags(tx: EntityManager) {
   const used = new Set(

@@ -1,4 +1,8 @@
-import { ArrowLeft01Icon, Delete02Icon } from "@hugeicons/core-free-icons"
+import {
+  ArrowLeft01Icon,
+  Delete02Icon,
+  RotateLeft01Icon,
+} from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
@@ -25,10 +29,25 @@ import {
 } from "@/components/ui/empty"
 import { Spinner } from "@/components/ui/spinner"
 import {
+  PurgeRecipesDialog,
+  useRecipeBulk,
+} from "@/features/recipes/bulk-dialogs"
+import {
   deletedQuery,
   useRefreshRecipes,
   type DeletedRecipe,
 } from "@/features/recipes/queries"
+import { SelectMark } from "@/features/select/select-mark"
+import {
+  SelectButton,
+  SelectionBar,
+  SelectionHeader,
+} from "@/features/select/selection-bar"
+import {
+  useSelection,
+  useSelectionKeepOnly,
+  type Selection,
+} from "@/features/select/use-selection"
 import { api, unwrap } from "@/lib/api/client"
 import { formatDate } from "@/lib/format"
 
@@ -41,6 +60,24 @@ function RecentlyDeleted() {
   const { t } = useTranslation()
   const refresh = useRefreshRecipes()
   const { data: recipes } = useSuspenseQuery(deletedQuery)
+  const bulk = useRecipeBulk()
+  const selection = useSelection()
+  const [purging, setPurging] = React.useState(false)
+  useSelectionKeepOnly(
+    selection,
+    recipes.map((recipe) => recipe.id)
+  )
+  const picked = recipes.filter((recipe) => selection.isPicked(recipe.id))
+
+  async function restorePicked() {
+    const result = await bulk.deleted({
+      action: "restore",
+      ids: picked.map((recipe) => recipe.id),
+    })
+    if (!result) return
+    selection.done()
+    toast.success(t("recipes.bulk.restored", { count: result.changed }))
+  }
 
   async function empty() {
     await unwrap(api.DELETE("/api/recipes/deleted"))
@@ -63,21 +100,31 @@ function RecentlyDeleted() {
         title={t("recipes.deleted.title")}
         description={t("recipes.deleted.description")}
         actions={
-          recipes.length > 0 && (
-            <ConfirmDialog
-              trigger={
-                <Button variant="outline">
-                  <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-                  {t("recipes.deleted.empty")}
-                </Button>
-              }
-              title={t("recipes.deleted.emptyTitle")}
-              description={t("recipes.deleted.emptyDescription", {
-                count: recipes.length,
-              })}
-              confirm={t("recipes.deleted.empty")}
-              onConfirm={empty}
+          selection.selecting ? (
+            <SelectionHeader
+              selection={selection}
+              allIds={recipes.map((recipe) => recipe.id)}
             />
+          ) : (
+            recipes.length > 0 && (
+              <>
+                <SelectButton selection={selection} />
+                <ConfirmDialog
+                  trigger={
+                    <Button variant="outline">
+                      <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+                      {t("recipes.deleted.empty")}
+                    </Button>
+                  }
+                  title={t("recipes.deleted.emptyTitle")}
+                  description={t("recipes.deleted.emptyDescription", {
+                    count: recipes.length,
+                  })}
+                  confirm={t("recipes.deleted.empty")}
+                  onConfirm={empty}
+                />
+              </>
+            )
           )
         }
       />
@@ -102,17 +149,55 @@ function RecentlyDeleted() {
           <CardContent>
             <ul className="divide-y rounded-2xl border">
               {recipes.map((recipe) => (
-                <DeletedRow key={recipe.id} recipe={recipe} />
+                <DeletedRow
+                  key={recipe.id}
+                  recipe={recipe}
+                  selection={selection}
+                />
               ))}
             </ul>
           </CardContent>
         </Card>
       )}
+      {/* Room for the action bar, so it doesn't cover the last rows. */}
+      {selection.selecting && <div aria-hidden className="h-16" />}
+
+      <SelectionBar
+        selection={selection}
+        actions={[
+          {
+            label: t("recipes.bulk.restore"),
+            icon: RotateLeft01Icon,
+            onSelect: () => void restorePicked(),
+          },
+          {
+            label: t("recipes.bulk.purge"),
+            icon: Delete02Icon,
+            destructive: true,
+            onSelect: () => setPurging(true),
+          },
+        ]}
+      />
+      <PurgeRecipesDialog
+        recipes={picked}
+        open={purging}
+        onOpenChange={setPurging}
+        onPurged={() => {
+          setPurging(false)
+          selection.done()
+        }}
+      />
     </>
   )
 }
 
-function DeletedRow({ recipe }: { recipe: DeletedRecipe }) {
+function DeletedRow({
+  recipe,
+  selection,
+}: {
+  recipe: DeletedRecipe
+  selection: Selection
+}) {
   const { t, i18n } = useTranslation()
   const refresh = useRefreshRecipes()
   const [busy, setBusy] = React.useState(false)
@@ -142,17 +227,44 @@ function DeletedRow({ recipe }: { recipe: DeletedRecipe }) {
     toast.success(t("recipes.deleted.goneForGood", { name: recipe.name }))
   }
 
+  const about = (
+    <div className="min-w-0 flex-1 basis-48">
+      <p className="truncate font-medium">{recipe.name}</p>
+      <p className="text-sm text-muted-foreground">
+        {t("recipes.deleted.when", {
+          deleted: formatDate(recipe.deletedAt, i18n.language),
+          gone: formatDate(recipe.goneAt, i18n.language),
+        })}
+      </p>
+    </div>
+  )
+
+  // While selecting, the whole row picks it.
+  if (selection.selecting) {
+    const on = selection.isPicked(recipe.id)
+    return (
+      <li>
+        <button
+          type="button"
+          aria-pressed={on}
+          aria-label={
+            on
+              ? t("select.unpick", { name: recipe.name })
+              : t("select.pick", { name: recipe.name })
+          }
+          onClick={() => selection.toggle(recipe.id)}
+          className="flex w-full items-center gap-3 p-4 text-left outline-none hover:bg-muted/40 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+        >
+          <SelectMark picked={on} />
+          {about}
+        </button>
+      </li>
+    )
+  }
+
   return (
     <li className="flex flex-wrap items-center gap-3 p-4">
-      <div className="min-w-0 flex-1 basis-48">
-        <p className="truncate font-medium">{recipe.name}</p>
-        <p className="text-sm text-muted-foreground">
-          {t("recipes.deleted.when", {
-            deleted: formatDate(recipe.deletedAt, i18n.language),
-            gone: formatDate(recipe.goneAt, i18n.language),
-          })}
-        </p>
-      </div>
+      {about}
       <div className="ml-auto flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={restore} disabled={busy}>
           {busy && <Spinner />}

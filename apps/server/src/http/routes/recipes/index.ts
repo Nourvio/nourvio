@@ -2,6 +2,7 @@ import type { AppDeps } from "../../../core/context.ts"
 import type { Router } from "../../router.ts"
 import get from "./get.ts"
 import post from "./post.ts"
+import bulkRoutes from "./bulk/index.ts"
 import deletedRoutes from "./deleted/index.ts"
 import importRoutes from "./import/index.ts"
 import tagsRoutes from "./tags/index.ts"
@@ -11,6 +12,7 @@ export default (router: Router, deps: AppDeps) => {
   get(router, deps)
   post(router, deps)
   // Fixed paths first, so they aren't taken for {recipe}.
+  bulkRoutes(router, deps)
   deletedRoutes(router, deps)
   importRoutes(router, deps)
   tagsRoutes(router, deps)
