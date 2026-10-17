@@ -77,6 +77,11 @@ const TAGS = [
       "What changes in the household, as it happens: the live updates the app uses, and who has the list open.",
   },
   {
+    name: "Stores",
+    description:
+      "Stores with an API: Kroger (Fry's, Ralphs...), its products and prices, and sending the list to a linked account's cart.",
+  },
+  {
     name: "Voice",
     description:
       "The server voice: cook steps read aloud by Kokoro or OpenAI, the same on every device.",

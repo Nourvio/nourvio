@@ -47,6 +47,7 @@ test("the next summary can be seen before saying yes to it", async () => {
       sites: true,
       photos: false,
       voice: false,
+      stores: false,
       errorTracking: false,
       telemetry: false,
     },

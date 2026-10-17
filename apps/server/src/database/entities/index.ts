@@ -36,6 +36,9 @@ import { Secret } from "./secrets.ts"
 import { ServerSetting } from "./server_settings.ts"
 import { Session } from "./sessions.ts"
 import { SiteRecipe } from "./site_recipes.ts"
+import { StoreConnection } from "./store_connections.ts"
+import { StorePrice } from "./store_prices.ts"
+import { StoreProduct } from "./store_products.ts"
 import { ShoppingItem } from "./shopping_items.ts"
 import { ShoppingList } from "./shopping_lists.ts"
 import { Tag } from "./tags.ts"
@@ -79,6 +82,9 @@ export * from "./secrets.ts"
 export * from "./server_settings.ts"
 export * from "./sessions.ts"
 export * from "./site_recipes.ts"
+export * from "./store_connections.ts"
+export * from "./store_prices.ts"
+export * from "./store_products.ts"
 export * from "./shopping_items.ts"
 export * from "./shopping_lists.ts"
 export * from "./tags.ts"
@@ -125,6 +131,9 @@ export const entities = [
   Session,
   ShoppingItem,
   SiteRecipe,
+  StoreConnection,
+  StorePrice,
+  StoreProduct,
   ShoppingList,
   Tag,
   User,

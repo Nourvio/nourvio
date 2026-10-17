@@ -28,7 +28,7 @@ Merran's core needs nothing but Merran itself: it runs on SQLite out of the box,
 
 **How a module is built.** Each module lives in its own folder and declares, in one place:
 - its settings (with their environment variables), as a Zod schema
-- what it makes possible (`capabilities`: `ai.chat`, `ai.vision`, `video.import`, `store.kroger`...)
+- what it makes possible (`capabilities`: `ai.chat`, `ai.vision`, `video.import`, `stores.kroger`...)
 - its routes, jobs and the outside addresses it may call
 - where it shows up in the web app
 

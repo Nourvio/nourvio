@@ -75,6 +75,10 @@
       "description": "What changes in the household, as it happens: the live updates the app uses, and who has the list open."
     },
     {
+      "name": "Stores",
+      "description": "Stores with an API: Kroger (Fry's, Ralphs...), its products and prices, and sending the list to a linked account's cart."
+    },
+    {
       "name": "Voice",
       "description": "The server voice: cook steps read aloud by Kokoro or OpenAI, the same on every device."
     },
@@ -10719,13 +10723,29 @@
               "readAt"
             ],
             "description": "The recipe sites Merran reads, the recipes it has from them, how many of the starter collections' classics open, and when a site was last read."
+          },
+          "kroger": {
+            "type": "object",
+            "properties": {
+              "redirectUri": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "redirectUri"
+            ],
+            "description": "The redirect address to give the Kroger developer app: null without a public address set, when it's this server's address and /api/stores/kroger/callback."
           }
         },
         "required": [
           "about",
           "settings",
           "video",
-          "sites"
+          "sites",
+          "kroger"
         ],
         "example": {
           "about": {
@@ -10770,6 +10790,9 @@
               "all": 73
             },
             "readAt": "2026-10-15T18:30:00.000Z"
+          },
+          "kroger": {
+            "redirectUri": "https://merran.example.com/api/stores/kroger/callback"
           }
         }
       },
@@ -11215,6 +11238,42 @@
           "finishedAt": null,
           "createdAt": "2026-10-15T18:30:00.000Z",
           "householdName": "The Riveras"
+        }
+      },
+      "KrogerAppTested": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        },
+        "required": [
+          "ok"
+        ],
+        "example": {
+          "ok": true
+        }
+      },
+      "KrogerAppTest": {
+        "type": "object",
+        "properties": {
+          "clientId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "clientSecret": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          }
+        },
+        "description": "A Kroger developer app's client ID and secret to test before saving them. Either left out is the saved one.",
+        "example": {
+          "clientId": "merran-abc123"
         }
       },
       "UsdaKeyTested": {
@@ -11796,6 +11855,570 @@
                 "name": "Lemon Chicken"
               },
               "suits": true
+            }
+          ]
+        }
+      },
+      "StoresStatus": {
+        "type": "object",
+        "properties": {
+          "kroger": {
+            "type": "object",
+            "properties": {
+              "ready": {
+                "type": "boolean",
+                "description": "The server has a Kroger developer app."
+              },
+              "location": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/StoreLocation"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The household's store, or null."
+              },
+              "modality": {
+                "type": "string",
+                "enum": [
+                  "PICKUP",
+                  "DELIVERY"
+                ],
+                "description": "Orders are picked up or delivered."
+              },
+              "linked": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "by": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "by",
+                  "at"
+                ],
+                "description": "The account whose cart things go to."
+              },
+              "needsRelink": {
+                "type": "boolean",
+                "description": "Kroger stopped taking the linked account."
+              },
+              "pricesCheckedAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "ready",
+              "location",
+              "modality",
+              "linked",
+              "needsRelink",
+              "pricesCheckedAt"
+            ]
+          }
+        },
+        "required": [
+          "kroger"
+        ],
+        "example": {
+          "kroger": {
+            "ready": true,
+            "location": {
+              "locationId": "70500822",
+              "name": "Fry's Food Stores - Phoenix",
+              "banner": "Fry's",
+              "domain": "frysfood.com",
+              "address": "4724 N 20th St, Phoenix, AZ"
+            },
+            "modality": "PICKUP",
+            "linked": {
+              "by": "Kyle",
+              "at": "2026-10-01T17:30:00.000Z"
+            },
+            "needsRelink": false,
+            "pricesCheckedAt": null
+          }
+        }
+      },
+      "StoreLocation": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "banner": {
+            "type": "string",
+            "description": "Kroger's name for the chain: Fry's, Ralphs, King Soopers..."
+          },
+          "domain": {
+            "type": "string",
+            "description": "The banner's site."
+          },
+          "address": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "locationId",
+          "name",
+          "banner",
+          "domain",
+          "address"
+        ],
+        "example": {
+          "locationId": "70500822",
+          "name": "Fry's Food Stores - Phoenix",
+          "banner": "Fry's",
+          "domain": "frysfood.com",
+          "address": "4724 N 20th St, Phoenix, AZ"
+        }
+      },
+      "KrogerStoreChanges": {
+        "type": "object",
+        "properties": {
+          "locationId": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "PICKUP",
+              "DELIVERY"
+            ]
+          }
+        },
+        "example": {
+          "locationId": "70500822",
+          "modality": "PICKUP"
+        }
+      },
+      "StoreLocations": {
+        "type": "object",
+        "properties": {
+          "locations": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreLocation"
+            }
+          }
+        },
+        "required": [
+          "locations"
+        ],
+        "example": {
+          "locations": [
+            {
+              "locationId": "70500822",
+              "name": "Fry's Food Stores - Phoenix",
+              "banner": "Fry's",
+              "domain": "frysfood.com",
+              "address": "4724 N 20th St, Phoenix, AZ"
+            }
+          ]
+        }
+      },
+      "KrogerLink": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Where to send the person."
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "example": {
+          "url": "https://api.kroger.com/v1/connect/oauth2/authorize?..."
+        }
+      },
+      "Basket": {
+        "type": "object",
+        "properties": {
+          "store": {
+            "type": "string",
+            "description": "The banner: Fry's."
+          },
+          "location": {
+            "$ref": "#/components/schemas/StoreLocation"
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "PICKUP",
+              "DELIVERY"
+            ]
+          },
+          "linked": {
+            "type": "boolean",
+            "description": "An account is linked, so it can be sent."
+          },
+          "sentAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BasketLine"
+            }
+          }
+        },
+        "required": [
+          "store",
+          "location",
+          "modality",
+          "linked",
+          "sentAt",
+          "lines"
+        ],
+        "example": {
+          "store": "Fry's",
+          "location": {
+            "locationId": "70500822",
+            "name": "Fry's Food Stores - Phoenix",
+            "banner": "Fry's",
+            "domain": "frysfood.com",
+            "address": "4724 N 20th St, Phoenix, AZ"
+          },
+          "modality": "PICKUP",
+          "linked": true,
+          "sentAt": null,
+          "lines": [
+            {
+              "itemId": "0199e8b0-5a10-7a01-8b00-00000000001d",
+              "name": "milk",
+              "amount": "1 gallon",
+              "product": {
+                "id": "0001111041700",
+                "upc": "0001111041700",
+                "name": "Kroger 2% Reduced Fat Milk",
+                "brand": "Kroger",
+                "size": "1 gal",
+                "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+                "price": 349,
+                "salePrice": 299,
+                "saleEnds": "2026-10-21",
+                "currency": "USD",
+                "aisle": "Dairy",
+                "inStock": true,
+                "url": "https://www.frysfood.com/p/milk/0001111041700"
+              },
+              "suggested": true,
+              "packages": 1,
+              "sure": true,
+              "sent": false
+            }
+          ]
+        }
+      },
+      "BasketLine": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "amount": {
+            "type": "string"
+          },
+          "product": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StoreProduct"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "suggested": {
+            "type": "boolean",
+            "description": "Merran's pick, not one the household chose."
+          },
+          "packages": {
+            "type": "integer"
+          },
+          "sure": {
+            "type": "boolean",
+            "description": "How many is worked out from the product's size, not a guess."
+          },
+          "sent": {
+            "type": "boolean",
+            "description": "Sent to the cart last time."
+          }
+        },
+        "required": [
+          "itemId",
+          "name",
+          "amount",
+          "product",
+          "suggested",
+          "packages",
+          "sure",
+          "sent"
+        ],
+        "example": {
+          "itemId": "0199e8b0-5a10-7a01-8b00-00000000001d",
+          "name": "milk",
+          "amount": "1 gallon",
+          "product": {
+            "id": "0001111041700",
+            "upc": "0001111041700",
+            "name": "Kroger 2% Reduced Fat Milk",
+            "brand": "Kroger",
+            "size": "1 gal",
+            "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+            "price": 349,
+            "salePrice": 299,
+            "saleEnds": "2026-10-21",
+            "currency": "USD",
+            "aisle": "Dairy",
+            "inStock": true,
+            "url": "https://www.frysfood.com/p/milk/0001111041700"
+          },
+          "suggested": true,
+          "packages": 1,
+          "sure": true,
+          "sent": false
+        }
+      },
+      "StoreProduct": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "upc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "brand": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "size": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "image": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "price": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "In the currency's smallest unit: cents."
+          },
+          "salePrice": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "saleEnds": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The sale's last day."
+          },
+          "currency": {
+            "type": "string"
+          },
+          "aisle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "inStock": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "upc",
+          "name",
+          "brand",
+          "size",
+          "image",
+          "price",
+          "salePrice",
+          "saleEnds",
+          "currency",
+          "aisle",
+          "inStock",
+          "url"
+        ],
+        "example": {
+          "id": "0001111041700",
+          "upc": "0001111041700",
+          "name": "Kroger 2% Reduced Fat Milk",
+          "brand": "Kroger",
+          "size": "1 gal",
+          "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+          "price": 349,
+          "salePrice": 299,
+          "saleEnds": "2026-10-21",
+          "currency": "USD",
+          "aisle": "Dairy",
+          "inStock": true,
+          "url": "https://www.frysfood.com/p/milk/0001111041700"
+        }
+      },
+      "StoreProducts": {
+        "type": "object",
+        "properties": {
+          "products": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/StoreProduct"
+            }
+          }
+        },
+        "required": [
+          "products"
+        ],
+        "example": {
+          "products": [
+            {
+              "id": "0001111041700",
+              "upc": "0001111041700",
+              "name": "Kroger 2% Reduced Fat Milk",
+              "brand": "Kroger",
+              "size": "1 gal",
+              "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+              "price": 349,
+              "salePrice": 299,
+              "saleEnds": "2026-10-21",
+              "currency": "USD",
+              "aisle": "Dairy",
+              "inStock": true,
+              "url": "https://www.frysfood.com/p/milk/0001111041700"
+            }
+          ]
+        }
+      },
+      "PickProduct": {
+        "type": "object",
+        "properties": {
+          "productId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        },
+        "required": [
+          "productId"
+        ],
+        "example": {
+          "productId": "0001111041700"
+        }
+      },
+      "SentBasket": {
+        "type": "object",
+        "properties": {
+          "sent": {
+            "type": "integer"
+          },
+          "store": {
+            "type": "string"
+          },
+          "cartUrl": {
+            "type": "string",
+            "description": "The store's cart, to check out."
+          }
+        },
+        "required": [
+          "sent",
+          "store",
+          "cartUrl"
+        ],
+        "example": {
+          "sent": 1,
+          "store": "Fry's",
+          "cartUrl": "https://www.frysfood.com/cart"
+        }
+      },
+      "SendBasket": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "itemId": {
+                  "type": "string"
+                },
+                "packages": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 99
+                }
+              },
+              "required": [
+                "itemId",
+                "packages"
+              ]
+            },
+            "minItems": 1,
+            "maxItems": 300
+          }
+        },
+        "required": [
+          "lines"
+        ],
+        "example": {
+          "lines": [
+            {
+              "itemId": "0199e8b0-5a10-7a01-8b00-00000000001d",
+              "packages": 1
             }
           ]
         }
@@ -24181,6 +24804,93 @@
         }
       }
     },
+    "/api/settings/server/kroger/test": {
+      "post": {
+        "operationId": "testKrogerApp",
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Test the Kroger app",
+        "description": "Server admins only. Asks Kroger for a token with a client ID and secret, before saving them, or with the saved ones.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KrogerAppTest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Kroger took them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KrogerAppTested"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No client ID and secret to test.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Kroger refused them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Kroger didn't answer.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/settings/server/nutrition/test": {
       "post": {
         "operationId": "testUsdaKey",
@@ -24828,6 +25538,669 @@
           },
           "404": {
             "description": "The household doesn't follow that site.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores": {
+      "get": {
+        "operationId": "getStores",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "The household's stores",
+        "description": "Kroger for the household: whether the server has a Kroger app, the household's store, how orders are collected, and the account linked to send things to its cart. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "responses": {
+          "200": {
+            "description": "Its stores.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoresStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/kroger": {
+      "put": {
+        "operationId": "setKrogerStore",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Pick the household's Kroger store",
+        "description": "Household admins only. The store the household shops at (from `GET /stores/kroger/locations`), and whether orders are picked up or delivered.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KrogerStoreChanges"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Its stores now.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoresStatus"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such Kroger store.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Kroger isn't set up on this server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/kroger/locations": {
+      "get": {
+        "operationId": "listKrogerLocations",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Kroger stores near a ZIP code",
+        "description": "Up to twelve of Kroger's stores, of any banner, near a ZIP code. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "pattern": "^\\d{5}$",
+              "example": "85016"
+            },
+            "required": true,
+            "name": "zip",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stores near it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreLocations"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Kroger isn't set up on this server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/kroger/link": {
+      "post": {
+        "operationId": "startKrogerLink",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Link a Kroger account",
+        "description": "Household admins only. Where to send the person to let Merran add to their Kroger cart; Kroger sends them back to `GET /stores/kroger/callback`. One account for the household, so everyone shops one cart.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Where to go.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KrogerLink"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Kroger isn't set up on this server.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "unlinkKroger",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Unlink the Kroger account",
+        "description": "Household admins only. Its tokens are deleted.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Unlinked."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/kroger/callback": {
+      "get": {
+        "operationId": "krogerCallback",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Where Kroger sends the person back",
+        "description": "Not called directly: the redirect address the Kroger developer app has. It finishes linking the account, then sends the person on to Settings, Household, saying how it went.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "required": false,
+            "name": "code",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "state",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "required": false,
+            "name": "error",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "On to Settings, Household."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/kroger/basket": {
+      "get": {
+        "operationId": "getKrogerBasket",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "The Kroger cart to look over",
+        "description": "Each thing left on the list for Kroger (or, with no list for it, the lists for any store) with its product: the one the household picked before, at today's price, or Merran's pick from the store's search, made by the household's model for shopping when it has AI. How many packages, worked out from the product's size where it can be. Nothing is sent until `POST /stores/kroger/send`. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "responses": {
+          "200": {
+            "description": "The cart to look over.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Basket"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Kroger isn't set up, or the household has no store.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/kroger/search": {
+      "get": {
+        "operationId": "searchKroger",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Search the household's Kroger store",
+        "description": "Up to twenty products, with today's prices, to pick another. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100,
+              "example": "milk"
+            },
+            "required": true,
+            "name": "q",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "What the store has.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StoreProducts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Kroger isn't set up, or the household has no store.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/kroger/products/{itemId}": {
+      "put": {
+        "operationId": "pickKrogerProduct",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Pick a product for something on the list",
+        "description": "Kept for that food from now on, at the household's store, and never replaced by itself. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000001d"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PickProduct"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Its line, with the product.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BasketLine"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such thing on the list, or product at the store.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/kroger/send": {
+      "post": {
+        "operationId": "sendKrogerBasket",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Send to the Kroger cart",
+        "description": "Adds the lines given to the linked account's cart, so many of each, by barcode. Their products are kept as the household's from now on. Kroger's API can only add to a cart: checking out is on Kroger's site. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendBasket"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sent.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SentBasket"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "None of them has a product.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Kroger stopped taking the account: link it again.",
             "content": {
               "application/json": {
                 "schema": {

@@ -22,6 +22,7 @@ import { NutritionLibraryCard } from "@/features/household/nutrition-library-car
 import { PhotosCard } from "@/features/household/photos-card"
 import { NewHouseholdCard } from "@/features/household/new-household-card"
 import { PlanningCard } from "@/features/household/planning-card"
+import { StoresCard } from "@/features/stores/stores-card"
 import {
   householdQuery,
   invitesQuery,
@@ -34,7 +35,22 @@ import { TastesCard } from "@/features/household/tastes-card"
 import { ThemeNightsCard } from "@/features/household/theme-nights-card"
 import { autoplanQuery } from "@/features/plan/queries"
 
+/** How linking a Kroger account went, when Kroger sends someone back. */
+type HouseholdSearch = {
+  kroger?: "linked" | "cancelled" | "failed"
+  reason?: string
+}
+
 export const Route = createFileRoute("/_app/settings/household")({
+  validateSearch: (search: Record<string, unknown>): HouseholdSearch => ({
+    kroger:
+      search.kroger === "linked" ||
+      search.kroger === "cancelled" ||
+      search.kroger === "failed"
+        ? search.kroger
+        : undefined,
+    reason: typeof search.reason === "string" ? search.reason : undefined,
+  }),
   loader: async ({ context: { queryClient } }) => {
     const me = await queryClient.ensureQueryData(meQuery)
     const active = me?.households.find((h) => h.id === me.activeHouseholdId)
@@ -69,6 +85,7 @@ function HouseholdSettings() {
           {isAdminRole(household.role) && <HouseholdAiCard />}
           {isAdminRole(household.role) && <NutritionLibraryCard />}
           {isAdminRole(household.role) && <PhotosCard />}
+          {isAdminRole(household.role) && <StoresCard />}
           <MembersCard />
           {isAdminRole(household.role) && <InvitesCard />}
         </>

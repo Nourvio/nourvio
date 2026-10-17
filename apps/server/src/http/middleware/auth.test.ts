@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../app.ts"
-import { describedRoutes } from "../../test/api-reference.ts"
+import { describedRoutes, type Operation } from "../../test/api-reference.ts"
 import {
   createTestApp,
   setUpServer,
@@ -42,11 +42,24 @@ function withKey(key: string, method: string, path: string, body?: unknown) {
   })
 }
 
-/** Path parameters filled in: a recipe by its slug, anything else by an id. */
-const pathOf = (path: string) =>
-  path.replace(/\{(\w+)\}/g, (_, name: string) =>
+/**
+ * Path parameters filled in, a recipe by its slug and anything else by an
+ * id; and the query a route can't do without, from its examples.
+ */
+const pathOf = (path: string, operation: Operation) => {
+  const filled = path.replace(/\{(\w+)\}/g, (_, name: string) =>
     name === "recipe" ? "lemon-chicken" : IDS.lemonChicken
   )
+  const query = new URLSearchParams(
+    (operation.parameters ?? [])
+      .filter((param) => param.in === "query" && param.required)
+      .map((param): [string, string] => [
+        param.name,
+        String(param.example ?? param.schema?.example ?? ""),
+      ])
+  ).toString()
+  return query ? `${filled}?${query}` : filled
+}
 
 // openToKeys() puts a route's permission in the API reference and hands the
 // same one to inHousehold(). A key without it must be turned away, by name:
@@ -68,7 +81,7 @@ describe("routes open to API keys", () => {
       const res = await withKey(
         bareKey,
         route.method.toUpperCase(),
-        pathOf(route.path),
+        pathOf(route.path, operation),
         json ? example(json) : undefined
       )
 

@@ -85,6 +85,95 @@ export function parseNumber(text: string): number {
   return Number(value.replace(",", "."))
 }
 
+/** Measures that come without a number, besides units: "a drizzle of". */
+const MEASURE_WORDS = new Set([
+  "splash",
+  "drizzle",
+  "sprinkle",
+  "sprinkling",
+  "squeeze",
+  "squirt",
+  "knob",
+  "touch",
+  "dollop",
+  "glug",
+  "bit",
+  "drop",
+  "drops",
+])
+
+/**
+ * The food without a measure that has no number, or a bracket before it:
+ * "Pinch of salt" is salt, "a few sprigs of thyme" thyme, "a little olive
+ * oil" olive oil, "(75 g) butter" butter. What came off goes in `asides`.
+ */
+export function bareFood(text: string, asides: string[] = []): string {
+  let rest = text.trim()
+  const bracket = rest.match(/^\(([^)]+)\)\s*/)
+  if (bracket && rest.length > bracket[0].length) {
+    asides.push(bracket[1]!.trim())
+    rest = rest.slice(bracket[0].length)
+  }
+  const words = rest.split(/\s+/)
+  let at = 0
+  const is = (pattern: RegExp) => pattern.test(words[at] ?? "")
+  const article = is(/^(?:a|an|some)$/i)
+  if (article) at++
+  if (is(/^(?:good|generous|big|large|small|heaping|scant)$/i)) at++
+  // "a few sprigs thyme" needs no "of" after the measure.
+  const few = is(/^(?:few|couple)$/i)
+  if (few) {
+    at++
+    if (is(/^of$/i)) at++
+  }
+  const measure = words[at] ?? ""
+  // Nor does "a little olive oil".
+  const little = article && /^little$/i.test(measure)
+  const measured =
+    little || findUnit(measure) || MEASURE_WORDS.has(measure.toLowerCase())
+  if (!measured) {
+    // "a few basil leaves": a few of the food itself.
+    if (!few || at >= words.length) return rest
+    asides.push(words.slice(0, at).join(" "))
+    return words.slice(at).join(" ")
+  }
+  at++
+  const of = is(/^of$/i)
+  if (of) at++
+  if ((!of && !few && !little) || at >= words.length) return rest
+  asides.push(words.slice(0, of ? at - 1 : at).join(" "))
+  return words.slice(at).join(" ")
+}
+
+/** "/ 240 ml " before the food: the amount another way. */
+const OTHER_AMOUNT = new RegExp(String.raw`^\/\s*(${NUMBER}\s*([A-Za-z.]+))\s+`)
+
+/**
+ * The food after its amount without another way of measuring it: "(75 g)"
+ * in "½ cup (75 g) butter", "plus 2 tbsp" in "1 cup plus 2 tbsp flour",
+ * "/ 240 ml" in "1 cup / 240 ml milk". What came off goes in `asides`.
+ */
+function withoutOtherAmount(body: string, asides: string[]): string {
+  let rest = body
+  const plus = plusAmount(rest)
+  if (plus) {
+    asides.push(rest.slice(0, plus.length).trim())
+    rest = rest.slice(plus.length).trim()
+  }
+  const bracket = rest.match(/^\(([^)]+)\)\s*/)
+  if (bracket) {
+    asides.push(bracket[1]!.trim())
+    rest = rest.slice(bracket[0].length)
+  }
+  const slash = rest.match(OTHER_AMOUNT)
+  if (slash && findUnit(slash[2]!)) {
+    asides.push(slash[1]!)
+    rest = rest.slice(slash[0].length)
+  }
+  rest = rest.replace(/^of\s+/i, "").trim()
+  return rest || body
+}
+
 /** Only words that describe the food, before a comma that's between them. */
 const DESCRIBING =
   /^(?:(?:boneless|skinless|bone-in|skin-on|fresh|large|medium|small|extra[- ]large|jumbo|ripe|firm|peeled|raw|cooked|uncooked|unsalted|salted|organic|whole|frozen|thawed|softened|lean|extra[- ]lean|thick[- ]cut|thin[- ]cut|seedless|pitted|dried|toasted|plain|low[- ]sodium|unsweetened|sweetened)(?:\s+|$|\s*and\s+))+$/i
@@ -185,6 +274,9 @@ export function parseIngredient(line: string): ParsedIngredient {
 
   const afterUnit = text.slice(cursor)
   let body = (unit ? afterUnit.replace(/^\s+of\b/i, "") : afterUnit).trim()
+  const asides: string[] = []
+  if (unit) body = withoutOtherAmount(body, asides)
+  else if (quantity === null) body = bareFood(body, asides)
   let note: string | null = null
   // A comma between describing words is part of the food: "skinless,
   // boneless chicken thighs, cut up" is skinless boneless chicken thighs.
@@ -205,7 +297,9 @@ export function parseIngredient(line: string): ParsedIngredient {
     note = [trailing[1]!.trim(), note].filter(Boolean).join(", ")
     body = body.slice(0, trailing.index).trim()
   }
-  if (sizeNote) note = [sizeNote, note].filter(Boolean).join(", ")
+  if (sizeNote || asides.length > 0) {
+    note = [sizeNote, ...asides, note].filter(Boolean).join(", ")
+  }
 
   return {
     text,

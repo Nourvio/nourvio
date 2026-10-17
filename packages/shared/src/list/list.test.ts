@@ -17,6 +17,10 @@ describe("food keys", () => {
     expect(foodKey("onion")).toBe("onion")
     expect(foodKey("fresh basil leaves")).toBe("basil leaf")
     expect(foodKey("tomatoes")).toBe("tomato")
+    // A measure or another amount isn't the food.
+    expect(foodKey("Pinch of salt")).toBe("salt")
+    expect(foodKey("(75 g) butter")).toBe("butter")
+    expect(foodKey("can of chickpeas")).toBe("chickpea")
     expect(foodKey("berries")).toBe("berry")
     expect(foodKey("chickpeas (drained)")).toBe("chickpea")
     expect(foodKey("asparagus")).toBe("asparagus")
@@ -57,6 +61,19 @@ describe("adding up the list", () => {
     expect(items.map((item) => [item.food, item.quantity, item.unit])).toEqual([
       ["diced tomato", 3, "can"],
       ["tomato", 1, "pound"],
+    ])
+  })
+
+  test("names the food alone, so it's one line and the store finds it", () => {
+    const items = combineLines([
+      { text: "½ cup (75 g) butter", factor: 1, source: "Cookies" },
+      { text: "2 tbsp butter", factor: 1, source: "Toast" },
+      { text: "Pinch of salt", factor: 1, source: "Cookies" },
+      { text: "1 tsp salt", factor: 1, source: "Toast" },
+    ])
+    expect(items.map((item) => [item.name, item.quantity, item.unit])).toEqual([
+      ["butter", 0.625, "cup"],
+      ["salt", 1, "teaspoon"],
     ])
   })
 

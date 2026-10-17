@@ -1,4 +1,4 @@
-import { parseIngredient } from "../ingredients/parse.ts"
+import { bareFood, parseIngredient } from "../ingredients/parse.ts"
 
 // The thing to buy in an ingredient line, named so the same food matches
 // across recipes, the list and the pantry: "2 Large Onions" and "1 onion"
@@ -17,9 +17,12 @@ function singular(word: string) {
   return word
 }
 
-/** A food's key: lowercase, without sizes or freshness, the last word singular. */
+/**
+ * A food's key: lowercase, without sizes, freshness or a measure ("pinch
+ * of"), the last word singular.
+ */
 export function foodKey(food: string) {
-  const words = food
+  const words = bareFood(food)
     .toLowerCase()
     .replace(/\([^)]*\)/g, " ")
     .replace(DESCRIPTORS, " ")

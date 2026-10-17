@@ -17,6 +17,13 @@ export type Media = { schema?: Schema; example?: unknown }
 export type Operation = {
   operationId?: string
   summary?: string
+  parameters?: {
+    name: string
+    in: string
+    required?: boolean
+    example?: unknown
+    schema?: Schema
+  }[]
   requestBody?: { content?: Record<string, Media> }
   responses?: Record<string, { content?: Record<string, Media> }>
 }

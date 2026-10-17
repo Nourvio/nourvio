@@ -140,7 +140,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Select and act on many list or pantry items | Detail | Built | |
 | Fridge, freezer or cupboard | Detail | Planned | |
 | Receipts into the pantry: looked over, then off the list | Key | Built | AI; a photo, screenshots, a PDF or pasted text, shared from Android or an iPhone, or sent to the assistant |
-| Kroger stores (Fry's, Ralphs...): products, send the cart, prices, sales | Key | Planned | Module (stores) |
+| Kroger stores (Fry's, Ralphs...): products, send the cart, prices, sales | Key | Built | Module (stores), with the server admin's Kroger developer app: a store by ZIP code, one linked account for the household, Merran's pick and how many for each thing, today's price and sale, sent to the cart by barcode |
 | Costco and any store with a search page | Detail | Built | Find each thing on a store's list on its site, in the app and the extension; stores by country |
 | Buying by the package: the rest of a 2 lb pack goes in the pantry | Key | Planned | Module (stores) |
 | Fill a Walmart cart through the extension | Detail | Planned | Experimental, off by default |

@@ -2864,6 +2864,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings/server/kroger/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Test the Kroger app
+         * @description Server admins only. Asks Kroger for a token with a client ID and secret, before saving them, or with the saved ones.
+         */
+        post: operations["testKrogerApp"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/settings/server/nutrition/test": {
         parameters: {
             query?: never;
@@ -3023,6 +3043,190 @@ export interface paths {
          * @description Recipes imported from it stay in the library. With an API key, it needs the `recipes: write` permission.
          */
         delete: operations["unfollowSite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's stores
+         * @description Kroger for the household: whether the server has a Kroger app, the household's store, how orders are collected, and the account linked to send things to its cart. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["getStores"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/kroger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Pick the household's Kroger store
+         * @description Household admins only. The store the household shops at (from `GET /stores/kroger/locations`), and whether orders are picked up or delivered.
+         */
+        put: operations["setKrogerStore"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/kroger/locations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Kroger stores near a ZIP code
+         * @description Up to twelve of Kroger's stores, of any banner, near a ZIP code. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["listKrogerLocations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/kroger/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Link a Kroger account
+         * @description Household admins only. Where to send the person to let Merran add to their Kroger cart; Kroger sends them back to `GET /stores/kroger/callback`. One account for the household, so everyone shops one cart.
+         */
+        post: operations["startKrogerLink"];
+        /**
+         * Unlink the Kroger account
+         * @description Household admins only. Its tokens are deleted.
+         */
+        delete: operations["unlinkKroger"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/kroger/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Where Kroger sends the person back
+         * @description Not called directly: the redirect address the Kroger developer app has. It finishes linking the account, then sends the person on to Settings, Household, saying how it went.
+         */
+        get: operations["krogerCallback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/kroger/basket": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The Kroger cart to look over
+         * @description Each thing left on the list for Kroger (or, with no list for it, the lists for any store) with its product: the one the household picked before, at today's price, or Merran's pick from the store's search, made by the household's model for shopping when it has AI. How many packages, worked out from the product's size where it can be. Nothing is sent until `POST /stores/kroger/send`. With an API key, it needs the `list: write` permission.
+         */
+        get: operations["getKrogerBasket"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/kroger/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search the household's Kroger store
+         * @description Up to twenty products, with today's prices, to pick another. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["searchKroger"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/kroger/products/{itemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Pick a product for something on the list
+         * @description Kept for that food from now on, at the household's store, and never replaced by itself. With an API key, it needs the `list: write` permission.
+         */
+        put: operations["pickKrogerProduct"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/kroger/send": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Send to the Kroger cart
+         * @description Adds the lines given to the linked account's cart, so many of each, by barcode. Their products are kept as the household's from now on. Kroger's API can only add to a cart: checking out is on Kroger's site. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["sendKrogerBasket"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -8524,6 +8728,9 @@ export interface components {
          *           "all": 73
          *         },
          *         "readAt": "2026-10-15T18:30:00.000Z"
+         *       },
+         *       "kroger": {
+         *         "redirectUri": "https://merran.example.com/api/stores/kroger/callback"
          *       }
          *     }
          */
@@ -8553,6 +8760,10 @@ export interface components {
                 };
                 /** Format: date-time */
                 readAt: string | null;
+            };
+            /** @description The redirect address to give the Kroger developer app: null without a public address set, when it's this server's address and /api/stores/kroger/callback. */
+            kroger: {
+                redirectUri: string | null;
             };
         };
         /**
@@ -8781,6 +8992,25 @@ export interface components {
          */
         JobListItem: components["schemas"]["Job"] & {
             householdName: string | null;
+        };
+        /**
+         * @example {
+         *       "ok": true
+         *     }
+         */
+        KrogerAppTested: {
+            /** @enum {boolean} */
+            ok: true;
+        };
+        /**
+         * @description A Kroger developer app's client ID and secret to test before saving them. Either left out is the saved one.
+         * @example {
+         *       "clientId": "merran-abc123"
+         *     }
+         */
+        KrogerAppTest: {
+            clientId?: string;
+            clientSecret?: string;
         };
         /**
          * @example {
@@ -9102,6 +9332,291 @@ export interface components {
          */
         SiteRecipes: {
             recipes: components["schemas"]["ShelfRecipe"][];
+        };
+        /**
+         * @example {
+         *       "kroger": {
+         *         "ready": true,
+         *         "location": {
+         *           "locationId": "70500822",
+         *           "name": "Fry's Food Stores - Phoenix",
+         *           "banner": "Fry's",
+         *           "domain": "frysfood.com",
+         *           "address": "4724 N 20th St, Phoenix, AZ"
+         *         },
+         *         "modality": "PICKUP",
+         *         "linked": {
+         *           "by": "Kyle",
+         *           "at": "2026-10-01T17:30:00.000Z"
+         *         },
+         *         "needsRelink": false,
+         *         "pricesCheckedAt": null
+         *       }
+         *     }
+         */
+        StoresStatus: {
+            kroger: {
+                /** @description The server has a Kroger developer app. */
+                ready: boolean;
+                /** @description The household's store, or null. */
+                location: components["schemas"]["StoreLocation"] | null;
+                /**
+                 * @description Orders are picked up or delivered.
+                 * @enum {string}
+                 */
+                modality: "PICKUP" | "DELIVERY";
+                /** @description The account whose cart things go to. */
+                linked: {
+                    by: string | null;
+                    /** Format: date-time */
+                    at: string;
+                } | null;
+                /** @description Kroger stopped taking the linked account. */
+                needsRelink: boolean;
+                /** Format: date-time */
+                pricesCheckedAt: string | null;
+            };
+        };
+        /**
+         * @example {
+         *       "locationId": "70500822",
+         *       "name": "Fry's Food Stores - Phoenix",
+         *       "banner": "Fry's",
+         *       "domain": "frysfood.com",
+         *       "address": "4724 N 20th St, Phoenix, AZ"
+         *     }
+         */
+        StoreLocation: {
+            locationId: string;
+            name: string;
+            /** @description Kroger's name for the chain: Fry's, Ralphs, King Soopers... */
+            banner: string;
+            /** @description The banner's site. */
+            domain: string;
+            address: string;
+        };
+        /**
+         * @example {
+         *       "locationId": "70500822",
+         *       "modality": "PICKUP"
+         *     }
+         */
+        KrogerStoreChanges: {
+            locationId?: string;
+            /** @enum {string} */
+            modality?: "PICKUP" | "DELIVERY";
+        };
+        /**
+         * @example {
+         *       "locations": [
+         *         {
+         *           "locationId": "70500822",
+         *           "name": "Fry's Food Stores - Phoenix",
+         *           "banner": "Fry's",
+         *           "domain": "frysfood.com",
+         *           "address": "4724 N 20th St, Phoenix, AZ"
+         *         }
+         *       ]
+         *     }
+         */
+        StoreLocations: {
+            locations: components["schemas"]["StoreLocation"][];
+        };
+        /**
+         * @example {
+         *       "url": "https://api.kroger.com/v1/connect/oauth2/authorize?..."
+         *     }
+         */
+        KrogerLink: {
+            /** @description Where to send the person. */
+            url: string;
+        };
+        /**
+         * @example {
+         *       "store": "Fry's",
+         *       "location": {
+         *         "locationId": "70500822",
+         *         "name": "Fry's Food Stores - Phoenix",
+         *         "banner": "Fry's",
+         *         "domain": "frysfood.com",
+         *         "address": "4724 N 20th St, Phoenix, AZ"
+         *       },
+         *       "modality": "PICKUP",
+         *       "linked": true,
+         *       "sentAt": null,
+         *       "lines": [
+         *         {
+         *           "itemId": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "name": "milk",
+         *           "amount": "1 gallon",
+         *           "product": {
+         *             "id": "0001111041700",
+         *             "upc": "0001111041700",
+         *             "name": "Kroger 2% Reduced Fat Milk",
+         *             "brand": "Kroger",
+         *             "size": "1 gal",
+         *             "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+         *             "price": 349,
+         *             "salePrice": 299,
+         *             "saleEnds": "2026-10-21",
+         *             "currency": "USD",
+         *             "aisle": "Dairy",
+         *             "inStock": true,
+         *             "url": "https://www.frysfood.com/p/milk/0001111041700"
+         *           },
+         *           "suggested": true,
+         *           "packages": 1,
+         *           "sure": true,
+         *           "sent": false
+         *         }
+         *       ]
+         *     }
+         */
+        Basket: {
+            /** @description The banner: Fry's. */
+            store: string;
+            location: components["schemas"]["StoreLocation"];
+            /** @enum {string} */
+            modality: "PICKUP" | "DELIVERY";
+            /** @description An account is linked, so it can be sent. */
+            linked: boolean;
+            /** Format: date-time */
+            sentAt: string | null;
+            lines: components["schemas"]["BasketLine"][];
+        };
+        /**
+         * @example {
+         *       "itemId": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *       "name": "milk",
+         *       "amount": "1 gallon",
+         *       "product": {
+         *         "id": "0001111041700",
+         *         "upc": "0001111041700",
+         *         "name": "Kroger 2% Reduced Fat Milk",
+         *         "brand": "Kroger",
+         *         "size": "1 gal",
+         *         "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+         *         "price": 349,
+         *         "salePrice": 299,
+         *         "saleEnds": "2026-10-21",
+         *         "currency": "USD",
+         *         "aisle": "Dairy",
+         *         "inStock": true,
+         *         "url": "https://www.frysfood.com/p/milk/0001111041700"
+         *       },
+         *       "suggested": true,
+         *       "packages": 1,
+         *       "sure": true,
+         *       "sent": false
+         *     }
+         */
+        BasketLine: {
+            itemId: string;
+            name: string;
+            amount: string;
+            product: components["schemas"]["StoreProduct"] | null;
+            /** @description Merran's pick, not one the household chose. */
+            suggested: boolean;
+            packages: number;
+            /** @description How many is worked out from the product's size, not a guess. */
+            sure: boolean;
+            /** @description Sent to the cart last time. */
+            sent: boolean;
+        };
+        /**
+         * @example {
+         *       "id": "0001111041700",
+         *       "upc": "0001111041700",
+         *       "name": "Kroger 2% Reduced Fat Milk",
+         *       "brand": "Kroger",
+         *       "size": "1 gal",
+         *       "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+         *       "price": 349,
+         *       "salePrice": 299,
+         *       "saleEnds": "2026-10-21",
+         *       "currency": "USD",
+         *       "aisle": "Dairy",
+         *       "inStock": true,
+         *       "url": "https://www.frysfood.com/p/milk/0001111041700"
+         *     }
+         */
+        StoreProduct: {
+            id: string;
+            upc: string | null;
+            name: string;
+            brand: string | null;
+            size: string | null;
+            image: string | null;
+            /** @description In the currency's smallest unit: cents. */
+            price: number | null;
+            salePrice: number | null;
+            /** @description The sale's last day. */
+            saleEnds: string | null;
+            currency: string;
+            aisle: string | null;
+            inStock: boolean;
+            url: string | null;
+        };
+        /**
+         * @example {
+         *       "products": [
+         *         {
+         *           "id": "0001111041700",
+         *           "upc": "0001111041700",
+         *           "name": "Kroger 2% Reduced Fat Milk",
+         *           "brand": "Kroger",
+         *           "size": "1 gal",
+         *           "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+         *           "price": 349,
+         *           "salePrice": 299,
+         *           "saleEnds": "2026-10-21",
+         *           "currency": "USD",
+         *           "aisle": "Dairy",
+         *           "inStock": true,
+         *           "url": "https://www.frysfood.com/p/milk/0001111041700"
+         *         }
+         *       ]
+         *     }
+         */
+        StoreProducts: {
+            products: components["schemas"]["StoreProduct"][];
+        };
+        /**
+         * @example {
+         *       "productId": "0001111041700"
+         *     }
+         */
+        PickProduct: {
+            productId: string;
+        };
+        /**
+         * @example {
+         *       "sent": 1,
+         *       "store": "Fry's",
+         *       "cartUrl": "https://www.frysfood.com/cart"
+         *     }
+         */
+        SentBasket: {
+            sent: number;
+            store: string;
+            /** @description The store's cart, to check out. */
+            cartUrl: string;
+        };
+        /**
+         * @example {
+         *       "lines": [
+         *         {
+         *           "itemId": "0199e8b0-5a10-7a01-8b00-00000000001d",
+         *           "packages": 1
+         *         }
+         *       ]
+         *     }
+         */
+        SendBasket: {
+            lines: {
+                itemId: string;
+                packages: number;
+            }[];
         };
         /**
          * @example {
@@ -17811,6 +18326,75 @@ export interface operations {
             };
         };
     };
+    testKrogerApp: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KrogerAppTest"];
+            };
+        };
+        responses: {
+            /** @description Kroger took them. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KrogerAppTested"];
+                };
+            };
+            /** @description No client ID and secret to test. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger refused them. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger didn't answer. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     testUsdaKey: {
         parameters: {
             query?: never;
@@ -18290,6 +18874,485 @@ export interface operations {
             };
             /** @description The household doesn't follow that site. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getStores: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its stores. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoresStatus"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    setKrogerStore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KrogerStoreChanges"];
+            };
+        };
+        responses: {
+            /** @description Its stores now. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoresStatus"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such Kroger store. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger isn't set up on this server. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listKrogerLocations: {
+        parameters: {
+            query: {
+                zip: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stores near it. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreLocations"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger isn't set up on this server. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startKrogerLink: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Where to go. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KrogerLink"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger isn't set up on this server. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    unlinkKroger: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Unlinked. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    krogerCallback: {
+        parameters: {
+            query?: {
+                code?: string;
+                state?: string;
+                error?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description On to Settings, Household. */
+            302: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getKrogerBasket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The cart to look over. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Basket"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger isn't set up, or the household has no store. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    searchKroger: {
+        parameters: {
+            query: {
+                q: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description What the store has. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreProducts"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger isn't set up, or the household has no store. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    pickKrogerProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PickProduct"];
+            };
+        };
+        responses: {
+            /** @description Its line, with the product. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BasketLine"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such thing on the list, or product at the store. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    sendKrogerBasket: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SendBasket"];
+            };
+        };
+        responses: {
+            /** @description Sent. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SentBasket"];
+                };
+            };
+            /** @description None of them has a product. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger stopped taking the account: link it again. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -115,6 +115,10 @@ export type FetchOptions = {
   referer?: string
   /** Sends this as JSON, in a POST, rather than asking for a page. */
   json?: unknown
+  /** Sends this as a form, in a POST: what OAuth token endpoints take. */
+  form?: Record<string, string>
+  /** Another method than GET, or POST with a body: PUT, say. */
+  method?: "GET" | "POST" | "PUT" | "DELETE"
   /** More headers, like a token. */
   headers?: Record<string, string>
   /**
@@ -180,6 +184,8 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
       maxBytes = 5_000_000,
       referer,
       json,
+      form,
+      method,
       headers = {},
       homeNetwork = false,
       keepErrors = false,
@@ -198,7 +204,16 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
           signal,
           ...(json === undefined
             ? {}
-            : { method: "POST", body: JSON.stringify(json) }),
+            : { method: method ?? "POST", body: JSON.stringify(json) }),
+          ...(form === undefined
+            ? {}
+            : {
+                method: method ?? "POST",
+                body: new URLSearchParams(form).toString(),
+              }),
+          ...(method && json === undefined && form === undefined
+            ? { method }
+            : {}),
           headers: {
             "user-agent": userAgent,
             "accept-language": "en-US,en;q=0.9",
@@ -207,6 +222,9 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
             ...(json === undefined
               ? {}
               : { "content-type": "application/json" }),
+            ...(form === undefined
+              ? {}
+              : { "content-type": "application/x-www-form-urlencoded" }),
             ...headers,
           },
         })
@@ -231,7 +249,7 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
         const location = response.headers.get("location")
         await response.body?.cancel()
         // A POST isn't sent on to somewhere else.
-        if (!location || json !== undefined) {
+        if (!location || json !== undefined || form !== undefined) {
           throw new AppError(
             "upstream",
             "site_error",

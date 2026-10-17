@@ -14,11 +14,12 @@ import { Route as FocusRouteImport } from './routes/_focus'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
-import { Route as AppListRouteImport } from './routes/_app/list'
 import { Route as AppPlanRouteImport } from './routes/_app/plan'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppShareRouteImport } from './routes/_app/share'
 import { Route as JoinTokenRouteImport } from './routes/join/$token'
+import { Route as AppListIndexRouteImport } from './routes/_app/list/index'
+import { Route as AppListKrogerRouteImport } from './routes/_app/list/kroger'
 import { Route as AppPantryIndexRouteImport } from './routes/_app/pantry/index'
 import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 import { Route as AppRecipesDeletedRouteImport } from './routes/_app/recipes/deleted'
@@ -62,11 +63,6 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppListRoute = AppListRouteImport.update({
-  id: '/list',
-  path: '/list',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppPlanRoute = AppPlanRouteImport.update({
   id: '/plan',
   path: '/plan',
@@ -86,6 +82,16 @@ const JoinTokenRoute = JoinTokenRouteImport.update({
   id: '/join/$token',
   path: '/join/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppListIndexRoute = AppListIndexRouteImport.update({
+  id: '/list/',
+  path: '/list/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppListKrogerRoute = AppListKrogerRouteImport.update({
+  id: '/list/kroger',
+  path: '/list/kroger',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppPantryIndexRoute = AppPantryIndexRouteImport.update({
   id: '/pantry/',
@@ -190,11 +196,11 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
-  '/list': typeof AppListRoute
   '/plan': typeof AppPlanRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
+  '/list/kroger': typeof AppListKrogerRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
@@ -203,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/extension/connect': typeof FocusExtensionConnectRoute
+  '/list/': typeof AppListIndexRoute
   '/pantry/': typeof AppPantryIndexRoute
   '/recipes/': typeof AppRecipesIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
@@ -219,10 +226,10 @@ export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
-  '/list': typeof AppListRoute
   '/plan': typeof AppPlanRoute
   '/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
+  '/list/kroger': typeof AppListKrogerRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
@@ -231,6 +238,7 @@ export interface FileRoutesByTo {
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
   '/extension/connect': typeof FocusExtensionConnectRoute
+  '/list': typeof AppListIndexRoute
   '/pantry': typeof AppPantryIndexRoute
   '/recipes': typeof AppRecipesIndexRoute
   '/settings': typeof AppSettingsIndexRoute
@@ -249,12 +257,12 @@ export interface FileRoutesById {
   '/_focus': typeof FocusRouteWithChildren
   '/login': typeof LoginRoute
   '/setup': typeof SetupRoute
-  '/_app/list': typeof AppListRoute
   '/_app/plan': typeof AppPlanRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/list/kroger': typeof AppListKrogerRoute
   '/_app/recipes/deleted': typeof AppRecipesDeletedRoute
   '/_app/recipes/new': typeof AppRecipesNewRoute
   '/_app/recipes/review': typeof AppRecipesReviewRoute
@@ -263,6 +271,7 @@ export interface FileRoutesById {
   '/_app/settings/server': typeof AppSettingsServerRoute
   '/_app/settings/you': typeof AppSettingsYouRoute
   '/_focus/extension/connect': typeof FocusExtensionConnectRoute
+  '/_app/list/': typeof AppListIndexRoute
   '/_app/pantry/': typeof AppPantryIndexRoute
   '/_app/recipes/': typeof AppRecipesIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
@@ -281,11 +290,11 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/setup'
-    | '/list'
     | '/plan'
     | '/settings'
     | '/share'
     | '/join/$token'
+    | '/list/kroger'
     | '/recipes/deleted'
     | '/recipes/new'
     | '/recipes/review'
@@ -294,6 +303,7 @@ export interface FileRouteTypes {
     | '/settings/server'
     | '/settings/you'
     | '/extension/connect'
+    | '/list/'
     | '/pantry/'
     | '/recipes/'
     | '/settings/'
@@ -310,10 +320,10 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/setup'
-    | '/list'
     | '/plan'
     | '/share'
     | '/join/$token'
+    | '/list/kroger'
     | '/recipes/deleted'
     | '/recipes/new'
     | '/recipes/review'
@@ -322,6 +332,7 @@ export interface FileRouteTypes {
     | '/settings/server'
     | '/settings/you'
     | '/extension/connect'
+    | '/list'
     | '/pantry'
     | '/recipes'
     | '/settings'
@@ -339,12 +350,12 @@ export interface FileRouteTypes {
     | '/_focus'
     | '/login'
     | '/setup'
-    | '/_app/list'
     | '/_app/plan'
     | '/_app/settings'
     | '/_app/share'
     | '/join/$token'
     | '/_app/'
+    | '/_app/list/kroger'
     | '/_app/recipes/deleted'
     | '/_app/recipes/new'
     | '/_app/recipes/review'
@@ -353,6 +364,7 @@ export interface FileRouteTypes {
     | '/_app/settings/server'
     | '/_app/settings/you'
     | '/_focus/extension/connect'
+    | '/_app/list/'
     | '/_app/pantry/'
     | '/_app/recipes/'
     | '/_app/settings/'
@@ -411,13 +423,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/list': {
-      id: '/_app/list'
-      path: '/list'
-      fullPath: '/list'
-      preLoaderRoute: typeof AppListRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/plan': {
       id: '/_app/plan'
       path: '/plan'
@@ -445,6 +450,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/join/$token'
       preLoaderRoute: typeof JoinTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/list/': {
+      id: '/_app/list/'
+      path: '/list'
+      fullPath: '/list/'
+      preLoaderRoute: typeof AppListIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/list/kroger': {
+      id: '/_app/list/kroger'
+      path: '/list/kroger'
+      fullPath: '/list/kroger'
+      preLoaderRoute: typeof AppListKrogerRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/pantry/': {
       id: '/_app/pantry/'
@@ -603,14 +622,15 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 )
 
 interface AppRouteChildren {
-  AppListRoute: typeof AppListRoute
   AppPlanRoute: typeof AppPlanRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppShareRoute: typeof AppShareRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppListKrogerRoute: typeof AppListKrogerRoute
   AppRecipesDeletedRoute: typeof AppRecipesDeletedRoute
   AppRecipesNewRoute: typeof AppRecipesNewRoute
   AppRecipesReviewRoute: typeof AppRecipesReviewRoute
+  AppListIndexRoute: typeof AppListIndexRoute
   AppPantryIndexRoute: typeof AppPantryIndexRoute
   AppRecipesIndexRoute: typeof AppRecipesIndexRoute
   AppPantryReceiptsReceiptIdRoute: typeof AppPantryReceiptsReceiptIdRoute
@@ -623,14 +643,15 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppListRoute: AppListRoute,
   AppPlanRoute: AppPlanRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppShareRoute: AppShareRoute,
   AppIndexRoute: AppIndexRoute,
+  AppListKrogerRoute: AppListKrogerRoute,
   AppRecipesDeletedRoute: AppRecipesDeletedRoute,
   AppRecipesNewRoute: AppRecipesNewRoute,
   AppRecipesReviewRoute: AppRecipesReviewRoute,
+  AppListIndexRoute: AppListIndexRoute,
   AppPantryIndexRoute: AppPantryIndexRoute,
   AppRecipesIndexRoute: AppRecipesIndexRoute,
   AppPantryReceiptsReceiptIdRoute: AppPantryReceiptsReceiptIdRoute,

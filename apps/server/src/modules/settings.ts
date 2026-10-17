@@ -4,6 +4,7 @@ import { ERROR_TRACKING } from "./error-tracking/settings.ts"
 import { NUTRITION } from "./nutrition/settings.ts"
 import { PHOTOS } from "./photos/settings.ts"
 import { SITES } from "./sites/settings.ts"
+import { STORE_SETTINGS } from "./stores/settings.ts"
 import { TELEMETRY } from "./telemetry/settings.ts"
 import { VIDEO } from "./video/settings.ts"
 import { VOICE } from "./voice/settings.ts"
@@ -20,6 +21,7 @@ export const MODULE_SETTINGS: readonly AnySetting[] = [
   ...Object.values(SITES),
   ...Object.values(PHOTOS),
   ...Object.values(VOICE),
+  ...Object.values(STORE_SETTINGS),
   ...Object.values(ERROR_TRACKING),
   ...Object.values(TELEMETRY),
 ]

@@ -1,0 +1,34 @@
+import { createRoute } from "@hono/zod-openapi"
+import type { AppDeps } from "../../../../../core/context.ts"
+import { krogerBasket } from "../../../../../services/stores/basket.ts"
+import { inHousehold, openToKeys } from "../../../../middleware/auth.ts"
+import type { Router } from "../../../../router.ts"
+import {
+  errorResponse,
+  jsonResponse,
+  SIGNED_IN_ERRORS,
+} from "../../../../schemas/responses.ts"
+import { BasketSchema } from "../../../../schemas/stores.ts"
+
+const route = createRoute({
+  method: "get",
+  path: "/stores/kroger/basket",
+  operationId: "getKrogerBasket",
+  tags: ["Stores"],
+  summary: "The Kroger cart to look over",
+  description:
+    "Each thing left on the list for Kroger (or, with no list for it, the lists for any store) with its product: the one the household picked before, at today's price, or Merran's pick from the store's search, made by the household's model for shopping when it has AI. How many packages, worked out from the product's size where it can be. Nothing is sent until `POST /stores/kroger/send`.",
+  ...openToKeys("list", "write"),
+  responses: {
+    200: jsonResponse(BasketSchema, "The cart to look over."),
+    422: errorResponse("Kroger isn't set up, or the household has no store."),
+    ...SIGNED_IN_ERRORS,
+  },
+})
+
+export default (router: Router, deps: AppDeps) => {
+  router.openapi(route, async (c) => {
+    const { em, householdId, userId } = inHousehold(c)
+    return c.json(await krogerBasket(deps, em, { householdId, userId }), 200)
+  })
+}

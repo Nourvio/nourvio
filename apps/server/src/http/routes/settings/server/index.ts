@@ -3,6 +3,7 @@ import type { Router } from "../../../router.ts"
 import aiRoutes from "./ai/index.ts"
 import get from "./get.ts"
 import jobsRoutes from "./jobs/index.ts"
+import krogerRoutes from "./kroger/index.ts"
 import nutritionRoutes from "./nutrition/index.ts"
 import patch from "./patch.ts"
 import voiceRoutes from "./voice/index.ts"
@@ -12,6 +13,7 @@ export default (router: Router, deps: AppDeps) => {
   patch(router, deps)
   aiRoutes(router, deps)
   jobsRoutes(router, deps)
+  krogerRoutes(router, deps)
   nutritionRoutes(router, deps)
   voiceRoutes(router, deps)
 }

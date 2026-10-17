@@ -81,6 +81,10 @@ export const ServerSettingsSchema = z
         description:
           "The recipe sites Merran reads, the recipes it has from them, how many of the starter collections' classics open, and when a site was last read.",
       }),
+    kroger: z.object({ redirectUri: z.string().nullable() }).openapi({
+      description:
+        "The redirect address to give the Kroger developer app: null without a public address set, when it's this server's address and /api/stores/kroger/callback.",
+    }),
   })
   .openapi("ServerSettings", {
     example: {
@@ -97,6 +101,9 @@ export const ServerSettingsSchema = z
         recipes: 214,
         classics: { working: 71, all: 73 },
         readAt: "2026-10-15T18:30:00.000Z",
+      },
+      kroger: {
+        redirectUri: "https://merran.example.com/api/stores/kroger/callback",
       },
     },
   })

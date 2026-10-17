@@ -49,6 +49,12 @@ export async function describeServerSettings({
     settings: await settings.describeServer(),
     video: { ...tools, cookies: existsSync(cookies) },
     sites: await shelfSummary(database.em.fork()),
+    kroger: {
+      // Without a public address, the web app says its own.
+      redirectUri: config.publicUrl
+        ? `${config.publicUrl}/api/stores/kroger/callback`
+        : null,
+    },
   }
 }
 

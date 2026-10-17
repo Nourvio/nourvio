@@ -47,6 +47,26 @@ describe("reading an ingredient line", () => {
     ["1,5 l water", 1.5, null, "liter", "water", null],
     ["- 1 cup rice", 1, null, "cup", "rice", null],
     ["▢ 2 tablespoons butter", 2, null, "tablespoon", "butter", null],
+    // Another way to measure it isn't part of the food.
+    ["½ cup (75 g) butter", 0.5, null, "cup", "butter", "75 g"],
+    [
+      "1 cup (2 sticks) butter, softened",
+      1,
+      null,
+      "cup",
+      "butter",
+      "2 sticks, softened",
+    ],
+    [
+      "1½ cups plus 1 Tbsp. (200 g) flour",
+      1.5,
+      null,
+      "cup",
+      "flour",
+      "plus 1 Tbsp., 200 g",
+    ],
+    ["1 cup / 240 ml milk", 1, null, "cup", "milk", "240 ml"],
+    ["2 cups (packed) brown sugar", 2, null, "cup", "brown sugar", "packed"],
   ])("%s", (line, quantity, quantityMax, unitId, food, note) => {
     const parsed = parseIngredient(line)
     expect(parsed.quantity).toBeCloseTo(quantity)
@@ -63,7 +83,34 @@ describe("reading an ingredient line", () => {
       food: "Salt and pepper",
       note: "to taste",
     })
-    expect(parseIngredient("a few basil leaves").quantity).toBeNull()
+    expect(parseIngredient("a few basil leaves")).toMatchObject({
+      quantity: null,
+      food: "basil leaves",
+      note: "a few",
+    })
+  })
+
+  test.each([
+    ["Pinch of salt", "salt", "Pinch"],
+    ["Large pinch of kosher salt", "kosher salt", "Large pinch"],
+    ["a drizzle of olive oil", "olive oil", "a drizzle"],
+    ["a few sprigs of thyme", "thyme", "a few sprigs"],
+    ["a couple cloves garlic, minced", "garlic", "a couple cloves, minced"],
+    ["a little olive oil", "olive oil", "a little"],
+    ["Splash of milk", "milk", "Splash"],
+    ["(75 g) butter", "butter", "75 g"],
+    // Not measures: the food itself.
+    ["Cream of tartar", "Cream of tartar", null],
+    ["Juice of 1 lemon", "Juice of 1 lemon", null],
+    ["Large eggs", "Large eggs", null],
+    ["Head lettuce", "Head lettuce", null],
+  ])("a measure without a number isn't the food: %s", (line, food, note) => {
+    expect(parseIngredient(line)).toMatchObject({
+      quantity: null,
+      unitId: null,
+      food,
+      note,
+    })
   })
 
   test("its parts put back together are the line", () => {
@@ -72,6 +119,8 @@ describe("reading an ingredient line", () => {
       "2 cups flour",
       "a pinch of salt",
       "3 eggs",
+      "½ cup (75 g) butter",
+      "1 cup plus 2 tbsp flour",
     ]) {
       const { text, parts } = parseIngredient(line)
       expect(

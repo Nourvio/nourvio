@@ -2,6 +2,7 @@ import { ai } from "./ai/index.ts"
 import { errorTracking } from "./error-tracking/index.ts"
 import { nutrition } from "./nutrition/index.ts"
 import { sites } from "./sites/index.ts"
+import { stores } from "./stores/index.ts"
 import type { Module } from "./module.ts"
 import { photos } from "./photos/index.ts"
 import { telemetry } from "./telemetry/index.ts"
@@ -16,6 +17,7 @@ export const MODULES: readonly Module[] = [
   sites,
   photos,
   voice,
+  stores,
   errorTracking,
   telemetry,
 ]

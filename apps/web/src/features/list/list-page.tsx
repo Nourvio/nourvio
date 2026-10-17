@@ -8,12 +8,14 @@ import {
   MoreHorizontalIcon,
   RepeatIcon,
   ShoppingBasket01Icon,
+  ShoppingCart01Icon,
   Store01Icon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { STORES_BY_KEY, storeSearch } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { Trans, useTranslation } from "react-i18next"
 
@@ -43,6 +45,7 @@ import {
 import { Progress } from "@/components/ui/progress"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useActiveHousehold } from "@/features/auth/use-me"
+import { useCapability } from "@/features/capabilities/queries"
 import { isAdminRole } from "@/features/household/queries"
 import { usePeopleHere, type Person } from "@/features/live/live-updates"
 import { SelectionBar, SelectionHeader } from "@/features/select/selection-bar"
@@ -51,6 +54,7 @@ import {
   useSelectionKeepOnly,
 } from "@/features/select/use-selection"
 import { householdQuery } from "@/features/household/queries"
+import { storesQuery } from "@/features/stores/queries"
 import { initials } from "@/lib/initials"
 import { cn } from "@/lib/utils"
 
@@ -101,6 +105,8 @@ export function ListPage() {
   const [chosen, setChosen] = React.useState(readChosenList)
 
   const { data: household } = useQuery(householdQuery)
+  const kroger = useCapability("stores.kroger")
+  const { data: stores } = useQuery({ ...storesQuery, enabled: kroger })
   /** Where to find something on its list's store's site, if it has one. */
   const findAt = (item: ListItem) => {
     const store = lists.find((option) => option.id === item.list)?.store
@@ -148,6 +154,14 @@ export function ListPage() {
   useSelectionKeepOnly(selection, selectable)
   const picked = selectable.filter((id) => selection.isPicked(id))
   const elsewhere = lists.filter((option) => option.id !== current?.id)
+  // The household's Kroger store (Fry's, Ralphs...) takes the Kroger list,
+  // or without one, the lists for no store in particular.
+  const krogerStore = stores?.kroger.location?.banner
+  const toKroger =
+    krogerStore &&
+    toGet.length > 0 &&
+    (current?.store === "kroger" ||
+      (!lists.some((option) => option.store === "kroger") && !current?.store))
   /** The list showing, when there's more than one. */
   const listShowing = split ? current?.id : undefined
 
@@ -188,6 +202,16 @@ export function ListPage() {
             <SelectionHeader selection={selection} allIds={selectable} />
           ) : (
             <>
+              {toKroger && (
+                <Button variant="outline" render={<Link to="/list/kroger" />}>
+                  <HugeiconsIcon
+                    icon={ShoppingCart01Icon}
+                    strokeWidth={2}
+                    data-icon="inline-start"
+                  />
+                  {t("list.sendTo", { store: krogerStore })}
+                </Button>
+              )}
               <Button onClick={() => setFromPlan(true)}>
                 <HugeiconsIcon
                   icon={Calendar03Icon}
