@@ -7,6 +7,7 @@ import { noteEditJob } from "../recipes/review/note-edits.ts"
 import { tidyRunJob } from "../recipes/review/tidy-run.ts"
 import { nutritionRunJob } from "../nutrition/runs.ts"
 import { autoplanJob } from "../plan/autoplan.ts"
+import { readSitesJob } from "../sites/read-job.ts"
 import { importJob } from "../transfer/import.ts"
 import { cleanUpJobsJob } from "./clean-up.ts"
 import type { JobHandler, JobSchedule } from "./runner.ts"
@@ -26,6 +27,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   nutritionRunJob,
   noteEditJob,
   discoverJob,
+  readSitesJob,
 ]
 
 /** Jobs that come round again, in the server's time. */
@@ -33,4 +35,6 @@ export const JOB_SCHEDULES: readonly JobSchedule[] = [
   { kind: purgeDeletedJob.kind, cron: "17 3 * * *" },
   { kind: cleanUpJobsJob.kind, cron: "27 3 * * *" },
   { kind: sendTelemetryJob.kind, cron: "41 4 * * *" },
+  // Each site is read every 6 hours; this finds the ones that are due.
+  { kind: readSitesJob.kind, cron: "*/30 * * * *" },
 ]

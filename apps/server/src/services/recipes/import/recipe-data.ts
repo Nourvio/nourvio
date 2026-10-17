@@ -13,6 +13,15 @@ export type RecipeData = {
   nutrition: Nutrition | null
   /** Photos to try, best first: the recipe's own, then the page's share image. */
   photoUrls: string[]
+  /** What the page says the recipe is, for sorting it into starter collections. */
+  about?: RecipeAbout
+}
+
+/** A recipe's categories, cuisines and keywords, as the page gives them. */
+export type RecipeAbout = {
+  categories: string[]
+  cuisines: string[]
+  keywords: string[]
 }
 
 /** schema.org's names for what Merran shows. */
@@ -336,6 +345,23 @@ function tagsFrom(node: any): string[] {
   return tags.slice(0, 5)
 }
 
+/** Words from a list, or one string of them split at commas, cleaned. */
+function words(value: unknown) {
+  return asArray(value)
+    .flatMap((item) => cleanText(item).split(","))
+    .map((word) => word.trim().toLowerCase())
+    .filter((word) => word && word.length <= 60)
+}
+
+/** What the recipe is, by its categories, cuisines and keywords. */
+function aboutFrom(node: any): RecipeAbout {
+  return {
+    categories: [...new Set(words(node.recipeCategory))].slice(0, 20),
+    cuisines: [...new Set(words(node.recipeCuisine))].slice(0, 20),
+    keywords: [...new Set(words(node.keywords))].slice(0, 40),
+  }
+}
+
 /** Reads a page's schema.org Recipe, or null if it hasn't one. */
 export function readRecipeData(
   html: string,
@@ -405,5 +431,6 @@ export function readRecipeData(
         size: pixels(null, url),
       })),
     ]),
+    about: aboutFrom(node),
   }
 }

@@ -285,6 +285,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/collections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Starter collections
+         * @description Sets of recipes to start a library with, each filled from the recipe sites Merran reads by its own rule, around a few hand-picked classics. Only collections in season for the household, with at least four recipes that suit it. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listCollections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collections/{collection}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A starter collection
+         * @description Its recipes that suit the household, and what Find more found for it last. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["getCollection"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collections/{collection}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import a whole collection
+         * @description Its recipes not in the library yet, in the background, as several links are: follow along at /recipes/import/links/{importId}. With an API key, it needs the `imports: write` permission.
+         */
+        post: operations["importCollection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/collections/{collection}/find": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Find more for a collection
+         * @description Searches the web for more recipes in the collection's theme that suit the household, as `POST /discover` does, and keeps them with the collection (its `found`). Needs a model that can search the web. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["findMoreForCollection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/discover": {
         parameters: {
             query?: never;
@@ -2740,6 +2820,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/sites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Followed recipe sites
+         * @description The recipe sites the household follows, oldest followed first, each with its newest recipes; and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listSites"];
+        put?: never;
+        /**
+         * Follow a recipe site
+         * @description By any page of the site, its RSS or Atom feed, or a suggestion. Merran finds the feed and reads it straight away when no one's read it lately, opening each new post a few seconds apart and keeping the recipes. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["followSite"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sites/recipes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The newest recipes from followed sites
+         * @description Up to 24, newest first, from every site the household follows: for Recipes' spotlight and Today's idea for tonight. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listSiteRecipes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sites/recipes/{recipe}/photo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * A site recipe's photo
+         * @description A small copy, as WebP, fetched once through Merran so browsing doesn't load photos from other sites. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["getSiteRecipePhoto"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/sites/{site}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Stop following a site
+         * @description Recipes imported from it stay in the library. With an API key, it needs the `recipes: write` permission.
+         */
+        delete: operations["unfollowSite"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/telemetry/install-id": {
         parameters: {
             query?: never;
@@ -3458,35 +3622,159 @@ export interface components {
         };
         /**
          * @example {
-         *       "searches": [
+         *       "collections": [
          *         {
-         *           "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
-         *           "theme": "cozy fall soups",
-         *           "status": "done",
-         *           "error": null,
-         *           "recipes": [
-         *             {
-         *               "url": "https://cooking.example/butternut-squash-soup",
-         *               "name": "Roasted Butternut Squash Soup",
-         *               "site": "cooking.example",
-         *               "minutes": 60,
-         *               "photo": "https://cooking.example/images/squash-soup.jpg",
-         *               "why": "Vegetarian and freezes well, with the squash roasted for depth."
-         *             }
-         *           ],
-         *           "createdAt": "2026-10-01T17:30:00.000Z",
-         *           "updatedAt": "2026-10-01T17:30:00.000Z"
+         *           "id": "weeknight",
+         *           "title": "Weeknight wins",
+         *           "description": "Dinners on the table in 40 minutes or less.",
+         *           "theme": "Weeknight dinners on the table in 40 minutes or less",
+         *           "count": 2,
+         *           "toImport": 1,
+         *           "photos": [
+         *             "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo"
+         *           ]
          *         }
          *       ]
          *     }
          */
-        DiscoveryList: {
-            searches: components["schemas"]["Discovery"][];
+        CollectionList: {
+            collections: components["schemas"]["CollectionSummary"][];
+        };
+        /**
+         * @example {
+         *       "id": "weeknight",
+         *       "title": "Weeknight wins",
+         *       "description": "Dinners on the table in 40 minutes or less.",
+         *       "theme": "Weeknight dinners on the table in 40 minutes or less",
+         *       "count": 2,
+         *       "toImport": 1,
+         *       "photos": [
+         *         "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo"
+         *       ]
+         *     }
+         */
+        CollectionSummary: {
+            id: string;
+            title: string;
+            description: string;
+            /** @description What Find more looks for. */
+            theme: string;
+            count: number;
+            /** @description How many aren't in the library yet. */
+            toImport: number;
+            /** @description Up to four, for its card. */
+            photos: string[];
+        };
+        /**
+         * @example {
+         *       "id": "weeknight",
+         *       "title": "Weeknight wins",
+         *       "description": "Dinners on the table in 40 minutes or less.",
+         *       "theme": "Weeknight dinners on the table in 40 minutes or less",
+         *       "count": 2,
+         *       "toImport": 1,
+         *       "photos": [
+         *         "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo"
+         *       ],
+         *       "recipes": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+         *           "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+         *           "name": "Honey Garlic Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+         *           "minutes": 12,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": null,
+         *           "suits": true
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+         *           "url": "https://www.recipetineats.com/lemon-chicken/",
+         *           "name": "Lemon Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": null,
+         *           "minutes": 35,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": {
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken"
+         *           },
+         *           "suits": true
+         *         }
+         *       ],
+         *       "found": null
+         *     }
+         */
+        Collection: {
+            id: string;
+            title: string;
+            description: string;
+            /** @description What Find more looks for. */
+            theme: string;
+            count: number;
+            /** @description How many aren't in the library yet. */
+            toImport: number;
+            /** @description Up to four, for its card. */
+            photos: string[];
+            /** @description Up to 24 that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest. */
+            recipes: components["schemas"]["ShelfRecipe"][];
+            /** @description What Find more found for it last, or is finding. */
+            found: components["schemas"]["Discovery"] | null;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+         *       "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+         *       "name": "Honey Garlic Chicken",
+         *       "site": "RecipeTin Eats",
+         *       "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+         *       "minutes": 12,
+         *       "courses": [
+         *         "main"
+         *       ],
+         *       "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *       "publishedAt": "2026-10-01T17:30:00.000Z",
+         *       "inLibrary": null,
+         *       "suits": true
+         *     }
+         */
+        ShelfRecipe: {
+            id: string;
+            /** @description The recipe's page, to import at `POST /recipes/import`. */
+            url: string;
+            name: string;
+            site: string;
+            /** @description The recipe's own short description, when the site gives one. */
+            description: string | null;
+            minutes: number | null;
+            /** @description What its site says it is, in Merran's words; empty when it doesn't say. */
+            courses: ("main" | "side" | "soup" | "salad" | "dessert" | "baking" | "breakfast" | "snack" | "drink" | "sauce")[];
+            /** @description A small copy of its photo, through Merran. */
+            photo: string | null;
+            /** Format: date-time */
+            publishedAt: string | null;
+            /** @description The household's recipe from it, if it has one. */
+            inLibrary: {
+                slug: string;
+                name: string;
+            } | null;
+            /** @description False when it has a food the household avoids, or is off its diets. */
+            suits: boolean;
         };
         /**
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
          *       "theme": "cozy fall soups",
+         *       "collection": null,
          *       "status": "done",
          *       "error": null,
          *       "recipes": [
@@ -3506,6 +3794,8 @@ export interface components {
         Discovery: {
             id: string;
             theme: string;
+            /** @description The starter collection it found more for (`POST /collections/{collection}/find`), or null. */
+            collection: string | null;
             /**
              * @description Still searching, done, or failed (`error` says why).
              * @enum {string}
@@ -3527,6 +3817,101 @@ export interface components {
             createdAt: string;
             /** Format: date-time */
             updatedAt: string;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+         *       "status": "running",
+         *       "tag": "to try",
+         *       "total": 2,
+         *       "done": 1,
+         *       "added": 1,
+         *       "already": 0,
+         *       "failed": 0,
+         *       "stopped": 0,
+         *       "items": [
+         *         {
+         *           "url": "https://example.com/garlic-rice",
+         *           "state": "added",
+         *           "recipe": {
+         *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+         *             "slug": "garlic-rice",
+         *             "name": "Garlic Rice",
+         *             "photo": null
+         *           },
+         *           "error": null
+         *         },
+         *         {
+         *           "url": "https://example.com/lemon-chicken",
+         *           "state": "adding",
+         *           "recipe": null,
+         *           "error": null
+         *         }
+         *       ],
+         *       "createdAt": "2026-10-15T18:30:00.000Z",
+         *       "finishedAt": null
+         *     }
+         */
+        LinkImport: {
+            /** @description The import's job. */
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "running" | "done" | "failed" | "cancelled";
+            tag: string | null;
+            total: number;
+            done: number;
+            added: number;
+            already: number;
+            failed: number;
+            stopped: number;
+            items: {
+                url: string;
+                /**
+                 * @description Where the link has got to: added, already in the library, failed (see error), or stopped before it was reached.
+                 * @enum {string}
+                 */
+                state: "waiting" | "adding" | "added" | "already" | "failed" | "stopped";
+                /** @description The recipe it made, or was already. */
+                recipe: {
+                    id: string;
+                    slug: string;
+                    name: string;
+                    photo: string | null;
+                } | null;
+                error: string | null;
+            }[];
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            finishedAt: string | null;
+        };
+        /**
+         * @example {
+         *       "searches": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
+         *           "theme": "cozy fall soups",
+         *           "collection": null,
+         *           "status": "done",
+         *           "error": null,
+         *           "recipes": [
+         *             {
+         *               "url": "https://cooking.example/butternut-squash-soup",
+         *               "name": "Roasted Butternut Squash Soup",
+         *               "site": "cooking.example",
+         *               "minutes": 60,
+         *               "photo": "https://cooking.example/images/squash-soup.jpg",
+         *               "why": "Vegetarian and freezes well, with the squash roasted for depth."
+         *             }
+         *           ],
+         *           "createdAt": "2026-10-01T17:30:00.000Z",
+         *           "updatedAt": "2026-10-01T17:30:00.000Z"
+         *         }
+         *       ]
+         *     }
+         */
+        DiscoveryList: {
+            searches: components["schemas"]["Discovery"][];
         };
         /**
          * @example {
@@ -7097,73 +7482,6 @@ export interface components {
         };
         /**
          * @example {
-         *       "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
-         *       "status": "running",
-         *       "tag": "to try",
-         *       "total": 2,
-         *       "done": 1,
-         *       "added": 1,
-         *       "already": 0,
-         *       "failed": 0,
-         *       "stopped": 0,
-         *       "items": [
-         *         {
-         *           "url": "https://example.com/garlic-rice",
-         *           "state": "added",
-         *           "recipe": {
-         *             "id": "0199e8b0-5a10-7a01-8b00-000000000007",
-         *             "slug": "garlic-rice",
-         *             "name": "Garlic Rice",
-         *             "photo": null
-         *           },
-         *           "error": null
-         *         },
-         *         {
-         *           "url": "https://example.com/lemon-chicken",
-         *           "state": "adding",
-         *           "recipe": null,
-         *           "error": null
-         *         }
-         *       ],
-         *       "createdAt": "2026-10-15T18:30:00.000Z",
-         *       "finishedAt": null
-         *     }
-         */
-        LinkImport: {
-            /** @description The import's job. */
-            id: string;
-            /** @enum {string} */
-            status: "queued" | "running" | "done" | "failed" | "cancelled";
-            tag: string | null;
-            total: number;
-            done: number;
-            added: number;
-            already: number;
-            failed: number;
-            stopped: number;
-            items: {
-                url: string;
-                /**
-                 * @description Where the link has got to: added, already in the library, failed (see error), or stopped before it was reached.
-                 * @enum {string}
-                 */
-                state: "waiting" | "adding" | "added" | "already" | "failed" | "stopped";
-                /** @description The recipe it made, or was already. */
-                recipe: {
-                    id: string;
-                    slug: string;
-                    name: string;
-                    photo: string | null;
-                } | null;
-                error: string | null;
-            }[];
-            /** Format: date-time */
-            createdAt: string;
-            /** Format: date-time */
-            finishedAt: string | null;
-        };
-        /**
-         * @example {
          *       "urls": [
          *         "https://example.com/garlic-rice",
          *         "https://example.com/lemon-chicken"
@@ -7927,6 +8245,15 @@ export interface components {
          *         "ytDlp": "2026.08.19",
          *         "ffmpeg": "8.0",
          *         "cookies": false
+         *       },
+         *       "sites": {
+         *         "sites": 12,
+         *         "recipes": 214,
+         *         "classics": {
+         *           "working": 71,
+         *           "all": 73
+         *         },
+         *         "readAt": "2026-10-15T18:30:00.000Z"
          *       }
          *     }
          */
@@ -7945,6 +8272,17 @@ export interface components {
                 ytDlp: string | null;
                 ffmpeg: string | null;
                 cookies: boolean;
+            };
+            /** @description The recipe sites Merran reads, the recipes it has from them, how many of the starter collections' classics open, and when a site was last read. */
+            sites: {
+                sites: number;
+                recipes: number;
+                classics: {
+                    working: number;
+                    all: number;
+                };
+                /** Format: date-time */
+                readAt: string | null;
             };
         };
         /**
@@ -8238,6 +8576,192 @@ export interface components {
             title?: string;
             text?: string;
             url?: string;
+        };
+        /**
+         * @example {
+         *       "sites": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000030",
+         *           "name": "RecipeTin Eats",
+         *           "url": "https://www.recipetineats.com/",
+         *           "feedUrl": "https://www.recipetineats.com/feed/",
+         *           "recipes": [
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+         *               "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+         *               "name": "Honey Garlic Chicken",
+         *               "site": "RecipeTin Eats",
+         *               "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+         *               "minutes": 12,
+         *               "courses": [
+         *                 "main"
+         *               ],
+         *               "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *               "publishedAt": "2026-10-01T17:30:00.000Z",
+         *               "inLibrary": null,
+         *               "suits": true
+         *             },
+         *             {
+         *               "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+         *               "url": "https://www.recipetineats.com/lemon-chicken/",
+         *               "name": "Lemon Chicken",
+         *               "site": "RecipeTin Eats",
+         *               "description": null,
+         *               "minutes": 35,
+         *               "courses": [
+         *                 "main"
+         *               ],
+         *               "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *               "publishedAt": "2026-10-01T17:30:00.000Z",
+         *               "inLibrary": {
+         *                 "slug": "lemon-chicken",
+         *                 "name": "Lemon Chicken"
+         *               },
+         *               "suits": true
+         *             }
+         *           ],
+         *           "waiting": 3,
+         *           "reading": false,
+         *           "readAt": "2026-10-15T18:30:00.000Z",
+         *           "error": null,
+         *           "followedAt": "2026-10-01T17:30:00.000Z"
+         *         }
+         *       ],
+         *       "suggestions": [
+         *         {
+         *           "name": "Love and Lemons",
+         *           "url": "https://www.loveandlemons.com/",
+         *           "description": "Bright, seasonal vegetarian cooking."
+         *         }
+         *       ]
+         *     }
+         */
+        SiteList: {
+            sites: components["schemas"]["FollowedSite"][];
+            /** @description Sites that work well with Merran, not followed yet. */
+            suggestions: {
+                name: string;
+                /** @description Follow it with this. */
+                url: string;
+                description: string;
+            }[];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000030",
+         *       "name": "RecipeTin Eats",
+         *       "url": "https://www.recipetineats.com/",
+         *       "feedUrl": "https://www.recipetineats.com/feed/",
+         *       "recipes": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+         *           "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+         *           "name": "Honey Garlic Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+         *           "minutes": 12,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": null,
+         *           "suits": true
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+         *           "url": "https://www.recipetineats.com/lemon-chicken/",
+         *           "name": "Lemon Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": null,
+         *           "minutes": 35,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": {
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken"
+         *           },
+         *           "suits": true
+         *         }
+         *       ],
+         *       "waiting": 3,
+         *       "reading": false,
+         *       "readAt": "2026-10-15T18:30:00.000Z",
+         *       "error": null,
+         *       "followedAt": "2026-10-01T17:30:00.000Z"
+         *     }
+         */
+        FollowedSite: {
+            id: string;
+            name: string;
+            url: string;
+            feedUrl: string;
+            /** @description Its newest recipes, newest first: posts Merran opened and can import. */
+            recipes: components["schemas"]["ShelfRecipe"][];
+            /** @description New posts not opened yet: Merran opens them a few seconds apart. */
+            waiting: number;
+            /** @description Not read for the first time yet. */
+            reading: boolean;
+            /** Format: date-time */
+            readAt: string | null;
+            /** @description Why its feed couldn't be read last time. */
+            error: string | null;
+            /** Format: date-time */
+            followedAt: string;
+        };
+        /**
+         * @example {
+         *       "url": "https://www.loveandlemons.com/"
+         *     }
+         */
+        FollowSite: {
+            /** @description Any page of the site, its feed, or a suggestion's `url`. */
+            url: string;
+        };
+        /**
+         * @example {
+         *       "recipes": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+         *           "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+         *           "name": "Honey Garlic Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+         *           "minutes": 12,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": null,
+         *           "suits": true
+         *         },
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+         *           "url": "https://www.recipetineats.com/lemon-chicken/",
+         *           "name": "Lemon Chicken",
+         *           "site": "RecipeTin Eats",
+         *           "description": null,
+         *           "minutes": 35,
+         *           "courses": [
+         *             "main"
+         *           ],
+         *           "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+         *           "publishedAt": "2026-10-01T17:30:00.000Z",
+         *           "inLibrary": {
+         *             "slug": "lemon-chicken",
+         *             "name": "Lemon Chicken"
+         *           },
+         *           "suits": true
+         *         }
+         *       ]
+         *     }
+         */
+        SiteRecipes: {
+            recipes: components["schemas"]["ShelfRecipe"][];
         };
         /**
          * @example {
@@ -9147,6 +9671,209 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Capabilities"];
+                };
+            };
+        };
+    };
+    listCollections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The collections. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CollectionList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getCollection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The collection. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Collection"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such collection. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    importCollection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Importing. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LinkImport"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such collection. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Every recipe in it is in the library already. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    findMoreForCollection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                collection: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Searching. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Discovery"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such collection. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description A search is going already. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
                 };
             };
         };
@@ -16572,6 +17299,247 @@ export interface operations {
             };
             /** @description Too big to share. */
             413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listSites: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its sites. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteList"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    followSite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FollowSite"];
+            };
+        };
+        responses: {
+            /** @description Following it. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FollowedSite"];
+                };
+            };
+            /** @description That isn't a link Merran can fetch. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The household follows it already. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No feed was found, or recipe sites are off. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listSiteRecipes: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Their newest recipes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SiteRecipes"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getSiteRecipePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The photo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "image/webp": string;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe, or no photo that loads. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    unfollowSite: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                site: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Not following it any more. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The household doesn't follow that site. */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

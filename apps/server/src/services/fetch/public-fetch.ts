@@ -103,6 +103,9 @@ export type FetchedResource = {
   status: number
   contentType: string
   body: Buffer
+  /** What the answer said it was, to ask next time only if it's changed. */
+  etag?: string | null
+  lastModified?: string | null
 }
 
 export type FetchOptions = {
@@ -278,6 +281,8 @@ export function createPublicFetcher({ version }: { version: string }): Fetcher {
         status: response.status,
         contentType: response.headers.get("content-type") ?? "",
         body: Buffer.concat(chunks),
+        etag: response.headers.get("etag"),
+        lastModified: response.headers.get("last-modified"),
       }
     }
     throw new AppError(

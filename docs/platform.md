@@ -14,7 +14,7 @@ Merran's core needs nothing but Merran itself: it runs on SQLite out of the box,
 | **Video import** | TikTok, YouTube, Instagram and Facebook links | yt-dlp and ffmpeg (in the image), an AI key | On |
 | **Nutrition** | Calculated nutrition | A USDA key (free), optionally an AI key | When a key exists |
 | **Voice** | The server reads cook steps aloud | Kokoro (an optional container) or an AI key with speech | Off (the device's own voice always works) |
-| **Recipe sites** | Following sites' feeds, starter collections | Nothing | On |
+| **Recipe sites** | Reading recipe sites' feeds: following sites, starter collections | Nothing | On |
 | **Stores** | Products, prices, sales, costs, sending a list to a store | Per store: Kroger needs a free developer app; link-only stores need nothing | Off |
 | **Browser extension** | Import from any page, the list in a side panel, store carts | The extension, an API key | On |
 | **Email** | Invites and password resets by email, verifying sign-ups | SMTP | Off |
@@ -215,6 +215,20 @@ The same encryption covers every other secret Merran stores: Kroger tokens, SMTP
 
 **Stores are adapters.** A store adapter can do some of: search products, read prices and sales, add to a cart, link an account. Kroger has an official API. Walmart works through the extension in the person's own tab. **Link-only stores** (Costco Same-Day, Target, Tesco, Albert Heijn...) are just a name, a country and a search address, so adding one is a few lines, and households pick stores from their own country.
 
+## Recipe sites and starter collections
+
+The Recipe sites module reads recipe sites' feeds in the background and keeps what it finds on one shelf. Followed sites and starter collections both come from it.
+
+- **The shelf.** Two shared tables, as these are public pages that belong to no one: `recipe_sites` (a site and its feed) and `site_recipes` (each post Merran opened: its link, name, photo, time, course, cuisine, keywords, ingredient lines and diet labels, or that it wasn't a recipe). Two households following the same site cost it one visit. Which sites a household follows is its own (`followed_sites`).
+- **Which sites are read:** the suggested sites for each language, and any site a household follows. A site no one follows that isn't suggested isn't read.
+- **Being a good visitor:** Merran's own user agent; `robots.txt` followed for every background read; feeds asked for with `If-None-Match` and `If-Modified-Since`, every 6 hours per site (checked every half hour); new posts opened one at a time per site, a few seconds apart. A site that turns Merran away is left alone for a while. Posts that aren't recipes (roundups, gear, news) are remembered, so they're never opened again.
+- **Photos** are fetched once through Merran, with the page as the referer (some sites need it), and kept as small WebP thumbnails, so browsing doesn't load photos from other sites.
+- **A starter collection is a rule, not a list.** Each language has a data file of collections: a title, a line on what it is, a theme for Discover, a rule (courses, words in the name or keywords, words that rule one out, diets, the most minutes, months of the year), and a few hand-picked classics. A collection shows its classics and every recipe on the shelf that fits its rule, newest first, so it changes as the sites post.
+- **Seasons:** a collection with months shows only in them, moved by six months for a household in the southern hemisphere.
+- **Checked by itself:** the classics are opened again every week, and one that stops importing is hidden until it works again.
+- **Fitted to each household:** recipes against its allergies or diets are left out (one Merran can't read counts as having every allergy), recipes in its library are marked and go last, and a collection with fewer than four left is hidden. With AI, **Find more** runs Discover with the collection's theme and keeps what it finds with the collection, for that household.
+- **No calling home:** collections and suggested sites come with Merran's releases, in `apps/server/src/services/sites/data/<language>/`; the server never fetches them from the Merran project.
+
 ## The database
 
 SQLite or Postgres, with one schema defined in TypeScript (see [stack.md](stack.md#sqlite-or-postgres)).
@@ -241,7 +255,8 @@ Merran's own job runner does everything in the background, from a `jobs` table i
 |---|---|
 | Weekly autoplan | Each household's chosen day and time, in its time zone |
 | Price check | Daily, early morning in the household's time zone, and before the autoplan |
-| Followed sites | Every few hours per site |
+| Reading recipe sites, followed and suggested | Every 6 hours per site, checked every half hour |
+| Checking starter collections' classics | Weekly |
 | Bulk imports | When started; three pages or one video at a time per household |
 | Library runs: tidy up, nutrition, photos | When started; two at a time |
 | Nutrition and photo for a saved recipe | After saving |
@@ -278,7 +293,7 @@ One server hosting several households is a core promise, so isolation can't rely
 - **A scoped data layer.** Services get a household context, and household-owned tables are only reachable through helpers that apply it. Writing a raw query against a household table is a lint error outside that layer.
 - **Every household-owned table carries `household_id`,** child tables included (ingredients, steps, versions, chat messages), so a scope can be checked on any row.
 - **The isolation test is generated from the schema.** CI lists every table with `household_id` and fails if one has no test showing another household can't read, change or delete it.
-- **Shared tables** are only for data that belongs to no one: USDA foods and matches, units, the model catalog.
+- **Shared tables** are only for data that belongs to no one: USDA foods and matches, recipe sites and what was read from them, units, the model catalog.
 - **Not database rules:** Postgres's row-level security could be a second lock, but SQLite has nothing like it, so the scoped layer and the generated tests are what keep households apart on both.
 
 ## Security

@@ -420,7 +420,8 @@
           "importFromApp": "Importing from another app",
           "purgeDeleted": "Emptying old recipes from Recently deleted",
           "cleanUp": "Clearing out old jobs",
-          "telemetry": "Sending the daily summary"
+          "telemetry": "Sending the daily summary",
+          "readSites": "Reading recipe sites"
         }
       },
       "video": {
@@ -452,6 +453,19 @@
         "remove": "Remove",
         "saved": "USDA key saved.",
         "removed": "USDA key removed."
+      },
+      "sites": {
+        "title": "Recipe sites",
+        "description": "Merran reads recipe sites' feeds every few hours, as Merran and following robots.txt: the suggested sites, for starter collections, and any a household follows.",
+        "shelf_one": "{{count}} recipe from {{sites}} sites.",
+        "shelf_other": "{{count}} recipes from {{sites}} sites.",
+        "classics_one": "{{working}} of {{count}} hand-picked classic opens.",
+        "classics_other": "{{working}} of {{count}} hand-picked classics open.",
+        "readAt": "Last read {{when}}.",
+        "notRead": "Not read yet: the first read starts a minute after Merran does.",
+        "enabled": "Read recipe sites",
+        "enabledHint": "Off, households can't follow sites, and collections keep only what's been read already.",
+        "saved": "Saved."
       }
     },
     "transfer": {
@@ -1760,7 +1774,15 @@
       "none": "What's for dinner?",
       "noneHint": "No ideas right now: your recipes have all been had lately, or don't fit your tastes. Add a few more.",
       "allSeen": "That's every idea for tonight.",
-      "startOver": "Start over"
+      "startOver": "Start over",
+      "fromSite": "New on {{site}}",
+      "importAndPlan": "Import and plan for tonight",
+      "from": "Ideas from",
+      "sources": {
+        "both": "Both",
+        "recipes": "Your recipes",
+        "sites": "Your sites"
+      }
     },
     "tiles": {
       "week": "This week",
@@ -2175,5 +2197,70 @@
     "minutes": "{{minutes}} min",
     "import": "Import",
     "open": "Open it"
+  },
+  "find": {
+    "title": "Find recipes",
+    "tabs": {
+      "collections": "Collections",
+      "sites": "Sites",
+      "discover": "Discover"
+    },
+    "import": "Import",
+    "open": "Open it",
+    "inLibrary": "In your recipes",
+    "doesntSuit": "Doesn't suit your household",
+    "collections": {
+      "description": "Sets of well-loved recipes to start with. They fill up by themselves as recipe sites post, around a few hand-picked classics, and leave out what your household can't eat.",
+      "none": "No collections yet",
+      "filling": "Merran is reading recipe sites to fill them. Look again in a few minutes.",
+      "off": "Recipe sites are off on this server, so there's nothing to fill them with. The server admin can turn them on in Settings, This server.",
+      "count_one": "{{count}} recipe",
+      "count_other": "{{count}} recipes",
+      "countNew_one": "{{count}} recipe, {{new}} new to you",
+      "countNew_other": "{{count}} recipes, {{new}} new to you",
+      "missing": "There's no such collection.",
+      "importAll_one": "Import {{count}}",
+      "importAll_other": "Import all {{count}}",
+      "moreTitle": "Find more like these",
+      "moreHint": "AI searches the web for more in this collection's theme that suit your household, and Merran opens each one first.",
+      "findMore": "Find more",
+      "findAgain": "Find more again",
+      "browse": "Browse collections"
+    },
+    "sites": {
+      "description": "Follow the recipe sites you like, and their newest recipes show here, on Recipes and on Today, ready to import.",
+      "none": "No sites followed yet",
+      "noneHint": "Follow one of the suggestions, or paste any recipe site's address.",
+      "off": "Recipe sites are off on this server. The server admin can turn them on in Settings, This server.",
+      "filter": "Show a site",
+      "all": "All",
+      "reading": "Reading it for the first time…",
+      "waiting_one": "{{count}} new post to open",
+      "waiting_other": "{{count}} new posts to open",
+      "readAt": "Checked {{when}}",
+      "soon": "Its recipes show here as Merran opens its posts, a few seconds apart.",
+      "noRecipes": "No recipes from it yet. Merran keeps only posts with the recipe on them.",
+      "unfollow": "Unfollow",
+      "unfollowed": "Not following {{name}} any more.",
+      "followTitle": "Follow a site",
+      "placeholder": "https://",
+      "follow": "Follow",
+      "followName": "Follow {{name}}",
+      "followHint": "Any page of the site, or its feed. Merran reads its feed every few hours.",
+      "followed": "Following {{name}}.",
+      "suggested": "Suggested sites"
+    },
+    "spotlight": {
+      "title": "From your sites",
+      "onSite": "On the site",
+      "previous": "Previous recipe",
+      "next": "Next recipe",
+      "pause": "Pause",
+      "play": "Play",
+      "all": "All from your sites",
+      "startTitle": "New recipes from sites you like",
+      "startHint": "Follow a recipe site and its newest recipes show up here.",
+      "more": "More sites"
+    }
   }
 }

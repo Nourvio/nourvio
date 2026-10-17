@@ -100,8 +100,8 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Share to Merran from Android's share sheet or an iPhone Shortcut | Key | Built | Links, pages, photos, screenshots and PDFs; on Android, once installed from Merran's https address |
 | Tidy up: AI fixes a recipe, you review each change | Key | Built | AI; also marks which ingredients a recipe can do without |
 | Video links (TikTok, YouTube, Instagram, Facebook) | Headline | Built | Module, on by default: yt-dlp and ffmpeg (in the image) and AI; listens to videos without captions on an OpenAI key |
-| Follow recipe sites and see their newest recipes | Key | Planned | Module; respects `robots.txt` |
-| Starter collections | Detail | Planned | Module; data files per language |
+| Follow recipe sites and see their newest recipes | Key | Built | Module, on by default; respects `robots.txt`; on Recipes and Today too |
+| Starter collections that fill themselves from recipe sites, fitted to your tastes | Key | Built | Module, on by default; a rule and a few classics per collection, in data files per language; Find more with AI |
 | Imports in your language: a recipe from another language translated as it comes in | Key | Planned | AI; a setting, with the app's translations |
 | Discover: find recipes for any theme with AI | Key | Built | AI, with web search; each page is opened first, so they all import |
 | Browser extension: import a page, right-click, the list in a side panel | Key | Planned | Chrome, Edge, Firefox |

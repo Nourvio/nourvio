@@ -3,6 +3,7 @@ import { existsSync } from "node:fs"
 import { join } from "node:path"
 import type { AppDeps } from "../../../../core/context.ts"
 import { VIDEO } from "../../../../modules/video/settings.ts"
+import { shelfSummary } from "../../../../services/sites/sites.ts"
 import { serverAdmin } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import {
@@ -32,6 +33,7 @@ export async function describeServerSettings({
   config,
   settings,
   video,
+  database,
 }: AppDeps) {
   const tools = await video.check()
   const cookies =
@@ -46,6 +48,7 @@ export async function describeServerSettings({
     },
     settings: await settings.describeServer(),
     video: { ...tools, cookies: existsSync(cookies) },
+    sites: await shelfSummary(database.em.fork()),
   }
 }
 

@@ -28,6 +28,8 @@ export const Discovery = defineEntity({
     household: () => householdRef(),
     user: () => p.manyToOne(User).ref().nullable().deleteRule("set null"),
     theme: p.string(),
+    /** The starter collection it found more for, by its id, if one. */
+    collection: p.string().nullable(),
     status: p.enum(DISCOVERY_STATUSES),
     error: p.text().nullable(),
     recipes: p.json<DiscoveredRecipe[]>(),

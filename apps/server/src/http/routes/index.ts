@@ -3,6 +3,7 @@ import type { Router } from "../router.ts"
 import assistantRoutes from "./assistant/index.ts"
 import authRoutes from "./auth/index.ts"
 import capabilitiesRoutes from "./capabilities/index.ts"
+import collectionsRoutes from "./collections/index.ts"
 import discoverRoutes from "./discover/index.ts"
 import eventsRoutes from "./events/index.ts"
 import healthRoutes from "./health/index.ts"
@@ -14,6 +15,7 @@ import proposalsRoutes from "./proposals/index.ts"
 import recipesRoutes from "./recipes/index.ts"
 import settingsRoutes from "./settings/index.ts"
 import shareRoutes from "./share/index.ts"
+import sitesRoutes from "./sites/index.ts"
 import telemetryRoutes from "./telemetry/index.ts"
 
 /**
@@ -25,6 +27,7 @@ export default (router: Router, deps: AppDeps) => {
   assistantRoutes(router, deps)
   authRoutes(router, deps)
   capabilitiesRoutes(router, deps)
+  collectionsRoutes(router, deps)
   discoverRoutes(router, deps)
   eventsRoutes(router, deps)
   healthRoutes(router, deps)
@@ -36,5 +39,6 @@ export default (router: Router, deps: AppDeps) => {
   recipesRoutes(router, deps)
   settingsRoutes(router, deps)
   shareRoutes(router, deps)
+  sitesRoutes(router, deps)
   telemetryRoutes(router, deps)
 }

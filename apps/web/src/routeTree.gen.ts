@@ -22,7 +22,6 @@ import { Route as JoinTokenRouteImport } from './routes/join/$token'
 import { Route as AppPantryIndexRouteImport } from './routes/_app/pantry/index'
 import { Route as AppRecipesIndexRouteImport } from './routes/_app/recipes/index'
 import { Route as AppRecipesDeletedRouteImport } from './routes/_app/recipes/deleted'
-import { Route as AppRecipesDiscoverRouteImport } from './routes/_app/recipes/discover'
 import { Route as AppRecipesNewRouteImport } from './routes/_app/recipes/new'
 import { Route as AppRecipesReviewRouteImport } from './routes/_app/recipes/review'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app/settings/index'
@@ -34,6 +33,8 @@ import { Route as AppPantryReceiptsIndexRouteImport } from './routes/_app/pantry
 import { Route as AppPantryReceiptsReceiptIdRouteImport } from './routes/_app/pantry/receipts/$receiptId'
 import { Route as AppRecipesSlugIndexRouteImport } from './routes/_app/recipes/$slug/index'
 import { Route as AppRecipesSlugEditRouteImport } from './routes/_app/recipes/$slug/edit'
+import { Route as AppRecipesFindIndexRouteImport } from './routes/_app/recipes/find/index'
+import { Route as AppRecipesFindCollectionRouteImport } from './routes/_app/recipes/find/$collection'
 import { Route as AppRecipesImportImportIdRouteImport } from './routes/_app/recipes/import/$importId'
 import { Route as FocusRecipesSlugCookRouteImport } from './routes/_focus/recipes/$slug/cook'
 
@@ -100,11 +101,6 @@ const AppRecipesDeletedRoute = AppRecipesDeletedRouteImport.update({
   path: '/recipes/deleted',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRecipesDiscoverRoute = AppRecipesDiscoverRouteImport.update({
-  id: '/recipes/discover',
-  path: '/recipes/discover',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppRecipesNewRoute = AppRecipesNewRouteImport.update({
   id: '/recipes/new',
   path: '/recipes/new',
@@ -161,6 +157,17 @@ const AppRecipesSlugEditRoute = AppRecipesSlugEditRouteImport.update({
   path: '/recipes/$slug/edit',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRecipesFindIndexRoute = AppRecipesFindIndexRouteImport.update({
+  id: '/recipes/find/',
+  path: '/recipes/find/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRecipesFindCollectionRoute =
+  AppRecipesFindCollectionRouteImport.update({
+    id: '/recipes/find/$collection',
+    path: '/recipes/find/$collection',
+    getParentRoute: () => AppRoute,
+  } as any)
 const AppRecipesImportImportIdRoute =
   AppRecipesImportImportIdRouteImport.update({
     id: '/recipes/import/$importId',
@@ -183,7 +190,6 @@ export interface FileRoutesByFullPath {
   '/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
-  '/recipes/discover': typeof AppRecipesDiscoverRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
@@ -195,10 +201,12 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AppSettingsIndexRoute
   '/pantry/receipts/$receiptId': typeof AppPantryReceiptsReceiptIdRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
+  '/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
   '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug/': typeof AppRecipesSlugIndexRoute
+  '/recipes/find/': typeof AppRecipesFindIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -209,7 +217,6 @@ export interface FileRoutesByTo {
   '/share': typeof AppShareRoute
   '/join/$token': typeof JoinTokenRoute
   '/recipes/deleted': typeof AppRecipesDeletedRoute
-  '/recipes/discover': typeof AppRecipesDiscoverRoute
   '/recipes/new': typeof AppRecipesNewRoute
   '/recipes/review': typeof AppRecipesReviewRoute
   '/settings/household': typeof AppSettingsHouseholdRoute
@@ -221,10 +228,12 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsIndexRoute
   '/pantry/receipts/$receiptId': typeof AppPantryReceiptsReceiptIdRoute
   '/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
+  '/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
   '/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
   '/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/pantry/receipts': typeof AppPantryReceiptsIndexRoute
   '/recipes/$slug': typeof AppRecipesSlugIndexRoute
+  '/recipes/find': typeof AppRecipesFindIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -239,7 +248,6 @@ export interface FileRoutesById {
   '/join/$token': typeof JoinTokenRoute
   '/_app/': typeof AppIndexRoute
   '/_app/recipes/deleted': typeof AppRecipesDeletedRoute
-  '/_app/recipes/discover': typeof AppRecipesDiscoverRoute
   '/_app/recipes/new': typeof AppRecipesNewRoute
   '/_app/recipes/review': typeof AppRecipesReviewRoute
   '/_app/settings/household': typeof AppSettingsHouseholdRoute
@@ -251,10 +259,12 @@ export interface FileRoutesById {
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/_app/pantry/receipts/$receiptId': typeof AppPantryReceiptsReceiptIdRoute
   '/_app/recipes/$slug/edit': typeof AppRecipesSlugEditRoute
+  '/_app/recipes/find/$collection': typeof AppRecipesFindCollectionRoute
   '/_app/recipes/import/$importId': typeof AppRecipesImportImportIdRoute
   '/_focus/recipes/$slug/cook': typeof FocusRecipesSlugCookRoute
   '/_app/pantry/receipts/': typeof AppPantryReceiptsIndexRoute
   '/_app/recipes/$slug/': typeof AppRecipesSlugIndexRoute
+  '/_app/recipes/find/': typeof AppRecipesFindIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -268,7 +278,6 @@ export interface FileRouteTypes {
     | '/share'
     | '/join/$token'
     | '/recipes/deleted'
-    | '/recipes/discover'
     | '/recipes/new'
     | '/recipes/review'
     | '/settings/household'
@@ -280,10 +289,12 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/pantry/receipts/$receiptId'
     | '/recipes/$slug/edit'
+    | '/recipes/find/$collection'
     | '/recipes/import/$importId'
     | '/recipes/$slug/cook'
     | '/pantry/receipts/'
     | '/recipes/$slug/'
+    | '/recipes/find/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -294,7 +305,6 @@ export interface FileRouteTypes {
     | '/share'
     | '/join/$token'
     | '/recipes/deleted'
-    | '/recipes/discover'
     | '/recipes/new'
     | '/recipes/review'
     | '/settings/household'
@@ -306,10 +316,12 @@ export interface FileRouteTypes {
     | '/settings'
     | '/pantry/receipts/$receiptId'
     | '/recipes/$slug/edit'
+    | '/recipes/find/$collection'
     | '/recipes/import/$importId'
     | '/recipes/$slug/cook'
     | '/pantry/receipts'
     | '/recipes/$slug'
+    | '/recipes/find'
   id:
     | '__root__'
     | '/_app'
@@ -323,7 +335,6 @@ export interface FileRouteTypes {
     | '/join/$token'
     | '/_app/'
     | '/_app/recipes/deleted'
-    | '/_app/recipes/discover'
     | '/_app/recipes/new'
     | '/_app/recipes/review'
     | '/_app/settings/household'
@@ -335,10 +346,12 @@ export interface FileRouteTypes {
     | '/_app/settings/'
     | '/_app/pantry/receipts/$receiptId'
     | '/_app/recipes/$slug/edit'
+    | '/_app/recipes/find/$collection'
     | '/_app/recipes/import/$importId'
     | '/_focus/recipes/$slug/cook'
     | '/_app/pantry/receipts/'
     | '/_app/recipes/$slug/'
+    | '/_app/recipes/find/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -442,13 +455,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesDeletedRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/recipes/discover': {
-      id: '/_app/recipes/discover'
-      path: '/recipes/discover'
-      fullPath: '/recipes/discover'
-      preLoaderRoute: typeof AppRecipesDiscoverRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/recipes/new': {
       id: '/_app/recipes/new'
       path: '/recipes/new'
@@ -526,6 +532,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecipesSlugEditRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/recipes/find/': {
+      id: '/_app/recipes/find/'
+      path: '/recipes/find'
+      fullPath: '/recipes/find/'
+      preLoaderRoute: typeof AppRecipesFindIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/recipes/find/$collection': {
+      id: '/_app/recipes/find/$collection'
+      path: '/recipes/find/$collection'
+      fullPath: '/recipes/find/$collection'
+      preLoaderRoute: typeof AppRecipesFindCollectionRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/recipes/import/$importId': {
       id: '/_app/recipes/import/$importId'
       path: '/recipes/import/$importId'
@@ -570,16 +590,17 @@ interface AppRouteChildren {
   AppShareRoute: typeof AppShareRoute
   AppIndexRoute: typeof AppIndexRoute
   AppRecipesDeletedRoute: typeof AppRecipesDeletedRoute
-  AppRecipesDiscoverRoute: typeof AppRecipesDiscoverRoute
   AppRecipesNewRoute: typeof AppRecipesNewRoute
   AppRecipesReviewRoute: typeof AppRecipesReviewRoute
   AppPantryIndexRoute: typeof AppPantryIndexRoute
   AppRecipesIndexRoute: typeof AppRecipesIndexRoute
   AppPantryReceiptsReceiptIdRoute: typeof AppPantryReceiptsReceiptIdRoute
   AppRecipesSlugEditRoute: typeof AppRecipesSlugEditRoute
+  AppRecipesFindCollectionRoute: typeof AppRecipesFindCollectionRoute
   AppRecipesImportImportIdRoute: typeof AppRecipesImportImportIdRoute
   AppPantryReceiptsIndexRoute: typeof AppPantryReceiptsIndexRoute
   AppRecipesSlugIndexRoute: typeof AppRecipesSlugIndexRoute
+  AppRecipesFindIndexRoute: typeof AppRecipesFindIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -589,16 +610,17 @@ const AppRouteChildren: AppRouteChildren = {
   AppShareRoute: AppShareRoute,
   AppIndexRoute: AppIndexRoute,
   AppRecipesDeletedRoute: AppRecipesDeletedRoute,
-  AppRecipesDiscoverRoute: AppRecipesDiscoverRoute,
   AppRecipesNewRoute: AppRecipesNewRoute,
   AppRecipesReviewRoute: AppRecipesReviewRoute,
   AppPantryIndexRoute: AppPantryIndexRoute,
   AppRecipesIndexRoute: AppRecipesIndexRoute,
   AppPantryReceiptsReceiptIdRoute: AppPantryReceiptsReceiptIdRoute,
   AppRecipesSlugEditRoute: AppRecipesSlugEditRoute,
+  AppRecipesFindCollectionRoute: AppRecipesFindCollectionRoute,
   AppRecipesImportImportIdRoute: AppRecipesImportImportIdRoute,
   AppPantryReceiptsIndexRoute: AppPantryReceiptsIndexRoute,
   AppRecipesSlugIndexRoute: AppRecipesSlugIndexRoute,
+  AppRecipesFindIndexRoute: AppRecipesFindIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

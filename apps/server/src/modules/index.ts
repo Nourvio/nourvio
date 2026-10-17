@@ -1,6 +1,7 @@
 import { ai } from "./ai/index.ts"
 import { errorTracking } from "./error-tracking/index.ts"
 import { nutrition } from "./nutrition/index.ts"
+import { sites } from "./sites/index.ts"
 import type { Module } from "./module.ts"
 import { telemetry } from "./telemetry/index.ts"
 import { video } from "./video/index.ts"
@@ -10,6 +11,7 @@ export const MODULES: readonly Module[] = [
   ai,
   video,
   nutrition,
+  sites,
   errorTracking,
   telemetry,
 ]

@@ -11,6 +11,7 @@ import { CookNote } from "./cook_notes.ts"
 import { Discovery } from "./discoveries.ts"
 import { FdcFood } from "./fdc_foods.ts"
 import { FoodMatch } from "./food_matches.ts"
+import { FollowedSite } from "./followed_sites.ts"
 import { EmailInvitation } from "./email_invitations.ts"
 import { FoodPlacement } from "./food_placements.ts"
 import { HouseholdMember } from "./household_members.ts"
@@ -25,6 +26,7 @@ import { Purchase } from "./purchases.ts"
 import { Receipt } from "./receipts.ts"
 import { RateLimit } from "./rate_limits.ts"
 import { RecipeIngredient } from "./recipe_ingredients.ts"
+import { RecipeSite } from "./recipe_sites.ts"
 import { RecipePairing } from "./recipe_pairings.ts"
 import { RecipeStep } from "./recipe_steps.ts"
 import { RecipeTag } from "./recipe_tags.ts"
@@ -33,6 +35,7 @@ import { Recipe } from "./recipes.ts"
 import { Secret } from "./secrets.ts"
 import { ServerSetting } from "./server_settings.ts"
 import { Session } from "./sessions.ts"
+import { SiteRecipe } from "./site_recipes.ts"
 import { ShoppingItem } from "./shopping_items.ts"
 import { ShoppingList } from "./shopping_lists.ts"
 import { Tag } from "./tags.ts"
@@ -52,6 +55,7 @@ export * from "./discoveries.ts"
 export * from "./email_invitations.ts"
 export * from "./fdc_foods.ts"
 export * from "./food_matches.ts"
+export * from "./followed_sites.ts"
 export * from "./food_placements.ts"
 export * from "./household_members.ts"
 export * from "./household_settings.ts"
@@ -65,6 +69,7 @@ export * from "./purchases.ts"
 export * from "./receipts.ts"
 export * from "./rate_limits.ts"
 export * from "./recipe_ingredients.ts"
+export * from "./recipe_sites.ts"
 export * from "./recipe_pairings.ts"
 export * from "./recipe_steps.ts"
 export * from "./recipe_tags.ts"
@@ -73,6 +78,7 @@ export * from "./recipes.ts"
 export * from "./secrets.ts"
 export * from "./server_settings.ts"
 export * from "./sessions.ts"
+export * from "./site_recipes.ts"
 export * from "./shopping_items.ts"
 export * from "./shopping_lists.ts"
 export * from "./tags.ts"
@@ -93,6 +99,7 @@ export const entities = [
   Discovery,
   FdcFood,
   FoodMatch,
+  FollowedSite,
   EmailInvitation,
   FoodPlacement,
   Household,
@@ -109,6 +116,7 @@ export const entities = [
   Recipe,
   RecipeIngredient,
   RecipePairing,
+  RecipeSite,
   RecipeStep,
   RecipeTag,
   RecipeVersion,
@@ -116,6 +124,7 @@ export const entities = [
   ServerSetting,
   Session,
   ShoppingItem,
+  SiteRecipe,
   ShoppingList,
   Tag,
   User,
@@ -139,6 +148,10 @@ export const SHARED_TABLES = [
   // ingredient is, shared so every household gains from the first few.
   "fdc_foods",
   "food_matches",
+  // Public recipe pages and the sites they're on, read once for every
+  // household; which sites a household follows is its own.
+  "recipe_sites",
+  "site_recipes",
   // Reached only through the settings that point at them.
   "secrets",
   "server_settings",

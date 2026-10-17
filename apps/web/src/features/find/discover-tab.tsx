@@ -1,12 +1,11 @@
-import { ArrowLeft01Icon, Search01Icon } from "@hugeicons/core-free-icons"
+import { Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { queryOptions, useQuery, useQueryClient } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
+import { Link } from "@tanstack/react-router"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
-import { PageHeader } from "@/components/layout/page-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -21,7 +20,7 @@ type Discovery = Schemas["Discovery"]
 type Found = Discovery["recipes"][number]
 
 // Under ["recipes"], so live updates bring a finished search in.
-const searchesQuery = queryOptions({
+export const searchesQuery = queryOptions({
   queryKey: ["recipes", "discover"],
   queryFn: () => unwrap(api.GET("/api/discover")),
   refetchInterval: (query) =>
@@ -32,12 +31,8 @@ const searchesQuery = queryOptions({
 
 const IDEAS = ["soups", "pasta", "sheetPan", "chicken", "vegetarian"] as const
 
-export const Route = createFileRoute("/_app/recipes/discover")({
-  component: Discover,
-})
-
 /** New recipes online for a theme, found with AI, ready to import. */
-function Discover() {
+export function DiscoverTab() {
   const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const ai = useAiFor("discover")
@@ -70,20 +65,9 @@ function Discover() {
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="mt-2 -ml-3 md:mt-4"
-        render={<Link to="/recipes" />}
-      >
-        <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
-        {t("nav.recipes")}
-      </Button>
-      <PageHeader
-        title={t("discover.title")}
-        description={t("discover.description")}
-      />
-
+      <p className="max-w-2xl text-muted-foreground">
+        {t("discover.description")}
+      </p>
       <div className="grid gap-6">
         {ai.why ? (
           <NeedsAi task="discover" why={ai.why} />
@@ -166,7 +150,14 @@ function Discover() {
 }
 
 /** A search: going, what it found, or why it found nothing. */
-function Search({ search }: { search: Discovery }) {
+export function Search({
+  search,
+  hideTheme = false,
+}: {
+  search: Discovery
+  /** Its theme goes without saying, as on a collection's page. */
+  hideTheme?: boolean
+}) {
   const { t } = useTranslation()
   if (search.status === "searching") {
     return (
@@ -188,7 +179,9 @@ function Search({ search }: { search: Discovery }) {
   }
   return (
     <section className="grid gap-4">
-      <h2 className="text-xl font-semibold break-words">{search.theme}</h2>
+      {!hideTheme && (
+        <h2 className="text-xl font-semibold break-words">{search.theme}</h2>
+      )}
       {search.error && (
         <p className="text-muted-foreground" role="status">
           {search.error}

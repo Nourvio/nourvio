@@ -81,7 +81,7 @@ Every outside call Merran can make, when, and how to stop it. This table also go
 | Where | When | What's sent | Off by |
 |---|---|---|---|
 | The household's or server's AI provider | AI features | The recipe, page, photo or chat at hand, and the household's tastes and pantry when the task needs them | No AI key |
-| Recipe sites and feeds | Importing a link, following a site, Discover results | A normal page request, with Merran's user agent | Not importing; Recipe sites module off |
+| Recipe sites and feeds | Importing a link; the suggested and followed sites' feeds every 6 hours, their new posts and photos; starter collections' classics weekly; Discover results | A normal page request, with Merran's user agent, following `robots.txt` in the background | Not importing; Recipe sites module off |
 | TikTok, YouTube, Instagram, Facebook | Importing a video | Requests made by yt-dlp | Video import module off |
 | GitHub releases | yt-dlp updating itself, weekly | A download request | `MERRAN_YTDLP_AUTO_UPDATE=false` |
 | GitHub releases | The update check, every 6 hours | A request for the latest release | `MERRAN_UPDATE_CHECK=false` |

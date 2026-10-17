@@ -65,6 +65,7 @@ The REFERENCE app's docs (`apps/REFERENCE/docs/`) still describe each feature in
 | Releases | Semantic versions with release-please | Changelog and images from every release |
 | Telemetry | Opt-in, a daily anonymous summary, shown before it's sent, to a small receiver the project runs | Useful to the project, safe for self-hosters |
 | Error tracking | The operator's own Sentry-compatible DSN, plus a built-in Problems page | Nothing sent to the project |
+| Starter collections | A rule per collection plus a few classics, filled from the recipe sites' feeds; shipped with releases, never fetched from the project | Decided October 16, 2026: they stay fresh without hardcoded links or calling home |
 
 Decided with the user on October 15, 2026, from the plan's open questions:
 

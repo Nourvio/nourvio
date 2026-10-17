@@ -14,6 +14,7 @@ const FOUND = {
 const SEARCH = {
   id: IDS.discovery,
   theme: "cozy fall soups",
+  collection: null,
   status: "done" as const,
   error: null,
   recipes: [FOUND],
@@ -25,6 +26,10 @@ export const DiscoverySchema = z
   .object({
     id: z.string(),
     theme: z.string(),
+    collection: z.string().nullable().openapi({
+      description:
+        "The starter collection it found more for (`POST /collections/{collection}/find`), or null.",
+    }),
     status: z.enum(DISCOVERY_STATUSES).openapi({
       description: "Still searching, done, or failed (`error` says why).",
     }),

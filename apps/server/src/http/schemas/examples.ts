@@ -44,6 +44,9 @@ export const IDS = {
   discovery: id(45),
   receipt: id(46),
   nutritionRun: id(47),
+  followedSite: id(48),
+  siteRecipe: id(49),
+  otherSiteRecipe: id(50),
 }
 
 export const TIMES = {

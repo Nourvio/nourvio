@@ -1,7 +1,7 @@
 import {
   AiMagicIcon,
+  Compass01Icon,
   CookBookIcon,
-  Search01Icon,
   Delete02Icon,
   MoreHorizontalIcon,
   Tag01Icon,
@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/empty"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Spinner } from "@/components/ui/spinner"
+import { SitesSpotlight, SitesStart } from "@/features/find/sites-spotlight"
 import { AddRecipeDialog } from "@/features/recipes/add-recipe-dialog"
 import {
   DeleteRecipesDialog,
@@ -157,6 +158,18 @@ function RecipesPage() {
                 selection={selection}
                 disabled={items.length === 0}
               />
+              <Button
+                variant="outline"
+                aria-label={t("find.title")}
+                render={<Link to="/recipes/find" />}
+              >
+                <HugeiconsIcon
+                  icon={Compass01Icon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                />
+                <span className="hidden sm:inline">{t("find.title")}</span>
+              </Button>
               <AddRecipeDialog />
               <DropdownMenu>
                 <DropdownMenuTrigger
@@ -175,12 +188,6 @@ function RecipesPage() {
                     <HugeiconsIcon icon={Tag01Icon} strokeWidth={2} />
                     {t("recipes.manageTags")}
                   </DropdownMenuItem>
-                  {aiOn && (
-                    <DropdownMenuItem render={<Link to="/recipes/discover" />}>
-                      <HugeiconsIcon icon={Search01Icon} strokeWidth={2} />
-                      {t("discover.title")}
-                    </DropdownMenuItem>
-                  )}
                   {aiOn && (
                     <DropdownMenuItem render={<Link to="/recipes/review" />}>
                       <HugeiconsIcon icon={TaskDone01Icon} strokeWidth={2} />
@@ -203,6 +210,7 @@ function RecipesPage() {
         <LinkImportsBanner />
         <ReviewBanner />
         <RecipeFilters search={search} onChange={setSearch} />
+        <SitesSpotlight folded={filtered || selection.selecting} />
 
         {recipes.isPending ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -251,8 +259,11 @@ function RecipesPage() {
                 <EmptyTitle>{t("recipes.none")}</EmptyTitle>
                 <EmptyDescription>{t("recipes.noneHint")}</EmptyDescription>
               </EmptyHeader>
-              <EmptyContent>
+              <EmptyContent className="flex-row flex-wrap justify-center">
                 <AddRecipeDialog />
+                <Button variant="outline" render={<Link to="/recipes/find" />}>
+                  {t("find.collections.browse")}
+                </Button>
               </EmptyContent>
             </Empty>
           )
@@ -289,6 +300,7 @@ function RecipesPage() {
             )}
           </>
         )}
+        {!filtered && !selection.selecting && <SitesStart />}
         {/* Room for the action bar, so it doesn't cover the last cards. */}
         {selection.selecting && <div aria-hidden className="h-16" />}
       </div>

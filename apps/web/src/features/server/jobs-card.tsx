@@ -38,6 +38,7 @@ const KINDS = {
   "recipes.purgeDeleted": "settings.server.jobs.kinds.purgeDeleted",
   "jobs.cleanUp": "settings.server.jobs.kinds.cleanUp",
   "telemetry.send": "settings.server.jobs.kinds.telemetry",
+  "sites.read": "settings.server.jobs.kinds.readSites",
 } as const
 
 const BADGES = {

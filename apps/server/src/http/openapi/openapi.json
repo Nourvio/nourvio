@@ -1033,40 +1033,308 @@
           }
         }
       },
-      "DiscoveryList": {
+      "CollectionList": {
         "type": "object",
         "properties": {
-          "searches": {
+          "collections": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/Discovery"
+              "$ref": "#/components/schemas/CollectionSummary"
             }
           }
         },
         "required": [
-          "searches"
+          "collections"
         ],
         "example": {
-          "searches": [
+          "collections": [
             {
-              "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
-              "theme": "cozy fall soups",
-              "status": "done",
-              "error": null,
-              "recipes": [
-                {
-                  "url": "https://cooking.example/butternut-squash-soup",
-                  "name": "Roasted Butternut Squash Soup",
-                  "site": "cooking.example",
-                  "minutes": 60,
-                  "photo": "https://cooking.example/images/squash-soup.jpg",
-                  "why": "Vegetarian and freezes well, with the squash roasted for depth."
-                }
-              ],
-              "createdAt": "2026-10-01T17:30:00.000Z",
-              "updatedAt": "2026-10-01T17:30:00.000Z"
+              "id": "weeknight",
+              "title": "Weeknight wins",
+              "description": "Dinners on the table in 40 minutes or less.",
+              "theme": "Weeknight dinners on the table in 40 minutes or less",
+              "count": 2,
+              "toImport": 1,
+              "photos": [
+                "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo"
+              ]
             }
           ]
+        }
+      },
+      "CollectionSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "theme": {
+            "type": "string",
+            "description": "What Find more looks for."
+          },
+          "count": {
+            "type": "number"
+          },
+          "toImport": {
+            "type": "number",
+            "description": "How many aren't in the library yet."
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Up to four, for its card."
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "theme",
+          "count",
+          "toImport",
+          "photos"
+        ],
+        "example": {
+          "id": "weeknight",
+          "title": "Weeknight wins",
+          "description": "Dinners on the table in 40 minutes or less.",
+          "theme": "Weeknight dinners on the table in 40 minutes or less",
+          "count": 2,
+          "toImport": 1,
+          "photos": [
+            "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo"
+          ]
+        }
+      },
+      "Collection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "theme": {
+            "type": "string",
+            "description": "What Find more looks for."
+          },
+          "count": {
+            "type": "number"
+          },
+          "toImport": {
+            "type": "number",
+            "description": "How many aren't in the library yet."
+          },
+          "photos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Up to four, for its card."
+          },
+          "recipes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShelfRecipe"
+            },
+            "description": "Up to 24 that suit the household, those not in its library first: the sites' newest that fit, its hand-picked classics, then the rest."
+          },
+          "found": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Discovery"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "What Find more found for it last, or is finding."
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "theme",
+          "count",
+          "toImport",
+          "photos",
+          "recipes",
+          "found"
+        ],
+        "example": {
+          "id": "weeknight",
+          "title": "Weeknight wins",
+          "description": "Dinners on the table in 40 minutes or less.",
+          "theme": "Weeknight dinners on the table in 40 minutes or less",
+          "count": 2,
+          "toImport": 1,
+          "photos": [
+            "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo"
+          ],
+          "recipes": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+              "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+              "name": "Honey Garlic Chicken",
+              "site": "RecipeTin Eats",
+              "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+              "minutes": 12,
+              "courses": [
+                "main"
+              ],
+              "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+              "publishedAt": "2026-10-01T17:30:00.000Z",
+              "inLibrary": null,
+              "suits": true
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+              "url": "https://www.recipetineats.com/lemon-chicken/",
+              "name": "Lemon Chicken",
+              "site": "RecipeTin Eats",
+              "description": null,
+              "minutes": 35,
+              "courses": [
+                "main"
+              ],
+              "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+              "publishedAt": "2026-10-01T17:30:00.000Z",
+              "inLibrary": {
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken"
+              },
+              "suits": true
+            }
+          ],
+          "found": null
+        }
+      },
+      "ShelfRecipe": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string",
+            "description": "The recipe's page, to import at `POST /recipes/import`."
+          },
+          "name": {
+            "type": "string"
+          },
+          "site": {
+            "type": "string"
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The recipe's own short description, when the site gives one."
+          },
+          "minutes": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "courses": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "main",
+                "side",
+                "soup",
+                "salad",
+                "dessert",
+                "baking",
+                "breakfast",
+                "snack",
+                "drink",
+                "sauce"
+              ]
+            },
+            "description": "What its site says it is, in Merran's words; empty when it doesn't say."
+          },
+          "photo": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "A small copy of its photo, through Merran."
+          },
+          "publishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "inLibrary": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "slug": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "slug",
+              "name"
+            ],
+            "description": "The household's recipe from it, if it has one."
+          },
+          "suits": {
+            "type": "boolean",
+            "description": "False when it has a food the household avoids, or is off its diets."
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "name",
+          "site",
+          "description",
+          "minutes",
+          "courses",
+          "photo",
+          "publishedAt",
+          "inLibrary",
+          "suits"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+          "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+          "name": "Honey Garlic Chicken",
+          "site": "RecipeTin Eats",
+          "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+          "minutes": 12,
+          "courses": [
+            "main"
+          ],
+          "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+          "publishedAt": "2026-10-01T17:30:00.000Z",
+          "inLibrary": null,
+          "suits": true
         }
       },
       "Discovery": {
@@ -1077,6 +1345,13 @@
           },
           "theme": {
             "type": "string"
+          },
+          "collection": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The starter collection it found more for (`POST /collections/{collection}/find`), or null."
           },
           "status": {
             "type": "string",
@@ -1148,6 +1423,7 @@
         "required": [
           "id",
           "theme",
+          "collection",
           "status",
           "error",
           "recipes",
@@ -1157,6 +1433,7 @@
         "example": {
           "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
           "theme": "cozy fall soups",
+          "collection": null,
           "status": "done",
           "error": null,
           "recipes": [
@@ -1171,6 +1448,208 @@
           ],
           "createdAt": "2026-10-01T17:30:00.000Z",
           "updatedAt": "2026-10-01T17:30:00.000Z"
+        }
+      },
+      "LinkImport": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The import's job."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "tag": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "total": {
+            "type": "integer"
+          },
+          "done": {
+            "type": "integer"
+          },
+          "added": {
+            "type": "integer"
+          },
+          "already": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "stopped": {
+            "type": "integer"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "type": "string"
+                },
+                "state": {
+                  "type": "string",
+                  "enum": [
+                    "waiting",
+                    "adding",
+                    "added",
+                    "already",
+                    "failed",
+                    "stopped"
+                  ],
+                  "description": "Where the link has got to: added, already in the library, failed (see error), or stopped before it was reached."
+                },
+                "recipe": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "slug": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "photo": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "slug",
+                    "name",
+                    "photo"
+                  ],
+                  "description": "The recipe it made, or was already."
+                },
+                "error": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "url",
+                "state",
+                "recipe",
+                "error"
+              ]
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "tag",
+          "total",
+          "done",
+          "added",
+          "already",
+          "failed",
+          "stopped",
+          "items",
+          "createdAt",
+          "finishedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
+          "status": "running",
+          "tag": "to try",
+          "total": 2,
+          "done": 1,
+          "added": 1,
+          "already": 0,
+          "failed": 0,
+          "stopped": 0,
+          "items": [
+            {
+              "url": "https://example.com/garlic-rice",
+              "state": "added",
+              "recipe": {
+                "id": "0199e8b0-5a10-7a01-8b00-000000000007",
+                "slug": "garlic-rice",
+                "name": "Garlic Rice",
+                "photo": null
+              },
+              "error": null
+            },
+            {
+              "url": "https://example.com/lemon-chicken",
+              "state": "adding",
+              "recipe": null,
+              "error": null
+            }
+          ],
+          "createdAt": "2026-10-15T18:30:00.000Z",
+          "finishedAt": null
+        }
+      },
+      "DiscoveryList": {
+        "type": "object",
+        "properties": {
+          "searches": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Discovery"
+            }
+          }
+        },
+        "required": [
+          "searches"
+        ],
+        "example": {
+          "searches": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000002d",
+              "theme": "cozy fall soups",
+              "collection": null,
+              "status": "done",
+              "error": null,
+              "recipes": [
+                {
+                  "url": "https://cooking.example/butternut-squash-soup",
+                  "name": "Roasted Butternut Squash Soup",
+                  "site": "cooking.example",
+                  "minutes": 60,
+                  "photo": "https://cooking.example/images/squash-soup.jpg",
+                  "why": "Vegetarian and freezes well, with the squash roasted for depth."
+                }
+              ],
+              "createdAt": "2026-10-01T17:30:00.000Z",
+              "updatedAt": "2026-10-01T17:30:00.000Z"
+            }
+          ]
         }
       },
       "DiscoverInput": {
@@ -8544,171 +9023,6 @@
           ]
         }
       },
-      "LinkImport": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "The import's job."
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "queued",
-              "running",
-              "done",
-              "failed",
-              "cancelled"
-            ]
-          },
-          "tag": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "total": {
-            "type": "integer"
-          },
-          "done": {
-            "type": "integer"
-          },
-          "added": {
-            "type": "integer"
-          },
-          "already": {
-            "type": "integer"
-          },
-          "failed": {
-            "type": "integer"
-          },
-          "stopped": {
-            "type": "integer"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "url": {
-                  "type": "string"
-                },
-                "state": {
-                  "type": "string",
-                  "enum": [
-                    "waiting",
-                    "adding",
-                    "added",
-                    "already",
-                    "failed",
-                    "stopped"
-                  ],
-                  "description": "Where the link has got to: added, already in the library, failed (see error), or stopped before it was reached."
-                },
-                "recipe": {
-                  "type": [
-                    "object",
-                    "null"
-                  ],
-                  "properties": {
-                    "id": {
-                      "type": "string"
-                    },
-                    "slug": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string"
-                    },
-                    "photo": {
-                      "type": [
-                        "string",
-                        "null"
-                      ]
-                    }
-                  },
-                  "required": [
-                    "id",
-                    "slug",
-                    "name",
-                    "photo"
-                  ],
-                  "description": "The recipe it made, or was already."
-                },
-                "error": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                }
-              },
-              "required": [
-                "url",
-                "state",
-                "recipe",
-                "error"
-              ]
-            }
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "finishedAt": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time"
-          }
-        },
-        "required": [
-          "id",
-          "status",
-          "tag",
-          "total",
-          "done",
-          "added",
-          "already",
-          "failed",
-          "stopped",
-          "items",
-          "createdAt",
-          "finishedAt"
-        ],
-        "example": {
-          "id": "0199e8b0-5a10-7a01-8b00-00000000000b",
-          "status": "running",
-          "tag": "to try",
-          "total": 2,
-          "done": 1,
-          "added": 1,
-          "already": 0,
-          "failed": 0,
-          "stopped": 0,
-          "items": [
-            {
-              "url": "https://example.com/garlic-rice",
-              "state": "added",
-              "recipe": {
-                "id": "0199e8b0-5a10-7a01-8b00-000000000007",
-                "slug": "garlic-rice",
-                "name": "Garlic Rice",
-                "photo": null
-              },
-              "error": null
-            },
-            {
-              "url": "https://example.com/lemon-chicken",
-              "state": "adding",
-              "recipe": null,
-              "error": null
-            }
-          ],
-          "createdAt": "2026-10-15T18:30:00.000Z",
-          "finishedAt": null
-        }
-      },
       "LinkImportRequest": {
         "type": "object",
         "properties": {
@@ -10142,12 +10456,53 @@
               "cookies"
             ],
             "description": "Video import's tools, by their versions, or null when they aren't there; and whether there's a cookies.txt for sites that want a signed-in session."
+          },
+          "sites": {
+            "type": "object",
+            "properties": {
+              "sites": {
+                "type": "number"
+              },
+              "recipes": {
+                "type": "number"
+              },
+              "classics": {
+                "type": "object",
+                "properties": {
+                  "working": {
+                    "type": "number"
+                  },
+                  "all": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "working",
+                  "all"
+                ]
+              },
+              "readAt": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "sites",
+              "recipes",
+              "classics",
+              "readAt"
+            ],
+            "description": "The recipe sites Merran reads, the recipes it has from them, how many of the starter collections' classics open, and when a site was last read."
           }
         },
         "required": [
           "about",
           "settings",
-          "video"
+          "video",
+          "sites"
         ],
         "example": {
           "about": {
@@ -10183,6 +10538,15 @@
             "ytDlp": "2026.08.19",
             "ffmpeg": "8.0",
             "cookies": false
+          },
+          "sites": {
+            "sites": 12,
+            "recipes": 214,
+            "classics": {
+              "working": 71,
+              "all": 73
+            },
+            "readAt": "2026-10-15T18:30:00.000Z"
           }
         }
       },
@@ -10766,6 +11130,278 @@
         "example": {
           "title": "Lemon Chicken",
           "text": "Making this tonight! https://example.com/lemon-chicken"
+        }
+      },
+      "SiteList": {
+        "type": "object",
+        "properties": {
+          "sites": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FollowedSite"
+            }
+          },
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "description": "Follow it with this."
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "name",
+                "url",
+                "description"
+              ]
+            },
+            "description": "Sites that work well with Merran, not followed yet."
+          }
+        },
+        "required": [
+          "sites",
+          "suggestions"
+        ],
+        "example": {
+          "sites": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000030",
+              "name": "RecipeTin Eats",
+              "url": "https://www.recipetineats.com/",
+              "feedUrl": "https://www.recipetineats.com/feed/",
+              "recipes": [
+                {
+                  "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+                  "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+                  "name": "Honey Garlic Chicken",
+                  "site": "RecipeTin Eats",
+                  "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+                  "minutes": 12,
+                  "courses": [
+                    "main"
+                  ],
+                  "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+                  "publishedAt": "2026-10-01T17:30:00.000Z",
+                  "inLibrary": null,
+                  "suits": true
+                },
+                {
+                  "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+                  "url": "https://www.recipetineats.com/lemon-chicken/",
+                  "name": "Lemon Chicken",
+                  "site": "RecipeTin Eats",
+                  "description": null,
+                  "minutes": 35,
+                  "courses": [
+                    "main"
+                  ],
+                  "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+                  "publishedAt": "2026-10-01T17:30:00.000Z",
+                  "inLibrary": {
+                    "slug": "lemon-chicken",
+                    "name": "Lemon Chicken"
+                  },
+                  "suits": true
+                }
+              ],
+              "waiting": 3,
+              "reading": false,
+              "readAt": "2026-10-15T18:30:00.000Z",
+              "error": null,
+              "followedAt": "2026-10-01T17:30:00.000Z"
+            }
+          ],
+          "suggestions": [
+            {
+              "name": "Love and Lemons",
+              "url": "https://www.loveandlemons.com/",
+              "description": "Bright, seasonal vegetarian cooking."
+            }
+          ]
+        }
+      },
+      "FollowedSite": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "feedUrl": {
+            "type": "string"
+          },
+          "recipes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShelfRecipe"
+            },
+            "description": "Its newest recipes, newest first: posts Merran opened and can import."
+          },
+          "waiting": {
+            "type": "number",
+            "description": "New posts not opened yet: Merran opens them a few seconds apart."
+          },
+          "reading": {
+            "type": "boolean",
+            "description": "Not read for the first time yet."
+          },
+          "readAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "error": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why its feed couldn't be read last time."
+          },
+          "followedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "url",
+          "feedUrl",
+          "recipes",
+          "waiting",
+          "reading",
+          "readAt",
+          "error",
+          "followedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000030",
+          "name": "RecipeTin Eats",
+          "url": "https://www.recipetineats.com/",
+          "feedUrl": "https://www.recipetineats.com/feed/",
+          "recipes": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+              "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+              "name": "Honey Garlic Chicken",
+              "site": "RecipeTin Eats",
+              "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+              "minutes": 12,
+              "courses": [
+                "main"
+              ],
+              "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+              "publishedAt": "2026-10-01T17:30:00.000Z",
+              "inLibrary": null,
+              "suits": true
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+              "url": "https://www.recipetineats.com/lemon-chicken/",
+              "name": "Lemon Chicken",
+              "site": "RecipeTin Eats",
+              "description": null,
+              "minutes": 35,
+              "courses": [
+                "main"
+              ],
+              "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+              "publishedAt": "2026-10-01T17:30:00.000Z",
+              "inLibrary": {
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken"
+              },
+              "suits": true
+            }
+          ],
+          "waiting": 3,
+          "reading": false,
+          "readAt": "2026-10-15T18:30:00.000Z",
+          "error": null,
+          "followedAt": "2026-10-01T17:30:00.000Z"
+        }
+      },
+      "FollowSite": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 500,
+            "description": "Any page of the site, its feed, or a suggestion's `url`."
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "example": {
+          "url": "https://www.loveandlemons.com/"
+        }
+      },
+      "SiteRecipes": {
+        "type": "object",
+        "properties": {
+          "recipes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShelfRecipe"
+            }
+          }
+        },
+        "required": [
+          "recipes"
+        ],
+        "example": {
+          "recipes": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000031",
+              "url": "https://www.recipetineats.com/honey-garlic-chicken/",
+              "name": "Honey Garlic Chicken",
+              "site": "RecipeTin Eats",
+              "description": "Juicy chicken in a sticky honey garlic sauce, in 12 minutes.",
+              "minutes": 12,
+              "courses": [
+                "main"
+              ],
+              "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+              "publishedAt": "2026-10-01T17:30:00.000Z",
+              "inLibrary": null,
+              "suits": true
+            },
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-000000000032",
+              "url": "https://www.recipetineats.com/lemon-chicken/",
+              "name": "Lemon Chicken",
+              "site": "RecipeTin Eats",
+              "description": null,
+              "minutes": 35,
+              "courses": [
+                "main"
+              ],
+              "photo": "/api/sites/recipes/0199e8b0-5a10-7a01-8b00-000000000031/photo",
+              "publishedAt": "2026-10-01T17:30:00.000Z",
+              "inLibrary": {
+                "slug": "lemon-chicken",
+                "name": "Lemon Chicken"
+              },
+              "suits": true
+            }
+          ]
         }
       },
       "TelemetryReport": {
@@ -12069,6 +12705,293 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collections": {
+      "get": {
+        "operationId": "listCollections",
+        "tags": [
+          "Collections"
+        ],
+        "summary": "Starter collections",
+        "description": "Sets of recipes to start a library with, each filled from the recipe sites Merran reads by its own rule, around a few hand-picked classics. Only collections in season for the household, with at least four recipes that suit it. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "The collections.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collections/{collection}": {
+      "get": {
+        "operationId": "getCollection",
+        "tags": [
+          "Collections"
+        ],
+        "summary": "A starter collection",
+        "description": "Its recipes that suit the household, and what Find more found for it last. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "weeknight"
+            },
+            "required": true,
+            "name": "collection",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The collection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Collection"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such collection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collections/{collection}/import": {
+      "post": {
+        "operationId": "importCollection",
+        "tags": [
+          "Collections"
+        ],
+        "summary": "Import a whole collection",
+        "description": "Its recipes not in the library yet, in the background, as several links are: follow along at /recipes/import/links/{importId}. With an API key, it needs the `imports: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "imports:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "weeknight"
+            },
+            "required": true,
+            "name": "collection",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Importing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LinkImport"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such collection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Every recipe in it is in the library already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collections/{collection}/find": {
+      "post": {
+        "operationId": "findMoreForCollection",
+        "tags": [
+          "Collections"
+        ],
+        "summary": "Find more for a collection",
+        "description": "Searches the web for more recipes in the collection's theme that suit the household, as `POST /discover` does, and keeps them with the collection (its `found`). Needs a model that can search the web. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "weeknight"
+            },
+            "required": true,
+            "name": "collection",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Searching.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Discovery"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such collection.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "A search is going already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }
@@ -22626,6 +23549,335 @@
           },
           "413": {
             "description": "Too big to share.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sites": {
+      "get": {
+        "operationId": "listSites",
+        "tags": [
+          "Sites"
+        ],
+        "summary": "Followed recipe sites",
+        "description": "The recipe sites the household follows, oldest followed first, each with its newest recipes; and suggested sites it doesn't follow yet. Merran reads each site's feed every few hours. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "Its sites.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteList"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "followSite",
+        "tags": [
+          "Sites"
+        ],
+        "summary": "Follow a recipe site",
+        "description": "By any page of the site, its RSS or Atom feed, or a suggestion. Merran finds the feed and reads it straight away when no one's read it lately, opening each new post a few seconds apart and keeping the recipes. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FollowSite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Following it.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowedSite"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "That isn't a link Merran can fetch.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "The household follows it already.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "No feed was found, or recipe sites are off.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sites/recipes": {
+      "get": {
+        "operationId": "listSiteRecipes",
+        "tags": [
+          "Sites"
+        ],
+        "summary": "The newest recipes from followed sites",
+        "description": "Up to 24, newest first, from every site the household follows: for Recipes' spotlight and Today's idea for tonight. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "Their newest recipes.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SiteRecipes"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sites/recipes/{recipe}/photo": {
+      "get": {
+        "operationId": "getSiteRecipePhoto",
+        "tags": [
+          "Sites"
+        ],
+        "summary": "A site recipe's photo",
+        "description": "A small copy, as WebP, fetched once through Merran so browsing doesn't load photos from other sites. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000031"
+            },
+            "required": true,
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The photo.",
+            "content": {
+              "image/webp": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe, or no photo that loads.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/sites/{site}": {
+      "delete": {
+        "operationId": "unfollowSite",
+        "tags": [
+          "Sites"
+        ],
+        "summary": "Stop following a site",
+        "description": "Recipes imported from it stay in the library. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000030"
+            },
+            "required": true,
+            "name": "site",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Not following it any more."
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The household doesn't follow that site.",
             "content": {
               "application/json": {
                 "schema": {

@@ -70,6 +70,17 @@ export const ServerSettingsSchema = z
         description:
           "Video import's tools, by their versions, or null when they aren't there; and whether there's a cookies.txt for sites that want a signed-in session.",
       }),
+    sites: z
+      .object({
+        sites: z.number(),
+        recipes: z.number(),
+        classics: z.object({ working: z.number(), all: z.number() }),
+        readAt: z.iso.datetime().nullable(),
+      })
+      .openapi({
+        description:
+          "The recipe sites Merran reads, the recipes it has from them, how many of the starter collections' classics open, and when a site was last read.",
+      }),
   })
   .openapi("ServerSettings", {
     example: {
@@ -81,6 +92,12 @@ export const ServerSettingsSchema = z
       },
       settings: [SETTING, SECRET_SETTING],
       video: { ytDlp: "2026.08.19", ffmpeg: "8.0", cookies: false },
+      sites: {
+        sites: 12,
+        recipes: 214,
+        classics: { working: 71, all: 73 },
+        readAt: "2026-10-15T18:30:00.000Z",
+      },
     },
   })
 
