@@ -32,6 +32,7 @@ import {
   mainList,
   rememberList,
 } from "./lists.ts"
+import { relistRestored, unlistRemoved } from "./meals.ts"
 
 // The shopping lists: what to buy, by aisle, on the list for the store
 // it's bought at. Things go on from the plan (added up), typed in, or
@@ -241,6 +242,7 @@ export async function removeItem(em: EntityManager, id: string) {
   const before = itemSnapshot(item)
   em.remove(item)
   await em.flush()
+  await unlistRemoved(em, [item])
   return before
 }
 
@@ -269,6 +271,8 @@ export async function bulkItems(
     switch (bulk.action) {
       case "remove":
         for (const item of items) tx.remove(item)
+        await tx.flush()
+        await unlistRemoved(tx, items)
         break
       case "check":
       case "uncheck":
@@ -356,6 +360,7 @@ export async function clearList(
     const before = items.map(itemSnapshot)
     for (const item of items) tx.remove(item)
     await tx.flush()
+    await unlistRemoved(tx, items)
     return { before }
   })
 }
@@ -413,6 +418,7 @@ export async function restoreItems(
       restored.push(item)
     }
     await tx.flush()
+    await relistRestored(tx, restored)
     return describeItems(tx, restored)
   })
 }

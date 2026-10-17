@@ -94,7 +94,7 @@ function readChosenList() {
  * under it. With a list for each store, cards at the top pick which.
  */
 export function ListPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const list = useQuery(listQuery)
   const actions = useListActions()
   const admin = isAdminRole(useActiveHousehold()?.role)
@@ -136,17 +136,21 @@ export function ListPage() {
   const rowPrices: RowPrices | null = toGet.some(priceOf)
     ? { of: priceOf, currency: prices.currency, store: prices.store }
     : null
+  // Each aisle's things A to Z, as they read.
+  const byName = new Intl.Collator(i18n.language, { sensitivity: "base" })
+  const sorted = (items: ListItem[]) =>
+    items.sort((a, b) => byName.compare(a.name, b.name))
   const byAisle = [
     ...aisles.map((aisle) => ({
       id: aisle.id,
       name: aisle.name,
-      items: toGet.filter((item) => item.aisle === aisle.id),
+      items: sorted(toGet.filter((item) => item.aisle === aisle.id)),
     })),
     {
       id: "none",
       name: t("list.noAisle"),
-      items: toGet.filter(
-        (item) => !aisles.some((aisle) => aisle.id === item.aisle)
+      items: sorted(
+        toGet.filter((item) => !aisles.some((aisle) => aisle.id === item.aisle))
       ),
     },
   ].filter((aisle) => aisle.items.length > 0)

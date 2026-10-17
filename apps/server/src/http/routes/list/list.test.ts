@@ -342,6 +342,49 @@ describe("adding from the plan", () => {
     await clearAll()
   })
 
+  test("cleared off, the meals can be added again, with what's at home", async () => {
+    await kyle.post("/api/pantry/items", { text: "1 tbsp olive oil" })
+    await plan({ date: day(0), meal: "dinner", recipe: ids["Lemon Chicken"] })
+    const preview = async () =>
+      (await kyle.get(`/api/list/from-plan?from=${day(0)}&to=${day(6)}`)).json()
+    expect(await fromPlan()).toMatchObject({
+      meals: 1,
+      inPantry: ["olive oil"],
+    })
+
+    // Bought and cleared: still on the list, so not added twice.
+    const lemons = await find("lemons")
+    await kyle.patch(`/api/list/items/${lemons!.id}`, { checked: true })
+    await kyle.post("/api/list/clear", { which: "checked" })
+    expect(await preview()).toMatchObject({ meals: [], listed: 1 })
+
+    // All of it cleared: the meal can go on again.
+    const cleared = await (
+      await kyle.post("/api/list/clear", { which: "all" })
+    ).json()
+    expect(await preview()).toMatchObject({ listed: 0 })
+    // Undo, and it's on the list as it was.
+    await kyle.post("/api/list/restore", { items: cleared.before })
+    expect(await preview()).toMatchObject({ meals: [], listed: 1 })
+
+    await kyle.post("/api/list/clear", { which: "all" })
+    // The oil at home is still the meal's, not needed twice.
+    expect(await fromPlan()).toMatchObject({
+      meals: 1,
+      inPantry: ["olive oil"],
+    })
+    expect(await find("chicken thighs")).toMatchObject({ amount: "2 lb" })
+    expect(await find("olive oil")).toBeUndefined()
+
+    // Taking the last thing for it off does the same.
+    for (const item of await list()) {
+      await kyle.delete(`/api/list/items/${item.id}`)
+    }
+    expect(await preview()).toMatchObject({ listed: 0 })
+    await kyle.post("/api/pantry/clear")
+    await clearAll()
+  })
+
   test("adds into what's on the list already", async () => {
     const typed = await type("1 lb ground beef")
     await plan({ date: day(2), meal: "dinner", recipe: ids["Beef Tacos"] })

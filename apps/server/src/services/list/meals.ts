@@ -64,6 +64,9 @@ export async function listMeals(
     onHand.add(item.name.toLowerCase())
     return false
   })
+  // What was set aside for them before (they were on the list, and taken
+  // off) is counted again, not as theirs already.
+  await releasePantry(em, new Set(meals.map((entry) => entry.id)))
   const { items: combined, inPantry } = await coverFromPantry(
     em,
     householdId,
@@ -182,6 +185,57 @@ async function unlistMeals(em: EntityManager, entries: readonly PlanEntry[]) {
       forMeals: staying.length > 0 ? staying : null,
     })
   }
+}
+
+/**
+ * After things are taken off the list: a meal that had a share in one not
+ * bought yet, and has nothing left on any list, isn't on the list now, so
+ * adding from the plan puts it back. What's at home set aside for it stays
+ * until it's listed again, so Undo finds it as it was.
+ */
+export async function unlistRemoved(
+  em: EntityManager,
+  removed: readonly ShoppingItem[]
+) {
+  const meals = new Set(
+    removed
+      .filter((item) => !item.checked)
+      .flatMap((item) => (item.forMeals ?? []).map((share) => share.meal))
+  )
+  if (meals.size === 0) return
+  for (const item of await em.find(ShoppingItem, {})) {
+    for (const share of item.forMeals ?? []) meals.delete(share.meal)
+  }
+  if (meals.size === 0) return
+  const entries = await em.find(PlanEntry, {
+    id: { $in: [...meals] },
+    listedAt: { $ne: null },
+  })
+  for (const entry of entries) entry.listedAt = null
+  await em.flush()
+}
+
+/** Undo of taking things off: the meals they're for are on the list again. */
+export async function relistRestored(
+  em: EntityManager,
+  restored: readonly ShoppingItem[]
+) {
+  const meals = [
+    ...new Set(
+      restored.flatMap((item) =>
+        (item.forMeals ?? []).map((share) => share.meal)
+      )
+    ),
+  ]
+  if (meals.length === 0) return
+  const now = new Date()
+  for (const entry of await em.find(PlanEntry, {
+    id: { $in: meals },
+    listedAt: null,
+  })) {
+    entry.listedAt = now
+  }
+  await em.flush()
 }
 
 /**
