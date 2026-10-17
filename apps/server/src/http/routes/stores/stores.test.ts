@@ -930,6 +930,41 @@ describe("buying by the package, costs and a budget", () => {
     expect((await status()).weeklyBudget).toBeNull()
   })
 
+  test("what the list costs, and the deals on it, without a look at the store", async () => {
+    const items = (await (await kyle.get("/api/list")).json()).items as {
+      id: string
+      name: string
+    }[]
+    const id = (name: string) => items.find((item) => item.name === name)!.id
+    kroger.searched.length = 0
+    // A member sees them too.
+    const res = await jamie.get("/api/stores/list-prices")
+    expect(res.status, await res.clone().text()).toBe(200)
+    const prices = await res.json()
+    expect(kroger.searched).toEqual([])
+    expect(prices).toMatchObject({ store: "Fry's", currency: "USD" })
+    // Two gallons went to the cart, at $2.99 instead of $3.49: the lowest
+    // in a while.
+    expect(prices.items[id("milk")]).toEqual({
+      total: 598,
+      packages: 2,
+      sure: true,
+      sale: { verdict: "lowest", saved: 100, ends: "2099-10-21" },
+      usual: 349,
+      product: "Kroger 2% Reduced Fat Milk",
+      seenOn: today,
+    })
+    // The 18 count picked, at its regular price.
+    expect(prices.items[id("eggs")]).toMatchObject({
+      total: 399,
+      packages: 1,
+      sale: null,
+      usual: null,
+    })
+    // No product for saffron: nothing to say.
+    expect(prices.items[id("saffron")]).toBeUndefined()
+  })
+
   test("what was sent to the cart goes in the pantry as the packs bought", async () => {
     // Two gallons of milk went to the cart for the gallon on the list.
     const list = (await (await kyle.get("/api/list")).json()).items as {

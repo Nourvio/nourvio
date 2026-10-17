@@ -12345,6 +12345,122 @@
           }
         }
       },
+      "ListPrices": {
+        "type": "object",
+        "properties": {
+          "store": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The household's store's banner, or null without one."
+          },
+          "currency": {
+            "type": "string"
+          },
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "total": {
+                  "type": "integer",
+                  "description": "In cents, for the packages needed, at the sale price when there's a sale."
+                },
+                "packages": {
+                  "type": "integer"
+                },
+                "sure": {
+                  "type": "boolean",
+                  "description": "How many is worked out from the product's size, not a guess."
+                },
+                "sale": {
+                  "type": [
+                    "object",
+                    "null"
+                  ],
+                  "properties": {
+                    "verdict": {
+                      "type": "string",
+                      "enum": [
+                        "lowest",
+                        "sale"
+                      ]
+                    },
+                    "saved": {
+                      "type": "integer",
+                      "description": "What it takes off the packages needed, in cents."
+                    },
+                    "ends": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date"
+                    }
+                  },
+                  "required": [
+                    "verdict",
+                    "saved",
+                    "ends"
+                  ],
+                  "description": "A real deal on it today; one barely off is left out."
+                },
+                "usual": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ],
+                  "description": "What a package usually costs, in cents, when it's on sale."
+                },
+                "product": {
+                  "type": "string",
+                  "description": "The product priced."
+                },
+                "seenOn": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "The day the price was seen."
+                }
+              },
+              "required": [
+                "total",
+                "packages",
+                "sure",
+                "sale",
+                "usual",
+                "product",
+                "seenOn"
+              ]
+            },
+            "description": "By list item id, what's left to get on the list for the store. Things with no product kept for them, or no price, are left out."
+          }
+        },
+        "required": [
+          "store",
+          "currency",
+          "items"
+        ],
+        "example": {
+          "store": "Fry's",
+          "currency": "USD",
+          "items": {
+            "0199e8b0-5a10-7a01-8b00-00000000001d": {
+              "total": 598,
+              "packages": 2,
+              "sure": true,
+              "sale": {
+                "verdict": "sale",
+                "saved": 100,
+                "ends": "2026-10-21"
+              },
+              "usual": 349,
+              "product": "Kroger 2% Reduced Fat Milk",
+              "seenOn": "2026-10-17"
+            }
+          }
+        }
+      },
       "KrogerStoreChanges": {
         "type": "object",
         "properties": {
@@ -25994,6 +26110,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RecipeCosts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/list-prices": {
+      "get": {
+        "operationId": "listItemPrices",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "What the list costs",
+        "description": "What each thing left to get on the list for the household's Kroger store costs, for the packages needed, and the real deals among them. From the product kept for each food and the last price seen for it, without a look at the store: nothing without a Kroger store. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "responses": {
+          "200": {
+            "description": "Its prices.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListPrices"
                 }
               }
             }

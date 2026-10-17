@@ -64,7 +64,7 @@ export async function ready(deps: BasketDeps, em: EntityManager) {
 }
 
 /** The food a list item is, as products are kept by. */
-const foodOf = (item: ShoppingItem) => item.foodKey ?? foodKey(item.name)
+export const foodOf = (item: ShoppingItem) => item.foodKey ?? foodKey(item.name)
 
 /** How much of something the list says, as it shows it: "½ cup". */
 function amountOf(item: ShoppingItem) {
@@ -74,7 +74,7 @@ function amountOf(item: ShoppingItem) {
 }
 
 /** What's left to get on the list for Kroger: its own, else those for no store. */
-async function itemsToGet(em: EntityManager) {
+export async function itemsToGet(em: EntityManager) {
   const lists = await em.find(ShoppingList, {})
   const forKroger = lists.filter((list) => list.store === KROGER)
   const chosen =
@@ -230,7 +230,7 @@ export type BasketLine = {
   sale: { verdict: SaleJudged["verdict"]; usual: number | null } | null
 }
 
-function lineFor(
+export function lineFor(
   item: ShoppingItem,
   kept: StoreProduct | undefined,
   connection: StoreConnection,

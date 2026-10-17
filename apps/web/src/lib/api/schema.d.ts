@@ -3108,6 +3108,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stores/list-prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What the list costs
+         * @description What each thing left to get on the list for the household's Kroger store costs, for the packages needed, and the real deals among them. From the product kept for each food and the last price seen for it, without a look at the store: nothing without a Kroger store. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["listItemPrices"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stores/kroger": {
         parameters: {
             query?: never;
@@ -9602,6 +9622,60 @@ export interface components {
                     priced: number;
                     /** @description Its lines with an amount of something bought. */
                     counted: number;
+                };
+            };
+        };
+        /**
+         * @example {
+         *       "store": "Fry's",
+         *       "currency": "USD",
+         *       "items": {
+         *         "0199e8b0-5a10-7a01-8b00-00000000001d": {
+         *           "total": 598,
+         *           "packages": 2,
+         *           "sure": true,
+         *           "sale": {
+         *             "verdict": "sale",
+         *             "saved": 100,
+         *             "ends": "2026-10-21"
+         *           },
+         *           "usual": 349,
+         *           "product": "Kroger 2% Reduced Fat Milk",
+         *           "seenOn": "2026-10-17"
+         *         }
+         *       }
+         *     }
+         */
+        ListPrices: {
+            /** @description The household's store's banner, or null without one. */
+            store: string | null;
+            currency: string;
+            /** @description By list item id, what's left to get on the list for the store. Things with no product kept for them, or no price, are left out. */
+            items: {
+                [key: string]: {
+                    /** @description In cents, for the packages needed, at the sale price when there's a sale. */
+                    total: number;
+                    packages: number;
+                    /** @description How many is worked out from the product's size, not a guess. */
+                    sure: boolean;
+                    /** @description A real deal on it today; one barely off is left out. */
+                    sale: {
+                        /** @enum {string} */
+                        verdict: "lowest" | "sale";
+                        /** @description What it takes off the packages needed, in cents. */
+                        saved: number;
+                        /** Format: date */
+                        ends: string | null;
+                    } | null;
+                    /** @description What a package usually costs, in cents, when it's on sale. */
+                    usual: number | null;
+                    /** @description The product priced. */
+                    product: string;
+                    /**
+                     * Format: date
+                     * @description The day the price was seen.
+                     */
+                    seenOn: string;
                 };
             };
         };
@@ -19182,6 +19256,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecipeCosts"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listItemPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its prices. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListPrices"];
                 };
             };
             /** @description Not signed in. */

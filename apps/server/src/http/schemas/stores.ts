@@ -380,3 +380,68 @@ export const CostsSchema = z
       },
     },
   })
+
+export const ListPricesSchema = z
+  .object({
+    store: z.string().nullable().openapi({
+      description: "The household's store's banner, or null without one.",
+    }),
+    currency: z.string(),
+    items: z
+      .record(
+        z.string(),
+        z.object({
+          total: z.number().int().openapi({
+            description:
+              "In cents, for the packages needed, at the sale price when there's a sale.",
+          }),
+          packages: z.number().int(),
+          sure: z.boolean().openapi({
+            description:
+              "How many is worked out from the product's size, not a guess.",
+          }),
+          sale: z
+            .object({
+              verdict: z.enum(["lowest", "sale"]),
+              saved: z.number().int().openapi({
+                description: "What it takes off the packages needed, in cents.",
+              }),
+              ends: z.iso.date().nullable(),
+            })
+            .nullable()
+            .openapi({
+              description:
+                "A real deal on it today; one barely off is left out.",
+            }),
+          usual: z.number().int().nullable().openapi({
+            description:
+              "What a package usually costs, in cents, when it's on sale.",
+          }),
+          product: z.string().openapi({ description: "The product priced." }),
+          seenOn: z.iso.date().openapi({
+            description: "The day the price was seen.",
+          }),
+        })
+      )
+      .openapi({
+        description:
+          "By list item id, what's left to get on the list for the store. Things with no product kept for them, or no price, are left out.",
+      }),
+  })
+  .openapi("ListPrices", {
+    example: {
+      store: "Fry's",
+      currency: "USD",
+      items: {
+        [IDS.listItems[0]!]: {
+          total: 598,
+          packages: 2,
+          sure: true,
+          sale: { verdict: "sale", saved: 100, ends: "2026-10-21" },
+          usual: 349,
+          product: "Kroger 2% Reduced Fat Milk",
+          seenOn: "2026-10-17",
+        },
+      },
+    },
+  })

@@ -12,6 +12,8 @@ export type Basket = Schemas["Basket"]
 export type BasketLine = Schemas["BasketLine"]
 export type Deals = Schemas["Deals"]
 export type RecipeSale = Deals["recipes"][string][number]
+export type ListPrices = Schemas["ListPrices"]
+export type ItemPrice = ListPrices["items"][string]
 
 /** The household's stores with an API: its Kroger, and the linked account. */
 export const storesQuery = queryOptions({
@@ -69,6 +71,26 @@ export function useCosts() {
   }
 }
 
+/**
+ * What the things left on the list cost at the household's store. Under
+ * the list's key, so it's asked again whenever the list changes.
+ */
+export const listPricesQuery = queryOptions({
+  queryKey: ["list", "prices"],
+  queryFn: () => unwrap(api.GET("/api/stores/list-prices")),
+})
+
+/** The list's prices when the household has a Kroger store. */
+export function useListPrices() {
+  const on = useCapability("stores.kroger")
+  const { data } = useQuery({ ...listPricesQuery, enabled: on })
+  return {
+    items: new Map(Object.entries(data?.items ?? {})),
+    currency: data?.currency ?? "USD",
+    store: data?.store ?? null,
+  }
+}
+
 /** Keeps the household's stores after a change. */
 export function useSetStores() {
   const queryClient = useQueryClient()
@@ -77,6 +99,7 @@ export function useSetStores() {
     void queryClient.invalidateQueries({ queryKey: krogerBasketQuery.queryKey })
     void queryClient.invalidateQueries({ queryKey: dealsQuery.queryKey })
     void queryClient.invalidateQueries({ queryKey: costsQuery.queryKey })
+    void queryClient.invalidateQueries({ queryKey: listPricesQuery.queryKey })
   }
 }
 

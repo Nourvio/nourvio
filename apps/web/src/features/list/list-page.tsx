@@ -54,12 +54,17 @@ import {
   useSelectionKeepOnly,
 } from "@/features/select/use-selection"
 import { householdQuery } from "@/features/household/queries"
-import { storesQuery } from "@/features/stores/queries"
+import {
+  formatPrice,
+  storesQuery,
+  useListPrices,
+  type ItemPrice,
+} from "@/features/stores/queries"
 import { initials } from "@/lib/initials"
 import { cn } from "@/lib/utils"
 
 import { AddFromPlanDialog } from "./add-from-plan-dialog"
-import { ItemRow } from "./item-row"
+import { ItemRow, type RowPrices } from "./item-row"
 import {
   AisleDialog,
   EditItemDialog,
@@ -125,6 +130,12 @@ export function ListPage() {
   const toGet = items.filter((item) => !item.checked)
   const got = items.filter((item) => item.checked)
   const totalLeft = all.filter((item) => !item.checked).length
+  const prices = useListPrices()
+  const priceOf = (item: ListItem) => prices.items.get(item.id) ?? null
+  // A column of prices when anything left on the list showing has one.
+  const rowPrices: RowPrices | null = toGet.some(priceOf)
+    ? { of: priceOf, currency: prices.currency, store: prices.store }
+    : null
   const byAisle = [
     ...aisles.map((aisle) => ({
       id: aisle.id,
@@ -288,6 +299,8 @@ export function ListPage() {
             current={current.id}
             split={split}
             admin={admin}
+            priceOf={priceOf}
+            currency={prices.currency}
             onChoose={choose}
             onManage={() => setManaging(true)}
           />
@@ -350,6 +363,7 @@ export function ListPage() {
                       selection={selection}
                       onEdit={() => setEditing(item)}
                       findAt={findAt(item)}
+                      prices={rowPrices}
                     />
                   ))}
                 </ul>
@@ -584,6 +598,8 @@ function StoreCards({
   current,
   split,
   admin,
+  priceOf,
+  currency,
   onChoose,
   onManage,
 }: {
@@ -592,10 +608,13 @@ function StoreCards({
   current: string
   split: boolean
   admin: boolean
+  priceOf: (item: ListItem) => ItemPrice | null
+  currency: string
   onChoose: (id: string) => void
   onManage: () => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const money = (cents: number) => formatPrice(cents, currency, i18n.language)
   return (
     <div
       role={split ? "tablist" : undefined}
@@ -606,8 +625,13 @@ function StoreCards({
         const own = split
           ? items.filter((item) => item.list === list.id)
           : items
-        const left = own.filter((item) => !item.checked).length
+        const toGet = own.filter((item) => !item.checked)
+        const left = toGet.length
         const got = own.length - left
+        const costs = toGet.flatMap((item) => priceOf(item) ?? [])
+        const total = costs.reduce((sum, cost) => sum + cost.total, 0)
+        const sales = costs.flatMap((cost) => cost.sale ?? [])
+        const saved = sales.reduce((sum, sale) => sum + sale.saved, 0)
         const selected = split && list.id === current
         const body = (
           <>
@@ -619,7 +643,29 @@ function StoreCards({
                 ? t("list.cards.left", { count: left })
                 : t("list.cards.nothingLeft")}
               {got > 0 && ` · ${t("list.cards.inCart", { count: got })}`}
+              {costs.length > 0 && (
+                <>
+                  {" · "}
+                  <span className="font-medium text-foreground">
+                    {costs.length < left
+                      ? t("list.cards.aboutSome", {
+                          total: money(total),
+                          priced: costs.length,
+                          left,
+                        })
+                      : t("list.cards.about", { total: money(total) })}
+                  </span>
+                </>
+              )}
             </span>
+            {saved > 0 && (
+              <span className="text-sm font-medium text-primary">
+                {t("list.cards.saving", {
+                  saved: money(saved),
+                  count: sales.length,
+                })}
+              </span>
+            )}
             <Progress
               value={own.length ? (got / own.length) * 100 : 0}
               aria-label={t("list.cards.progress", { got, total: own.length })}
