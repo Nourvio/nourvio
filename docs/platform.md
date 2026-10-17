@@ -215,7 +215,15 @@ The same encryption covers every other secret Merran stores: Kroger tokens, SMTP
 | Kokoro | Server (an address) | Runs beside Merran |
 | Single sign-on | Server | |
 
-**Stores are adapters.** A store adapter can do some of: search products, read prices and sales, add to a cart, link an account. Kroger has an official API. Walmart works through the extension in the person's own tab. **Link-only stores** (Costco Same-Day, Target, Tesco, Albert Heijn...) are just a name, a country and a search address, so adding one is a few lines, and households pick stores from their own country.
+**Stores are adapters.** A store adapter can do some of: search products, read prices and sales, add to a cart, link an account. Kroger has an official API. Walmart works through the extension in the person's own tab. **Link-only stores** (Costco, Target, Tesco, Woolworths...) are just a name, a country and a search address, so adding one is a few lines, and households pick stores from their own country.
+
+### Stores, in the order they're built
+
+1. **Link-only stores** (core, no module: a link costs nothing). Each store in `packages/shared/src/list/stores.ts` has its site's search, one address or one for each country whose site differs. A list for a store shows **Find at Costco** on each thing on it, and the extension's list has **Find**, which searches the store's site in the tab beside it.
+2. **Kroger** (the stores module): the server admin's Kroger developer app (`MERRAN_KROGER_CLIENT_ID` and `_SECRET`, or Settings, This server); a household's store by ZIP code, with its banner (Fry's, Ralphs...) from Kroger; one household member linking their Kroger account (OAuth with PKCE, the pending link kept in the database so a restart doesn't lose it, the tokens sealed like other secrets). Each thing on the list gets a product, picked by the small AI model from Kroger's search (a plain everyday item, a sensible size, in stock, then on sale, then the store brand), or the first in stock without AI, remembered per food (`store_products`, and never replaced once a person picked it). A review page shows each product, how many packages, the price and any sale, then **Send to Fry's** adds them to the Kroger cart: Kroger's API can only add.
+3. **Prices, sales and deals:** every price seen is kept by day (`store_prices`), a check each morning in the household's time zone and before the weekly autoplan; "usually $X" from the most common price over 90 days. Each sale is judged against that history: the lowest in a while, a normal sale, or barely off. Fill the week leans on real deals, as much as the household's **Lean on sales** says.
+4. **Buying by the package, recipe costs and a weekly budget:** what's left of a pack goes in the pantry when put away; a recipe's cost from its products' prices and sizes, in the household's currency; a weekly budget that Fill the week keeps to.
+5. **Walmart through the extension** (experimental, off by default): finding each thing in the person's own Walmart tab, picking with AI, filling the cart, and stopping at Walmart's bot check rather than getting past it.
 
 ## Recipe sites and starter collections
 

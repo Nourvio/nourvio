@@ -7,6 +7,8 @@ import {
 } from "react"
 import { createRoot } from "react-dom/client"
 
+import { STORES_BY_KEY, storeSearch } from "@merran/shared"
+
 import { HouseholdSwitch } from "@/lib/households"
 import {
   apiFor,
@@ -18,9 +20,10 @@ import {
 } from "@/lib/merran"
 import "@/lib/ui.css"
 
-// The shopping list beside the page, while shopping a store's site: check
-// things off as they go in the cart, and add what's missing. It looks
-// again every so often, so changes from the household's phones show.
+// The shopping list beside the page, while shopping a store's site: find
+// each thing there, check it off as it goes in the cart, and add what's
+// missing. It looks again every so often, so changes from the household's
+// phones show.
 
 type ShoppingList = Schemas["ShoppingList"]
 type Item = Schemas["ListItem"]
@@ -65,7 +68,18 @@ function List({
   const [shown, setShown] = useState<string | null>(null)
   const [adding, setAdding] = useState("")
   const [busy, setBusy] = useState(false)
+  const [country, setCountry] = useState<string | null>(null)
   const api = apiFor(connection)
+
+  // The household's country, for which of a store's sites to search.
+  useEffect(() => {
+    void unwrap(
+      apiFor(connection).GET("/api/households/current"),
+      connection.origin
+    )
+      .then((household) => setCountry(household.country ?? null))
+      .catch(() => {})
+  }, [connection])
 
   const load = useCallback(async () => {
     try {
@@ -141,6 +155,21 @@ function List({
 
   const lists = list?.lists ?? []
   const listId = shown ?? lists[0]?.id ?? null
+  const store = lists.find((one) => one.id === listId)?.store ?? null
+  const storeName = store ? (STORES_BY_KEY.get(store)?.name ?? store) : null
+  /** Its store's search for something, in the tab beside the panel. */
+  const finder = (item: Item) => {
+    const url = storeSearch(store, country, item.name)
+    if (!url) return undefined
+    return async () => {
+      const [tab] = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      })
+      if (tab?.id !== undefined) await browser.tabs.update(tab.id, { url })
+      else await browser.tabs.create({ url })
+    }
+  }
   const items = (list?.items ?? []).filter((item) => item.list === listId)
   const toGet = items.filter((item) => !item.checked)
   const got = items.filter((item) => item.checked)
@@ -211,7 +240,13 @@ function List({
           <section key={aisle} className="aisle">
             <h3>{aisle}</h3>
             {aisleItems.map((item) => (
-              <ItemRow key={item.id} item={item} onCheck={check} />
+              <ItemRow
+                key={item.id}
+                item={item}
+                onCheck={check}
+                onFind={finder(item)}
+                store={storeName}
+              />
             ))}
           </section>
         ))
@@ -232,22 +267,40 @@ function List({
 function ItemRow({
   item,
   onCheck,
+  onFind,
+  store = null,
 }: {
   item: Item
   onCheck: (item: Item, checked: boolean) => void
+  /** Searches its store's site for it, on a store's list. */
+  onFind?: () => Promise<void>
+  store?: string | null
 }) {
   return (
-    <label className={item.checked ? "item checked" : "item"}>
-      <input
-        type="checkbox"
-        checked={item.checked}
-        onChange={(event) => onCheck(item, event.target.checked)}
-      />
-      <span className="grow">
-        <span className="name">{item.name}</span>
-        {item.amount && <span className="amount"> · {item.amount}</span>}
-      </span>
-    </label>
+    <div className="row">
+      <label className={item.checked ? "item checked grow" : "item grow"}>
+        <input
+          type="checkbox"
+          checked={item.checked}
+          onChange={(event) => onCheck(item, event.target.checked)}
+        />
+        <span className="grow">
+          <span className="name">{item.name}</span>
+          {item.amount && <span className="amount"> · {item.amount}</span>}
+        </span>
+      </label>
+      {onFind && (
+        <button
+          type="button"
+          className="ghost small"
+          onClick={() => void onFind()}
+          aria-label={`Find ${item.name} at ${store}`}
+          title={`Find it at ${store}, in this tab`}
+        >
+          Find
+        </button>
+      )}
+    </div>
   )
 }
 

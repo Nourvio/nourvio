@@ -178,6 +178,9 @@ importers:
 
   apps/extension:
     dependencies:
+      '@merran/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
       openapi-fetch:
         specifier: ^0.17.0
         version: 0.17.0

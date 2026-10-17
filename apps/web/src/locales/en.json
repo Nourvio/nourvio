@@ -1616,7 +1616,10 @@
       "add": "Add a list",
       "movesHint": "Moving something to another list teaches Merran where that food goes from then on. Things on a removed list go to the main one.",
       "save": "Save",
-      "saved": "Lists saved."
+      "saved": "Lists saved.",
+      "store": "Store",
+      "anyStore": "Any store",
+      "storeTaken": "{{store}} (for {{name}})"
     },
     "clearListNamed": "Clear {{list}}",
     "clearCheckedOn": "Clear checked on {{list}}",
@@ -1640,7 +1643,9 @@
       "more_one": "Show {{count}} more",
       "more_other": "Show {{count}} more",
       "fewer": "Show fewer"
-    }
+    },
+    "find": "Find at {{store}}",
+    "findName": "Find {{name}} at {{store}}"
   },
   "pantry": {
     "title": "Pantry",

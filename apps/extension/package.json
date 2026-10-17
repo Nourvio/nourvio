@@ -15,6 +15,7 @@
     "api": "pnpm dlx --package openapi-typescript@7.13.0 --package typescript@5.9.3 openapi-typescript ../server/src/http/openapi/openapi.json --output src/lib/schema.d.ts"
   },
   "dependencies": {
+    "@merran/shared": "workspace:*",
     "openapi-fetch": "^0.17.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"

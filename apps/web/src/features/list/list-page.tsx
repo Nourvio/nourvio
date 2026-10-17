@@ -12,6 +12,7 @@ import {
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { STORES_BY_KEY, storeSearch } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
 import * as React from "react"
 import { Trans, useTranslation } from "react-i18next"
@@ -49,6 +50,7 @@ import {
   useSelection,
   useSelectionKeepOnly,
 } from "@/features/select/use-selection"
+import { householdQuery } from "@/features/household/queries"
 import { initials } from "@/lib/initials"
 import { cn } from "@/lib/utils"
 
@@ -98,6 +100,15 @@ export function ListPage() {
   const [showCart, setShowCart] = React.useState(false)
   const [chosen, setChosen] = React.useState(readChosenList)
 
+  const { data: household } = useQuery(householdQuery)
+  /** Where to find something on its list's store's site, if it has one. */
+  const findAt = (item: ListItem) => {
+    const store = lists.find((option) => option.id === item.list)?.store
+    const url = storeSearch(store, household?.country, item.name)
+    return store && url
+      ? { store: STORES_BY_KEY.get(store)?.name ?? store, url }
+      : null
+  }
   const lists = list.data?.lists ?? []
   const aisles = list.data?.aisles ?? []
   const all = list.data?.items ?? []
@@ -314,6 +325,7 @@ export function ListPage() {
                       item={item}
                       selection={selection}
                       onEdit={() => setEditing(item)}
+                      findAt={findAt(item)}
                     />
                   ))}
                 </ul>
@@ -386,6 +398,7 @@ export function ListPage() {
                         item={item}
                         selection={selection}
                         onEdit={() => setEditing(item)}
+                        findAt={findAt(item)}
                       />
                     ))}
                   </ul>

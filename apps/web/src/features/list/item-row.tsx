@@ -1,3 +1,5 @@
+import { Search01Icon } from "@hugeicons/core-free-icons"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { useTranslation } from "react-i18next"
 
 import { Checkbox } from "@/components/ui/checkbox"
@@ -10,16 +12,20 @@ import { useListActions } from "./use-list-actions"
 
 /**
  * One thing to buy: a box to check it off, its name and how much (tap to
- * change it), and what it's for. A long press starts selecting with it.
+ * change it), what it's for, and on a store's list, finding it on the
+ * store's site. A long press starts selecting with it.
  */
 export function ItemRow({
   item,
   selection,
   onEdit,
+  findAt = null,
 }: {
   item: ListItem
   selection: Selection
   onEdit: () => void
+  /** Its store's search for it, for a list that's for a store. */
+  findAt?: { store: string; url: string } | null
 }) {
   const { t } = useTranslation()
   const actions = useListActions()
@@ -42,9 +48,18 @@ export function ItemRow({
           : []),
       ]
 
+  const find = item.checked || selecting ? null : findAt
+
   // A narrow card: what it's for under the name. A wide one: all in a line.
   return (
-    <li className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3.5 gap-y-1 py-3 @2xl:grid-cols-[auto_minmax(0,1fr)_auto] @2xl:gap-x-4">
+    <li
+      className={cn(
+        "grid items-center gap-x-3.5 gap-y-1 py-3 @2xl:gap-x-4",
+        find
+          ? "grid-cols-[auto_minmax(0,1fr)_auto] @2xl:grid-cols-[auto_minmax(0,1fr)_auto_auto]"
+          : "grid-cols-[auto_minmax(0,1fr)] @2xl:grid-cols-[auto_minmax(0,1fr)_auto]"
+      )}
+    >
       {selecting ? (
         <span
           onClick={() => selection.toggle(item.id)}
@@ -114,6 +129,27 @@ export function ItemRow({
             </span>
           ))}
         </div>
+      )}
+      {find && (
+        <a
+          href={find.url}
+          target="_blank"
+          rel="noreferrer noopener"
+          aria-label={t("list.findName", {
+            name: item.name,
+            store: find.store,
+          })}
+          className="col-start-3 row-start-1 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm font-medium text-primary outline-none hover:bg-muted focus-visible:ring-[3px] focus-visible:ring-ring/50 @2xl:col-start-4"
+        >
+          <HugeiconsIcon
+            icon={Search01Icon}
+            strokeWidth={2}
+            className="size-4"
+          />
+          <span className="hidden @lg:inline">
+            {t("list.find", { store: find.store })}
+          </span>
+        </a>
       )}
     </li>
   )

@@ -1,6 +1,7 @@
 import { Add01Icon, Delete02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQueryClient } from "@tanstack/react-query"
+import { STORES_BY_KEY, storesFor } from "@merran/shared"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import * as React from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
@@ -14,18 +15,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { householdQuery } from "@/features/household/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import { listQuery, type Aisle, type List } from "./queries"
 
 const MAX_LISTS = 10
 
-/**
- * A list as it's being edited: a new one has a key of its own until saved.
- * Its store, for store connections later, is kept as it is.
- */
+/** A list as it's being edited: a new one has a key of its own until saved. */
 type Draft = {
   key: string
   id: string | null
@@ -37,7 +43,8 @@ type Draft = {
 
 /**
  * The household's lists, for its admins: any names (Festival, Costco,
- * the corner shop), and the aisles that go on each. Saved as a whole.
+ * the corner shop), the store each is for, and the aisles that go on
+ * each. Saved as a whole.
  */
 export function ListsDialog({
   open,
@@ -87,6 +94,21 @@ function ListsEditor({
     return kept.length > 1 ? kept : [...kept, blank()]
   })
   const [busy, setBusy] = React.useState(false)
+  const { data: household } = useQuery(householdQuery)
+  // The household's country's stores, and any a list is for already.
+  const stores = [
+    ...storesFor(household?.country),
+    ...drafts.flatMap((draft) => {
+      const store = draft.store ? STORES_BY_KEY.get(draft.store) : undefined
+      return store && !storesFor(household?.country).includes(store)
+        ? [store]
+        : []
+    }),
+  ]
+  const storeItems = [
+    { value: "none", label: t("list.lists.anyStore") },
+    ...stores.map((store) => ({ value: store.key, label: store.name })),
+  ]
 
   const change = (key: string, patch: Partial<Draft>) =>
     setDrafts((current) =>
@@ -182,6 +204,43 @@ function ListsEditor({
                 </Button>
               )}
             </div>
+            <Select
+              items={storeItems}
+              value={draft.store ?? "none"}
+              onValueChange={(next) =>
+                change(draft.key, {
+                  store: !next || next === "none" ? null : String(next),
+                })
+              }
+            >
+              <SelectTrigger
+                className="w-full"
+                aria-label={t("list.lists.store")}
+              >
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {storeItems.map((item) => {
+                  const other = drafts.find(
+                    (one) => one.key !== draft.key && one.store === item.value
+                  )
+                  return (
+                    <SelectItem
+                      key={item.value}
+                      value={item.value}
+                      disabled={Boolean(other)}
+                    >
+                      {other
+                        ? t("list.lists.storeTaken", {
+                            store: item.label,
+                            name: other.name || t("list.lists.anotherList"),
+                          })
+                        : item.label}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
             {draft.main ? (
               <p className="text-sm text-muted-foreground">
                 {t("list.lists.mainHint")}
