@@ -1,6 +1,7 @@
+import { foodFacts } from "@merran/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
-import { Recipe } from "../../../../database/entities/index.ts"
+import { FoodMatch, Recipe } from "../../../../database/entities/index.ts"
 import type { Database } from "../../../../database/orm.ts"
 import type {
   FetchOptions,
@@ -16,7 +17,7 @@ import {
 import { createTestApp, setUpServer, TestClient } from "../../../../test/app.ts"
 
 // Nutrition: estimated by AI, or added up from USDA FoodData Central, here
-// a fake: `usda` is what it knows, and what was asked of it is kept. The
+// a fake: FOODS is what it knows, and what was asked of it is kept. The
 // model answers picks from `picks` and estimates with ESTIMATE.
 
 const USDA_KEY = "usda-test-key-1234"
@@ -42,23 +43,37 @@ const per100 = (calories: number, protein: number, fat: number, carbs = 0) => [
   { nutrient: { id: 1093 }, amount: 80 },
 ]
 
+// The USDA foods the vocabulary has for chicken thighs, olive oil and
+// lemons; goat it doesn't know, so it's searched for.
+const CHICKEN = foodFacts("chicken thigh")!.fdc!
+const OIL = foodFacts("olive oil")!.fdc!
+const LEMON = foodFacts("lemon")!.fdc!
+
 const FOODS: Food[] = [
   {
     fdcId: 1,
-    description: "Chicken, skin (drumsticks and thighs), raw",
+    description: "Milk, goat, fluid, with added vitamin D",
     dataType: "SR Legacy",
-    foodNutrients: per100(349, 13, 32),
+    foodNutrients: per100(69, 3.6, 4.1, 4.5),
     foodPortions: [],
   },
   {
     fdcId: 2,
-    description: "Chicken, dark meat, thigh, meat only, raw",
+    description: "Game meat, goat, raw",
+    dataType: "SR Legacy",
+    foodNutrients: per100(109, 20.6, 2.3),
+    foodPortions: [],
+  },
+  {
+    fdcId: CHICKEN,
+    description:
+      "Chicken, broilers or fryers, dark meat, thigh, meat only, raw",
     dataType: "SR Legacy",
     foodNutrients: per100(121, 20, 4),
     foodPortions: [{ amount: 1, gramWeight: 114, modifier: "thigh" }],
   },
   {
-    fdcId: 3,
+    fdcId: OIL,
     description: "Oil, olive, salad or cooking",
     dataType: "SR Legacy",
     foodNutrients: per100(884, 0, 100),
@@ -67,19 +82,17 @@ const FOODS: Food[] = [
     ],
   },
   {
-    fdcId: 4,
-    description: "Lemon juice, raw",
+    fdcId: LEMON,
+    description: "Lemons, raw, without peel",
     dataType: "SR Legacy",
-    foodNutrients: per100(22, 0.4, 0.2, 6.9),
+    foodNutrients: per100(29, 1.1, 0.3, 9.3),
     foodPortions: [],
   },
 ]
-const SEARCH: Record<string, number[]> = {
-  "chicken thighs": [1, 2],
-  "olive oil": [3],
-  "lemons, juiced": [4],
-  lemons: [4],
-}
+const SEARCH: Record<string, number[]> = { "goat shoulder": [1, 2] }
+
+/** A tablespoon of olive oil, as bakers weigh it: 218 g a cup. */
+const OIL_GRAMS = (14.7868 * 218) / 236.588
 
 const searched: string[] = []
 const keysSent: string[] = []
@@ -199,7 +212,7 @@ describe("a recipe's nutrition", () => {
     expect(asked.at(-1)).toBe("estimate")
   })
 
-  test("with a USDA key, is added up from USDA's data, AI picking the foods", async () => {
+  test("with a USDA key, is added up from USDA's data, the foods Merran knows from their own", async () => {
     const saved = await kyle.patch("/api/settings/server", {
       "nutrition.usdaKey": USDA_KEY,
     })
@@ -207,29 +220,23 @@ describe("a recipe's nutrition", () => {
     const capabilities = await (await kyle.get("/api/capabilities")).json()
     expect(capabilities.capabilities).toContain("nutrition")
 
-    // USDA's first answer for chicken thighs is the skin: AI picks the meat.
-    picks = [
-      { line: 1, fdcId: 2, grams: null },
-      { line: 2, fdcId: 3, grams: null },
-      { line: 3, fdcId: 4, grams: 90 },
-    ]
+    // Nothing to pick: AI only weighs the lemons.
+    picks = [{ line: 1, fdcId: LEMON, grams: 90 }]
     const recipe = await addRecipe("Roast Chicken")
     const { status, body } = await workOut(recipe.id)
     expect(status, JSON.stringify(body)).toBe(200)
     // 2 lb of thigh, a tablespoon of oil as bakers weigh it, and the 90 g
-    // of juice AI weighed, over 4 servings; salt to taste isn't counted.
-    const oil = (14.7868 * 218) / 236.588
-    const calories = (121 * 907.184 + 884 * oil + 22 * 90) / 100 / 4
+    // of lemon AI weighed, over 4 servings; salt to taste isn't counted.
+    const calories = (121 * 907.184 + 884 * OIL_GRAMS + 29 * 90) / 100 / 4
     expect(body.nutrition).toMatchObject({
       source: "calculated",
       calories: Math.round(calories),
-      protein: Math.round(((20 * 907.184 + 0.4 * 90) / 100 / 4) * 10) / 10,
+      protein: Math.round(((20 * 907.184 + 1.1 * 90) / 100 / 4) * 10) / 10,
       missing: [],
       servings: 4,
     })
     expect(keysSent.every((key) => key === USDA_KEY)).toBe(true)
-    expect(searched).toHaveLength(3)
-    expect(searched).toContain("chicken thighs")
+    expect(searched).toEqual([])
 
     // The next recipe with them doesn't ask again: matches are kept, and
     // what a juiced lemon weighs was learned.
@@ -241,20 +248,48 @@ describe("a recipe's nutrition", () => {
     expect(asked).toEqual([])
   })
 
+  test("a food Merran doesn't know is searched for, AI picking from USDA's answers", async () => {
+    // USDA's first answer for goat shoulder is goat's milk: AI picks the meat.
+    picks = [{ line: 1, fdcId: 2, grams: null }]
+    const recipe = await addRecipe(
+      "Goat Stew",
+      ["1 lb goat shoulder", "1 tbsp olive oil"],
+      2
+    )
+    const { body } = await workOut(recipe.id)
+    expect(body.nutrition).toMatchObject({
+      source: "calculated",
+      calories: Math.round((109 * 453.592 + 884 * OIL_GRAMS) / 100 / 2),
+      missing: [],
+    })
+    expect(searched).toEqual(["goat shoulder"])
+  })
+
+  test("a food Merran knows is its own USDA food, whatever was matched before", async () => {
+    // Chicken thighs matched to goat, say, before the vocabulary knew them.
+    const em = database.em.fork()
+    await em.upsert(FoodMatch, { food: "chicken thigh", fdcId: 2, grams: {} })
+    searched.length = 0
+    const recipe = await addRecipe("Plain Thighs", ["2 lb chicken thighs"])
+    const { body } = await workOut(recipe.id)
+    expect(body.nutrition.calories).toBe(Math.round((121 * 907.184) / 100 / 4))
+    expect(searched).toEqual([])
+  })
+
   test("says which lines it couldn't count, and estimates when too many", async () => {
     picks = [{ line: 1, fdcId: null, grams: null }]
     const some = await workOut(
       (
-        await addRecipe("Chicken and Saffron", [
+        await addRecipe("Chicken and Gochugaru", [
           "2 lb chicken thighs",
           "1 tbsp olive oil",
-          "1 pinch saffron",
+          "1 tbsp gochugaru",
         ])
       ).id
     )
     expect(some.body.nutrition).toMatchObject({
       source: "calculated",
-      missing: ["1 pinch saffron"],
+      missing: ["1 tbsp gochugaru"],
     })
 
     picks = [

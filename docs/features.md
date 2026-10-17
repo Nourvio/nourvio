@@ -69,7 +69,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | How did it go? Stars and notes after cooking | Key | Built | |
 | Select and act on many recipes; Recently deleted for 30 days | Detail | Built | |
 | Nutrition from the recipe's site | Detail | Built | |
-| Nutrition worked out from USDA data or by AI, with plan totals | Key | Built | Module: a free USDA key; AI estimates without one. Worked out by itself when a recipe's saved, and for the whole library |
+| Nutrition worked out from USDA data or by AI, with plan totals | Key | Built | Module: a free USDA key; AI estimates without one. Worked out by itself when a recipe's saved, and for the whole library. The foods Merran knows have their USDA food checked by hand, so they aren't searched for |
 | What recipes cost, and a weekly budget, in any currency | Key | Built | Module (stores): each line's share of its product's price at the household's Kroger store (by weight or volume, a baking staple's density, or a can as one can), shown on recipes and cards when three in five lines have a price; the Plan page says what the week comes to against the budget, and Fill the week and the autoplan pick recipes that fit what's left of it more |
 | AI photos in a consistent style for recipes without one | Key | Built | Module, off by default; an OpenAI or Google key; four styles per household, one by itself for each new recipe, or the whole library |
 | Recipe translations, step photos, meaning-based search | Detail | Later | |
@@ -136,6 +136,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Shopping together: the list updates live on every phone | Headline | Built | |
 | Usual buys: "Milk? You last got some Oct 9" | Key | Built | |
 | A pantry: amounts, use soon, leftovers, cooking uses it up | Headline | Built | |
+| Ran out of anything? Check off what you used up after cooking | Key | Planned | With "How did it go?": the recipe's ingredients in a list, each one checked comes out of the pantry and can go on the list |
 | Put away what you bought in one tap | Detail | Built | |
 | Select and act on many list or pantry items | Detail | Built | |
 | Fridge, freezer or cupboard | Detail | Planned | |
@@ -144,7 +145,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | What the list costs, and the deals on it | Key | Built | Module (stores): each thing left on the list for Kroger priced for the packs needed (~ when how many is a guess), from the product kept for it and the last price seen; what a real deal saves under its price, and what it's for on one line under the name; each list's card says about what it comes to and what the sales save |
 | Costco and any store with a search page | Detail | Built | Find each thing on a store's list on its site, in the app and the extension; stores by country |
 | Buying by the package: the rest of a 2 lb pack goes in the pantry | Key | Built | Module (stores): what was sent to the Kroger cart is put away as the packs bought, with the meals' share set aside and the rest there to use |
-| Every food known by any of its names: brands, regional names (plain flour, coriander leaves), kinds of (a green bell pepper is a bell pepper), a household's own "same as" | Key | Built | [foods.md](foods.md); one vocabulary for recipes, the list, the pantry, nutrition and the stores; 705 foods so far, with what a cup and one of each weighs, how each keeps and what the store calls it; a kind covers its food at home (green bell peppers for a bell pepper); Same as and Not the same on the list |
+| Every food known by any of its names: brands, regional names (plain flour, coriander leaves), kinds of (a green bell pepper is a bell pepper), a household's own "same as" | Key | Built | [foods.md](foods.md); one vocabulary for recipes, the list, the pantry, nutrition and the stores; 705 foods so far, with what a cup and one of each weighs, how each keeps, what the store calls it and (for 625) its USDA food; a kind covers its food at home (green bell peppers for a bell pepper); Same as and Not the same on the list |
 | Fill a Walmart cart through the extension | Detail | Planned | Experimental, off by default |
 | Barcode scanning | Detail | Later | |
 

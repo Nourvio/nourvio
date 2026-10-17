@@ -90,6 +90,7 @@ Everything here is in 0.1 unless it says **Later**.
 | Select on the list and pantry | M14 | Core | |
 | Pantry: amounts, use soon, leftovers from skipped meals, cooking uses it up | M4 | Core | |
 | **Fridge, freezer or cupboard** | Planned (M17) | Core | New |
+| **Ran out of anything?** After cooking, a run through the recipe's ingredients to check off what's used up | New | Core | New. Asked with "How did it go?"; each checked food comes out of the pantry (and can go on the list), so the pantry stays right when cooking used more than the recipe said |
 | **Usual buys** ("Milk? You last got some Oct 9") | Planned (M17) | Core | New. Learned from what's put away (a `purchases` record), offered when the list is made |
 | Receipts into the pantry | M13 | AI | |
 | Kroger: products, cart, prices, sales | M6, M11 | Module (stores) | A store adapter; banner names (Fry's, Ralphs...) come from Kroger, not the code |

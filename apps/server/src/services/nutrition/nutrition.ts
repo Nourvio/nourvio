@@ -1,4 +1,5 @@
 import {
+  foodFacts,
   gramsFor,
   NUTRIENT_KEYS,
   roundNutrient,
@@ -28,10 +29,11 @@ import {
 } from "./fdc.ts"
 
 // Nutrition per serving, worked out from the ingredients: added up from
-// USDA FoodData Central when there's a key (the small model picking each
-// ingredient's food from USDA's search and weighing what portions can't),
-// or estimated by AI when there isn't, or when too much couldn't be
-// counted. Matches and USDA's foods are kept for every household after.
+// USDA FoodData Central when there's a key (the foods Merran knows have
+// their USDA food in the vocabulary; the small model picks the rest from
+// USDA's search, and weighs what portions can't), or estimated by AI when
+// there isn't, or when too much couldn't be counted. Matches and USDA's
+// foods are kept for every household after.
 
 /** More than this share of lines not counted, and an estimate does better. */
 const TOO_MANY_MISSING = 1 / 3
@@ -188,10 +190,17 @@ async function calculate(
       { food: match.food, fdcId: match.fdcId ?? null, grams: match.grams },
     ])
   )
+  // A food Merran knows is its USDA food, checked by hand, over whatever
+  // was matched before; what its units were found to weigh stays.
+  for (const key of keys) {
+    const fdcId = foodFacts(key)?.fdc
+    if (fdcId === undefined) continue
+    matches.set(key, { food: key, fdcId, grams: matches.get(key)?.grams ?? {} })
+  }
   const foods = await foodsById(
     em,
     fdc,
-    kept.flatMap((match) => (match.fdcId ? [match.fdcId] : []))
+    [...matches.values()].flatMap((match) => (match.fdcId ? [match.fdcId] : []))
   )
 
   const candidates = new Map<string, FdcCandidate[]>()

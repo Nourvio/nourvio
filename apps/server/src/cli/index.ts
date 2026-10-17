@@ -3,6 +3,7 @@
 //   pnpm merran <command>                       from a checkout
 //   docker exec -it merran merran <command>     in the Docker image
 
+import { foodsFdc } from "./foods-fdc.ts"
 import { foodsCoverage } from "./foods.ts"
 import { rotateSecret } from "./rotate-secret.ts"
 
@@ -17,8 +18,9 @@ const COMMANDS: Record<
   },
   foods: {
     description:
-      "How many of this server's ingredient lines (or a file's: text, one to a line, or JSON Lines recipes with an ingredients list) name a food Merran knows, and the foods it doesn't.",
-    run: (args) => foodsCoverage(args),
+      "How many of this server's ingredient lines (or a file's: text, one to a line, or JSON Lines recipes with an ingredients list) name a food Merran knows, and the foods it doesn't. `foods fdc <file>` proposes a USDA food for each food without one, for checking.",
+    run: (args) =>
+      args[0] === "fdc" ? foodsFdc(args.slice(1)) : foodsCoverage(args),
   },
 }
 

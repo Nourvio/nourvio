@@ -29,6 +29,11 @@ export type FoodFacts = {
   keeps?: { out?: true; weeks?: true }
   /** What to search a store for, when what it's called isn't it. */
   search?: string
+  /**
+   * Its USDA FoodData Central food, generic and as bought (raw onions, not
+   * fried), so nutrition doesn't search for it.
+   */
+  fdc?: number
 }
 
 /**
@@ -284,6 +289,11 @@ const VOCABULARIES: Record<string, Vocabulary> = {
 /** What's true of a food, if Merran knows it. */
 export function foodFacts(key: string): FoodFacts | undefined {
   return FOODS[key]
+}
+
+/** Every food Merran knows, by key. */
+export function knownFoods(): string[] {
+  return Object.keys(FOODS)
 }
 
 /**

@@ -34,3 +34,4 @@ npm-debug.log*
 *.suo
 *.sw?
 .tanstack
+.local

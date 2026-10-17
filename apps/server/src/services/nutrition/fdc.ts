@@ -8,7 +8,12 @@ import type { Fetcher } from "../fetch/public-fetch.ts"
 // out of addresses and logs.
 
 /** A search result: a food the ingredient might be. */
-export type FdcCandidate = { fdcId: number; description: string }
+export type FdcCandidate = {
+  fdcId: number
+  description: string
+  /** "Foundation" or "SR Legacy". */
+  dataType?: string
+}
 
 export type FdcFoodRecord = {
   fdcId: number
@@ -20,8 +25,8 @@ export type FdcFoodRecord = {
 }
 
 export type FdcClient = {
-  /** Generic foods that match, USDA's best first. */
-  search(query: string): Promise<FdcCandidate[]>
+  /** Generic foods that match, USDA's best first: 8, or `size`. */
+  search(query: string, size?: number): Promise<FdcCandidate[]>
   food(fdcId: number): Promise<FdcFoodRecord | null>
 }
 
@@ -134,15 +139,16 @@ export function createFdcClient(fetcher: Fetcher, apiKey: string): FdcClient {
   }
 
   return {
-    async search(query) {
+    async search(query, size = 8) {
       const body = (await call("/foods/search", {
         query,
         dataType: ["Foundation", "SR Legacy"],
-        pageSize: 8,
-      })) as { foods?: { fdcId: number; description: string }[] } | null
+        pageSize: size,
+      })) as { foods?: FdcCandidate[] } | null
       return (body?.foods ?? []).map((food) => ({
         fdcId: food.fdcId,
         description: food.description,
+        dataType: food.dataType,
       }))
     },
     async food(fdcId) {

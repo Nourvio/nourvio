@@ -33,6 +33,16 @@ describe("the data", () => {
     for (const key of Object.keys(FOODS)) expect(key).toBe(key.toLowerCase())
   })
 
+  test("most foods have a USDA food, by its FoodData Central id", () => {
+    const ids = Object.values(FOODS).flatMap((facts) =>
+      facts.fdc === undefined ? [] : [facts.fdc]
+    )
+    for (const id of ids)
+      expect(Number.isInteger(id) && id > 0, `${id}`).toBe(true)
+    // Those without are searched for, as foods Merran doesn't know are.
+    expect(ids.length / Object.keys(FOODS).length).toBeGreaterThan(0.8)
+  })
+
   test("no name is two foods'", () => {
     const owner = new Map<string, string>()
     const clashes: string[] = []
