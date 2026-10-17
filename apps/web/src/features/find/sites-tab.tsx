@@ -63,9 +63,7 @@ export function SitesTab({
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_18rem] lg:items-start">
       <div className="grid min-w-0 gap-6">
-        <p className="max-w-2xl text-muted-foreground">
-          {t("find.sites.description")}
-        </p>
+        <p className="text-muted-foreground">{t("find.sites.description")}</p>
         {isPending ? (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 6 }, (_, index) => (

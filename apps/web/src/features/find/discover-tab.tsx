@@ -65,9 +65,7 @@ export function DiscoverTab() {
 
   return (
     <>
-      <p className="max-w-2xl text-muted-foreground">
-        {t("discover.description")}
-      </p>
+      <p className="text-muted-foreground">{t("discover.description")}</p>
       <div className="grid gap-6">
         {ai.why ? (
           <NeedsAi task="discover" why={ai.why} />

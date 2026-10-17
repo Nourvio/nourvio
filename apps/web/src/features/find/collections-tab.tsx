@@ -28,7 +28,7 @@ export function CollectionsTab() {
 
   return (
     <div className="grid gap-4">
-      <p className="max-w-2xl text-muted-foreground">
+      <p className="text-muted-foreground">
         {t("find.collections.description")}
       </p>
       {isPending ? (
