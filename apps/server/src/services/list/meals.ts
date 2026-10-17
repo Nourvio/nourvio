@@ -80,15 +80,20 @@ export async function listMeals(
       combined.map((item, index) => ({ name: item.name, aisle: aisles[index] }))
     )
     for (const [index, item] of combined.entries()) {
-      // The line of the same food it adds up with: garlic cloves go with
-      // cloves, not with a head of garlic.
+      // The line of the same food it adds up with, in the same unit first:
+      // garlic cloves go with cloves, and with a head of garlic only when
+      // there's no line of cloves.
       let match: ShoppingItem | undefined
       let sum: ReturnType<typeof addAmounts> = null
-      for (const row of waiting) {
+      const sameUnitFirst = [...waiting].sort(
+        (a, b) => Number(b.unit === item.unit) - Number(a.unit === item.unit)
+      )
+      for (const row of sameUnitFirst) {
         if (row.foodKey !== item.food || row.amountText) continue
         sum = addAmounts(
           { quantity: toNumber(row.quantity), unit: row.unit ?? null },
-          item
+          item,
+          item.food
         )
         if (sum) {
           match = row
@@ -158,7 +163,7 @@ async function unlistMeals(em: EntityManager, entries: readonly PlanEntry[]) {
     let amount = { quantity: toNumber(item.quantity), unit: item.unit ?? null }
     let used = false
     for (const share of leaving) {
-      const rest = subtractAmounts(amount, share)
+      const rest = subtractAmounts(amount, share, item.foodKey ?? undefined)
       if (rest) amount = rest
       else if (share.quantity !== null) used = true
     }

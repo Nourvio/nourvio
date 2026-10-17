@@ -1,4 +1,4 @@
-import { foodKey } from "./food.ts"
+import { plainKey } from "./food.ts"
 
 // Aisles, in a typical walk through the store. Each household starts with
 // its country's names for them, and food is sorted into them by a first
@@ -168,7 +168,7 @@ export function guessAisle(name: string, unit?: string | null): AisleKey {
   if (/\b(frozen|ice cream)\b/.test(text)) return "frozen"
   if (unit === "can" || unit === "jar") return "canned-jarred"
   // The singular too: "paper towels" matches "paper towel".
-  const forms = [text, foodKey(text)]
+  const forms = [text, plainKey(text)]
   for (const [aisle, words] of AISLE_WORDS) {
     if (forms.some((form) => words.test(form))) return aisle
   }

@@ -69,7 +69,7 @@ export async function coverFromPantry(
           break
         }
         if (free.quantity === null || free.quantity <= 0.001) continue
-        const rest = subtractAmounts(need, free)
+        const rest = subtractAmounts(need, free, key)
         if (!rest) continue
         if (rest.quantity <= 0.001) {
           setFor(row, { meal: share.meal, ...need })
@@ -87,7 +87,7 @@ export async function coverFromPantry(
     }
     let total: Amount = { quantity: shares[0]!.quantity, unit: shares[0]!.unit }
     for (const share of shares.slice(1))
-      total = addAmounts(total, share) ?? total
+      total = addAmounts(total, share, key) ?? total
     left.push({ ...item, ...total, shares })
   }
   return { items: left, inPantry }

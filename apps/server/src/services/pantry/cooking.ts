@@ -73,7 +73,7 @@ export async function useForMeals(
         }
         // "Salt to taste" doesn't use up the salt.
         if (left.quantity === null) break
-        const rest = subtractAmounts(amountOf(row), left)
+        const rest = subtractAmounts(amountOf(row), left, row.foodKey)
         if (!rest) continue
         touch(row)
         if (rest.quantity > 0.001) {
@@ -81,7 +81,7 @@ export async function useForMeals(
           break
         }
         // Not enough in this one: the rest from the next.
-        const still = subtractAmounts(left, amountOf(row))
+        const still = subtractAmounts(left, amountOf(row), row.foodKey)
         gone.add(row.id)
         if (!still || still.quantity <= 0.001) break
         left = still
@@ -103,7 +103,7 @@ export async function useForMeals(
       const removed = gone.has(id)
       const taken = removed
         ? was.amount
-        : (subtractAmounts(was.amount, amountOf(row)) ?? {
+        : (subtractAmounts(was.amount, amountOf(row), row.foodKey) ?? {
             quantity: null,
             unit: null,
           })
@@ -158,7 +158,7 @@ export async function putBack(
         continue
       }
       if (taken.quantity !== null && measured(row)) {
-        const sum = addAmounts(amountOf(row), taken)
+        const sum = addAmounts(amountOf(row), taken, row.foodKey)
         if (sum) em.assign(row, { quantity: sum.quantity, unit: sum.unit })
       }
       if (taken.share)

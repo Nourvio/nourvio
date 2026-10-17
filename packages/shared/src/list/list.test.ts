@@ -8,14 +8,14 @@ import {
   readItem,
   subtractAmounts,
 } from "./amounts.ts"
-import { foodKey, lineFood } from "./food.ts"
+import { foodKey, lineFood, shoppingName } from "./food.ts"
 import { DEFAULT_ON_HAND, onHandTest, tidyOnHand } from "./on-hand.ts"
 
 describe("food keys", () => {
   test("match the same food however it's written", () => {
     expect(foodKey("2 Large Onions".replace(/^\d+ /, ""))).toBe("onion")
     expect(foodKey("onion")).toBe("onion")
-    expect(foodKey("fresh basil leaves")).toBe("basil leaf")
+    expect(foodKey("fresh basil leaves")).toBe("basil")
     expect(foodKey("tomatoes")).toBe("tomato")
     // A measure or another amount isn't the food.
     expect(foodKey("Pinch of salt")).toBe("salt")
@@ -26,12 +26,57 @@ describe("food keys", () => {
     expect(foodKey("asparagus")).toBe("asparagus")
   })
 
+  test("join what's the same thing to buy", () => {
+    expect(foodKey("plain flour")).toBe("all-purpose flour")
+    expect(foodKey("all purpose flour")).toBe("all-purpose flour")
+    expect(foodKey("lemon wedges")).toBe("lemon")
+    expect(foodKey("garlic cloves")).toBe("garlic")
+    expect(foodKey("chopped parsley")).toBe("parsley")
+    expect(foodKey("finely chopped fresh flat-leaf parsley")).toBe("parsley")
+    expect(foodKey("icing sugar")).toBe(foodKey("confectioners' sugar"))
+    expect(foodKey("unsalted butter")).toBe("butter")
+    expect(foodKey("extra-virgin olive oil")).toBe("olive oil")
+    expect(foodKey("minced beef")).toBe("ground beef")
+    expect(foodKey("beef mince")).toBe("ground beef")
+    expect(foodKey("minced garlic")).toBe("garlic")
+    // Still apart: what's sold that way is its own thing.
+    expect(foodKey("diced tomatoes")).not.toBe(foodKey("tomatoes"))
+    expect(foodKey("red onion")).not.toBe(foodKey("onion"))
+  })
+
   test("come from an ingredient line, without how much", () => {
     expect(lineFood("2 cloves garlic, minced")).toEqual({
       name: "garlic",
       key: "garlic",
     })
     expect(lineFood("Salt to taste")?.key).toBe("salt")
+  })
+})
+
+describe("shopping names", () => {
+  test.each([
+    ["lemon wedges to serve", "lemon wedges"],
+    ["caster sugar to serve", "caster sugar"],
+    ["sunflower or vegetable oil plus a little extra", "sunflower oil"],
+    ["butter or margarine", "butter"],
+    ["chicken or vegetable stock", "chicken stock"],
+    ["salt and/or pepper", "salt"],
+    ["chopped parsley", "parsley"],
+    ["large potatoes", "potatoes"],
+    ["large green bell peppers", "green bell peppers"],
+    ["finely chopped fresh parsley", "fresh parsley"],
+    ["diced chicken breast", "chicken breast"],
+    ["Pinch of salt", "salt"],
+    ["(75 g) butter", "butter"],
+    // Sold that way: kept.
+    ["large eggs", "large eggs"],
+    ["diced tomatoes", "diced tomatoes"],
+    ["grated parmesan", "grated parmesan"],
+    ["crushed red pepper flakes", "crushed red pepper flakes"],
+    ["jumbo shrimp", "jumbo shrimp"],
+    ["Cream of tartar", "Cream of tartar"],
+  ])("%s is %s", (food, name) => {
+    expect(shoppingName(food)).toBe(name)
   })
 })
 
@@ -75,6 +120,37 @@ describe("adding up the list", () => {
       ["butter", 0.625, "cup"],
       ["salt", 1, "teaspoon"],
     ])
+  })
+
+  test("joins a food's ways of being named and measured", () => {
+    const items = combineLines([
+      { text: "1 head garlic", factor: 1, source: "Roast" },
+      { text: "6 cloves garlic, minced", factor: 1, source: "Pasta" },
+      { text: "4 lemons", factor: 1, source: "Roast" },
+      { text: "Lemon wedges, to serve", factor: 1, source: "Fish" },
+      { text: "2 tbsp chopped parsley", factor: 1, source: "Roast" },
+      { text: "2 tbsp parsley", factor: 1, source: "Pasta" },
+      { text: "1 ½ cups (190 g) all-purpose flour", factor: 1, source: "Cake" },
+      { text: "120 g plain flour", factor: 1, source: "Pancakes" },
+      { text: "1 stick butter", factor: 1, source: "Cake" },
+      { text: "½ cup butter", factor: 1, source: "Cookies" },
+    ])
+    expect(items.map((item) => [item.name, item.quantity, item.unit])).toEqual([
+      ["garlic", 16, "clove"],
+      ["lemons", 4, null],
+      ["parsley", 4, "tablespoon"],
+      // A cup of flour is 120 g: 1 ½ cups and 1 cup.
+      ["all-purpose flour", 2.5, "cup"],
+      ["butter", 1, "cup"],
+    ])
+  })
+
+  test("goes back to whole heads of garlic", () => {
+    const [garlic] = combineLines([
+      { text: "1 head garlic", factor: 1, source: "Roast" },
+      { text: "10 cloves garlic", factor: 1, source: "Soup" },
+    ])
+    expect(garlic).toMatchObject({ quantity: 2, unit: "head" })
   })
 
   test("buys the top of a range", () => {

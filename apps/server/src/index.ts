@@ -16,6 +16,7 @@ import { createAiModels, createTranscriber } from "./services/ai/providers.ts"
 import { createEventBus } from "./services/events/events.ts"
 import { JOB_HANDLERS, JOB_SCHEDULES } from "./services/jobs/handlers.ts"
 import { JobRunner } from "./services/jobs/runner.ts"
+import { rekeyFoodsSoon } from "./services/list/rekey.ts"
 import { createSettings } from "./services/settings/settings.ts"
 import { LocalFileStore } from "./services/storage/files.ts"
 import { createVideoTools } from "./services/video/tools.ts"
@@ -115,6 +116,8 @@ const server = serve({ fetch: app.fetch, port: config.port }, (info) => {
   logger.info(`Merran ${config.version} is listening on port ${info.port}`)
 })
 await jobs.start()
+// Food keys made a new way: the ones kept are made again, once.
+await rekeyFoodsSoon(database.em.fork())
 
 function shutDown(signal: NodeJS.Signals) {
   logger.info(`${signal}: shutting down`)

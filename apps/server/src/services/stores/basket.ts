@@ -1,8 +1,8 @@
 import {
-  bareFood,
   formatAmount,
   foodKey,
   packagesFor,
+  shoppingName,
   type SaleJudged,
   type StoreProduct as Product,
 } from "@merran/shared"
@@ -297,9 +297,9 @@ export async function krogerBasket(
     const firsts = missing.map((food) =>
       items.find((item) => foodOf(item) === food)!
     )
-    // The food alone: things put on the list before names were tidied can
-    // still say "Pinch of salt" or "(75 g) butter".
-    const named = firsts.map((item) => bareFood(item.name))
+    // The food as it's bought: something typed onto the list can still
+    // say "Pinch of salt" or "chopped parsley".
+    const named = firsts.map((item) => shoppingName(item.name))
     const results = await searchAll(deps, app, location, named)
     await recordPrices(em, who.householdId, results.flat())
     const asks = missing.map((food, i) => ({

@@ -110,7 +110,7 @@ export function available(
   let left = amountOf(item)
   for (const share of item.forMeals ?? []) {
     if (!setAside(share.meal)) continue
-    const rest = subtractAmounts(left, share)
+    const rest = subtractAmounts(left, share, item.foodKey)
     if (rest) left = rest
   }
   return left
@@ -240,7 +240,7 @@ export async function store(
     if (!hasAmount(current)) amount = stock
     else if (!hasAmount(stock)) amount = current
     else if (!current.amountText && !stock.amountText) {
-      const sum = addAmounts(current, stock)
+      const sum = addAmounts(current, stock, item.foodKey)
       if (sum) amount = { ...sum, amountText: null }
     }
     if (!amount) continue

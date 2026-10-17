@@ -129,7 +129,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
-| A shopping list from the plan: combined, converted, pantry taken off | Headline | Built | |
+| A shopping list from the plan: combined, converted, pantry taken off | Headline | Built | One line per food however recipes name it (plain flour is all-purpose flour, chopped parsley is parsley, lemon wedges are lemons) and measure it (a head of garlic is ten cloves, a stick of butter half a cup, a cup of flour 120 g); names without how it's used or prepped ("to serve", "or vegetable oil", "large" on vegetables) |
 | Every-week items and always-on-hand staples | Key | Built | |
 | Sorted by aisle, and it remembers where things go | Key | Built | |
 | A list for each place you shop | Key | Built | |
