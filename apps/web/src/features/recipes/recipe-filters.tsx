@@ -42,6 +42,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Toggle } from "@/components/ui/toggle"
+import { useDeals } from "@/features/stores/queries"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 
@@ -58,7 +59,7 @@ import {
 } from "./queries"
 
 /**
- * Search, sort, and filters by new, diet, time and tags for the Recipes
+ * Search, sort, and filters by new, on sale, diet, time and tags for the Recipes
  * page. Changes go into the address.
  */
 export function RecipeFilters({
@@ -70,6 +71,7 @@ export function RecipeFilters({
 }) {
   const { t } = useTranslation()
   const { data: tags = [] } = useQuery(tagsQuery)
+  const deals = useDeals()
   const [words, setWords] = React.useState(search.q ?? "")
   const chosen = searchTags(search)
 
@@ -142,6 +144,21 @@ export function RecipeFilters({
           >
             {t("recipes.new")}
           </Toggle>
+          {(deals.any || search.onSale) && (
+            <Toggle
+              variant="outline"
+              pressed={Boolean(search.onSale)}
+              onPressedChange={(pressed) =>
+                onChange({ ...search, onSale: pressed ? true : undefined })
+              }
+              title={t("recipes.onSaleHint", {
+                store: deals.data?.store ?? "",
+              })}
+              className={cn(CHIP, "px-4")}
+            >
+              {t("recipes.onSale")}
+            </Toggle>
+          )}
           <DietMenu
             picked={searchDiets(search)}
             onChange={(diets) =>

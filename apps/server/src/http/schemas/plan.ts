@@ -24,6 +24,13 @@ export const ReasonSchema = z
       kind: z.literal("usesUp"),
       foods: z.array(z.string().max(60)).max(5),
     }),
+    z.object({
+      kind: z.literal("onSale"),
+      foods: z.array(z.string().max(60)).max(5),
+      lowest: z.boolean().openapi({
+        description: "One is the lowest it's been in a while.",
+      }),
+    }),
     z.object({ kind: z.literal("new") }),
     z.object({ kind: z.literal("notLately"), weeks: z.number().int().min(0) }),
     z.object({
@@ -42,7 +49,7 @@ export const ReasonSchema = z
   ])
   .openapi("Reason", {
     description:
-      "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.",
+      "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; food on sale at the household's store; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.",
     example: { kind: "notLately", weeks: 5 },
   })
 

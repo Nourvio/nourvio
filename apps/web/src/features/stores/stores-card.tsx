@@ -1,5 +1,6 @@
 import { Alert02Icon, Search01Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import { SALE_LEANS } from "@merran/shared"
 import { useQuery } from "@tanstack/react-query"
 import { getRouteApi } from "@tanstack/react-router"
 import * as React from "react"
@@ -46,6 +47,7 @@ import {
 const householdRoute = getRouteApi("/_app/settings/household")
 
 type Modality = StoresStatus["kroger"]["modality"]
+type Lean = StoresStatus["kroger"]["leanOnSales"]
 
 /**
  * The household's Kroger (Fry's, Ralphs, King Soopers...): the store it
@@ -118,6 +120,32 @@ export function StoresCard() {
     )
     // Kroger asks the person to sign in, then sends them back here.
     if (answer) window.location.assign(answer.url)
+  }
+
+  /** How much Fill the week and the autoplan lean on deals. */
+  async function lean(value: Lean) {
+    const saved = await attempt("lean", () =>
+      unwrap(
+        api.PATCH("/api/settings/household", {
+          body: { "stores.leanOnSales": value },
+        })
+      )
+    )
+    if (saved) setStores({ kroger: { ...kroger, leanOnSales: value } })
+  }
+
+  /** Today's prices and sales now, rather than tomorrow morning. */
+  async function checkNow() {
+    const check = await attempt("check", () =>
+      unwrap(api.POST("/api/stores/kroger/prices"))
+    )
+    if (!check) return
+    setStores({
+      kroger: { ...kroger, pricesCheckedAt: new Date().toISOString() },
+    })
+    toast.success(
+      t("settings.household.stores.checkedNow", { count: check.deals })
+    )
   }
 
   async function unlink() {
@@ -299,6 +327,52 @@ export function StoresCard() {
               <FieldDescription>
                 {t("settings.household.stores.modalityHint")}
               </FieldDescription>
+            </Field>
+          )}
+
+          {kroger.location && (
+            <Field>
+              <FieldLabel>{t("settings.household.stores.lean")}</FieldLabel>
+              <ToggleGroup
+                variant="outline"
+                size="sm"
+                value={[kroger.leanOnSales]}
+                onValueChange={(value) => {
+                  const picked = value[0] as Lean | undefined
+                  if (picked && picked !== kroger.leanOnSales) {
+                    void lean(picked)
+                  }
+                }}
+                disabled={busy !== null}
+                className="justify-start"
+              >
+                {SALE_LEANS.map((option) => (
+                  <ToggleGroupItem key={option} value={option}>
+                    {t(`settings.household.stores.leans.${option}`)}
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <FieldDescription className="min-w-0 flex-1">
+                  {kroger.pricesCheckedAt
+                    ? t("settings.household.stores.checked", {
+                        when: formatRelativeDate(
+                          kroger.pricesCheckedAt,
+                          i18n.language
+                        ),
+                      })
+                    : t("settings.household.stores.leanHint")}
+                </FieldDescription>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={busy !== null}
+                  onClick={() => void checkNow()}
+                >
+                  {busy === "check" && <Spinner />}
+                  {t("settings.household.stores.checkNow")}
+                </Button>
+              </div>
             </Field>
           )}
 

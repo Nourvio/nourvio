@@ -1,17 +1,25 @@
 import { createHash } from "node:crypto"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../app.ts"
+import { addDays } from "@merran/shared"
 import {
+  Job,
   Secret,
   StoreConnection,
   StorePrice,
 } from "../../../database/entities/index.ts"
 import type { Database } from "../../../database/orm.ts"
-import { ACROSS_HOUSEHOLDS } from "../../../database/scope.ts"
+import { ACROSS_HOUSEHOLDS, forHousehold } from "../../../database/scope.ts"
 import type {
   FetchOptions,
   Fetcher,
 } from "../../../services/fetch/public-fetch.ts"
+import { suggestMeals } from "../../../services/plan/suggest.ts"
+import type { Settings } from "../../../services/settings/settings.ts"
+import {
+  priceCheckDue,
+  salesForSuggest,
+} from "../../../services/stores/prices.ts"
 import {
   account,
   createTestApp,
@@ -91,6 +99,17 @@ const PRODUCTS: Record<string, FakeProduct[]> = {
       brand: "Morton",
       size: "26 oz",
       regular: 1.29,
+    },
+  ],
+  "chicken thighs": [
+    {
+      productId: "chicken1",
+      upc: "0020000000002",
+      description: "Kroger Boneless Skinless Chicken Thighs",
+      brand: "Kroger",
+      size: "1 lb",
+      regular: 5.99,
+      promo: 3.99,
     },
   ],
   "ground beef": [
@@ -244,6 +263,7 @@ const fetcher: Fetcher = async (url, options?: FetchOptions) => {
 let app: App
 let database: Database
 let close: () => Promise<void>
+let settings: Settings
 let kyle: TestClient
 let jamie: TestClient
 /** The linked account's sealed tokens. */
@@ -251,7 +271,7 @@ let tokensId: string
 
 beforeAll(async () => {
   const test = await createTestApp({ fetcher })
-  ;({ app, database, close } = test)
+  ;({ app, database, close, settings } = test)
   kyle = await setUpServer(app, test.setupCode)
   jamie = await join(app, await inviteToken(kyle), account("jamie", "Jamie"))
 })
@@ -625,5 +645,184 @@ describe("Kroger", () => {
       lines: [{ itemId: beef, packages: 2 }],
     })
     expect(send.status).toBe(409)
+  })
+})
+
+describe("prices, sales and deals", () => {
+  const today = new Date().toISOString().slice(0, 10)
+  let chickenRecipe: string
+
+  async function addRecipe(name: string, ingredients: string[]) {
+    const res = await kyle.post("/api/recipes", {
+      name,
+      servings: 4,
+      ingredients,
+      steps: ["Cook it."],
+    })
+    expect(res.status, await res.clone().text()).toBe(201)
+    return (await res.json()).id as string
+  }
+
+  const suggest = async () => {
+    const res = await kyle.post("/api/plan/suggest", {
+      slots: [{ date: addDays(today, 1), meal: "dinner" }],
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+    return (await res.json()).suggestions
+  }
+
+  test("a check is due each morning, once a day, in the household's time", () => {
+    const at = (time: string) => new Date(`2026-10-16T${time}Z`)
+    expect(priceCheckDue(null, "UTC", at("04:59:00"))).toBe(false)
+    expect(priceCheckDue(null, "UTC", at("05:00:00"))).toBe(true)
+    expect(priceCheckDue(at("05:10:00"), "UTC", at("09:00:00"))).toBe(false)
+    expect(
+      priceCheckDue(new Date("2026-10-15T23:00:00Z"), "UTC", at("06:00:00"))
+    ).toBe(true)
+    // 11:00 in UTC is 4 in the morning in Phoenix: too early there.
+    expect(priceCheckDue(null, "America/Phoenix", at("11:00:00"))).toBe(false)
+    expect(priceCheckDue(null, "America/Phoenix", at("12:00:00"))).toBe(true)
+  })
+
+  test("picking a store asks for its prices to be checked", async () => {
+    const jobs = await database.em
+      .fork()
+      .find(Job, { kind: "stores.prices" }, ACROSS_HOUSEHOLDS)
+    expect(jobs.length).toBeGreaterThan(0)
+  })
+
+  test("a check looks up the foods in the household's recipes", async () => {
+    chickenRecipe = await addRecipe("Roast Chicken Thighs", [
+      "2 lb chicken thighs",
+      "1 tbsp olive oil",
+      "Salt to taste",
+    ])
+    kroger.searched.length = 0
+    const res = await kyle.post("/api/stores/kroger/prices")
+    expect(res.status, await res.clone().text()).toBe(200)
+    // Meat first; salt is always at home, so it isn't looked for.
+    expect(kroger.searched).toEqual(["chicken thighs", "olive oil"])
+    expect(await res.json()).toMatchObject({ searched: 2, deals: 1 })
+    expect((await status()).pricesCheckedAt).not.toBeNull()
+
+    // Looked for lately, so not again tomorrow.
+    kroger.searched.length = 0
+    await kyle.post("/api/stores/kroger/prices")
+    expect(kroger.searched).toEqual([])
+
+    // Only those who run the household check by hand.
+    expect((await jamie.post("/api/stores/kroger/prices")).status).toBe(403)
+  })
+
+  test("what's on sale, judged, and the recipes it's in", async () => {
+    const res = await kyle.get("/api/stores/deals")
+    expect(res.status, await res.clone().text()).toBe(200)
+    const deals = await res.json()
+    expect(deals).toMatchObject({ store: "Fry's", leanOnSales: "some" })
+    const chicken = deals.deals.find(
+      (deal: { food: string }) => deal.food === "chicken thigh"
+    )
+    // No history yet: judged against its regular price.
+    expect(chicken).toMatchObject({
+      verdict: "sale",
+      usual: 599,
+      product: { id: "chicken1", salePrice: 399 },
+    })
+    expect(deals.recipes[chickenRecipe]).toEqual([
+      { name: "chicken thighs", verdict: "sale" },
+    ])
+
+    // Recipes can be narrowed to those with a deal.
+    await addRecipe("Plain Rice", ["1 cup rice", "2 cups water"])
+    const onSale = await (await kyle.get("/api/recipes?onSale=true")).json()
+    expect(onSale.recipes.map((r: { id: string }) => r.id)).toEqual([
+      chickenRecipe,
+    ])
+  })
+
+  test("a sale lower than any in 90 days is the lowest in a while", async () => {
+    const em = database.em.fork()
+    const { household } = await em.findOneOrFail(
+      StoreConnection,
+      { store: "kroger" },
+      ACROSS_HOUSEHOLDS
+    )
+    for (const [days, price, salePrice] of [
+      [40, 349, null],
+      [25, 349, 319],
+      [10, 349, null],
+    ] as const) {
+      em.create(StorePrice, {
+        household: household.id,
+        store: "kroger",
+        productId: "milk1",
+        day: addDays(today, -days),
+        price,
+        salePrice,
+        currency: "USD",
+      })
+    }
+    await em.flush()
+
+    const basket = await (await kyle.get("/api/stores/kroger/basket")).json()
+    const line = basket.lines.find(
+      (one: { name: string }) => one.name === "milk"
+    )
+    expect(line.sale).toEqual({ verdict: "lowest", usual: 349 })
+  })
+
+  test("Fill the week leans on real deals, and says so", async () => {
+    const em = database.em.fork()
+    const { household } = await em.findOneOrFail(
+      StoreConnection,
+      { store: "kroger" },
+      ACROSS_HOUSEHOLDS
+    )
+    const scoped = forHousehold(database.em.fork(), household.id)
+    // The same roll each time: with nothing leaning on sales, it lands on
+    // either; leaning a lot, the chicken on sale takes most of the room.
+    const pick = async () => {
+      const [suggestion] = await suggestMeals(
+        scoped,
+        household.id,
+        [{ date: addDays(today, 1), meal: "dinner" }],
+        {
+          random: () => 0.3,
+          sales: await salesForSuggest({ settings }, scoped, household.id),
+        }
+      )
+      return suggestion!
+    }
+
+    const lots = await kyle.patch("/api/settings/household", {
+      "stores.leanOnSales": "lots",
+    })
+    expect(lots.status, await lots.clone().text()).toBe(200)
+    expect((await status()).leanOnSales).toBe("lots")
+    const leaning = await pick()
+    expect(leaning.recipe.id).toBe(chickenRecipe)
+    expect(leaning.why).toContainEqual({
+      kind: "onSale",
+      foods: ["chicken thighs"],
+      lowest: false,
+    })
+
+    // Fill the week itself says so when it picks the chicken.
+    let said: { kind: string }[] = []
+    for (let i = 0; i < 20 && said.length === 0; i++) {
+      const [suggestion] = await suggest()
+      if (suggestion.recipe.id === chickenRecipe) said = suggestion.why
+    }
+    expect(said).toContainEqual(expect.objectContaining({ kind: "onSale" }))
+
+    // Off: sales don't count, and aren't a reason.
+    await kyle.patch("/api/settings/household", { "stores.leanOnSales": "off" })
+    expect(await salesForSuggest({ settings }, scoped, household.id)).toBeNull()
+    for (let i = 0; i < 4; i++) {
+      const [suggestion] = await suggest()
+      expect(
+        suggestion.why.some((why: { kind: string }) => why.kind === "onSale")
+      ).toBe(false)
+    }
   })
 })

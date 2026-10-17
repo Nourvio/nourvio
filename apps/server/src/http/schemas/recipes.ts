@@ -242,6 +242,10 @@ export const RecipeListQuerySchema = z.object({
   new: z.stringbool().optional().openapi({
     description: "Only recipes not made yet (true), or only ones made (false).",
   }),
+  onSale: z.stringbool().optional().openapi({
+    description:
+      "Only recipes that use a real deal at the household's store (true), from `GET /stores/deals`.",
+  }),
   sort: z.enum(RECIPE_SORTS).default("newest").openapi({
     description:
       "Newest added, name, recently changed, top rated, or recently made.",

@@ -482,6 +482,8 @@ export type RecipeListOptions = {
   diet: Diet[]
   /** Only recipes ready in this many minutes or fewer. */
   maxMinutes?: number | undefined
+  /** Only these recipes, as for those with something on sale. */
+  only?: readonly string[] | undefined
   sort: keyof typeof ORDER
   limit: number
   offset: number
@@ -505,6 +507,7 @@ export async function listRecipes(
     new: fresh,
     diet,
     maxMinutes,
+    only,
     sort,
     limit,
     offset,
@@ -512,6 +515,7 @@ export async function listRecipes(
 ) {
   const where: FilterQuery<Recipe> = {}
   const and: FilterQuery<Recipe>[] = []
+  if (only) and.push({ id: { $in: [...only] } })
   if (fresh !== undefined) {
     and.push({ lastMadeAt: fresh ? null : { $ne: null } })
   }

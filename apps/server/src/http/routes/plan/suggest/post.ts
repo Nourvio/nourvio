@@ -1,6 +1,7 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
 import { suggestMeals } from "../../../../services/plan/suggest.ts"
+import { salesForSuggest } from "../../../../services/stores/prices.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import {
@@ -30,11 +31,14 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
     const { slots, exclude } = c.req.valid("json")
-    const suggestions = await suggestMeals(em, householdId, slots, { exclude })
+    const suggestions = await suggestMeals(em, householdId, slots, {
+      exclude,
+      sales: await salesForSuggest(deps, em, householdId),
+    })
     return c.json({ suggestions }, 200)
   })
 }

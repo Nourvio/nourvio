@@ -14,6 +14,9 @@ import { formatRelativeDate } from "@/lib/format"
 import { cn } from "@/lib/utils"
 
 import { formatMinutes, formatServings } from "./format"
+import { OnSaleBadge } from "@/features/stores/on-sale-badge"
+import type { RecipeSale } from "@/features/stores/queries"
+
 import type { RecipeSummary } from "./queries"
 import { RatingStars } from "./rating-stars"
 
@@ -36,9 +39,12 @@ const CARD =
 export function RecipeCard({
   recipe,
   select,
+  onSale,
 }: {
   recipe: RecipeSummary
   select?: CardSelect
+  /** What it uses that's a deal at the household's store. */
+  onSale?: readonly RecipeSale[] | undefined
 }) {
   const { t } = useTranslation()
   const press = useLongPress(
@@ -61,7 +67,7 @@ export function RecipeCard({
           select.picked && "border-primary ring-2 ring-primary"
         )}
       >
-        <CardContent recipe={recipe} picked={select.picked} />
+        <CardContent recipe={recipe} picked={select.picked} onSale={onSale} />
       </button>
     )
   }
@@ -72,7 +78,7 @@ export function RecipeCard({
       className={CARD}
       {...press}
     >
-      <CardContent recipe={recipe} />
+      <CardContent recipe={recipe} onSale={onSale} />
     </Link>
   )
 }
@@ -80,10 +86,12 @@ export function RecipeCard({
 function CardContent({
   recipe,
   picked,
+  onSale,
 }: {
   recipe: RecipeSummary
   /** Picked or not, while selecting. */
   picked?: boolean
+  onSale?: readonly RecipeSale[] | undefined
 }) {
   const { t, i18n } = useTranslation()
   return (
@@ -157,6 +165,7 @@ function CardContent({
           ) : (
             <Badge title={t("recipes.notMadeYet")}>{t("recipes.new")}</Badge>
           )}
+          {onSale && onSale.length > 0 && <OnSaleBadge sales={onSale} />}
           {recipe.tags.map((tag) => (
             <Badge key={tag} variant="secondary">
               {tag}

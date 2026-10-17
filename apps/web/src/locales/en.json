@@ -413,7 +413,18 @@
         "relinkHint": "It may have had its password changed, or the link ran out. Link it again to send the list.",
         "didLink": "Kroger account linked.",
         "cancelled": "Linking Kroger was cancelled.",
-        "failed": "Kroger didn't link. Try again."
+        "failed": "Kroger didn't link. Try again.",
+        "lean": "Lean on sales",
+        "leans": {
+          "off": "Off",
+          "some": "A little",
+          "lots": "A lot"
+        },
+        "leanHint": "How much Fill the week and the weekly autoplan pick recipes with real deals. Prices are checked each morning.",
+        "checked": "Prices checked {{when}}, and each morning. Only real deals count, not sales barely off the usual price.",
+        "checkNow": "Check prices now",
+        "checkedNow_one": "Prices checked: {{count}} deal in your recipes.",
+        "checkedNow_other": "Prices checked: {{count}} deals in your recipes."
       }
     },
     "lockedBy": "Set on the server, by {{env}}",
@@ -484,7 +495,8 @@
           "cleanUp": "Clearing out old jobs",
           "telemetry": "Sending the daily summary",
           "readSites": "Reading recipe sites",
-          "photos": "Making AI photos"
+          "photos": "Making AI photos",
+          "prices": "Checking store prices and sales"
         }
       },
       "video": {
@@ -831,7 +843,9 @@
       "rated_other": "Rated {{count}} stars",
       "quick": "Quick: {{time}}",
       "leaveOut": "Leave out the {{foods}}",
-      "leaveOutFor": "{{food}} for {{who}}"
+      "leaveOutFor": "{{food}} for {{who}}",
+      "onSale": "{{foods}} on sale",
+      "onSaleLowest": "{{foods}} at the lowest price in a while"
     },
     "somethingElse": "Something else",
     "swapped": "Swapped in {{name}}.",
@@ -1404,7 +1418,9 @@
         "estimate": "Per serving, estimated by AI."
       },
       "missing": "Not counted: {{lines}}."
-    }
+    },
+    "onSale": "On sale",
+    "onSaleHint": "Recipes that use something on sale at {{store}}"
   },
   "cook": {
     "exit": "Exit",
@@ -1733,7 +1749,14 @@
       "pickTitle": "Pick for {{name}}",
       "pickHint": "Search {{store}}. Your pick is kept for next time.",
       "search": "Search the store",
-      "nothingFound": "Nothing found at {{store}}."
+      "nothingFound": "Nothing found at {{store}}.",
+      "lowest": "Lowest in a while",
+      "barelyOff": "Barely off",
+      "usually": "Usually {{price}}"
+    },
+    "deals": {
+      "onSale": "On sale: {{foods}}",
+      "lowestOn": "Lowest in a while: {{foods}}"
     }
   },
   "pantry": {

@@ -308,11 +308,16 @@ function Line({
   onPackages: (packages: number) => void
   onChange: () => void
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const id = React.useId()
   const product = line.product
   const saleEnds =
     product && priceNow(product, today).onSale ? product.saleEnds : null
+  // "Usually $4.49", when that's not the regular price already shown.
+  const usual =
+    product && line.sale?.usual && line.sale.usual !== product.price
+      ? formatPrice(line.sale.usual, product.currency, i18n.language)
+      : null
 
   return (
     <li
@@ -352,6 +357,17 @@ function Line({
           )}
           {product && !line.sure && (
             <Badge variant="outline">{t("stores.basket.checkHowMany")}</Badge>
+          )}
+          {line.sale?.verdict === "lowest" && (
+            <Badge>{t("stores.basket.lowest")}</Badge>
+          )}
+          {line.sale?.verdict === "small" && (
+            <Badge variant="outline">{t("stores.basket.barelyOff")}</Badge>
+          )}
+          {usual && (
+            <span className="text-xs text-muted-foreground">
+              {t("stores.basket.usually", { price: usual })}
+            </span>
           )}
           {saleEnds && (
             <Badge variant="outline">

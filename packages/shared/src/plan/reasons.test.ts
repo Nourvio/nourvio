@@ -82,6 +82,25 @@ describe("reasons", () => {
     ])
   })
 
+  test("say what's on sale it uses, after food to use up", () => {
+    expect(
+      reasonsFor(
+        { ...plain, rating: 5 },
+        {
+          ...noTheme,
+          usesUp: ["spinach"],
+          onSale: { foods: ["chicken thighs"], lowest: true },
+        }
+      )
+    ).toEqual([
+      { kind: "usesUp", foods: ["spinach"] },
+      { kind: "onSale", foods: ["chicken thighs"], lowest: true },
+    ])
+    expect(
+      reasonsFor(plain, { ...noTheme, onSale: { foods: [], lowest: false } })
+    ).toEqual([])
+  })
+
   test("give two at most, strongest first", () => {
     expect(
       reasonsFor(

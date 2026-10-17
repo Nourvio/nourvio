@@ -55,6 +55,7 @@ import {
 } from "@/features/recipes/queries"
 import { RecipeCard } from "@/features/recipes/recipe-card"
 import { RecipeFilters } from "@/features/recipes/recipe-filters"
+import { useDeals } from "@/features/stores/queries"
 import {
   SelectButton,
   SelectionBar,
@@ -81,6 +82,9 @@ export const Route = createFileRoute("/_app/recipes/")({
       ...(search.new === true || search.new === "true"
         ? { new: true as const }
         : {}),
+      ...(search.onSale === true || search.onSale === "true"
+        ? { onSale: true as const }
+        : {}),
       ...((RECIPE_SORTS as readonly unknown[]).includes(search.sort)
         ? { sort: search.sort as RecipeSort }
         : {}),
@@ -102,6 +106,7 @@ function RecipesPage() {
   const navigate = Route.useNavigate()
   const [managingTags, setManagingTags] = React.useState(false)
   const recipes = useInfiniteQuery(recipesQuery(search))
+  const deals = useDeals()
 
   const setSearch = React.useCallback(
     (next: RecipeSearch) => void navigate({ search: next, replace: true }),
@@ -115,7 +120,12 @@ function RecipesPage() {
   )
   useSelectionKeepOnly(selection, shownIds ?? [])
   const filtered = Boolean(
-    search.q || search.tags || search.diets || search.time || search.new
+    search.q ||
+    search.tags ||
+    search.diets ||
+    search.time ||
+    search.new ||
+    search.onSale
   )
   const total = recipes.data?.pages[0]?.total ?? 0
   const items = recipes.data?.pages.flatMap((page) => page.recipes) ?? []
@@ -277,6 +287,7 @@ function RecipesPage() {
                 <RecipeCard
                   key={recipe.id}
                   recipe={recipe}
+                  onSale={deals.recipes.get(recipe.id)}
                   select={{
                     selecting: selection.selecting,
                     picked: selection.isPicked(recipe.id),

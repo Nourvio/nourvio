@@ -53,6 +53,11 @@ export const StoreConnection = defineEntity({
     lastSent: p.json<LastSent>().nullable(),
     /** When its prices and sales were last checked. */
     pricesCheckedAt: p.datetime().nullable(),
+    /**
+     * When each recipe food was last looked up at the store, by food key:
+     * so the daily check spreads its searches out.
+     */
+    priceSearches: p.json<Record<string, string>>().nullable(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

@@ -10,7 +10,10 @@ import {
   NO_THEMES,
   pantryKey,
   reasonsFor,
+  saleNudge,
   themeLabel,
+  worthIt,
+  worthSaying,
   WEEKNIGHTS,
   type Diet,
   type IngredientMark,
@@ -31,12 +34,14 @@ import { decodeDiets } from "../recipes/diet-labels.ts"
 import { photoUrls } from "../recipes/photos.ts"
 import { toNumber, totalMinutes } from "../recipes/recipes.ts"
 import { tagKey, tagsOf } from "../recipes/tags.ts"
+import type { RecipeSale, SuggestSales } from "../stores/prices.ts"
 
 // Fill the week, without AI: a recipe for each empty meal, by the
 // household's tastes and theme nights, not repeating a dish within two
 // weeks, picked at random with a lean towards recipes that use up what's
-// at home and needs using, well-rated ones, ones tagged for the meal and
-// quick ones on weeknights. Each says why.
+// at home and needs using, ones with real deals at the household's store
+// (as much as it leans on sales), well-rated ones, ones tagged for the
+// meal and quick ones on weeknights. Each says why.
 
 /** Don't suggest what was planned (and not skipped) or made this many days around. */
 const NO_REPEAT_DAYS = 14
@@ -126,10 +131,12 @@ function weight(
   recipe: Candidate,
   slot: Slot,
   usesUp: number,
-  leavesOut: boolean
+  leavesOut: boolean,
+  onSale: number
 ) {
   let score = leavesOut ? 0.5 : 1
   if (usesUp > 0) score += 2 + (usesUp - 1) * 0.5
+  score += onSale
   if (recipe.rating) {
     score += recipe.rating >= 4 ? 2 : recipe.rating <= 2 ? -0.75 : 0.5
   } else if (!recipe.lastMadeAt) score += 0.5 // something new to try
@@ -225,7 +232,12 @@ export async function suggestMeals(
   em: EntityManager,
   householdId: string,
   slots: readonly Slot[],
-  options: { exclude?: readonly string[]; random?: () => number } = {}
+  options: {
+    exclude?: readonly string[]
+    random?: () => number
+    /** What's on sale at the household's store, and how much to lean. */
+    sales?: SuggestSales | null
+  } = {}
 ): Promise<Suggestion[]> {
   if (slots.length === 0) return []
   const random = options.random ?? Math.random
@@ -255,6 +267,13 @@ export async function suggestMeals(
       return [recipe.id, [...new Set(foods)]] as const
     })
   )
+  // Real deals it uses, and how much likelier they make it.
+  const deals = (recipe: Candidate): RecipeSale[] =>
+    (options.sales?.recipes.get(recipe.id) ?? []).filter((sale) =>
+      worthIt(sale.verdict)
+    )
+  const nudge = (recipe: Candidate) =>
+    options.sales ? saleNudge(deals(recipe), options.sales.lean) : 0
   const dates = slots.map((slot) => slot.date).sort()
   const nearby = await em.find(PlanEntry, {
     date: {
@@ -350,7 +369,13 @@ export async function suggestMeals(
     const recipe = pick(
       candidatesFor(slot),
       (r) =>
-        weight(r, slot, usesUp.get(r.id)?.length ?? 0, leaveOut(r).length > 0),
+        weight(
+          r,
+          slot,
+          usesUp.get(r.id)?.length ?? 0,
+          leaveOut(r).length > 0,
+          nudge(r)
+        ),
       random
     )
     if (!recipe) continue
@@ -401,6 +426,18 @@ export async function suggestMeals(
             : null,
           weeknightDinner: isWeeknightDinner(slot),
           usesUp: (usesUp.get(recipe.id) ?? []).slice(0, 2),
+          // Said for what changes dinner: chicken on sale, not flour.
+          onSale: options.sales
+            ? {
+                foods: deals(recipe)
+                  .filter(worthSaying)
+                  .map((sale) => sale.name)
+                  .slice(0, 2),
+                lowest: deals(recipe).some(
+                  (sale) => worthSaying(sale) && sale.verdict === "lowest"
+                ),
+              }
+            : null,
           leaveOut: leaveOut(recipe),
         }),
       },

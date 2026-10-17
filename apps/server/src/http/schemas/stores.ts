@@ -1,4 +1,5 @@
 import { z } from "@hono/zod-openapi"
+import { SALE_LEANS, SALE_VERDICTS } from "@merran/shared"
 import { STORE_MODALITIES } from "../../database/entities/index.ts"
 import { IDS, TIMES } from "./examples.ts"
 
@@ -42,7 +43,13 @@ export const StoresStatusSchema = z
       needsRelink: z.boolean().openapi({
         description: "Kroger stopped taking the linked account.",
       }),
-      pricesCheckedAt: z.iso.datetime().nullable(),
+      pricesCheckedAt: z.iso.datetime().nullable().openapi({
+        description: "When its prices and sales were last checked.",
+      }),
+      leanOnSales: z.enum(SALE_LEANS).openapi({
+        description:
+          "How much Fill the week and the autoplan lean on deals: the household setting `stores.leanOnSales`.",
+      }),
     }),
   })
   .openapi("StoresStatus", {
@@ -54,6 +61,7 @@ export const StoresStatusSchema = z
         linked: { by: "Kyle", at: TIMES.created },
         needsRelink: false,
         pricesCheckedAt: null,
+        leanOnSales: "some",
       },
     },
   })
@@ -135,7 +143,13 @@ const LINE = {
   packages: 1,
   sure: true,
   sent: false,
+  sale: { verdict: "sale", usual: 349 },
 }
+
+const VerdictSchema = z.enum(SALE_VERDICTS).openapi("SaleVerdict", {
+  description:
+    "How good a sale is, against what the product usually costs: the lowest in a while, a normal sale, or barely off (under a tenth).",
+})
 
 export const BasketLineSchema = z
   .object({
@@ -152,6 +166,16 @@ export const BasketLineSchema = z
         "How many is worked out from the product's size, not a guess.",
     }),
     sent: z.boolean().openapi({ description: "Sent to the cart last time." }),
+    sale: z
+      .object({
+        verdict: VerdictSchema,
+        usual: z.number().int().nullable().openapi({
+          description:
+            "What it usually costs, in cents: its most common price over 90 days, else its regular price.",
+        }),
+      })
+      .nullable()
+      .openapi({ description: "Its sale today, if it's on one." }),
   })
   .openapi("BasketLine", { example: LINE })
 
@@ -253,3 +277,61 @@ export const KrogerAppTestSchema = z
 export const KrogerAppTestedSchema = z
   .object({ ok: z.literal(true) })
   .openapi("KrogerAppTested", { example: { ok: true } })
+
+export const DealsSchema = z
+  .object({
+    store: z.string().nullable().openapi({
+      description: "The household's store's banner, or null without one.",
+    }),
+    checkedAt: z.iso.datetime().nullable(),
+    leanOnSales: z.enum(SALE_LEANS),
+    deals: z.array(
+      z.object({
+        food: z.string().openapi({ description: "The food: chicken thigh." }),
+        product: ProductSchema,
+        verdict: VerdictSchema,
+        usual: z.number().int().nullable(),
+        off: z.number().openapi({ description: "How much is off: 0.25." }),
+      })
+    ),
+    recipes: z
+      .record(
+        z.string(),
+        z.array(z.object({ name: z.string(), verdict: VerdictSchema }))
+      )
+      .openapi({
+        description:
+          "By recipe id, what each recipe uses that's on sale, named as the recipe has it.",
+      }),
+  })
+  .openapi("Deals", {
+    example: {
+      store: "Fry's",
+      checkedAt: TIMES.created,
+      leanOnSales: "some",
+      deals: [
+        {
+          food: "milk",
+          product: PRODUCT,
+          verdict: "sale",
+          usual: 349,
+          off: 0.14,
+        },
+      ],
+      recipes: { [IDS.lemonChicken]: [{ name: "milk", verdict: "sale" }] },
+    },
+  })
+
+export const PriceCheckSchema = z
+  .object({
+    refreshed: z.number().int().openapi({
+      description: "Products the household keeps, given today's price.",
+    }),
+    searched: z.number().int().openapi({
+      description: "Foods from its recipes looked up at the store.",
+    }),
+    deals: z.number().int().openapi({
+      description: "Foods in its recipes that are a deal now.",
+    }),
+  })
+  .openapi("PriceCheck", { example: { refreshed: 12, searched: 20, deals: 3 } })

@@ -3,6 +3,7 @@ import {
   formatAmount,
   foodKey,
   packagesFor,
+  type SaleJudged,
   type StoreProduct as Product,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
@@ -21,6 +22,7 @@ import {
 import { useAi } from "../ai/run.ts"
 import { resolveTask } from "../ai/status.ts"
 import { householdToday } from "../pantry/pantry.ts"
+import { judgeSales } from "./history.ts"
 import {
   accountToken,
   KROGER,
@@ -48,7 +50,7 @@ const AT_ONCE = 4
 const OPTIONS = 8
 
 /** The household's store, the app, and its connection; or why not. */
-async function ready(deps: BasketDeps, em: EntityManager) {
+export async function ready(deps: BasketDeps, em: EntityManager) {
   const app = await needKrogerApp(deps)
   const connection = await krogerConnection(em)
   if (!connection?.location) {
@@ -136,7 +138,7 @@ const money = (cents: number | null) =>
  * The likeliest product for each thing: the small model's pick when the
  * household has AI, else the first in stock.
  */
-async function choose(
+export async function choose(
   deps: BasketDeps,
   em: EntityManager,
   who: { householdId: string; userId: string | null },
@@ -189,7 +191,7 @@ async function choose(
 }
 
 /** Searches the store for each food, a few at a time. */
-async function searchAll(
+export async function searchAll(
   deps: BasketDeps,
   app: KrogerApp,
   location: StoreLocation,
@@ -224,12 +226,15 @@ export type BasketLine = {
   sure: boolean
   /** Sent last time, so left unticked unless it's ticked again. */
   sent: boolean
+  /** How good its sale is, against what it usually costs; null if none. */
+  sale: { verdict: SaleJudged["verdict"]; usual: number | null } | null
 }
 
 function lineFor(
   item: ShoppingItem,
   kept: StoreProduct | undefined,
-  connection: StoreConnection
+  connection: StoreConnection,
+  sales: Map<string, SaleJudged>
 ): BasketLine {
   const product = kept?.product ?? null
   // Doubles can come back as text from some databases.
@@ -246,6 +251,10 @@ function lineFor(
     packages: connection.lastSent?.items[item.id] ?? packages,
     sure,
     sent: Boolean(connection.lastSent?.items[item.id]),
+    sale: (() => {
+      const judged = product ? sales.get(product.id) : undefined
+      return judged ? { verdict: judged.verdict, usual: judged.usual } : null
+    })(),
   }
 }
 
@@ -316,6 +325,11 @@ export async function krogerBasket(
     })
   }
   await em.flush()
+  const sales = await judgeSales(
+    em,
+    [...kept.values()].map((row) => row.product),
+    await householdToday(em, who.householdId)
+  )
 
   return {
     store: location.banner,
@@ -324,7 +338,7 @@ export async function krogerBasket(
     linked: Boolean(connection.account && !connection.broken),
     sentAt: connection.lastSent?.at ?? null,
     lines: items.map((item) =>
-      lineFor(item, kept.get(foodOf(item)), connection)
+      lineFor(item, kept.get(foodOf(item)), connection, sales)
     ),
   }
 }
@@ -377,7 +391,12 @@ export async function pickKrogerProduct(
   row.chosen = true
   await em.flush()
   await recordPrices(em, options.householdId, [product])
-  return lineFor(item, row, connection)
+  const sales = await judgeSales(
+    em,
+    [product],
+    await householdToday(em, options.householdId)
+  )
+  return lineFor(item, row, connection, sales)
 }
 
 /**

@@ -17,6 +17,12 @@ import type { EventBus } from "../events/events.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import type { JobHandler } from "../jobs/runner.ts"
 import { addFromPlan } from "../list/meals.ts"
+import {
+  freshPrices,
+  salesForSuggest,
+  type PriceDeps,
+  type SuggestSales,
+} from "../stores/prices.ts"
 import { addEntries } from "./plan.ts"
 import { suggestMeals } from "./suggest.ts"
 
@@ -125,7 +131,8 @@ export async function planWeek(
   em: EntityManager,
   householdId: string,
   range: { week: string; from: string; to: string },
-  settings: Pick<AutoplanSettings, "meals" | "addToList">
+  settings: Pick<AutoplanSettings, "meals" | "addToList">,
+  sales: SuggestSales | null = null
 ): Promise<AutoplanRun> {
   const household = await em.findOneOrFail(Household, { id: householdId })
   const themes = household.settings?.themes ?? NO_THEMES
@@ -149,7 +156,7 @@ export async function planWeek(
       slots.push({ date, meal })
     }
   }
-  const suggestions = await suggestMeals(em, householdId, slots)
+  const suggestions = await suggestMeals(em, householdId, slots, { sales })
   if (suggestions.length > 0) {
     await addEntries(
       em,
@@ -210,6 +217,7 @@ function announce(events: EventBus, householdId: string, run: AutoplanRun) {
 export async function planAheadNow(
   em: EntityManager,
   householdId: string,
+  deps: Pick<PriceDeps, "settings">,
   events?: EventBus
 ) {
   const { household, settings } = await settingsOf(em, householdId)
@@ -219,7 +227,8 @@ export async function planAheadNow(
     em,
     householdId,
     { week, from: week, to: addDays(week, 6) },
-    settings
+    settings,
+    await salesForSuggest(deps, em, householdId)
   )
   await noteRun(em, householdId, run)
   if (events) announce(events, householdId, run)
@@ -248,11 +257,14 @@ export const autoplanJob: JobHandler = {
     if (addDays(week, 6) < today) {
       logger.info({ week }, "Too late to plan the week")
     } else if (last?.week !== week) {
+      // This week's sales, if the morning check hasn't seen them yet.
+      await freshPrices(deps, em, householdId)
       run = await planWeek(
         em,
         householdId,
         { week, from: today > week ? today : week, to: addDays(week, 6) },
-        settings
+        settings,
+        await salesForSuggest(deps, em, householdId)
       )
       await noteRun(em, householdId, run)
       announce(deps.events, householdId, run)

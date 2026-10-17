@@ -24,10 +24,10 @@ const route = createRoute({
   },
 })
 
-export default (router: Router, _deps: AppDeps) => {
+export default (router: Router, deps: AppDeps) => {
   router.openapi(route, async (c) => {
     const { em, householdId } = inHousehold(c)
     // The change announces itself, as a request.
-    return c.json(await planAheadNow(em, householdId), 200)
+    return c.json(await planAheadNow(em, householdId, deps), 200)
   })
 }

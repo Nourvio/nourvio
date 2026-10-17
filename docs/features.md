@@ -115,14 +115,14 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | A pool of meals for the week, cooked in any order | Key | Built | |
 | What's next: tonight's dinner, this afternoon's lunch | Key | Built | |
 | Fill the week, re-roll, Something else | Headline | Built | No AI needed |
-| Saying why for each pick: on hand, needs using, not had lately... | Headline | Built | Sales join the reasons with the stores module |
+| Saying why for each pick: on hand, needs using, not had lately... | Headline | Built | With the stores module, what's on sale too |
 | Tastes and rules | Key | Built | A recipe Merran can't read, like one kept in Arabic, isn't suggested to a household with allergies, and says why |
 | Leave it out: dislikes crossed off a recipe instead of ruling it out | Headline | Built | Allergies are never left to chance |
 | Theme nights: tacos on Tuesday, eat out on Friday | Key | Built | |
 | A week that plans itself on a schedule | Headline | Built | |
 | Select meals, repeat last week, clear the rest | Detail | Built | |
-| Leaning on sales | Key | Planned | Module (stores) |
-| Deals worth having: a sale judged against price history | Key | Planned | Module (stores) |
+| Leaning on sales | Key | Built | Module (stores): Fill the week and the weekly autoplan pick recipes with real deals at the household's Kroger store more, as much as its Lean on sales says (off, a little, a lot), and say so; Recipes has an On sale filter |
+| Deals worth having: a sale judged against price history | Key | Built | Module (stores): prices checked each morning and kept by day; each sale is the lowest in a while, a normal sale, or barely off what it usually costs, and only real deals count |
 | AI-ranked suggestions | Detail | Later | |
 
 ## Shopping and the pantry

@@ -1,7 +1,7 @@
 // Saying why: one reason builder for every suggestion, from Fill the week
-// now, and later the autoplan, Today and the assistant. Each reason is data,
-// so the app says it in the reader's language; later slices add usual buys
-// and sales.
+// and the autoplan now, and later Today and the assistant. Each reason is
+// data, so the app says it in the reader's language; a later slice adds
+// usual buys.
 
 export type Reason =
   /** The night's theme, which it fits: "Taco night". */
@@ -10,6 +10,11 @@ export type Reason =
   | { kind: "themeMissed"; label: string }
   /** It uses up food at home that needs using soon: "spinach". */
   | { kind: "usesUp"; foods: string[] }
+  /**
+   * It uses food on sale at the household's store: "chicken thighs",
+   * `lowest` when one is the lowest it's been in a while.
+   */
+  | { kind: "onSale"; foods: string[]; lowest: boolean }
   /** Never made yet. */
   | { kind: "new" }
   /** Not had in a while. */
@@ -37,8 +42,8 @@ const MOST = 2
 
 /**
  * Why a recipe was picked for a meal, strongest first: the night's theme,
- * then food at home it uses up, then something new or not had lately, then
- * a good rating, then quick on a weeknight.
+ * then food at home it uses up, then food on sale, then something new or
+ * not had lately, then a good rating, then quick on a weeknight.
  */
 export function reasonsFor(
   recipe: ReasonRecipe,
@@ -47,6 +52,7 @@ export function reasonsFor(
     theme,
     weeknightDinner,
     usesUp = [],
+    onSale = null,
     leaveOut = [],
   }: {
     /** The household's today, "2026-10-15". */
@@ -55,6 +61,8 @@ export function reasonsFor(
     weeknightDinner: boolean
     /** Food at home to use soon that it uses. */
     usesUp?: readonly string[]
+    /** Food on sale that it uses, worth changing a meal for. */
+    onSale?: { foods: readonly string[]; lowest: boolean } | null
     /** Dislikes it's made without, always said, after the reasons. */
     leaveOut?: readonly { food: string; who: string | null }[]
   }
@@ -68,6 +76,13 @@ export function reasonsFor(
     )
   }
   if (usesUp.length > 0) reasons.push({ kind: "usesUp", foods: [...usesUp] })
+  if (onSale && onSale.foods.length > 0) {
+    reasons.push({
+      kind: "onSale",
+      foods: [...onSale.foods],
+      lowest: onSale.lowest,
+    })
+  }
   if (recipe.lastMadeAt === null) reasons.push({ kind: "new" })
   else {
     const made = new Date(recipe.lastMadeAt).getTime()

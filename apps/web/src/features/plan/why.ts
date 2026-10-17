@@ -30,6 +30,10 @@ export function useWhyText() {
             return t("plan.why.themeMissed", { label: reason.label })
           case "usesUp":
             return t("plan.why.usesUp", { foods: list.format(reason.foods) })
+          case "onSale":
+            return reason.lowest
+              ? t("plan.why.onSaleLowest", { foods: list.format(reason.foods) })
+              : t("plan.why.onSale", { foods: list.format(reason.foods) })
           case "new":
             return t("plan.why.new")
           case "notLately":

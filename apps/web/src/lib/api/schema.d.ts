@@ -3068,6 +3068,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stores/deals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What's on sale
+         * @description What's on sale at the household's store, by food, each sale judged against what the product usually costs (the lowest in a while first), and the recipes they're in. From the prices the household has seen this past week: nothing without a Kroger store. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["listDeals"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stores/kroger": {
         parameters: {
             query?: never;
@@ -3078,7 +3098,7 @@ export interface paths {
         get?: never;
         /**
          * Pick the household's Kroger store
-         * @description Household admins only. The store the household shops at (from `GET /stores/kroger/locations`), and whether orders are picked up or delivered.
+         * @description Household admins only. The store the household shops at (from `GET /stores/kroger/locations`), and whether orders are picked up or delivered. A new store has its prices and sales checked straight away.
          */
         put: operations["setKrogerStore"];
         post?: never;
@@ -3226,6 +3246,26 @@ export interface paths {
          * @description Adds the lines given to the linked account's cart, so many of each, by barcode. Their products are kept as the household's from now on. Kroger's API can only add to a cart: checking out is on Kroger's site. With an API key, it needs the `list: write` permission.
          */
         post: operations["sendKrogerBasket"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stores/kroger/prices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check prices now
+         * @description Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales.
+         */
+        post: operations["checkKrogerPrices"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6343,7 +6383,7 @@ export interface components {
         /** @enum {string} */
         PlanStatus: "planned" | "cooked" | "skipped";
         /**
-         * @description Why a meal was picked: the night's theme ("Taco night"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.
+         * @description Why a meal was picked: the night's theme ("Taco night"), or one nothing fitted; food at home it uses up; food on sale at the household's store; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.
          * @example {
          *       "kind": "notLately",
          *       "weeks": 5
@@ -6361,6 +6401,12 @@ export interface components {
             /** @enum {string} */
             kind: "usesUp";
             foods: string[];
+        } | {
+            /** @enum {string} */
+            kind: "onSale";
+            foods: string[];
+            /** @description One is the lowest it's been in a while. */
+            lowest: boolean;
         } | {
             /** @enum {string} */
             kind: "new";
@@ -9350,7 +9396,8 @@ export interface components {
          *           "at": "2026-10-01T17:30:00.000Z"
          *         },
          *         "needsRelink": false,
-         *         "pricesCheckedAt": null
+         *         "pricesCheckedAt": null,
+         *         "leanOnSales": "some"
          *       }
          *     }
          */
@@ -9373,8 +9420,16 @@ export interface components {
                 } | null;
                 /** @description Kroger stopped taking the linked account. */
                 needsRelink: boolean;
-                /** Format: date-time */
+                /**
+                 * Format: date-time
+                 * @description When its prices and sales were last checked.
+                 */
                 pricesCheckedAt: string | null;
+                /**
+                 * @description How much Fill the week and the autoplan lean on deals: the household setting `stores.leanOnSales`.
+                 * @enum {string}
+                 */
+                leanOnSales: "off" | "some" | "lots";
             };
         };
         /**
@@ -9395,6 +9450,107 @@ export interface components {
             domain: string;
             address: string;
         };
+        /**
+         * @example {
+         *       "store": "Fry's",
+         *       "checkedAt": "2026-10-01T17:30:00.000Z",
+         *       "leanOnSales": "some",
+         *       "deals": [
+         *         {
+         *           "food": "milk",
+         *           "product": {
+         *             "id": "0001111041700",
+         *             "upc": "0001111041700",
+         *             "name": "Kroger 2% Reduced Fat Milk",
+         *             "brand": "Kroger",
+         *             "size": "1 gal",
+         *             "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+         *             "price": 349,
+         *             "salePrice": 299,
+         *             "saleEnds": "2026-10-21",
+         *             "currency": "USD",
+         *             "aisle": "Dairy",
+         *             "inStock": true,
+         *             "url": "https://www.frysfood.com/p/milk/0001111041700"
+         *           },
+         *           "verdict": "sale",
+         *           "usual": 349,
+         *           "off": 0.14
+         *         }
+         *       ],
+         *       "recipes": {
+         *         "0199e8b0-5a10-7a01-8b00-000000000006": [
+         *           {
+         *             "name": "milk",
+         *             "verdict": "sale"
+         *           }
+         *         ]
+         *       }
+         *     }
+         */
+        Deals: {
+            /** @description The household's store's banner, or null without one. */
+            store: string | null;
+            /** Format: date-time */
+            checkedAt: string | null;
+            /** @enum {string} */
+            leanOnSales: "off" | "some" | "lots";
+            deals: {
+                /** @description The food: chicken thigh. */
+                food: string;
+                product: components["schemas"]["StoreProduct"];
+                verdict: components["schemas"]["SaleVerdict"];
+                usual: number | null;
+                /** @description How much is off: 0.25. */
+                off: number;
+            }[];
+            /** @description By recipe id, what each recipe uses that's on sale, named as the recipe has it. */
+            recipes: {
+                [key: string]: {
+                    name: string;
+                    verdict: components["schemas"]["SaleVerdict"];
+                }[];
+            };
+        };
+        /**
+         * @example {
+         *       "id": "0001111041700",
+         *       "upc": "0001111041700",
+         *       "name": "Kroger 2% Reduced Fat Milk",
+         *       "brand": "Kroger",
+         *       "size": "1 gal",
+         *       "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+         *       "price": 349,
+         *       "salePrice": 299,
+         *       "saleEnds": "2026-10-21",
+         *       "currency": "USD",
+         *       "aisle": "Dairy",
+         *       "inStock": true,
+         *       "url": "https://www.frysfood.com/p/milk/0001111041700"
+         *     }
+         */
+        StoreProduct: {
+            id: string;
+            upc: string | null;
+            name: string;
+            brand: string | null;
+            size: string | null;
+            image: string | null;
+            /** @description In the currency's smallest unit: cents. */
+            price: number | null;
+            salePrice: number | null;
+            /** @description The sale's last day. */
+            saleEnds: string | null;
+            currency: string;
+            aisle: string | null;
+            inStock: boolean;
+            url: string | null;
+        };
+        /**
+         * @description How good a sale is, against what the product usually costs: the lowest in a while, a normal sale, or barely off (under a tenth).
+         * @enum {string}
+         */
+        SaleVerdict: "lowest" | "sale" | "small";
         /**
          * @example {
          *       "locationId": "70500822",
@@ -9467,7 +9623,11 @@ export interface components {
          *           "suggested": true,
          *           "packages": 1,
          *           "sure": true,
-         *           "sent": false
+         *           "sent": false,
+         *           "sale": {
+         *             "verdict": "sale",
+         *             "usual": 349
+         *           }
          *         }
          *       ]
          *     }
@@ -9507,7 +9667,11 @@ export interface components {
          *       "suggested": true,
          *       "packages": 1,
          *       "sure": true,
-         *       "sent": false
+         *       "sent": false,
+         *       "sale": {
+         *         "verdict": "sale",
+         *         "usual": 349
+         *       }
          *     }
          */
         BasketLine: {
@@ -9522,40 +9686,12 @@ export interface components {
             sure: boolean;
             /** @description Sent to the cart last time. */
             sent: boolean;
-        };
-        /**
-         * @example {
-         *       "id": "0001111041700",
-         *       "upc": "0001111041700",
-         *       "name": "Kroger 2% Reduced Fat Milk",
-         *       "brand": "Kroger",
-         *       "size": "1 gal",
-         *       "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
-         *       "price": 349,
-         *       "salePrice": 299,
-         *       "saleEnds": "2026-10-21",
-         *       "currency": "USD",
-         *       "aisle": "Dairy",
-         *       "inStock": true,
-         *       "url": "https://www.frysfood.com/p/milk/0001111041700"
-         *     }
-         */
-        StoreProduct: {
-            id: string;
-            upc: string | null;
-            name: string;
-            brand: string | null;
-            size: string | null;
-            image: string | null;
-            /** @description In the currency's smallest unit: cents. */
-            price: number | null;
-            salePrice: number | null;
-            /** @description The sale's last day. */
-            saleEnds: string | null;
-            currency: string;
-            aisle: string | null;
-            inStock: boolean;
-            url: string | null;
+            /** @description Its sale today, if it's on one. */
+            sale: {
+                verdict: components["schemas"]["SaleVerdict"];
+                /** @description What it usually costs, in cents: its most common price over 90 days, else its regular price. */
+                usual: number | null;
+            } | null;
         };
         /**
          * @example {
@@ -9617,6 +9753,21 @@ export interface components {
                 itemId: string;
                 packages: number;
             }[];
+        };
+        /**
+         * @example {
+         *       "refreshed": 12,
+         *       "searched": 20,
+         *       "deals": 3
+         *     }
+         */
+        PriceCheck: {
+            /** @description Products the household keeps, given today's price. */
+            refreshed: number;
+            /** @description Foods from its recipes looked up at the store. */
+            searched: number;
+            /** @description Foods in its recipes that are a deal now. */
+            deals: number;
         };
         /**
          * @example {
@@ -14752,6 +14903,8 @@ export interface operations {
                 maxMinutes?: number;
                 /** @description Only recipes not made yet (true), or only ones made (false). */
                 new?: string;
+                /** @description Only recipes that use a real deal at the household's store (true), from `GET /stores/deals`. */
+                onSale?: string;
                 /** @description Newest added, name, recently changed, top rated, or recently made. */
                 sort?: "newest" | "name" | "updated" | "rating" | "made";
                 limit?: number;
@@ -18921,6 +19074,44 @@ export interface operations {
             };
         };
     };
+    listDeals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its deals. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Deals"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     setKrogerStore: {
         parameters: {
             query?: never;
@@ -19353,6 +19544,71 @@ export interface operations {
             };
             /** @description Kroger stopped taking the account: link it again. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    checkKrogerPrices: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Checked. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheck"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger isn't set up, or there's no store picked. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger's daily limit for the app is used up. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kroger didn't answer. */
+            502: {
                 headers: {
                     [name: string]: unknown;
                 };

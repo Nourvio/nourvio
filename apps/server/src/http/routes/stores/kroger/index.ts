@@ -4,6 +4,7 @@ import basketRoutes from "./basket/index.ts"
 import callbackRoutes from "./callback/index.ts"
 import linkRoutes from "./link/index.ts"
 import locationsRoutes from "./locations/index.ts"
+import pricesRoutes from "./prices/index.ts"
 import productsRoutes from "./products/index.ts"
 import put from "./put.ts"
 import searchRoutes from "./search/index.ts"
@@ -18,4 +19,5 @@ export default (router: Router, deps: AppDeps) => {
   searchRoutes(router, deps)
   productsRoutes(router, deps)
   sendRoutes(router, deps)
+  pricesRoutes(router, deps)
 }

@@ -5,6 +5,7 @@ import type { AppDeps } from "../../core/context.ts"
 import { AppError } from "../../core/errors.ts"
 import { Secret, StoreConnection, User } from "../../database/entities/index.ts"
 import { ACROSS_HOUSEHOLDS } from "../../database/scope.ts"
+import { STORE_SETTINGS } from "../../modules/stores/settings.ts"
 import {
   authorizeUrl,
   exchangeCode,
@@ -65,7 +66,11 @@ export async function krogerConnection(em: EntityManager) {
 }
 
 /** Kroger for the household, as Settings and the list show it. */
-export async function storesStatus(deps: StoreDeps, em: EntityManager) {
+export async function storesStatus(
+  deps: StoreDeps,
+  em: EntityManager,
+  householdId: string
+) {
   const ready = Boolean(await krogerApp(deps.settings))
   const found = await krogerConnection(em)
   const linkedBy = found?.linkedBy?.getEntity()
@@ -83,6 +88,11 @@ export async function storesStatus(deps: StoreDeps, em: EntityManager) {
           : null,
       needsRelink: Boolean(found?.account && found.broken),
       pricesCheckedAt: found?.pricesCheckedAt?.toISOString() ?? null,
+      leanOnSales: await deps.settings.household(
+        em,
+        householdId,
+        STORE_SETTINGS.leanOnSales
+      ),
     },
   }
 }
@@ -97,15 +107,21 @@ export async function setKrogerStore(
   const app = await needKrogerApp(deps)
   const connection = await connectionOf(em, householdId)
   if (changes.locationId) {
+    const before = connection.location?.locationId
     connection.location = await locationById(
       deps.fetcher,
       app,
       changes.locationId
     )
+    // Another store: its prices and sales are looked at afresh.
+    if (before !== changes.locationId) {
+      connection.priceSearches = null
+      connection.pricesCheckedAt = null
+    }
   }
   if (changes.modality) connection.modality = changes.modality
   await em.flush()
-  return storesStatus(deps, em)
+  return storesStatus(deps, em, householdId)
 }
 
 const base64url = (bytes: Buffer) => bytes.toString("base64url")

@@ -6242,6 +6242,34 @@
               "kind": {
                 "type": "string",
                 "enum": [
+                  "onSale"
+                ]
+              },
+              "foods": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 60
+                },
+                "maxItems": 5
+              },
+              "lowest": {
+                "type": "boolean",
+                "description": "One is the lowest it's been in a while."
+              }
+            },
+            "required": [
+              "kind",
+              "foods",
+              "lowest"
+            ]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": [
                   "new"
                 ]
               }
@@ -6347,7 +6375,7 @@
             ]
           }
         ],
-        "description": "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.",
+        "description": "Why a meal was picked: the night's theme (\"Taco night\"), or one nothing fitted; food at home it uses up; food on sale at the household's store; never made; not had in so many weeks; rated so many stars; quick enough for a weeknight. And, after those, the foods to leave out of it for someone who doesn't like them.",
         "example": {
           "kind": "notLately",
           "weeks": 5
@@ -11920,7 +11948,17 @@
                   "string",
                   "null"
                 ],
-                "format": "date-time"
+                "format": "date-time",
+                "description": "When its prices and sales were last checked."
+              },
+              "leanOnSales": {
+                "type": "string",
+                "enum": [
+                  "off",
+                  "some",
+                  "lots"
+                ],
+                "description": "How much Fill the week and the autoplan lean on deals: the household setting `stores.leanOnSales`."
               }
             },
             "required": [
@@ -11929,7 +11967,8 @@
               "modality",
               "linked",
               "needsRelink",
-              "pricesCheckedAt"
+              "pricesCheckedAt",
+              "leanOnSales"
             ]
           }
         },
@@ -11952,7 +11991,8 @@
               "at": "2026-10-01T17:30:00.000Z"
             },
             "needsRelink": false,
-            "pricesCheckedAt": null
+            "pricesCheckedAt": null,
+            "leanOnSales": "some"
           }
         }
       },
@@ -11991,6 +12031,245 @@
           "domain": "frysfood.com",
           "address": "4724 N 20th St, Phoenix, AZ"
         }
+      },
+      "Deals": {
+        "type": "object",
+        "properties": {
+          "store": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The household's store's banner, or null without one."
+          },
+          "checkedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "leanOnSales": {
+            "type": "string",
+            "enum": [
+              "off",
+              "some",
+              "lots"
+            ]
+          },
+          "deals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "food": {
+                  "type": "string",
+                  "description": "The food: chicken thigh."
+                },
+                "product": {
+                  "$ref": "#/components/schemas/StoreProduct"
+                },
+                "verdict": {
+                  "$ref": "#/components/schemas/SaleVerdict"
+                },
+                "usual": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "off": {
+                  "type": "number",
+                  "description": "How much is off: 0.25."
+                }
+              },
+              "required": [
+                "food",
+                "product",
+                "verdict",
+                "usual",
+                "off"
+              ]
+            }
+          },
+          "recipes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "verdict": {
+                    "$ref": "#/components/schemas/SaleVerdict"
+                  }
+                },
+                "required": [
+                  "name",
+                  "verdict"
+                ]
+              }
+            },
+            "description": "By recipe id, what each recipe uses that's on sale, named as the recipe has it."
+          }
+        },
+        "required": [
+          "store",
+          "checkedAt",
+          "leanOnSales",
+          "deals",
+          "recipes"
+        ],
+        "example": {
+          "store": "Fry's",
+          "checkedAt": "2026-10-01T17:30:00.000Z",
+          "leanOnSales": "some",
+          "deals": [
+            {
+              "food": "milk",
+              "product": {
+                "id": "0001111041700",
+                "upc": "0001111041700",
+                "name": "Kroger 2% Reduced Fat Milk",
+                "brand": "Kroger",
+                "size": "1 gal",
+                "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+                "price": 349,
+                "salePrice": 299,
+                "saleEnds": "2026-10-21",
+                "currency": "USD",
+                "aisle": "Dairy",
+                "inStock": true,
+                "url": "https://www.frysfood.com/p/milk/0001111041700"
+              },
+              "verdict": "sale",
+              "usual": 349,
+              "off": 0.14
+            }
+          ],
+          "recipes": {
+            "0199e8b0-5a10-7a01-8b00-000000000006": [
+              {
+                "name": "milk",
+                "verdict": "sale"
+              }
+            ]
+          }
+        }
+      },
+      "StoreProduct": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "upc": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "brand": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "size": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "image": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "price": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "In the currency's smallest unit: cents."
+          },
+          "salePrice": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "saleEnds": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The sale's last day."
+          },
+          "currency": {
+            "type": "string"
+          },
+          "aisle": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "inStock": {
+            "type": "boolean"
+          },
+          "url": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "upc",
+          "name",
+          "brand",
+          "size",
+          "image",
+          "price",
+          "salePrice",
+          "saleEnds",
+          "currency",
+          "aisle",
+          "inStock",
+          "url"
+        ],
+        "example": {
+          "id": "0001111041700",
+          "upc": "0001111041700",
+          "name": "Kroger 2% Reduced Fat Milk",
+          "brand": "Kroger",
+          "size": "1 gal",
+          "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
+          "price": 349,
+          "salePrice": 299,
+          "saleEnds": "2026-10-21",
+          "currency": "USD",
+          "aisle": "Dairy",
+          "inStock": true,
+          "url": "https://www.frysfood.com/p/milk/0001111041700"
+        }
+      },
+      "SaleVerdict": {
+        "type": "string",
+        "enum": [
+          "lowest",
+          "sale",
+          "small"
+        ],
+        "description": "How good a sale is, against what the product usually costs: the lowest in a while, a normal sale, or barely off (under a tenth)."
       },
       "KrogerStoreChanges": {
         "type": "object",
@@ -12130,7 +12409,11 @@
               "suggested": true,
               "packages": 1,
               "sure": true,
-              "sent": false
+              "sent": false,
+              "sale": {
+                "verdict": "sale",
+                "usual": 349
+              }
             }
           ]
         }
@@ -12171,6 +12454,29 @@
           "sent": {
             "type": "boolean",
             "description": "Sent to the cart last time."
+          },
+          "sale": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "verdict": {
+                "$ref": "#/components/schemas/SaleVerdict"
+              },
+              "usual": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "What it usually costs, in cents: its most common price over 90 days, else its regular price."
+              }
+            },
+            "required": [
+              "verdict",
+              "usual"
+            ],
+            "description": "Its sale today, if it's on one."
           }
         },
         "required": [
@@ -12181,7 +12487,8 @@
           "suggested",
           "packages",
           "sure",
-          "sent"
+          "sent",
+          "sale"
         ],
         "example": {
           "itemId": "0199e8b0-5a10-7a01-8b00-00000000001d",
@@ -12205,110 +12512,11 @@
           "suggested": true,
           "packages": 1,
           "sure": true,
-          "sent": false
-        }
-      },
-      "StoreProduct": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "upc": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "name": {
-            "type": "string"
-          },
-          "brand": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "size": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "image": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "price": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "description": "In the currency's smallest unit: cents."
-          },
-          "salePrice": {
-            "type": [
-              "integer",
-              "null"
-            ]
-          },
-          "saleEnds": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "description": "The sale's last day."
-          },
-          "currency": {
-            "type": "string"
-          },
-          "aisle": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "inStock": {
-            "type": "boolean"
-          },
-          "url": {
-            "type": [
-              "string",
-              "null"
-            ]
+          "sent": false,
+          "sale": {
+            "verdict": "sale",
+            "usual": 349
           }
-        },
-        "required": [
-          "id",
-          "upc",
-          "name",
-          "brand",
-          "size",
-          "image",
-          "price",
-          "salePrice",
-          "saleEnds",
-          "currency",
-          "aisle",
-          "inStock",
-          "url"
-        ],
-        "example": {
-          "id": "0001111041700",
-          "upc": "0001111041700",
-          "name": "Kroger 2% Reduced Fat Milk",
-          "brand": "Kroger",
-          "size": "1 gal",
-          "image": "https://www.kroger.com/product/images/medium/front/0001111041700",
-          "price": 349,
-          "salePrice": 299,
-          "saleEnds": "2026-10-21",
-          "currency": "USD",
-          "aisle": "Dairy",
-          "inStock": true,
-          "url": "https://www.frysfood.com/p/milk/0001111041700"
         }
       },
       "StoreProducts": {
@@ -12421,6 +12629,33 @@
               "packages": 1
             }
           ]
+        }
+      },
+      "PriceCheck": {
+        "type": "object",
+        "properties": {
+          "refreshed": {
+            "type": "integer",
+            "description": "Products the household keeps, given today's price."
+          },
+          "searched": {
+            "type": "integer",
+            "description": "Foods from its recipes looked up at the store."
+          },
+          "deals": {
+            "type": "integer",
+            "description": "Foods in its recipes that are a deal now."
+          }
+        },
+        "required": [
+          "refreshed",
+          "searched",
+          "deals"
+        ],
+        "example": {
+          "refreshed": 12,
+          "searched": 20,
+          "deals": 3
         }
       },
       "TelemetryReport": {
@@ -19761,6 +19996,16 @@
           {
             "schema": {
               "type": "string",
+              "description": "Only recipes that use a real deal at the household's store (true), from `GET /stores/deals`."
+            },
+            "required": false,
+            "description": "Only recipes that use a real deal at the household's store (true), from `GET /stores/deals`.",
+            "name": "onSale",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
               "enum": [
                 "newest",
                 "name",
@@ -25600,6 +25845,57 @@
         }
       }
     },
+    "/api/stores/deals": {
+      "get": {
+        "operationId": "listDeals",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "What's on sale",
+        "description": "What's on sale at the household's store, by food, each sale judged against what the product usually costs (the lowest in a while first), and the recipes they're in. From the prices the household has seen this past week: nothing without a Kroger store. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "responses": {
+          "200": {
+            "description": "Its deals.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Deals"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/stores/kroger": {
       "put": {
         "operationId": "setKrogerStore",
@@ -25607,7 +25903,7 @@
           "Stores"
         ],
         "summary": "Pick the household's Kroger store",
-        "description": "Household admins only. The store the household shops at (from `GET /stores/kroger/locations`), and whether orders are picked up or delivered.",
+        "description": "Household admins only. The store the household shops at (from `GET /stores/kroger/locations`), and whether orders are picked up or delivered. A new store has its prices and sales checked straight away.",
         "security": [
           {
             "session": []
@@ -26201,6 +26497,83 @@
           },
           "409": {
             "description": "Kroger stopped taking the account: link it again.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/kroger/prices": {
+      "post": {
+        "operationId": "checkKrogerPrices",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "Check prices now",
+        "description": "Household admins only. What's done each morning by itself: today's prices for the products the household keeps, and a look at the store for foods its recipes use, for their sales.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Checked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PriceCheck"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Kroger isn't set up, or there's no store picked.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Kroger's daily limit for the app is used up.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Kroger didn't answer.",
             "content": {
               "application/json": {
                 "schema": {

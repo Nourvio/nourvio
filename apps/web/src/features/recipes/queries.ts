@@ -38,6 +38,8 @@ export type RecipeSearch = {
   time?: RecipeTime
   /** Only recipes not made yet. */
   new?: true
+  /** Only recipes with a deal at the household's store. */
+  onSale?: true
   sort?: RecipeSort
 }
 
@@ -78,6 +80,7 @@ export const recipesQuery = (search: RecipeSearch) =>
                 : {}),
               ...(search.time ? { maxMinutes: search.time } : {}),
               ...(search.new ? { new: "true" } : {}),
+              ...(search.onSale ? { onSale: "true" } : {}),
               sort: search.sort ?? "newest",
               limit: PAGE,
               offset: pageParam,

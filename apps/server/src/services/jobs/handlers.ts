@@ -9,6 +9,7 @@ import { tidyRunJob } from "../recipes/review/tidy-run.ts"
 import { nutritionRunJob } from "../nutrition/runs.ts"
 import { autoplanJob } from "../plan/autoplan.ts"
 import { readSitesJob } from "../sites/read-job.ts"
+import { checkPricesJob } from "../stores/prices.ts"
 import { importJob } from "../transfer/import.ts"
 import { cleanUpJobsJob } from "./clean-up.ts"
 import type { JobHandler, JobSchedule } from "./runner.ts"
@@ -30,6 +31,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   discoverJob,
   readSitesJob,
   aiPhotoRunJob,
+  checkPricesJob,
 ]
 
 /** Jobs that come round again, in the server's time. */
@@ -39,4 +41,6 @@ export const JOB_SCHEDULES: readonly JobSchedule[] = [
   { kind: sendTelemetryJob.kind, cron: "41 4 * * *" },
   // Each site is read every 6 hours; this finds the ones that are due.
   { kind: readSitesJob.kind, cron: "*/30 * * * *" },
+  // Each household's prices are checked each morning; this finds them.
+  { kind: checkPricesJob.kind, cron: "7,37 * * * *" },
 ]

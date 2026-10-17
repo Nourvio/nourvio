@@ -40,6 +40,7 @@ const KINDS = {
   "telemetry.send": "settings.server.jobs.kinds.telemetry",
   "sites.read": "settings.server.jobs.kinds.readSites",
   "recipes.photos": "settings.server.jobs.kinds.photos",
+  "stores.prices": "settings.server.jobs.kinds.prices",
 } as const
 
 const BADGES = {
