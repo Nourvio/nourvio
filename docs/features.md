@@ -143,6 +143,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Kroger stores (Fry's, Ralphs...): products, send the cart, prices, sales | Key | Built | Module (stores), with the server admin's Kroger developer app: a store by ZIP code, one linked account for the household, Merran's pick and how many for each thing, today's price and sale, sent to the cart by barcode |
 | Costco and any store with a search page | Detail | Built | Find each thing on a store's list on its site, in the app and the extension; stores by country |
 | Buying by the package: the rest of a 2 lb pack goes in the pantry | Key | Built | Module (stores): what was sent to the Kroger cart is put away as the packs bought, with the meals' share set aside and the rest there to use |
+| Every food known by any of its names: brands, regional names (plain flour, coriander leaves), kinds of (a green bell pepper is a bell pepper), a household's own "same as" | Key | Planned | [foods.md](foods.md); one vocabulary for recipes, the list, the pantry, nutrition and the stores |
 | Fill a Walmart cart through the extension | Detail | Planned | Experimental, off by default |
 | Barcode scanning | Detail | Later | |
 

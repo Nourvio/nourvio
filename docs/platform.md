@@ -325,7 +325,7 @@ Carried over from the REFERENCE app, plus what a public project needs:
 - **Each household picks** its country, currency, time zone and first day of the week. The country decides which stores, aisles and nutrition source are offered.
 - **Money** is stored as an amount plus a currency, and shown with the browser's `Intl` formatting. Nothing assumes dollars.
 - **Aisles** come from a list per country, and households can rename, add and reorder them.
-- **Ingredient parsing** starts with English, with the units and words for other languages added as data, not code.
+- **Ingredient parsing** starts with English, with the units and words for other languages added as data, not code. Foods' names in each language are part of the food vocabulary ([foods.md](foods.md)).
 - **The assistant** answers in the person's language.
 - **Imported recipes** keep the language they were written in, for now. With translations, a setting in Settings, You has AI imports written in the person's language instead, translated, saying in the notes what language it was. Diet labels skip ingredient lines in a script they can't read rather than guessing.
 - **Starter collections and suggested sites** are data files per language, open to contributions.

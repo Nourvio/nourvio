@@ -200,7 +200,9 @@ In this order:
 3. Recipe sites and starter collections
 4. AI photos and the server voice (Kokoro, OpenAI)
 5. The browser extension (WXT)
-6. Stores: the adapter, Kroger, link-only stores, prices and sales, deals worth having, buying by the package, costs and budget, and the Walmart cart (experimental)
+6. Stores: the adapter, Kroger, link-only stores, prices and sales, deals worth having, buying by the package, costs and budget
+7. Foods: one vocabulary of foods for recipes, the list, the pantry, nutrition and the stores ([foods.md](foods.md))
+8. The Walmart cart (experimental), which searches by the foods' names
 
 **Done when:** every REFERENCE feature works in Merran. The REFERENCE done-whens for M5, M6, M8, M10 and M11 pass, with the Walmart cart turned on.
 
