@@ -71,7 +71,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Nutrition from the recipe's site | Detail | Built | |
 | Nutrition worked out from USDA data or by AI, with plan totals | Key | Built | Module: a free USDA key; AI estimates without one. Worked out by itself when a recipe's saved, and for the whole library |
 | What recipes cost, and a weekly budget, in any currency | Key | Planned | Module (stores) |
-| AI photos in a consistent style for recipes without one | Key | Planned | Module; a few styles per household |
+| AI photos in a consistent style for recipes without one | Key | Built | Module, off by default; an OpenAI or Google key; four styles per household, one by itself for each new recipe, or the whole library |
 | Recipe translations, step photos, meaning-based search | Detail | Later | |
 
 ## Cooking
@@ -82,7 +82,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Kitchen timers from the steps | Key | Built | |
 | Screen stays on, and your place is kept | Detail | Built | |
 | Hands-free: steps read aloud, voice commands | Key | Built | Uses the device's voice |
-| A better server voice (Kokoro or OpenAI) | Detail | Planned | Module |
+| A better server voice (Kokoro or OpenAI) | Detail | Built | Module; each step read once and kept; the device's own voice when it can't |
 | Swap an ingredient you're out of | Key | Built | AI; for this time or saved to the recipe, with the steps rewritten to match, in cook view too |
 | Turn a cooking note into a suggested edit | Detail | Built | AI |
 

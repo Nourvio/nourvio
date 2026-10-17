@@ -5,6 +5,7 @@ import { pino } from "pino"
 import { createApp, type App } from "../app.ts"
 import { MODULES } from "../modules/index.ts"
 import { startModules, type Module } from "../modules/module.ts"
+import type { MediaMakers } from "../services/ai/media.ts"
 import type { AiModels, Transcriber } from "../services/ai/providers.ts"
 import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import { JOB_HANDLERS } from "../services/jobs/handlers.ts"
@@ -38,6 +39,8 @@ export async function createTestApp(
     ai?: AiModels
     /** Speech to text. Tests never reach a provider. */
     transcribe?: Transcriber
+    /** Pictures and speech. Tests never reach a provider. */
+    media?: MediaMakers
     /** yt-dlp and ffmpeg. By default they aren't there. */
     video?: VideoTools
     /** Kinds of job beyond Merran's own, for tests of the runner. */
@@ -78,6 +81,10 @@ export async function createTestApp(
   const transcribe: Transcriber =
     options.transcribe ??
     (() => Promise.reject(new Error("Tests don't reach AI providers.")))
+  const media: MediaMakers = options.media ?? {
+    image: () => Promise.reject(new Error("Tests don't reach AI providers.")),
+    speech: () => Promise.reject(new Error("Tests don't reach AI providers.")),
+  }
   await startModules(modules, { config, logger, database, settings, video })
   const setupCode = new SetupCode()
   const files = new LocalFileStore(filesDir)
@@ -102,6 +109,7 @@ export async function createTestApp(
       fetcher,
       ai,
       transcribe,
+      media,
       video,
       events,
     },
@@ -119,6 +127,7 @@ export async function createTestApp(
     fetcher,
     ai,
     transcribe,
+    media,
     video,
     jobs,
     events,

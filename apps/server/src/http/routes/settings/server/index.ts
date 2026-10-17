@@ -5,6 +5,7 @@ import get from "./get.ts"
 import jobsRoutes from "./jobs/index.ts"
 import nutritionRoutes from "./nutrition/index.ts"
 import patch from "./patch.ts"
+import voiceRoutes from "./voice/index.ts"
 
 export default (router: Router, deps: AppDeps) => {
   get(router, deps)
@@ -12,4 +13,5 @@ export default (router: Router, deps: AppDeps) => {
   aiRoutes(router, deps)
   jobsRoutes(router, deps)
   nutritionRoutes(router, deps)
+  voiceRoutes(router, deps)
 }

@@ -431,6 +431,14 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
                     ? t("recipes.photo.change")
                     : t("recipes.photo.add")}
                 </DropdownMenuItem>
+                {photo.canMake && (
+                  <DropdownMenuItem onClick={photo.make}>
+                    <HugeiconsIcon icon={AiMagicIcon} strokeWidth={2} />
+                    {recipe.photo
+                      ? t("recipes.photo.makeAnother")
+                      : t("recipes.photo.make")}
+                  </DropdownMenuItem>
+                )}
                 {recipe.photo && (
                   <DropdownMenuItem onClick={() => void photo.remove()}>
                     <HugeiconsIcon icon={ImageRemove01Icon} strokeWidth={2} />

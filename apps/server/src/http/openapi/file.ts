@@ -7,6 +7,7 @@ import { migrate, openDatabase } from "../../database/orm.ts"
 import { MODULES } from "../../modules/index.ts"
 import { createAuth } from "../../services/auth/auth.ts"
 import { SetupCode } from "../../services/auth/setup-code.ts"
+import { createMediaMakers } from "../../services/ai/media.ts"
 import { createPublicFetcher } from "../../services/fetch/public-fetch.ts"
 import {
   createAiModels,
@@ -47,6 +48,7 @@ export async function createOpenApiFile(): Promise<string> {
     const fetcher = createPublicFetcher({ version: config.version })
     const ai = createAiModels()
     const transcribe = createTranscriber()
+    const media = createMediaMakers()
     const video = NO_VIDEO_TOOLS
     const events = createEventBus()
     const app = createApp({
@@ -61,6 +63,7 @@ export async function createOpenApiFile(): Promise<string> {
       fetcher,
       ai,
       transcribe,
+      media,
       video,
       jobs: new JobRunner({
         deps: {
@@ -73,6 +76,7 @@ export async function createOpenApiFile(): Promise<string> {
           fetcher,
           ai,
           transcribe,
+          media,
           video,
           events,
         },

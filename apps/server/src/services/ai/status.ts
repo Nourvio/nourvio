@@ -4,6 +4,7 @@ import {
   nearLimit,
   resolveAi,
   serverLimitFor,
+  type AiProvider,
   type AiTask,
   type HouseholdAi,
   type Resolution,
@@ -62,6 +63,40 @@ async function contextFor(deps: Deps, em: EntityManager, householdId: string) {
 }
 
 /**
+ * A key from one of these providers, from whoever pays for one of a
+ * household's AI tasks, or null: for what only some providers can do,
+ * like speech to text or pictures.
+ */
+export async function keyFrom(
+  deps: Deps,
+  em: EntityManager,
+  options: {
+    householdId: string
+    task: AiTask
+    providers: readonly AiProvider[]
+    /** About what it'll cost, in US dollars, for the monthly limits. */
+    estimate?: number
+  }
+) {
+  const paying = await resolveTask(
+    deps,
+    em,
+    options.householdId,
+    options.task,
+    options.estimate
+  )
+  if (!paying.ok) return null
+  const context = await contextFor(deps, em, options.householdId)
+  const pool =
+    paying.key.source === "household"
+      ? context.own
+      : context.covers
+        ? context.server
+        : []
+  return pool.find((key) => options.providers.includes(key.provider)) ?? null
+}
+
+/**
  * An OpenAI key that can turn a video's speech into text for a household:
  * from whoever pays for its importing, or null.
  */
@@ -70,16 +105,11 @@ export async function canTranscribe(
   em: EntityManager,
   householdId: string
 ) {
-  const importing = await resolveTask(deps, em, householdId, "import")
-  if (!importing.ok) return null
-  const context = await contextFor(deps, em, householdId)
-  const pool =
-    importing.key.source === "household"
-      ? context.own
-      : context.covers
-        ? context.server
-        : []
-  return pool.find((key) => key.provider === "openai") ?? null
+  return keyFrom(deps, em, {
+    householdId,
+    task: "import",
+    providers: ["openai"],
+  })
 }
 
 /** Whose key pays for one of a household's AI tasks, or why nobody's can. */

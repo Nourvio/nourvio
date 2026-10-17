@@ -7,6 +7,7 @@ import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
 import type { Module } from "../../modules/module.ts"
 import type { EventBus } from "../events/events.ts"
+import type { MediaMakers } from "../ai/media.ts"
 import type { AiModels, Transcriber } from "../ai/providers.ts"
 import type { Fetcher } from "../fetch/public-fetch.ts"
 import type { Settings } from "../settings/settings.ts"
@@ -34,6 +35,8 @@ export type JobDeps = {
   ai: AiModels
   /** Speech to text, for videos without captions. */
   transcribe: Transcriber
+  /** Pictures and speech from AI. */
+  media: MediaMakers
   /** yt-dlp and ffmpeg, for video import. */
   video: VideoTools
   /** What changed in each household, so open pages see what a job did. */

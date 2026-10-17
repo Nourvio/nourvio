@@ -39,6 +39,7 @@ const KINDS = {
   "jobs.cleanUp": "settings.server.jobs.kinds.cleanUp",
   "telemetry.send": "settings.server.jobs.kinds.telemetry",
   "sites.read": "settings.server.jobs.kinds.readSites",
+  "recipes.photos": "settings.server.jobs.kinds.photos",
 } as const
 
 const BADGES = {

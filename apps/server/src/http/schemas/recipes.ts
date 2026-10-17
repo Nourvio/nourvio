@@ -182,6 +182,10 @@ export const NutritionSchema = z
 
 export const RecipeSchema = RecipeSummarySchema.extend({
   origin: z.enum(RECIPE_ORIGINS),
+  photoByAi: z.boolean().openapi({
+    description:
+      "Its photo was made by AI, in the household's style. Making another replaces it; a real one always does.",
+  }),
   sourceUrl: z.string().nullable(),
   yieldText: z.string().nullable(),
   prepMinutes: z.number().nullable(),

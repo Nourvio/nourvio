@@ -1,4 +1,5 @@
 import { sendTelemetryJob } from "../../modules/telemetry/send.ts"
+import { aiPhotoRunJob } from "../ai-photos/runs.ts"
 import { appImportJob } from "../importers/job.ts"
 import { purgeDeletedJob } from "../recipes/deleted.ts"
 import { discoverJob } from "../discover/discover.ts"
@@ -28,6 +29,7 @@ export const JOB_HANDLERS: readonly JobHandler[] = [
   noteEditJob,
   discoverJob,
   readSitesJob,
+  aiPhotoRunJob,
 ]
 
 /** Jobs that come round again, in the server's time. */

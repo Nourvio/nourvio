@@ -198,8 +198,8 @@ In this order:
 1. Video import
 2. Nutrition (USDA and AI)
 3. Recipe sites and starter collections
-4. The browser extension (WXT)
-5. AI photos and the server voice (Kokoro, OpenAI)
+4. AI photos and the server voice (Kokoro, OpenAI)
+5. The browser extension (WXT)
 6. Stores: the adapter, Kroger, link-only stores, prices and sales, deals worth having, buying by the package, costs and budget, and the Walmart cart (experimental)
 
 **Done when:** every REFERENCE feature works in Merran. The REFERENCE done-whens for M5, M6, M8, M10 and M11 pass, with the Walmart cart turned on.

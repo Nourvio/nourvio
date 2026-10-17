@@ -7,6 +7,7 @@ import type { Auth } from "../services/auth/auth.ts"
 import type { Authenticated } from "../services/auth/session.ts"
 import type { SetupCode } from "../services/auth/setup-code.ts"
 import type { EventBus } from "../services/events/events.ts"
+import type { MediaMakers } from "../services/ai/media.ts"
 import type { AiModels, Transcriber } from "../services/ai/providers.ts"
 import type { Fetcher } from "../services/fetch/public-fetch.ts"
 import type { JobRunner } from "../services/jobs/runner.ts"
@@ -34,6 +35,8 @@ export type AppDeps = {
   ai: AiModels
   /** Speech to text, for videos without captions. Tests pass a fake. */
   transcribe: Transcriber
+  /** Pictures and speech from AI, for recipe photos and the server voice. Tests pass fakes. */
+  media: MediaMakers
   /** yt-dlp and ffmpeg, for video import. Tests pass a fake. */
   video: VideoTools
   /** Runs background work; routes stop jobs through it. */

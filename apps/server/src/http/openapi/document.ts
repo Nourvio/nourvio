@@ -47,6 +47,16 @@ const TAGS = [
       "Finding new recipes online for a theme, with AI and web search: pages Merran has opened and can import.",
   },
   {
+    name: "Collections",
+    description:
+      "Starter collections: sets of recipes to start a library with, each filled by its rule from the recipe sites Merran reads, around a few hand-picked classics.",
+  },
+  {
+    name: "Sites",
+    description:
+      "Recipe sites a household follows, and their newest recipes, read in the background as Merran, following robots.txt.",
+  },
+  {
     name: "Plan",
     description:
       "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone.",
@@ -65,6 +75,11 @@ const TAGS = [
     name: "Live",
     description:
       "What changes in the household, as it happens: the live updates the app uses, and who has the list open.",
+  },
+  {
+    name: "Voice",
+    description:
+      "The server voice: cook steps read aloud by Kokoro or OpenAI, the same on every device.",
   },
   {
     name: "Settings",

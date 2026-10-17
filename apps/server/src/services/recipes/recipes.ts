@@ -15,6 +15,7 @@ import {
 import { raw, type FilterQuery } from "@mikro-orm/core"
 import type { EntityManager } from "@mikro-orm/sql"
 import { rescaled } from "../nutrition/nutrition.ts"
+import { photoAfterCreate } from "../ai-photos/runs.ts"
 import { nutritionAfterSave } from "../nutrition/runs.ts"
 import {
   CookNote,
@@ -115,6 +116,7 @@ export function describeRecipe(recipe: Recipe, tags: string[]) {
   return {
     ...summarize(recipe, tags),
     origin: recipe.origin,
+    photoByAi: recipe.imageByAi,
     sourceUrl: recipe.sourceUrl ?? null,
     yieldText: recipe.yieldText ?? null,
     prepMinutes: recipe.prepMinutes ?? null,
@@ -316,6 +318,14 @@ export async function createRecipe(
       householdId: options.householdId,
       userId: options.userId,
       recipeId: id,
+    })
+  }
+  if (!options.photoId) {
+    await photoAfterCreate(em, {
+      householdId: options.householdId,
+      userId: options.userId,
+      recipeId: id,
+      origin: options.origin ?? "manual",
     })
   }
   return loadRecipe(em.fork(), id)

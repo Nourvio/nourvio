@@ -352,6 +352,39 @@
         "start_one": "Work out {{count}}",
         "start_other": "Work out all {{count}}",
         "stop": "Stop"
+      },
+      "photos": {
+        "title": "AI photos",
+        "description": "Photos of the finished dish for recipes without one, all in one style so your library looks like one cookbook. They never replace a real photo.",
+        "style": "Photo style",
+        "styles": {
+          "marble": {
+            "name": "Dark plate, white marble",
+            "hint": "Matte charcoal dishes on Carrara marble, in soft daylight."
+          },
+          "rustic": {
+            "name": "Rustic wood",
+            "hint": "Earthenware on a weathered oak table, in warm window light."
+          },
+          "bright": {
+            "name": "Bright and airy",
+            "hint": "White porcelain on pale linen, shot from above."
+          },
+          "moody": {
+            "name": "Dark and moody",
+            "hint": "Slate dishes on black stone, with one dramatic light."
+          }
+        },
+        "noKey": "Making photos needs an OpenAI or Google key: add one under AI above.",
+        "missing_one": "{{count}} recipe has no photo.",
+        "missing_other": "{{count}} recipes have no photo.",
+        "allDone": "Every recipe has a photo.",
+        "going": "Making photos: {{done}} of {{total}}.",
+        "lastRun_one": "Made {{count}} photo.",
+        "lastRun_other": "Made {{count}} photos.",
+        "start_one": "Make {{count}} photo",
+        "start_other": "Make {{count}} photos",
+        "stop": "Stop"
       }
     },
     "lockedBy": "Set on the server, by {{env}}",
@@ -421,7 +454,8 @@
           "purgeDeleted": "Emptying old recipes from Recently deleted",
           "cleanUp": "Clearing out old jobs",
           "telemetry": "Sending the daily summary",
-          "readSites": "Reading recipe sites"
+          "readSites": "Reading recipe sites",
+          "photos": "Making AI photos"
         }
       },
       "video": {
@@ -466,6 +500,42 @@
         "enabled": "Read recipe sites",
         "enabledHint": "Off, households can't follow sites, and collections keep only what's been read already.",
         "saved": "Saved."
+      },
+      "saved": "Saved.",
+      "photos": {
+        "title": "AI photos",
+        "description": "A photo of the finished dish for recipes without one, on a household's OpenAI or Google key: about 1.5¢ a photo with OpenAI, 4¢ with Google. Each household picks how they look. They never replace a real photo.",
+        "enabled": "Make AI photos",
+        "enabledHint": "Households with an OpenAI or Google key can make them, and make them for their whole library.",
+        "auto": "For each new recipe",
+        "autoHint": "One made by itself for a recipe added without a photo: typed in, read from text, or from the assistant. Never for a library moved in at once."
+      },
+      "voice": {
+        "title": "Voice",
+        "description": "Who reads cook steps aloud when cooking hands-free. Each step is read once and kept, and if the server's voice fails, the device's reads instead.",
+        "who": "Who reads aloud",
+        "providers": {
+          "device": "Each device",
+          "kokoro": "Kokoro",
+          "openai": "OpenAI"
+        },
+        "hints": {
+          "device": "Each phone, tablet or computer reads in the best voice it has. Nothing leaves the server.",
+          "kokoro": "Kokoro runs beside Merran, free, and sounds close to a person: the same on every device.",
+          "openai": "OpenAI's voices, about 1.5¢ a minute of reading, on a household's OpenAI key. Without one, its devices read in their own."
+        },
+        "kokoroUrl": "Kokoro's address",
+        "kokoroUrlHint": "Where Kokoro answers, like http://kokoro:8880 from the compose file. It may be on your home network.",
+        "openaiHint": "Hearing a voice costs a fraction of a cent the first time, on your household's OpenAI key.",
+        "voices": "Voices",
+        "otherLanguages_one": "{{count}} voice in other languages",
+        "otherLanguages_other": "{{count}} voices in other languages",
+        "genders": {
+          "woman": "Woman",
+          "man": "Man"
+        },
+        "hear": "Hear {{name}}",
+        "previewFailed": "That voice couldn't be played."
       }
     },
     "transfer": {
@@ -996,7 +1066,12 @@
       "added": "Photo added.",
       "changed": "Photo changed.",
       "removed": "Photo removed.",
-      "alt": "{{name}}"
+      "alt": "{{name}}",
+      "make": "Make one with AI",
+      "makeAnother": "Make another photo",
+      "making": "Making a photo…",
+      "made": "Photo made.",
+      "byAi": "AI photo"
     },
     "facts": {
       "prep": "Prep",

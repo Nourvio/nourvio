@@ -51,6 +51,14 @@
       "description": "Finding new recipes online for a theme, with AI and web search: pages Merran has opened and can import."
     },
     {
+      "name": "Collections",
+      "description": "Starter collections: sets of recipes to start a library with, each filled by its rule from the recipe sites Merran reads, around a few hand-picked classics."
+    },
+    {
+      "name": "Sites",
+      "description": "Recipe sites a household follows, and their newest recipes, read in the background as Merran, following robots.txt."
+    },
+    {
       "name": "Plan",
       "description": "The week plan: meals on days and in the week's pool, what's next, and Fill the week's ideas, each saying why. Today is always the household's, in its time zone."
     },
@@ -65,6 +73,10 @@
     {
       "name": "Live",
       "description": "What changes in the household, as it happens: the live updates the app uses, and who has the list open."
+    },
+    {
+      "name": "Voice",
+      "description": "The server voice: cook steps read aloud by Kokoro or OpenAI, the same on every device."
     },
     {
       "name": "Settings",
@@ -7754,6 +7766,7 @@
             "createdAt": "2026-10-01T17:30:00.000Z",
             "updatedAt": "2026-10-15T18:30:00.000Z",
             "origin": "link",
+            "photoByAi": false,
             "sourceUrl": "https://example.com/lemon-chicken",
             "yieldText": null,
             "prepMinutes": 10,
@@ -7861,6 +7874,10 @@
                   "merran"
                 ]
               },
+              "photoByAi": {
+                "type": "boolean",
+                "description": "Its photo was made by AI, in the household's style. Making another replaces it; a real one always does."
+              },
               "sourceUrl": {
                 "type": [
                   "string",
@@ -7919,6 +7936,7 @@
             },
             "required": [
               "origin",
+              "photoByAi",
               "sourceUrl",
               "yieldText",
               "prepMinutes",
@@ -7958,6 +7976,7 @@
           "createdAt": "2026-10-01T17:30:00.000Z",
           "updatedAt": "2026-10-15T18:30:00.000Z",
           "origin": "link",
+          "photoByAi": false,
           "sourceUrl": "https://example.com/lemon-chicken",
           "yieldText": null,
           "prepMinutes": 10,
@@ -8887,6 +8906,7 @@
             "createdAt": "2026-10-01T17:30:00.000Z",
             "updatedAt": "2026-10-15T18:30:00.000Z",
             "origin": "link",
+            "photoByAi": false,
             "sourceUrl": "https://example.com/lemon-chicken",
             "yieldText": null,
             "prepMinutes": 10,
@@ -9288,6 +9308,149 @@
           "finishedAt": null
         },
         "description": "The latest run, going or finished in the last day."
+      },
+      "PhotoLibrary": {
+        "type": "object",
+        "properties": {
+          "missing": {
+            "type": "integer",
+            "description": "Recipes without a photo."
+          },
+          "ready": {
+            "type": "boolean",
+            "description": "Whether AI photos can be made for the household now."
+          },
+          "why": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "off",
+              "noKey",
+              null
+            ],
+            "description": "Why not: turned off on the server, or no OpenAI or Google key for the household."
+          },
+          "style": {
+            "type": "string",
+            "enum": [
+              "marble",
+              "rustic",
+              "bright",
+              "moody"
+            ],
+            "description": "How the household's photos look; change it at `PATCH /settings/household` (`photos.style`)."
+          },
+          "run": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PhotoRun"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The latest run, going or finished in the last day."
+          }
+        },
+        "required": [
+          "missing",
+          "ready",
+          "why",
+          "style",
+          "run"
+        ],
+        "example": {
+          "missing": 30,
+          "ready": true,
+          "why": null,
+          "style": "marble",
+          "run": {
+            "id": "0199e8b0-5a10-7a01-8b00-000000000033",
+            "status": "running",
+            "total": 30,
+            "done": 8,
+            "made": 8,
+            "failed": 0,
+            "stopped": null,
+            "startedAt": "2026-10-15T18:30:00.000Z",
+            "finishedAt": null
+          }
+        }
+      },
+      "PhotoRun": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "queued",
+              "running",
+              "done",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "total": {
+            "type": "integer"
+          },
+          "done": {
+            "type": "integer"
+          },
+          "made": {
+            "type": "integer"
+          },
+          "failed": {
+            "type": "integer"
+          },
+          "stopped": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why it stopped before the end, when it did."
+          },
+          "startedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "total",
+          "done",
+          "made",
+          "failed",
+          "stopped",
+          "startedAt",
+          "finishedAt"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-000000000033",
+          "status": "running",
+          "total": 30,
+          "done": 8,
+          "made": 8,
+          "failed": 0,
+          "stopped": null,
+          "startedAt": "2026-10-15T18:30:00.000Z",
+          "finishedAt": null
+        }
       },
       "Tag": {
         "type": "object",
@@ -9990,6 +10153,7 @@
             "createdAt": "2026-10-01T17:30:00.000Z",
             "updatedAt": "2026-10-15T18:30:00.000Z",
             "origin": "link",
+            "photoByAi": false,
             "sourceUrl": "https://example.com/lemon-chicken",
             "yieldText": null,
             "prepMinutes": 10,
@@ -11021,6 +11185,179 @@
         },
         "example": {}
       },
+      "VoiceSettings": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "device",
+              "kokoro",
+              "openai"
+            ]
+          },
+          "kokoroUrl": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "voices": {
+            "type": "object",
+            "properties": {
+              "kokoro": {
+                "type": "string"
+              },
+              "openai": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "kokoro",
+              "openai"
+            ],
+            "description": "The voice picked for each."
+          },
+          "kokoro": {
+            "type": "object",
+            "properties": {
+              "voices": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "accent": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "gender": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "enum": [
+                        "woman",
+                        "man",
+                        null
+                      ]
+                    },
+                    "english": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "name",
+                    "accent",
+                    "gender",
+                    "english"
+                  ]
+                }
+              },
+              "error": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Why Kokoro couldn't say which voices it has."
+              }
+            },
+            "required": [
+              "voices",
+              "error"
+            ]
+          },
+          "openai": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name"
+              ]
+            }
+          }
+        },
+        "required": [
+          "provider",
+          "kokoroUrl",
+          "voices",
+          "kokoro",
+          "openai"
+        ],
+        "example": {
+          "provider": "kokoro",
+          "kokoroUrl": "http://kokoro:8880",
+          "voices": {
+            "kokoro": "af_heart",
+            "openai": "marin"
+          },
+          "kokoro": {
+            "voices": [
+              {
+                "id": "af_heart",
+                "name": "Heart",
+                "accent": "American",
+                "gender": "woman",
+                "english": true
+              }
+            ],
+            "error": null
+          },
+          "openai": [
+            {
+              "id": "marin",
+              "name": "Marin"
+            }
+          ]
+        }
+      },
+      "VoicePreview": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "kokoro",
+              "openai"
+            ]
+          },
+          "voice": {
+            "type": "string",
+            "pattern": "^[a-z0-9_-]{1,40}$/i"
+          },
+          "kokoroUrl": {
+            "type": "string",
+            "maxLength": 500,
+            "format": "uri",
+            "description": "Kokoro's address, to try one before saving it."
+          }
+        },
+        "required": [
+          "provider",
+          "voice"
+        ],
+        "example": {
+          "provider": "kokoro",
+          "voice": "bf_emma"
+        }
+      },
       "ShareOutcome": {
         "type": "object",
         "properties": {
@@ -11464,6 +11801,48 @@
           "households": "1",
           "people": "2-5",
           "recipes": "100-499"
+        }
+      },
+      "HouseholdVoice": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "device",
+              "kokoro",
+              "openai"
+            ],
+            "description": "Who the server admin picked to read aloud."
+          },
+          "on": {
+            "type": "boolean",
+            "description": "Whether the server reads aloud for this household: false means each device reads in its own voice."
+          }
+        },
+        "required": [
+          "provider",
+          "on"
+        ],
+        "example": {
+          "provider": "kokoro",
+          "on": true
+        }
+      },
+      "Speak": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "example": {
+          "text": "Bring a large pot of salted water to the boil."
         }
       },
       "User": {
@@ -20103,6 +20482,208 @@
         }
       }
     },
+    "/api/recipes/photos": {
+      "get": {
+        "operationId": "getPhotoLibrary",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "AI photos across the library",
+        "description": "How many recipes have no photo, whether AI photos can be made for the household and why not, its photo style, and the latest run making them. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "The library.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoLibrary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "operationId": "startPhotoRun",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Make AI photos for the library",
+        "description": "A photo for every recipe without one, in the household's style, in the background, on its OpenAI or Google key. One at a time: starting another gives back the one going. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "responses": {
+          "202": {
+            "description": "Started.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoRun"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Every recipe has a photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "AI photos are off on the server, or the household has no key for them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/photos/{runId}/stop": {
+      "post": {
+        "operationId": "stopPhotoRun",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Stop making AI photos",
+        "description": "The photos made stay. The one being made finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-000000000033"
+            },
+            "required": true,
+            "name": "runId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Stopped, or stopping.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoRun"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such run in this household.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has already finished.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes/tags": {
       "get": {
         "operationId": "listTags",
@@ -21857,6 +22438,100 @@
         }
       }
     },
+    "/api/recipes/{recipe}/photo/make": {
+      "post": {
+        "operationId": "makeRecipePhoto",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Make a photo with AI",
+        "description": "A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It takes up to a minute. With an API key, it needs the `recipes: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "description": "The recipe's id, or its slug.",
+              "example": "lemon-chicken"
+            },
+            "required": true,
+            "description": "The recipe's id, or its slug.",
+            "name": "recipe",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The recipe, with its new photo.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Recipe"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such recipe.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "It has a real photo, which an AI one never replaces.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "AI photos are off on the server, or the household has no key for them.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/recipes/{recipe}/rating": {
       "put": {
         "operationId": "rateRecipe",
@@ -23443,6 +24118,121 @@
         }
       }
     },
+    "/api/settings/server/voice": {
+      "get": {
+        "operationId": "getVoiceSettings",
+        "tags": [
+          "Settings"
+        ],
+        "summary": "The server voice",
+        "description": "Server admins only. Who reads aloud, Kokoro's address, the voice picked for each, and the voices Kokoro and OpenAI have. Change them at `PATCH /settings/server` (`voice.*`).",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The server voice.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VoiceSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/settings/server/voice/preview": {
+      "post": {
+        "operationId": "previewVoice",
+        "tags": [
+          "Settings"
+        ],
+        "summary": "Hear a voice",
+        "description": "Server admins only. A sample cook step read in any Kokoro or OpenAI voice, before it's picked: made once and kept. OpenAI's is on an OpenAI key of the admin's household, a fraction of a cent the first time.",
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VoicePreview"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The reading, as MP3.",
+            "content": {
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Kokoro didn't answer, or there's no OpenAI key.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/share": {
       "post": {
         "operationId": "shareToMerran",
@@ -23972,6 +24762,129 @@
           },
           "403": {
             "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/voice": {
+      "get": {
+        "operationId": "getVoice",
+        "tags": [
+          "Voice"
+        ],
+        "summary": "Whether the server reads aloud",
+        "description": "For the cook view: whether the server reads steps aloud for the household (Kokoro, or OpenAI on one of its keys), or each device reads in its own voice. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "The household's voice.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HouseholdVoice"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/voice/speak": {
+      "post": {
+        "operationId": "speak",
+        "tags": [
+          "Voice"
+        ],
+        "summary": "Read some text aloud",
+        "description": "In the server's voice, as MP3: a cook step, an amount, a timer. Each piece of text is read once per voice and kept, so it's never paid for twice. When the server doesn't read aloud for the household, it says so, and the device reads in its own voice. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Speak"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The reading, as MP3.",
+            "content": {
+              "audio/mpeg": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The server doesn't read aloud for the household.",
             "content": {
               "application/json": {
                 "schema": {

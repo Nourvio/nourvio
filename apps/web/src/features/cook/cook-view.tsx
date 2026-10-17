@@ -352,9 +352,12 @@ export function CookView({
     },
   })
 
-  // Each new page is read aloud while hands-free is on.
+  // Each new page is read aloud while hands-free is on, with the next
+  // one made ready in the server's voice.
   React.useEffect(() => {
-    if (!handsFree || lastRead.current === page) return
+    if (!handsFree) return
+    if (!isLast) voice.prepare(textForPage(page + 1))
+    if (lastRead.current === page) return
     lastRead.current = page
     voice.speak(textForPage(page))
     // Only turning hands-free on or a new page reads aloud, not each render.

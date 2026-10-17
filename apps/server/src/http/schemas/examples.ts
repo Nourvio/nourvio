@@ -47,6 +47,7 @@ export const IDS = {
   followedSite: id(48),
   siteRecipe: id(49),
   otherSiteRecipe: id(50),
+  photoRun: id(51),
 }
 
 export const TIMES = {
@@ -181,6 +182,7 @@ export const RECIPE_SUMMARY = {
 export const RECIPE = {
   ...RECIPE_SUMMARY,
   origin: "link" as const,
+  photoByAi: false,
   sourceUrl: "https://example.com/lemon-chicken",
   yieldText: null,
   prepMinutes: 10,

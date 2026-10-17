@@ -17,6 +17,7 @@ import settingsRoutes from "./settings/index.ts"
 import shareRoutes from "./share/index.ts"
 import sitesRoutes from "./sites/index.ts"
 import telemetryRoutes from "./telemetry/index.ts"
+import voiceRoutes from "./voice/index.ts"
 
 /**
  * Every route under /api. Each part of a route's path is a folder, and
@@ -41,4 +42,5 @@ export default (router: Router, deps: AppDeps) => {
   shareRoutes(router, deps)
   sitesRoutes(router, deps)
   telemetryRoutes(router, deps)
+  voiceRoutes(router, deps)
 }

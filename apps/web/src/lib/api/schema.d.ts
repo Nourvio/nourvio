@@ -2116,6 +2116,50 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recipes/photos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * AI photos across the library
+         * @description How many recipes have no photo, whether AI photos can be made for the household and why not, its photo style, and the latest run making them. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["getPhotoLibrary"];
+        put?: never;
+        /**
+         * Make AI photos for the library
+         * @description A photo for every recipe without one, in the household's style, in the background, on its OpenAI or Google key. One at a time: starting another gives back the one going. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["startPhotoRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/photos/{runId}/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop making AI photos
+         * @description The photos made stay. The one being made finishes first, so the answer may still say it's running. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["stopPhotoRun"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/tags": {
         parameters: {
             query?: never;
@@ -2423,6 +2467,26 @@ export interface paths {
          * @description The photo is deleted. With an API key, it needs the `recipes: write` permission.
          */
         delete: operations["deleteRecipePhoto"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/recipes/{recipe}/photo/make": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Make a photo with AI
+         * @description A photo of the finished dish in the household's style, on its OpenAI or Google key: for a recipe without a photo, or in place of one made by AI before. It takes up to a minute. With an API key, it needs the `recipes: write` permission.
+         */
+        post: operations["makeRecipePhoto"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -2800,6 +2864,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/settings/server/voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The server voice
+         * @description Server admins only. Who reads aloud, Kokoro's address, the voice picked for each, and the voices Kokoro and OpenAI have. Change them at `PATCH /settings/server` (`voice.*`).
+         */
+        get: operations["getVoiceSettings"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/settings/server/voice/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hear a voice
+         * @description Server admins only. A sample cook step read in any Kokoro or OpenAI voice, before it's picked: made once and kept. OpenAI's is on an OpenAI key of the admin's household, a fraction of a cent the first time.
+         */
+        post: operations["previewVoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/share": {
         parameters: {
             query?: never;
@@ -2938,6 +3042,46 @@ export interface paths {
         get: operations["getTelemetryReport"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/voice": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Whether the server reads aloud
+         * @description For the cook view: whether the server reads steps aloud for the household (Kokoro, or OpenAI on one of its keys), or each device reads in its own voice. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["getVoice"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/voice/speak": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read some text aloud
+         * @description In the server's voice, as MP3: a cook step, an amount, a timer. Each piece of text is read once per voice and kept, so it's never paid for twice. When the server doesn't read aloud for the household, it says so, and the device reads in its own voice. With an API key, it needs the `recipes: read` permission.
+         */
+        post: operations["speak"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6761,6 +6905,7 @@ export interface components {
          *         "createdAt": "2026-10-01T17:30:00.000Z",
          *         "updatedAt": "2026-10-15T18:30:00.000Z",
          *         "origin": "link",
+         *         "photoByAi": false,
          *         "sourceUrl": "https://example.com/lemon-chicken",
          *         "yieldText": null,
          *         "prepMinutes": 10,
@@ -6878,6 +7023,7 @@ export interface components {
          *       "createdAt": "2026-10-01T17:30:00.000Z",
          *       "updatedAt": "2026-10-15T18:30:00.000Z",
          *       "origin": "link",
+         *       "photoByAi": false,
          *       "sourceUrl": "https://example.com/lemon-chicken",
          *       "yieldText": null,
          *       "prepMinutes": 10,
@@ -6965,6 +7111,8 @@ export interface components {
         Recipe: components["schemas"]["RecipeSummary"] & {
             /** @enum {string} */
             origin: "link" | "video" | "text" | "photo" | "manual" | "assistant" | "mealie" | "paprika" | "merran";
+            /** @description Its photo was made by AI, in the household's style. Making another replaces it; a real one always does. */
+            photoByAi: boolean;
             sourceUrl: string | null;
             yieldText: string | null;
             prepMinutes: number | null;
@@ -7348,6 +7496,7 @@ export interface components {
          *         "createdAt": "2026-10-01T17:30:00.000Z",
          *         "updatedAt": "2026-10-15T18:30:00.000Z",
          *         "origin": "link",
+         *         "photoByAi": false,
          *         "sourceUrl": "https://example.com/lemon-chicken",
          *         "yieldText": null,
          *         "prepMinutes": 10,
@@ -7601,6 +7750,71 @@ export interface components {
             /** Format: date-time */
             finishedAt: string | null;
         } | null;
+        /**
+         * @example {
+         *       "missing": 30,
+         *       "ready": true,
+         *       "why": null,
+         *       "style": "marble",
+         *       "run": {
+         *         "id": "0199e8b0-5a10-7a01-8b00-000000000033",
+         *         "status": "running",
+         *         "total": 30,
+         *         "done": 8,
+         *         "made": 8,
+         *         "failed": 0,
+         *         "stopped": null,
+         *         "startedAt": "2026-10-15T18:30:00.000Z",
+         *         "finishedAt": null
+         *       }
+         *     }
+         */
+        PhotoLibrary: {
+            /** @description Recipes without a photo. */
+            missing: number;
+            /** @description Whether AI photos can be made for the household now. */
+            ready: boolean;
+            /**
+             * @description Why not: turned off on the server, or no OpenAI or Google key for the household.
+             * @enum {string|null}
+             */
+            why: "off" | "noKey" | null;
+            /**
+             * @description How the household's photos look; change it at `PATCH /settings/household` (`photos.style`).
+             * @enum {string}
+             */
+            style: "marble" | "rustic" | "bright" | "moody";
+            /** @description The latest run, going or finished in the last day. */
+            run: components["schemas"]["PhotoRun"] | null;
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-000000000033",
+         *       "status": "running",
+         *       "total": 30,
+         *       "done": 8,
+         *       "made": 8,
+         *       "failed": 0,
+         *       "stopped": null,
+         *       "startedAt": "2026-10-15T18:30:00.000Z",
+         *       "finishedAt": null
+         *     }
+         */
+        PhotoRun: {
+            id: string;
+            /** @enum {string} */
+            status: "queued" | "running" | "done" | "failed" | "cancelled";
+            total: number;
+            done: number;
+            made: number;
+            failed: number;
+            /** @description Why it stopped before the end, when it did. */
+            stopped: string | null;
+            /** Format: date-time */
+            startedAt: string | null;
+            /** Format: date-time */
+            finishedAt: string | null;
+        };
         /**
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-000000000008",
@@ -7953,6 +8167,7 @@ export interface components {
          *         "createdAt": "2026-10-01T17:30:00.000Z",
          *         "updatedAt": "2026-10-15T18:30:00.000Z",
          *         "origin": "link",
+         *         "photoByAi": false,
          *         "sourceUrl": "https://example.com/lemon-chicken",
          *         "yieldText": null,
          *         "prepMinutes": 10,
@@ -8528,6 +8743,76 @@ export interface components {
         };
         /**
          * @example {
+         *       "provider": "kokoro",
+         *       "kokoroUrl": "http://kokoro:8880",
+         *       "voices": {
+         *         "kokoro": "af_heart",
+         *         "openai": "marin"
+         *       },
+         *       "kokoro": {
+         *         "voices": [
+         *           {
+         *             "id": "af_heart",
+         *             "name": "Heart",
+         *             "accent": "American",
+         *             "gender": "woman",
+         *             "english": true
+         *           }
+         *         ],
+         *         "error": null
+         *       },
+         *       "openai": [
+         *         {
+         *           "id": "marin",
+         *           "name": "Marin"
+         *         }
+         *       ]
+         *     }
+         */
+        VoiceSettings: {
+            /** @enum {string} */
+            provider: "device" | "kokoro" | "openai";
+            kokoroUrl: string | null;
+            /** @description The voice picked for each. */
+            voices: {
+                kokoro: string;
+                openai: string;
+            };
+            kokoro: {
+                voices: {
+                    id: string;
+                    name: string;
+                    accent: string | null;
+                    /** @enum {string|null} */
+                    gender: "woman" | "man" | null;
+                    english: boolean;
+                }[];
+                /** @description Why Kokoro couldn't say which voices it has. */
+                error: string | null;
+            };
+            openai: {
+                id: string;
+                name: string;
+            }[];
+        };
+        /**
+         * @example {
+         *       "provider": "kokoro",
+         *       "voice": "bf_emma"
+         *     }
+         */
+        VoicePreview: {
+            /** @enum {string} */
+            provider: "kokoro" | "openai";
+            voice: string;
+            /**
+             * Format: uri
+             * @description Kokoro's address, to try one before saving it.
+             */
+            kokoroUrl?: string;
+        };
+        /**
+         * @example {
          *       "outcome": "added",
          *       "code": null,
          *       "message": "Added Lemon Chicken to Merran.",
@@ -8793,6 +9078,29 @@ export interface components {
             households: string;
             people: string;
             recipes: string;
+        };
+        /**
+         * @example {
+         *       "provider": "kokoro",
+         *       "on": true
+         *     }
+         */
+        HouseholdVoice: {
+            /**
+             * @description Who the server admin picked to read aloud.
+             * @enum {string}
+             */
+            provider: "device" | "kokoro" | "openai";
+            /** @description Whether the server reads aloud for this household: false means each device reads in its own voice. */
+            on: boolean;
+        };
+        /**
+         * @example {
+         *       "text": "Bring a large pot of salted water to the boil."
+         *     }
+         */
+        Speak: {
+            text: string;
         };
         User: {
             readonly id: string;
@@ -14886,6 +15194,158 @@ export interface operations {
             };
         };
     };
+    getPhotoLibrary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The library. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoLibrary"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    startPhotoRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Started. */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoRun"];
+                };
+            };
+            /** @description Every recipe has a photo. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description AI photos are off on the server, or the household has no key for them. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    stopPhotoRun: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                runId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Stopped, or stopping. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PhotoRun"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such run in this household. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has already finished. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listTags: {
         parameters: {
             query?: never;
@@ -16078,6 +16538,74 @@ export interface operations {
             };
         };
     };
+    makeRecipePhoto: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The recipe's id, or its slug. */
+                recipe: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The recipe, with its new photo. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Recipe"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such recipe. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description It has a real photo, which an AI one never replaces. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description AI photos are off on the server, or the household has no key for them. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     rateRecipe: {
         parameters: {
             query?: never;
@@ -17228,6 +17756,95 @@ export interface operations {
             };
         };
     };
+    getVoiceSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The server voice. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VoiceSettings"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    previewVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VoicePreview"];
+            };
+        };
+        responses: {
+            /** @description The reading, as MP3. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": string;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Kokoro didn't answer, or there's no OpenAI key. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     shareToMerran: {
         parameters: {
             query?: never;
@@ -17616,6 +18233,95 @@ export interface operations {
             };
             /** @description Not allowed. */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    getVoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The household's voice. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HouseholdVoice"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    speak: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Speak"];
+            };
+        };
+        responses: {
+            /** @description The reading, as MP3. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "audio/mpeg": string;
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The server doesn't read aloud for the household. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

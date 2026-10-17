@@ -10,10 +10,10 @@ Merran's core needs nothing but Merran itself: it runs on SQLite out of the box,
 |---|---|---|---|
 | **Core** | Accounts and households, recipes (typed in, or imported from a link's recipe data), cook view, plan, list, pantry, export and import, the API, guided tours and help | A database: SQLite (built in) or Postgres | Always |
 | **AI** | The assistant, AI import (text, photos, pages without recipe data), tidy up, swaps, cooking notes into edits, Discover, receipts, AI nutrition estimates | An AI key at the server or the household (see [AI](#ai)) | When a key exists |
-| **AI photos** | A photo for recipes without one | An AI key with an image model | Off |
+| **AI photos** | A photo for recipes without one, in one of four styles a household picks | An OpenAI or Google key | Off |
 | **Video import** | TikTok, YouTube, Instagram and Facebook links | yt-dlp and ffmpeg (in the image), an AI key | On |
 | **Nutrition** | Calculated nutrition | A USDA key (free), optionally an AI key | When a key exists |
-| **Voice** | The server reads cook steps aloud | Kokoro (an optional container) or an AI key with speech | Off (the device's own voice always works) |
+| **Voice** | The server reads cook steps aloud, each step read once and kept | Kokoro (an optional container) or an OpenAI key | Off, unless Kokoro's address is set (the device's own voice always works) |
 | **Recipe sites** | Reading recipe sites' feeds: following sites, starter collections | Nothing | On |
 | **Stores** | Products, prices, sales, costs, sending a list to a store | Per store: Kroger needs a free developer app; link-only stores need nothing | Off |
 | **Browser extension** | Import from any page, the list in a side panel, store carts | The extension, an API key | On |
@@ -161,9 +161,11 @@ All through AI SDK 7, behind Merran's own thin layer.
 | Receipts | Small | Needs images for photos |
 | Discover | Small | Needs web search |
 | Prep reminders | Small | Reading steps for "marinate overnight" |
-| Photos | Image model | |
-| Transcription | Speech-to-text model | Video import without captions |
-| Voice | Text-to-speech model | Or Kokoro |
+| Photos | Image model | GPT Image 1 Mini or Gemini 2.5 Flash Image, on an OpenAI or Google key from whoever pays for importing |
+| Transcription | Speech-to-text model | Video import without captions, on an OpenAI key from whoever pays for importing |
+| Voice | Text-to-speech model | gpt-4o-mini-tts on an OpenAI key from whoever pays for the assistant, or Kokoro |
+
+Photos, transcription and the voice aren't tasks with a model to pick: they use a fixed model from the first key of a provider that can, among the keys paying for the task named, and count towards its spend.
 
 Every task can have its own model; otherwise it uses the default large or small model for whoever's paying.
 

@@ -11,6 +11,7 @@ import { migrate, openDatabase, type Database } from "./database/orm.ts"
 import { MODULES } from "./modules/index.ts"
 import { startModules } from "./modules/module.ts"
 import { createPublicFetcher } from "./services/fetch/public-fetch.ts"
+import { createMediaMakers } from "./services/ai/media.ts"
 import { createAiModels, createTranscriber } from "./services/ai/providers.ts"
 import { createEventBus } from "./services/events/events.ts"
 import { JOB_HANDLERS, JOB_SCHEDULES } from "./services/jobs/handlers.ts"
@@ -71,6 +72,7 @@ const files = new LocalFileStore(join(config.dataDir, "files"))
 const fetcher = createPublicFetcher({ version: config.version })
 const ai = createAiModels()
 const transcribe = createTranscriber()
+const media = createMediaMakers()
 const events = createEventBus()
 const jobs = new JobRunner({
   deps: {
@@ -83,6 +85,7 @@ const jobs = new JobRunner({
     fetcher,
     ai,
     transcribe,
+    media,
     video,
     events,
   },
@@ -102,6 +105,7 @@ const app = createApp({
   fetcher,
   ai,
   transcribe,
+  media,
   video,
   jobs,
   events,
