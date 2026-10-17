@@ -200,7 +200,42 @@ function SectionChange({
           after={<MarkGroups lines={after.marks ?? []} />}
         />
       )
+    case "foods":
+      return (
+        <BeforeAfter
+          tidied={tidied}
+          before={<NamedFoods lines={before.foods ?? []} />}
+          after={<NamedFoods lines={after.foods ?? []} />}
+        />
+      )
   }
+}
+
+/** Lines and the food each was said to be, for the ones that have one. */
+function NamedFoods({
+  lines,
+}: {
+  lines: readonly { line: string; food: string | null }[]
+}) {
+  const { t } = useTranslation()
+  const named = lines.filter((line) => line.food)
+  if (named.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {t("recipes.tidy.noFood")}
+      </p>
+    )
+  }
+  return (
+    <ul className="grid gap-1 text-sm">
+      {named.map(({ line, food }) => (
+        <li key={line}>
+          {line} <span className="text-muted-foreground">→</span>{" "}
+          <span className="font-medium">{food}</span>
+        </li>
+      ))}
+    </ul>
+  )
 }
 
 function BeforeAfter({

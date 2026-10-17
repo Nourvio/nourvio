@@ -14,6 +14,7 @@ import {
   ShoppingItem,
   StoreProduct,
 } from "../../database/entities/index.ts"
+import { householdKeys } from "../list/food-aliases.ts"
 import { findList } from "../list/lists.ts"
 import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
 import { KROGER, krogerConnection } from "../stores/connections.ts"
@@ -33,6 +34,7 @@ export async function putAway(
   householdId: string,
   { list }: { list?: string | null } = {}
 ) {
+  const keyOf = await householdKeys(em)
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const household = await tx.findOneOrFail(Household, { id: householdId })
     const isOnHand = onHandTest(
@@ -59,7 +61,7 @@ export async function putAway(
       const quantity = bought.quantity
       tx.create(Purchase, {
         household: householdId,
-        foodKey: foodKey(item.name),
+        foodKey: item.foodKey ?? keyOf(item.name),
         name: item.name,
         quantity,
         unit: bought.unit,

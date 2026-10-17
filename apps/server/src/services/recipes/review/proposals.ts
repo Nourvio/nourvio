@@ -1,4 +1,9 @@
-import type { MarkedLine, ProposalSection, TidyValues } from "@merran/shared"
+import type {
+  FoodLine,
+  MarkedLine,
+  ProposalSection,
+  TidyValues,
+} from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { AppError } from "../../../core/errors.ts"
 import { Proposal, User } from "../../../database/entities/index.ts"
@@ -35,6 +40,7 @@ const NAMES: Record<ProposalSection, string> = {
   description: "description",
   details: "servings and times",
   marks: "marks",
+  foods: "foods",
   notes: "notes",
 }
 
@@ -330,6 +336,7 @@ async function applySections(
     description: now.input.description,
     details: detailsOf(now.input),
     marks: now.marks,
+    foods: now.foods,
     notes: now.input.notes,
   }
   const changed = chosen.filter(
@@ -356,6 +363,10 @@ async function applySections(
   const marks: MarkedLine[] | undefined = chosen.includes("marks")
     ? after.marks
     : undefined
+  // So do the foods it said lines are.
+  const foods: FoodLine[] | undefined = chosen.includes("foods")
+    ? after.foods
+    : undefined
 
   return updateRecipe(em, {
     householdId: options.householdId,
@@ -366,6 +377,7 @@ async function applySections(
     // made it themselves.
     source: proposal.kind === "tidy" ? "tidy" : "edit",
     marks,
+    foods,
   })
 }
 

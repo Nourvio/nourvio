@@ -10,6 +10,7 @@ import type { IngredientMark } from "./marks.ts"
  * - description: one, when there isn't one
  * - details: servings and times, when they're missing
  * - marks: what it can do without, ingredient by ingredient
+ * - foods: the food a line is, for lines Merran doesn't know
  */
 export const TIDY_SECTIONS = [
   "ingredients",
@@ -18,6 +19,7 @@ export const TIDY_SECTIONS = [
   "description",
   "details",
   "marks",
+  "foods",
 ] as const
 export type TidySection = (typeof TIDY_SECTIONS)[number]
 
@@ -44,6 +46,12 @@ export type RecipeDetails = {
 export type MarkedLine = { line: string; mark: IngredientMark | null }
 
 /**
+ * An ingredient line and the food someone said it is (a food key), for a
+ * line Merran doesn't know; null when no one has.
+ */
+export type FoodLine = { line: string; food: string | null }
+
+/**
  * A recipe's sections as a suggestion has them, before or after: only the
  * ones it changes. Ingredients and steps are editor lines ("# Sauce" starts
  * a section).
@@ -55,5 +63,6 @@ export type TidyValues = {
   description?: string | null
   details?: RecipeDetails
   marks?: MarkedLine[]
+  foods?: FoodLine[]
   notes?: string | null
 }

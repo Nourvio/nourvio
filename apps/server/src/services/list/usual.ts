@@ -19,6 +19,7 @@ import { toNumber } from "../recipes/recipes.ts"
 import { aislesOf } from "./aisles.ts"
 import { describeItems } from "./list.ts"
 import { listsOf } from "./lists.ts"
+import { householdKeys } from "./food-aliases.ts"
 
 // Usual buys: what the household gets every so often, learned from the
 // shopping it's put away, offered when it's due again. Not what's on the
@@ -46,6 +47,7 @@ async function allUsualBuys(em: EntityManager) {
 
 /** The usual buys due now, most overdue first. */
 export async function dueUsualBuys(em: EntityManager, householdId: string) {
+  const keyOf = await householdKeys(em)
   const [usual, today, household] = await Promise.all([
     allUsualBuys(em),
     householdToday(em, householdId),
@@ -58,9 +60,9 @@ export async function dueUsualBuys(em: EntityManager, householdId: string) {
     em.find(WeeklyItem, {}),
   ])
   const have = new Set([
-    ...onList.map((item) => foodKey(item.name)),
+    ...onList.map((item) => keyOf(item.name)),
     ...atHome.map((item) => item.foodKey),
-    ...weekly.map((item) => foodKey(item.name)),
+    ...weekly.map((item) => keyOf(item.name)),
   ])
   const isOnHand = onHandTest(
     household.settings?.alwaysOnHand ?? DEFAULT_ON_HAND
@@ -107,6 +109,7 @@ export async function addUsualBuys(
   householdId: string,
   foods: readonly string[]
 ) {
+  const keyOf = await householdKeys(em)
   const due = (await dueUsualBuys(em, householdId)).filter((buy) =>
     foods.includes(buy.food)
   )
@@ -121,7 +124,7 @@ export async function addUsualBuys(
     em.create(ShoppingItem, {
       household: householdId,
       list: lists[index]!,
-      foodKey: foodKey(buy.name),
+      foodKey: keyOf(buy.name),
       name: buy.name,
       ...readAmount(buy.amount),
       aisle: aisles[index] ?? null,

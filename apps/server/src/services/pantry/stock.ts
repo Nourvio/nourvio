@@ -1,5 +1,6 @@
 import {
   addAmounts,
+  covers,
   foodKey,
   subtractAmounts,
   type Amount,
@@ -49,8 +50,12 @@ export async function coverFromPantry(
   const inPantry: string[] = []
   const left: CombinedItem[] = []
   for (const item of items) {
-    const key = foodKey(item.name)
-    const rows = pantry.filter((row) => row.foodKey === key)
+    const key = item.food
+    // The food itself first, then a kind of it: a recipe's bell pepper is
+    // met by the green bell pepper at home.
+    const rows = pantry
+      .filter((row) => row.foodKey && covers(row.foodKey, key))
+      .sort((a, b) => Number(b.foodKey === key) - Number(a.foodKey === key))
     if (rows.length === 0) {
       left.push(item)
       continue

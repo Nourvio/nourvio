@@ -28,6 +28,16 @@ const MarkedLineSchema = z
   })
   .openapi("MarkedLine")
 
+const FoodLineSchema = z
+  .object({
+    line: z.string(),
+    food: z.string().nullable().openapi({
+      description:
+        "The food Merran knows that the line is, as a food key; null when no one has said.",
+    }),
+  })
+  .openapi("FoodLine")
+
 const TidyValuesSchema = z
   .object({
     ingredients: z.array(z.string()).optional(),
@@ -43,6 +53,7 @@ const TidyValuesSchema = z
       })
       .optional(),
     marks: z.array(MarkedLineSchema).optional(),
+    foods: z.array(FoodLineSchema).optional(),
     notes: z.string().nullable().optional(),
   })
   .openapi("TidyValues", {

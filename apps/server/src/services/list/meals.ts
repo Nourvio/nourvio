@@ -18,6 +18,7 @@ import {
   WeeklyItem,
 } from "../../database/entities/index.ts"
 import { NOT_DELETED_FILTER } from "../../database/scope.ts"
+import { householdAliases, householdKeys } from "./food-aliases.ts"
 import { coverFromPantry, releasePantry } from "../pantry/stock.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
 import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
@@ -59,11 +60,14 @@ export async function listMeals(
   const meals = entries.filter(shopped)
   const isOnHand = await onHandOf(em, householdId)
   const onHand = new Set<string>()
-  const needed = combineLines(meals.flatMap(linesOf)).filter((item) => {
-    if (!isOnHand(item.name)) return true
-    onHand.add(item.name.toLowerCase())
-    return false
-  })
+  const aliases = await householdAliases(em)
+  const needed = combineLines(meals.flatMap(linesOf), aliases).filter(
+    (item) => {
+      if (!isOnHand(item.name)) return true
+      onHand.add(item.name.toLowerCase())
+      return false
+    }
+  )
   // What was set aside for them before (they were on the list, and taken
   // off) is counted again, not as theirs already.
   await releasePantry(em, new Set(meals.map((entry) => entry.id)))
@@ -367,6 +371,7 @@ export async function addFromPlan(
 
 /** The every-week items not on the list already. Says how many went on. */
 export async function addEveryWeek(em: EntityManager, householdId: string) {
+  const keyOf = await householdKeys(em)
   const weekly = await em.find(WeeklyItem, {}, { orderBy: { position: "asc" } })
   if (weekly.length === 0) return 0
   const waiting = await em.find(ShoppingItem, {
@@ -374,7 +379,7 @@ export async function addEveryWeek(em: EntityManager, householdId: string) {
     source: "every-week",
   })
   const have = new Set(waiting.map((item) => item.foodKey))
-  const missing = weekly.filter((item) => !have.has(foodKey(item.name)))
+  const missing = weekly.filter((item) => !have.has(keyOf(item.name)))
   if (missing.length === 0) return 0
   const guessed = await aislesOf(em, householdId, missing)
   const routed = await listsOf(
@@ -389,7 +394,7 @@ export async function addEveryWeek(em: EntityManager, householdId: string) {
     em.create(ShoppingItem, {
       household: householdId,
       list: item.list ?? routed[index]!,
-      foodKey: foodKey(item.name),
+      foodKey: keyOf(item.name),
       name: item.name,
       amountText: item.amountText ?? null,
       aisle: item.aisle ?? guessed[index] ?? null,

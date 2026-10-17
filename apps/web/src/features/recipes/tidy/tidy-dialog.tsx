@@ -32,6 +32,7 @@ const SECTIONS: TidySection[] = [
   "description",
   "details",
   "marks",
+  "foods",
 ]
 
 /**

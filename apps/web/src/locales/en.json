@@ -1294,7 +1294,8 @@
         "tags": "Tags, from your own first",
         "description": "A description, if it has none",
         "details": "Servings and times, if they're missing",
-        "marks": "What it can do without, for dislikes"
+        "marks": "What it can do without, for dislikes",
+        "foods": "Foods Merran doesn’t know, named for the list"
       },
       "start": "Tidy up",
       "tidying": "Tidying…",
@@ -1310,7 +1311,8 @@
         "description": "Description",
         "details": "Servings and times",
         "marks": "What it can do without",
-        "notes": "Notes"
+        "notes": "Notes",
+        "foods": "Foods for the list"
       },
       "now": "Now",
       "tidied": "Tidied",
@@ -1370,7 +1372,8 @@
         "confirm": "Tidy them up",
         "started_one": "Tidying {{count}} recipe.",
         "started_other": "Tidying {{count}} recipes."
-      }
+      },
+      "noFood": "Not named yet."
     },
     "review": {
       "fromNote": "From a cooking note: “{{note}}”",
@@ -1735,7 +1738,30 @@
     },
     "find": "Find at {{store}}",
     "findName": "Find {{name}} at {{store}}",
-    "sendTo": "Send to {{store}}"
+    "sendTo": "Send to {{store}}",
+    "foods": "Your own foods",
+    "sameAs": {
+      "label": "Same as",
+      "hint": "Pick another thing on the list that’s the same food. It’s that food from now on, and the two go on one line.",
+      "done": "{{name}} is {{other}} from now on.",
+      "placeholder": "Something else on the list",
+      "chosen": "{{name}} goes with {{other}} from now on."
+    },
+    "apart": {
+      "label": "Joined from",
+      "hint": "Each one checked is its own food from the next list on.",
+      "done_one": "Kept apart from the next list on.",
+      "done_other": "Kept apart from the next list on."
+    },
+    "foodsDialog": {
+      "title": "Your own foods",
+      "description": "What you said is the same as another thing on the list, or not the same. These win over Merran’s own names for foods.",
+      "none": "None yet. Change something on the list to say it’s the same as another thing, or to keep names it joined apart.",
+      "same": "{{name}} is {{food}}",
+      "apart": "{{name}} is its own food",
+      "forget": "Forget",
+      "forgetName": "Forget {{name}}"
+    }
   },
   "stores": {
     "basket": {

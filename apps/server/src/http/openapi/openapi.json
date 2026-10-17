@@ -4377,6 +4377,62 @@
           "amount": "2 bunches"
         }
       },
+      "FoodAliases": {
+        "type": "object",
+        "properties": {
+          "aliases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoodAlias"
+            }
+          }
+        },
+        "required": [
+          "aliases"
+        ],
+        "example": {
+          "aliases": [
+            {
+              "id": "0199e8b0-5a10-7a01-8b00-00000000001f",
+              "name": "unsalted butter",
+              "food": "unsalted butter",
+              "apart": true
+            }
+          ]
+        }
+      },
+      "FoodAlias": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "description": "A food's key made another's (Same as…), or a name kept its own (Not the same)."
+          },
+          "food": {
+            "type": "string",
+            "description": "The food it is, for the household."
+          },
+          "apart": {
+            "type": "boolean",
+            "description": "Kept its own food."
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "food",
+          "apart"
+        ],
+        "example": {
+          "id": "0199e8b0-5a10-7a01-8b00-00000000001f",
+          "name": "unsalted butter",
+          "food": "unsalted butter",
+          "apart": true
+        }
+      },
       "FromPlanPreview": {
         "type": "object",
         "properties": {
@@ -4670,6 +4726,108 @@
         },
         "example": {
           "checked": true
+        }
+      },
+      "KeptApart": {
+        "type": "object",
+        "properties": {
+          "kept": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kept"
+        ],
+        "example": {
+          "kept": 1
+        }
+      },
+      "KeepApart": {
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "minItems": 1,
+            "maxItems": 50
+          }
+        },
+        "required": [
+          "names"
+        ],
+        "example": {
+          "names": [
+            "unsalted butter"
+          ]
+        }
+      },
+      "JoinedNames": {
+        "type": "object",
+        "properties": {
+          "names": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The names this line was joined from: its own, and its meals' lines that came to the same food.",
+            "example": [
+              "butter",
+              "unsalted butter"
+            ]
+          }
+        },
+        "required": [
+          "names"
+        ],
+        "example": {
+          "names": [
+            "butter",
+            "unsalted butter"
+          ]
+        }
+      },
+      "SameAsResult": {
+        "type": "object",
+        "properties": {
+          "food": {
+            "type": "string",
+            "description": "The food both are now, for the household.",
+            "example": "butter"
+          },
+          "joined": {
+            "type": "integer",
+            "description": "How many lines joined into others.",
+            "example": 1
+          }
+        },
+        "required": [
+          "food",
+          "joined"
+        ],
+        "example": {
+          "food": "butter",
+          "joined": 1
+        }
+      },
+      "SameAs": {
+        "type": "object",
+        "properties": {
+          "item": {
+            "type": "string",
+            "minLength": 1,
+            "description": "The other thing on the list it's the same food as.",
+            "example": "0199e8b0-5a10-7a01-8b00-00000000001e"
+          }
+        },
+        "required": [
+          "item"
+        ],
+        "example": {
+          "item": "0199e8b0-5a10-7a01-8b00-00000000001e"
         }
       },
       "Lists": {
@@ -7597,6 +7755,7 @@
           "description",
           "details",
           "marks",
+          "foods",
           "notes"
         ],
         "description": "A part of a recipe a suggestion can change: tidy up's sections, and the notes, which a cooking note can add to."
@@ -7669,6 +7828,12 @@
               "$ref": "#/components/schemas/MarkedLine"
             }
           },
+          "foods": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FoodLine"
+            }
+          },
           "notes": {
             "type": [
               "string",
@@ -7700,6 +7865,25 @@
         "required": [
           "line",
           "mark"
+        ]
+      },
+      "FoodLine": {
+        "type": "object",
+        "properties": {
+          "line": {
+            "type": "string"
+          },
+          "food": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "The food Merran knows that the line is, as a food key; null when no one has said."
+          }
+        },
+        "required": [
+          "line",
+          "food"
         ]
       },
       "ApplyResult": {
@@ -10460,7 +10644,7 @@
             "items": {
               "$ref": "#/components/schemas/TidySection"
             },
-            "maxItems": 6,
+            "maxItems": 7,
             "description": "What to tidy; every section when left out."
           }
         },
@@ -10480,7 +10664,8 @@
           "tags",
           "description",
           "details",
-          "marks"
+          "marks",
+          "foods"
         ],
         "description": "A part of a recipe tidy up can change: its ingredients, steps, tags, a missing description, missing servings and times, and the marks on its ingredients."
       },
@@ -17131,6 +17316,143 @@
         }
       }
     },
+    "/api/list/foods": {
+      "get": {
+        "operationId": "listFoodAliases",
+        "tags": [
+          "List"
+        ],
+        "summary": "The household's own names for foods",
+        "description": "What it said was the same food as another (Same as…) or kept apart (Not the same) on the list, which win over Merran's own names for it. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "responses": {
+          "200": {
+            "description": "Its names, by name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoodAliases"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list/foods/{aliasId}": {
+      "delete": {
+        "operationId": "forgetFoodAlias",
+        "tags": [
+          "List"
+        ],
+        "summary": "Forget one of the household's names for a food",
+        "description": "Merran's own name for it counts again. Lines already joined stay as they are. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000001f"
+            },
+            "required": true,
+            "name": "aliasId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forgotten.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    }
+                  },
+                  "required": [
+                    "ok"
+                  ],
+                  "example": {
+                    "ok": true
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No such name.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/list/from-plan": {
       "get": {
         "operationId": "previewFromPlan",
@@ -17540,6 +17862,252 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ListItemSnapshot"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list/items/{itemId}/apart": {
+      "post": {
+        "operationId": "keepListItemNamesApart",
+        "tags": [
+          "List"
+        ],
+        "summary": "Say names a line was joined from aren't the same",
+        "description": "Each name is its own food for the household from the next list on (docs/foods.md). The line as it is stays. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000001d"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KeepApart"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remembered.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KeptApart"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list/items/{itemId}/names": {
+      "get": {
+        "operationId": "listItemNames",
+        "tags": [
+          "List"
+        ],
+        "summary": "What a line on the list was joined from",
+        "description": "Its own name, and the names in its meals' recipes that came to the same food: what Not the same can keep apart. With an API key, it needs the `list: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:read",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000001d"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The names.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JoinedNames"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not on the list.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/list/items/{itemId}/same-as": {
+      "post": {
+        "operationId": "sameAsListItem",
+        "tags": [
+          "List"
+        ],
+        "summary": "Say something on the list is the same food as another",
+        "description": "The household's own name for the food (docs/foods.md): from now on it's the other's food, on the list, at home and in what's to come, and the two lines join where their amounts add up. With an API key, it needs the `list: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "list:write",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "example": "0199e8b0-5a10-7a01-8b00-00000000001d"
+            },
+            "required": true,
+            "name": "itemId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SameAs"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Remembered, and joined.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SameAsResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The same thing twice.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
                 }
               }
             }

@@ -10,6 +10,8 @@ import {
   type Diet,
   type DietOverrides,
   type IngredientMark,
+  type FoodLine,
+  type FoodSource,
   type MarkedLine,
 } from "@merran/shared"
 import { raw, type FilterQuery } from "@mikro-orm/core"
@@ -203,6 +205,62 @@ export const markedLines = (recipe: Recipe): MarkedLine[] =>
     .getItems()
     .map((line) => ({ line: line.rawText, mark: line.mark ?? null }))
 
+/** A food someone said a line is, and who: a person or AI. */
+type ChosenFood = { food: string; source: FoodSource }
+
+/** A recipe's ingredient lines and the food each was said to be. */
+export const chosenFoods = (recipe: Recipe): FoodLine[] =>
+  recipe.ingredients
+    .getItems()
+    .map((line) => ({ line: line.rawText, food: line.foodKey ?? null }))
+
+/**
+ * The food each line was said to be, kept as marks are (by its words, or
+ * else by its food), with who said it. `suggested`, from tidy up, wins
+ * over what lines had, and is AI's unless it's what they had.
+ */
+function chosenFrom(recipe: Recipe, suggested?: readonly FoodLine[]) {
+  const had = recipe.ingredients.isInitialized()
+    ? recipe.ingredients.getItems()
+    : []
+  const lookup = <T>(entries: { line: string; value: T }[]) => {
+    const byText = new Map<string, T>()
+    const byFood = new Map<string, T>()
+    for (const { line, value } of entries) {
+      byText.set(line.trim().toLowerCase(), value)
+      const food = parseIngredient(line).food
+      if (food) byFood.set(foodKey(food), value)
+    }
+    return (line: string, food: string | null) =>
+      byText.get(line.trim().toLowerCase()) ??
+      (food ? byFood.get(foodKey(food)) : undefined)
+  }
+  const kept = lookup<ChosenFood>(
+    had.flatMap((line) =>
+      line.foodKey && line.foodSource
+        ? [
+            {
+              line: line.rawText,
+              value: { food: line.foodKey, source: line.foodSource },
+            },
+          ]
+        : []
+    )
+  )
+  const proposed = suggested
+    ? lookup<string | null>(
+        suggested.map(({ line, food }) => ({ line, value: food }))
+      )
+    : null
+  return (line: string, food: string | null): ChosenFood | null => {
+    const before = kept(line, food) ?? null
+    if (!proposed) return before
+    const now = proposed(line, food)
+    if (now === undefined || now === null) return now === null ? null : before
+    return now === before?.food ? before : { food: now, source: "ai" }
+  }
+}
+
 /**
  * Sets a recipe to what the input says, lines and tags included. Its lines
  * keep their marks (see `marksFrom`), unless `marks` says otherwise.
@@ -212,11 +270,13 @@ async function fill(
   householdId: string,
   recipe: Recipe,
   input: RecipeInput,
-  marks?: readonly MarkedLine[]
+  marks?: readonly MarkedLine[],
+  foods?: readonly FoodLine[]
 ) {
   const markOf = marksFrom(
     marks ?? (recipe.ingredients.isInitialized() ? markedLines(recipe) : [])
   )
+  const chosenOf = chosenFrom(recipe, foods)
   const linesBefore = recipe.ingredients.isInitialized()
     ? recipe.ingredients.getItems().map((line) => line.rawText)
     : []
@@ -235,6 +295,7 @@ async function fill(
   recipe.ingredients.set(
     splitSections(input.ingredients).map((item, position) => {
       const parsed = parseIngredient(item.text)
+      const chosen = chosenOf(parsed.text, parsed.food)
       return tx.create(RecipeIngredient, {
         household: householdId,
         recipe,
@@ -247,6 +308,8 @@ async function fill(
         food: parsed.food,
         note: parsed.note,
         mark: markOf(parsed.text, parsed.food),
+        foodKey: chosen?.food ?? null,
+        foodSource: chosen?.source ?? null,
       })
     })
   )
@@ -433,6 +496,8 @@ export async function updateRecipe(
     source?: VersionSource
     /** What each line is to the dish, when the change marks them. */
     marks?: readonly MarkedLine[]
+    /** The food lines Merran doesn't know are, when tidy up said. */
+    foods?: readonly FoodLine[]
     /** Tidy up looked at it. */
     tidied?: boolean
   }
@@ -455,7 +520,8 @@ export async function updateRecipe(
         options.householdId,
         recipe,
         options.input,
-        options.marks
+        options.marks,
+        options.foods
       )
       if (options.tidied) recipe.tidiedAt = new Date()
       await pruneTags(tx)

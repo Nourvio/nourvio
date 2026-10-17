@@ -8,6 +8,7 @@ import {
   ShoppingList,
 } from "../../database/entities/index.ts"
 import { inHouseholdTransaction } from "../recipes/recipes.ts"
+import { householdKeys } from "./food-aliases.ts"
 
 // A household's lists, one for each store it shops at. Things go on the
 // main list unless the household moved that food to another list before,
@@ -71,6 +72,7 @@ export async function listsOf(
   householdId: string,
   foods: readonly { name: string; aisle?: { id: string } | null }[]
 ): Promise<ShoppingList[]> {
+  const keyOf = await householdKeys(em)
   const lists = await householdLists(em, householdId)
   const main = lists[0]!
   if (foods.length === 0) return []
@@ -83,7 +85,7 @@ export async function listsOf(
         : (list.aisles ?? []).map((aisle) => [aisle, list] as const)
     )
   )
-  const keys = foods.map((food) => foodKey(food.name))
+  const keys = foods.map((food) => keyOf(food.name))
   const placed = await em.find(FoodPlacement, {
     foodKey: { $in: [...new Set(keys)] },
   })
@@ -107,7 +109,8 @@ export async function rememberList(
   names: readonly string[],
   list: ShoppingList
 ) {
-  const keys = [...new Set(names.map(foodKey))]
+  const keyOf = await householdKeys(em)
+  const keys = [...new Set(names.map(keyOf))]
   const known = new Map(
     (await em.find(FoodPlacement, { foodKey: { $in: keys } })).map(
       (placement) => [placement.foodKey, placement]

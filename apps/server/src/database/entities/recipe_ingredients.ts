@@ -1,5 +1,5 @@
 import { defineEntity, p, type InferEntity } from "@mikro-orm/core"
-import { INGREDIENT_MARKS } from "@merran/shared"
+import { INGREDIENT_MARKS, type FoodSource } from "@merran/shared"
 import { householdFilter } from "../scope.ts"
 import { id } from "./base.ts"
 import { householdRef } from "./households.ts"
@@ -31,6 +31,13 @@ export const RecipeIngredient = defineEntity({
      * optional. Leaving out a dislike goes by it. None until marked.
      */
     mark: p.enum(INGREDIENT_MARKS).nullable(),
+    /**
+     * The food a person or AI said the line is, winning over the
+     * vocabulary when the list is made. None when the vocabulary's is it.
+     */
+    foodKey: p.string().nullable(),
+    /** Who said: "person" or "ai" (see `FOOD_SOURCES`). Text, not an enum. */
+    foodSource: p.string().$type<FoodSource>().nullable(),
   },
   filters: householdFilter,
 })

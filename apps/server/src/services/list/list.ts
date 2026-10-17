@@ -16,6 +16,7 @@ import {
   WeeklyItem,
 } from "../../database/entities/index.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
+import { householdKeys } from "./food-aliases.ts"
 import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
 import {
   aislesOf,
@@ -144,7 +145,7 @@ export async function getList(em: EntityManager, householdId: string) {
   }
 }
 
-async function findItem(em: EntityManager, id: string) {
+export async function findItem(em: EntityManager, id: string) {
   const item = UUID.test(id) ? await em.findOne(ShoppingItem, { id }) : null
   if (!item) {
     throw new AppError(
@@ -165,6 +166,7 @@ export async function addTyped(
   householdId: string,
   input: { text: string; aisle?: string | null; list?: string | null }
 ) {
+  const keyOf = await householdKeys(em)
   const { name, quantity, unit } = readItem(input.text)
   if (!name) {
     throw new AppError("invalid", "invalid_item", "Say what to add.", {
@@ -180,7 +182,7 @@ export async function addTyped(
   const item = em.create(ShoppingItem, {
     household: householdId,
     list,
-    foodKey: foodKey(name),
+    foodKey: keyOf(name),
     name,
     quantity,
     unit,
@@ -214,10 +216,11 @@ export async function updateItem(
   id: string,
   changes: ItemChanges
 ) {
+  const keyOf = await householdKeys(em)
   const item = await findItem(em, id)
   if (changes.name !== undefined) {
     item.name = changes.name.trim()
-    item.foodKey = foodKey(item.name)
+    item.foodKey = keyOf(item.name)
   }
   if (changes.amount !== undefined) em.assign(item, readAmount(changes.amount))
   if (changes.checked !== undefined) check(item, changes.checked)
@@ -323,12 +326,13 @@ async function makeEveryWeek(
   householdId: string,
   items: readonly ShoppingItem[]
 ) {
+  const keyOf = await householdKeys(em)
   const weekly = await em.find(WeeklyItem, {})
   const main = await mainList(em, householdId)
-  const have = new Set(weekly.map((item) => foodKey(item.name)))
+  const have = new Set(weekly.map((item) => keyOf(item.name)))
   let position = Math.max(-1, ...weekly.map((item) => item.position)) + 1
   for (const item of items) {
-    const key = foodKey(item.name)
+    const key = keyOf(item.name)
     if (!have.has(key)) {
       have.add(key)
       const amount = describeItem(item, new Map()).amount
@@ -375,6 +379,7 @@ export async function restoreItems(
   householdId: string,
   snapshots: readonly ItemSnapshot[]
 ) {
+  const keyOf = await householdKeys(em)
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const lists = await householdLists(tx, householdId)
     const listOf = (id: string) =>
@@ -406,7 +411,7 @@ export async function restoreItems(
       tx.assign(item, {
         list: listOf(snapshot.list),
         name: snapshot.name,
-        foodKey: snapshot.foodKey ?? foodKey(snapshot.name),
+        foodKey: snapshot.foodKey ?? keyOf(snapshot.name),
         quantity: snapshot.quantity,
         unit: snapshot.unit,
         amountText: snapshot.amountText,

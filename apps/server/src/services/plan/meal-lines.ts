@@ -78,6 +78,7 @@ export function mealLines(
     text: line.rawText,
     factor,
     source: recipe.name,
+    food: line.foodKey ?? null,
     meal: entry.id,
   }))
   const side = entry.withRecipe?.getEntity()
@@ -92,6 +93,7 @@ export function mealLines(
         text: line.rawText,
         factor: sideFactor,
         source: side.name,
+        food: line.foodKey ?? null,
         meal: entry.id,
       })
     }

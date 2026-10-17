@@ -115,6 +115,14 @@ beforeAll(async () => {
       name: "Spinach Frittata",
       ingredients: ["6 eggs", "4 cups spinach"],
     },
+    {
+      name: "Pepper Hash",
+      ingredients: [
+        "2 bell peppers",
+        "1 red bell pepper",
+        "1 green bell pepper",
+      ],
+    },
   ]) {
     const res = await kyle.post("/api/recipes", {
       servings: 4,
@@ -332,6 +340,27 @@ describe("the list counts on what's at home", () => {
     expect((await fromPlan()).inPantry).toContain("chicken thighs")
     await clearAll()
   })
+
+  test("a kind of a food at home covers it, not the other way", async () => {
+    // Green bell peppers at home: the recipe's bell peppers are covered,
+    // its red one isn't, and its green one has none left.
+    await add("3 green bell peppers")
+    await plan({ date: day(0), meal: "dinner", recipe: ids["Pepper Hash"] })
+    const result = await fromPlan()
+    expect(result.inPantry).toContain("bell peppers")
+    expect(await listed("bell peppers")).toBeUndefined()
+    expect(await listed("red bell pepper")).toBeDefined()
+    expect(await listed("green bell pepper")).toBeUndefined()
+    await clearAll()
+
+    // With nothing at home, the list keeps the kinds apart.
+    await plan({ date: day(0), meal: "dinner", recipe: ids["Pepper Hash"] })
+    await fromPlan()
+    expect(await listed("bell peppers")).toMatchObject({ amount: "2" })
+    expect(await listed("red bell pepper")).toMatchObject({ amount: "1" })
+    expect(await listed("green bell pepper")).toMatchObject({ amount: "1" })
+    await clearAll()
+  })
 })
 
 describe("cooking", () => {
@@ -411,7 +440,11 @@ describe("using soon", () => {
 
     const res = await kyle.post("/api/plan/suggest", {
       slots: [{ date: day(3), meal: "dinner" }],
-      exclude: [ids["Lemon Chicken"], ids["Chicken Stir Fry"]],
+      exclude: [
+        ids["Lemon Chicken"],
+        ids["Chicken Stir Fry"],
+        ids["Pepper Hash"],
+      ],
     })
     const [idea] = (await res.json()).suggestions
     expect(idea).toMatchObject({ recipe: { name: "Spinach Frittata" } })

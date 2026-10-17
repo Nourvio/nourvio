@@ -1,3 +1,4 @@
+import { kindOf } from "../foods/kinds.ts"
 import { gramsEach } from "../foods/vocabulary.ts"
 import { guessAisle } from "./aisles.ts"
 import { amountRatio, type Amount } from "./amounts.ts"
@@ -137,7 +138,13 @@ export function recipeCost(
     if (!name || quantity === null || isOnHand(name)) continue
     cost.counted++
     const food = each.key
-    const product = productOf(food)
+    // The food's own product, else the product of what it's a kind of: a
+    // green bell pepper costs what a bell pepper does.
+    const product =
+      productOf(food) ??
+      kindOf(food)
+        .map((kind) => productOf(kind))
+        .find(Boolean)
     const price = product ? priceNow(product, today).price : null
     const packs = product
       ? packsFor(food, { quantity, unit: each.unitId }, product.size)

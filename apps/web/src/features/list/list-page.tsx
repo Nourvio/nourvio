@@ -69,6 +69,7 @@ import {
   AisleDialog,
   EditItemDialog,
   EveryWeekDialog,
+  FoodsDialog,
   ListPickDialog,
   OnHandDialog,
 } from "./list-dialogs"
@@ -102,6 +103,7 @@ export function ListPage() {
   const [fromPlan, setFromPlan] = React.useState(false)
   const [everyWeek, setEveryWeek] = React.useState(false)
   const [onHand, setOnHand] = React.useState(false)
+  const [foods, setFoods] = React.useState(false)
   const [managing, setManaging] = React.useState(false)
   const [editing, setEditing] = React.useState<ListItem | null>(null)
   const [choosingAisle, setChoosingAisle] = React.useState(false)
@@ -268,6 +270,9 @@ export function ListPage() {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setOnHand(true)}>
                     {t("list.onHand")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFoods(true)}>
+                    {t("list.foods")}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -537,6 +542,7 @@ export function ListPage() {
       <AddFromPlanDialog open={fromPlan} onOpenChange={setFromPlan} />
       <EveryWeekDialog open={everyWeek} onOpenChange={setEveryWeek} />
       <OnHandDialog open={onHand} onOpenChange={setOnHand} />
+      <FoodsDialog open={foods} onOpenChange={setFoods} />
       <ListsDialog
         open={managing}
         onOpenChange={setManaging}
@@ -545,6 +551,7 @@ export function ListPage() {
       />
       <EditItemDialog
         item={editing}
+        items={all}
         aisles={aisles}
         lists={lists}
         onClose={() => setEditing(null)}

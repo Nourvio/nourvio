@@ -18,6 +18,7 @@ import { forHousehold } from "../../database/scope.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import type { JobHandler } from "../jobs/runner.ts"
 import { toNumber } from "../recipes/recipes.ts"
+import { householdKeys } from "./food-aliases.ts"
 
 // When food keys are made differently (FOOD_KEYS_VERSION), the ones kept
 // on lists, in the pantry, for aisles, purchases and store products are
@@ -46,6 +47,8 @@ export async function rekeyFoodsSoon(em: EntityManager) {
 
 /** One household's keys and list names, made again. */
 export async function rekeyHousehold(em: EntityManager) {
+  // The household's own names for foods count.
+  const keyFor = await householdKeys(em)
   let renamed = 0
   let joined = 0
 
@@ -64,7 +67,7 @@ export async function rekeyHousehold(em: EntityManager) {
         renamed++
       }
     }
-    item.foodKey = foodKey(item.name)
+    item.foodKey = keyFor(item.name)
   }
   const kept: ShoppingItem[] = []
   for (const item of items) {
@@ -110,7 +113,7 @@ export async function rekeyHousehold(em: EntityManager) {
   )
   const placed = new Map<string, FoodPlacement>()
   for (const placement of placements) {
-    const key = foodKey(placement.foodKey)
+    const key = keyFor(placement.foodKey)
     if (placed.has(key)) em.remove(placement)
     else placed.set(key, placement)
   }
@@ -123,21 +126,21 @@ export async function rekeyHousehold(em: EntityManager) {
   )
   const stocked = new Map<string, StoreProduct>()
   for (const product of products) {
-    const key = `${product.store}|${foodKey(product.food)}`
+    const key = `${product.store}|${keyFor(product.food)}`
     if (stocked.has(key)) em.remove(product)
     else stocked.set(key, product)
   }
   // What two became one goes first, so the one left can take its key.
   await em.flush()
   for (const [key, placement] of placed) placement.foodKey = key
-  for (const product of stocked.values()) product.food = foodKey(product.food)
+  for (const product of stocked.values()) product.food = keyFor(product.food)
 
   for (const row of await em.find(PantryItem, {})) {
-    row.foodKey = foodKey(row.name)
+    row.foodKey = keyFor(row.name)
   }
   // Purchases are matched as the pantry matches food, for usual buys.
   for (const row of await em.find(Purchase, {})) {
-    row.foodKey = foodKey(row.name)
+    row.foodKey = keyFor(row.name)
   }
 
   await em.flush()

@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,8 @@ import { api, ApiError, unwrap } from "@/lib/api/client"
 
 import {
   everyWeekQuery,
+  foodAliasesQuery,
+  joinedNamesQuery,
   onHandQuery,
   type Aisle,
   type List,
@@ -84,11 +87,14 @@ function AisleSelect({
  */
 export function EditItemDialog({
   item,
+  items,
   aisles,
   lists,
   onClose,
 }: {
   item: ListItem | null
+  /** Everything on the list, for Same as. */
+  items: readonly ListItem[]
   aisles: readonly Aisle[]
   lists: readonly List[]
   onClose: () => void
@@ -104,6 +110,7 @@ export function EditItemDialog({
         {item && (
           <EditItem
             item={item}
+            items={items}
             aisles={aisles}
             lists={lists}
             onDone={onClose}
@@ -116,11 +123,13 @@ export function EditItemDialog({
 
 function EditItem({
   item,
+  items,
   aisles,
   lists,
   onDone,
 }: {
   item: ListItem
+  items: readonly ListItem[]
   aisles: readonly Aisle[]
   lists: readonly List[]
   onDone: () => void
@@ -132,19 +141,45 @@ function EditItem({
   const [aisle, setAisle] = React.useState(item.aisle)
   const [list, setList] = React.useState(item.list)
   const [busy, setBusy] = React.useState(false)
+  // The household's own foods: the same as another thing, or names it was
+  // joined from kept apart.
+  const [same, setSame] = React.useState<string | null>(null)
+  const [sameSearch, setSameSearch] = React.useState("")
+  const [apart, setApart] = React.useState<ReadonlySet<string>>(new Set())
+  const { data: joined } = useQuery(joinedNamesQuery(item.id))
   const listOptions = lists.map((option) => ({
     value: option.id,
     label: option.name,
   }))
+  // What else is on the list, by what's typed: a few at a time.
+  const others = items.filter((other) => other.id !== item.id && !other.checked)
+  const search = sameSearch.trim().toLowerCase()
+  const sameMatches =
+    search && !same
+      ? others
+          .filter((other) => other.name.toLowerCase().includes(search))
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .slice(0, 6)
+      : []
+  const names = joined?.names ?? []
 
   async function save() {
     setBusy(true)
-    const done = await actions.change(item, {
+    let done = await actions.change(item, {
       ...(name.trim() !== item.name ? { name: name.trim() } : {}),
       ...(amount.trim() !== item.amount ? { amount: amount.trim() } : {}),
       ...(aisle !== item.aisle ? { aisle } : {}),
       ...(list !== item.list ? { list } : {}),
     })
+    const other = items.find((one) => one.id === same)
+    if (done && other) {
+      done = (await actions.sameAs({ ...item, name: done.name }, other))
+        ? done
+        : null
+    }
+    if (done && apart.size > 0) {
+      done = (await actions.keepApart(item, [...apart])) ? done : null
+    }
     setBusy(false)
     if (done) onDone()
   }
@@ -222,6 +257,87 @@ function EditItem({
           </Select>
           <FieldDescription>{t("list.editItem.listHint")}</FieldDescription>
         </Field>
+      )}
+      {others.length > 0 && (
+        <Field>
+          <FieldLabel htmlFor="list-item-same">
+            {t("list.sameAs.label")}
+          </FieldLabel>
+          <Input
+            id="list-item-same"
+            value={sameSearch}
+            maxLength={200}
+            autoComplete="off"
+            placeholder={t("list.sameAs.placeholder")}
+            onChange={(event) => {
+              setSameSearch(event.target.value)
+              setSame(null)
+            }}
+            onKeyDown={(event) => {
+              // Enter picks the first match, rather than saving.
+              if (event.key === "Enter" && sameMatches[0]) {
+                event.preventDefault()
+                setSame(sameMatches[0].id)
+                setSameSearch(sameMatches[0].name)
+              }
+            }}
+          />
+          {sameMatches.length > 0 && (
+            <ul className="grid gap-0.5">
+              {sameMatches.map((other) => (
+                <li key={other.id}>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setSame(other.id)
+                      setSameSearch(other.name)
+                    }}
+                  >
+                    <span className="first-letter:uppercase">{other.name}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <FieldDescription>
+            {same
+              ? t("list.sameAs.chosen", { name: item.name, other: sameSearch })
+              : t("list.sameAs.hint")}
+          </FieldDescription>
+        </Field>
+      )}
+      {names.length > 1 && (
+        <fieldset className="grid gap-2">
+          <legend className="mb-2 text-sm font-medium">
+            {t("list.apart.label")}
+          </legend>
+          {names.map((joinedName, index) => (
+            <Field key={joinedName} orientation="horizontal">
+              <Checkbox
+                id={`list-item-apart-${index}`}
+                checked={apart.has(joinedName)}
+                onCheckedChange={(checked) =>
+                  setApart((before) => {
+                    const next = new Set(before)
+                    if (checked) next.add(joinedName)
+                    else next.delete(joinedName)
+                    return next
+                  })
+                }
+              />
+              <FieldLabel
+                htmlFor={`list-item-apart-${index}`}
+                className="font-normal"
+              >
+                <span className="first-letter:uppercase">{joinedName}</span>
+              </FieldLabel>
+            </Field>
+          ))}
+          <FieldDescription>{t("list.apart.hint")}</FieldDescription>
+        </fieldset>
       )}
       <DialogFooter className="sm:justify-between">
         <Button
@@ -553,6 +669,81 @@ export function OnHandDialog({
             {t("list.onHandDialog.add")}
           </Button>
         </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+/**
+ * The household's own names for foods, taught on the list with Same as
+ * and Not the same: each can be forgotten, and Merran's own name counts
+ * again.
+ */
+export function FoodsDialog({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
+  const { t } = useTranslation()
+  const actions = useListActions()
+  const { data } = useQuery({ ...foodAliasesQuery, enabled: open })
+  const [busy, setBusy] = React.useState<string | null>(null)
+  const aliases = data?.aliases ?? []
+
+  async function forget(id: string) {
+    setBusy(id)
+    await actions.forget(id)
+    setBusy(null)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("list.foodsDialog.title")}</DialogTitle>
+          <DialogDescription>
+            {t("list.foodsDialog.description")}
+          </DialogDescription>
+        </DialogHeader>
+        {!data ? (
+          <Skeleton className="h-16" />
+        ) : aliases.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {t("list.foodsDialog.none")}
+          </p>
+        ) : (
+          <ul className="grid gap-1">
+            {aliases.map((alias) => (
+              <li
+                key={alias.id}
+                className="flex items-center justify-between gap-2 rounded-md border bg-card py-1 pr-1 pl-3 text-sm"
+              >
+                <span className="first-letter:uppercase">
+                  {alias.apart
+                    ? t("list.foodsDialog.apart", { name: alias.name })
+                    : t("list.foodsDialog.same", {
+                        name: alias.name,
+                        food: alias.food,
+                      })}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={busy !== null}
+                  onClick={() => void forget(alias.id)}
+                  aria-label={t("list.foodsDialog.forgetName", {
+                    name: alias.name,
+                  })}
+                >
+                  {busy === alias.id && <Spinner data-icon="inline-start" />}
+                  {t("list.foodsDialog.forget")}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
       </DialogContent>
     </Dialog>
   )

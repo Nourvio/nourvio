@@ -6,6 +6,7 @@ import {
   FoodPlacement,
   Household,
 } from "../../database/entities/index.ts"
+import { householdKeys } from "./food-aliases.ts"
 
 // Aisles: each household starts with its country's, in a typical walk
 // through the store. Food goes in the aisle the household last put it in,
@@ -38,9 +39,10 @@ export async function aislesOf(
   householdId: string,
   foods: readonly { name: string; unit?: string | null }[]
 ): Promise<(Aisle | null)[]> {
+  const keyOf = await householdKeys(em)
   if (foods.length === 0) return []
   const aisles = await householdAisles(em, householdId)
-  const keys = foods.map((food) => foodKey(food.name))
+  const keys = foods.map((food) => keyOf(food.name))
   const placed = await em.find(FoodPlacement, {
     foodKey: { $in: [...new Set(keys)] },
   })
@@ -80,7 +82,8 @@ export async function rememberAisle(
   names: readonly string[],
   aisle: Aisle | null
 ) {
-  const keys = [...new Set(names.map(foodKey))]
+  const keyOf = await householdKeys(em)
+  const keys = [...new Set(names.map(keyOf))]
   const known = new Map(
     (await em.find(FoodPlacement, { foodKey: { $in: keys } })).map(
       (placement) => [placement.foodKey, placement]

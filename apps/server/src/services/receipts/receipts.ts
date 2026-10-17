@@ -1,4 +1,4 @@
-import { foodKey, readAmount, type ModelAbility } from "@merran/shared"
+import { covers, foodKey, readAmount, type ModelAbility } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { generateText, Output, type UserContent } from "ai"
 import sharp from "sharp"
@@ -13,6 +13,7 @@ import {
   type ReceiptFile,
   type ReceiptLine,
 } from "../../database/entities/index.ts"
+import { householdKeys } from "../list/food-aliases.ts"
 import { useAi, type AiDeps } from "../ai/run.ts"
 import { householdToday, placeFor, store } from "../pantry/pantry.ts"
 import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
@@ -234,6 +235,7 @@ async function matchList(
   em: EntityManager,
   lines: readonly Omit<ReceiptLine, "listItem">[]
 ): Promise<ReceiptLine[]> {
+  const keyOf = await householdKeys(em)
   const waiting = await em.find(
     ShoppingItem,
     { checked: false },
@@ -241,15 +243,16 @@ async function matchList(
   )
   const claimed = new Set<string>()
   return lines.map((line) => {
-    const key = foodKey(line.name)
+    const key = keyOf(line.name)
     const match =
       line.kind === "other"
         ? undefined
         : waiting.find((item) => {
             if (claimed.has(item.id)) return false
-            const theirs = foodKey(item.name)
+            const theirs = keyOf(item.name)
             return (
-              theirs === key ||
+              // Bought what's on the list, or a kind of it.
+              covers(key, theirs) ||
               key.endsWith(` ${theirs}`) ||
               theirs.endsWith(` ${key}`)
             )
@@ -430,6 +433,7 @@ export async function addReceipt(
     items: readonly { id: string; name: string; amount: string | null }[]
   }
 ) {
+  const keyOf = await householdKeys(em)
   const { householdId } = options
   const result = await inHouseholdTransaction(em, householdId, async (tx) => {
     const receipt = await findReceipt(tx, options.receiptId)
@@ -452,7 +456,7 @@ export async function addReceipt(
         : null
       tx.create(Purchase, {
         household: householdId,
-        foodKey: foodKey(name),
+        foodKey: keyOf(name),
         name,
         quantity: amount.quantity,
         unit: amount.unit,

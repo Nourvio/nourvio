@@ -3,6 +3,7 @@ import type { Router } from "../../router.ts"
 import get from "./get.ts"
 import clearRoutes from "./clear/index.ts"
 import everyWeekRoutes from "./every-week/index.ts"
+import foodsRoutes from "./foods/index.ts"
 import fromPlanRoutes from "./from-plan/index.ts"
 import itemsRoutes from "./items/index.ts"
 import listsRoutes from "./lists/index.ts"
@@ -14,6 +15,7 @@ export default (router: Router, deps: AppDeps) => {
   get(router, deps)
   clearRoutes(router, deps)
   everyWeekRoutes(router, deps)
+  foodsRoutes(router, deps)
   fromPlanRoutes(router, deps)
   itemsRoutes(router, deps)
   listsRoutes(router, deps)

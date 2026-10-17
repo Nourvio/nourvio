@@ -1,6 +1,7 @@
 import {
   addAmounts,
   combineLines,
+  covers,
   foodKey,
   subtractAmounts,
   type Amount,
@@ -13,6 +14,7 @@ import {
   type PantrySnapshot,
   type PlanEntry,
 } from "../../database/entities/index.ts"
+import { householdAliases, householdKeys } from "../list/food-aliases.ts"
 import { hasRecipe, loadMealLines } from "../plan/meal-lines.ts"
 import { amountOf, measured, merged } from "./pantry.ts"
 
@@ -34,6 +36,7 @@ export async function useForMeals(
   if (cooking.length === 0) return
   const linesOf = await loadMealLines(em, cooking[0]!.household.id, cooking)
   const pantry = await em.find(PantryItem, {})
+  const aliases = await householdAliases(em)
   const gone = new Set<string>()
 
   for (const entry of cooking) {
@@ -50,16 +53,20 @@ export async function useForMeals(
           share: shareOf(row, entry.id),
         })
     }
-    const needs = hasRecipe(entry) ? combineLines(linesOf(entry)) : []
+    const needs = hasRecipe(entry) ? combineLines(linesOf(entry), aliases) : []
     for (const need of needs) {
-      const key = foodKey(need.name)
-      // What was set aside for this meal goes first.
+      const key = need.food
+      // What was set aside for this meal goes first, then the food itself
+      // before a kind of it (the green bell pepper for a bell pepper).
       const rows = pantry
-        .filter((row) => row.foodKey === key && !gone.has(row.id))
+        .filter(
+          (row) => row.foodKey && covers(row.foodKey, key) && !gone.has(row.id)
+        )
         .sort(
           (a, b) =>
             Number(shareOf(b, entry.id) !== null) -
-            Number(shareOf(a, entry.id) !== null)
+              Number(shareOf(a, entry.id) !== null) ||
+            Number(b.foodKey === key) - Number(a.foodKey === key)
         )
       let left: Amount = { quantity: need.quantity, unit: need.unit }
       for (const row of rows) {
@@ -133,6 +140,7 @@ export async function putBack(
   householdId: string,
   entries: readonly PlanEntry[]
 ) {
+  const keyOf = await householdKeys(em)
   for (const entry of entries) {
     for (const taken of entry.pantryUsed ?? []) {
       const row = await em.findOne(PantryItem, { id: taken.id })
@@ -144,7 +152,7 @@ export async function putBack(
         em.create(PantryItem, {
           id: taken.id,
           household: householdId,
-          foodKey: taken.foodKey || foodKey(taken.name),
+          foodKey: taken.foodKey || keyOf(taken.name),
           name: taken.name,
           quantity: taken.quantity,
           unit: taken.unit,

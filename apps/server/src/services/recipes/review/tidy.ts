@@ -1,10 +1,15 @@
 import {
+  foodInLine,
+  foodKey,
+  type FoodLine,
+  foodsToChoose,
   INGREDIENT_MARKS,
+  isKnownFood,
+  type MarkedLine,
   parseIngredient,
   PROPOSAL_SECTIONS,
-  TIDY_SECTIONS,
-  type MarkedLine,
   type RecipeDetails,
+  TIDY_SECTIONS,
   type TidySection,
   type TidyValues,
 } from "@merran/shared"
@@ -17,6 +22,7 @@ import { useAi, type AiDeps } from "../../ai/run.ts"
 import {
   findRecipe,
   inHouseholdTransaction,
+  chosenFoods,
   markedLines,
   marksFrom,
   snapshotOf,
@@ -53,6 +59,17 @@ const TidyAnswer = z.object({
       })
     )
     .nullable(),
+  foods: z
+    .array(
+      z.object({
+        ingredient: z.string().describe("The line, as under Foods to name."),
+        food: z
+          .string()
+          .nullable()
+          .describe("A food from Known foods, exactly as written, or null."),
+      })
+    )
+    .nullable(),
 })
 type TidyAnswer = z.infer<typeof TidyAnswer>
 
@@ -66,6 +83,8 @@ const ASK: Record<TidySection, string> = {
     "description: one or two plain sentences about the dish, only if it has none. Otherwise null.",
   details:
     "servings, prepMinutes, cookMinutes, totalMinutes: only ones it's missing that can be worked out from the recipe. Never change one it has: null for those.",
+  foods:
+    'foods: for each line under "Foods to name" (lines whose food Merran doesn\'t recognize), the food it is from "Known foods", written exactly as there. Only a food that\'s the same thing to buy, by another name or brand; null when none is, rather than something close.',
   marks:
     'marks: every ingredient line of the final list ("# " lines aside), with what it is to the dish for someone who won\'t eat it. "needed" when the dish is about it or doesn\'t work without it (the chicken in a chicken curry, the flour in bread, the rice in a risotto). "swappable" when it matters but another food could stand in (the zucchini in a stir fry, the cheddar on a gratin). "optional" when it can simply be left out (a garnish, nuts on top, olives in a salad).',
 }
@@ -78,13 +97,16 @@ function systemFor(sections: readonly TidySection[], tags: string[]) {
     sections.includes("tags") && tags.length > 0
       ? `The household's tags: ${tags.join(", ")}.`
       : "",
+    sections.includes("foods")
+      ? `Known foods: ${foodsToChoose().join(", ")}.`
+      : "",
   ]
     .filter(Boolean)
     .join("\n\n")
 }
 
-/** The recipe as the model reads it. */
-function recipeText(input: RecipeInput) {
+/** The recipe as the model reads it, and the lines whose food it names. */
+function recipeText(input: RecipeInput, unknown: readonly string[] = []) {
   const minutes = (value: number | null) =>
     value === null ? "not given" : `${value} minutes`
   return [
@@ -102,6 +124,7 @@ function recipeText(input: RecipeInput) {
     "",
     "Steps:",
     ...input.steps,
+    ...(unknown.length > 0 ? ["", "Foods to name:", ...unknown] : []),
   ]
     .filter((line, i) => line !== "" || i > 0)
     .join("\n")
@@ -138,7 +161,7 @@ export const detailsOf = (input: RecipeInput): RecipeDetails => ({
  * never wipes a section, and set servings and times are never changed.
  */
 export function changesFrom(
-  recipe: { input: RecipeInput; marks: MarkedLine[] },
+  recipe: { input: RecipeInput; marks: MarkedLine[]; foods: FoodLine[] },
   sections: readonly TidySection[],
   answer: TidyAnswer,
   householdTags: readonly string[]
@@ -234,7 +257,59 @@ export function changesFrom(
     }
   }
 
+  if (asked("foods") && answer.foods) {
+    // A food Merran knows for a line it doesn't: by the line, or by its
+    // food when the model wrote the line differently. Anything else the
+    // model says is dropped.
+    const lines = ingredientLines(after.ingredients ?? input.ingredients)
+    const byLine = new Map<string, string>()
+    const byFood = new Map<string, string>()
+    for (const { ingredient, food } of answer.foods) {
+      const key = food?.trim().toLowerCase()
+      if (!key || !isKnownFood(key)) continue
+      byLine.set(ingredient.trim().toLowerCase(), key)
+      const said = parseFood(ingredient)
+      if (said) byFood.set(foodKey(said), key)
+    }
+    const kept = new Map(
+      recipe.foods.map(({ line, food }) => [line.trim().toLowerCase(), food])
+    )
+    const foods = lines.map((line) => {
+      const text = line.trim().toLowerCase()
+      const food = parseFood(line)
+      const known = foodInLine(line)?.known ?? true
+      const suggested = known
+        ? undefined
+        : (byLine.get(text) ?? (food ? byFood.get(foodKey(food)) : undefined))
+      return { line, food: suggested ?? kept.get(text) ?? null }
+    })
+    const unchanged = lines.map((line) => ({
+      line,
+      food: kept.get(line.trim().toLowerCase()) ?? null,
+    }))
+    if (!sameList(foods, unchanged)) {
+      before.foods = recipe.foods
+      after.foods = foods
+    }
+  }
+
   return { before, after }
+}
+
+/**
+ * A recipe's lines whose food Merran doesn't know and no one has said: the
+ * ones tidy up can name.
+ */
+export function linesToName(recipe: { input: RecipeInput; foods: FoodLine[] }) {
+  const said = new Set(
+    recipe.foods
+      .filter(({ food }) => food)
+      .map(({ line }) => line.trim().toLowerCase())
+  )
+  return ingredientLines(recipe.input.ingredients).filter(
+    (line) =>
+      !said.has(line.trim().toLowerCase()) && foodInLine(line)?.known === false
+  )
 }
 
 /** A line's food, for matching marks to lines written differently. */
@@ -264,10 +339,17 @@ export function describeProposal(proposal: Proposal) {
 }
 export type ProposalView = ReturnType<typeof describeProposal>
 
-/** A recipe as tidy up sees it: its editor lines and its marks. */
+/**
+ * A recipe as tidy up sees it: its editor lines, their marks, and the
+ * foods lines were said to be.
+ */
 export async function tidyView(em: EntityManager, recipe: Recipe) {
   const tags = (await tagsOf(em, [recipe.id])).get(recipe.id) ?? []
-  return { input: snapshotOf(recipe, tags), marks: markedLines(recipe) }
+  return {
+    input: snapshotOf(recipe, tags),
+    marks: markedLines(recipe),
+    foods: chosenFoods(recipe),
+  }
 }
 
 /**
@@ -289,8 +371,12 @@ export async function proposeTidy(
   }
 ): Promise<ProposalView | null> {
   const recipe = await findRecipe(em, options.recipe)
-  const sections = options.sections?.length ? options.sections : TIDY_SECTIONS
   const current = await tidyView(em, recipe)
+  // Foods only when there are lines to name.
+  const unknown = linesToName(current)
+  const sections = (
+    options.sections?.length ? options.sections : TIDY_SECTIONS
+  ).filter((section) => section !== "foods" || unknown.length > 0)
   const householdTags = (await listTags(em))
     .sort((a, b) => b.recipes - a.recipes)
     .slice(0, 150)
@@ -308,7 +394,10 @@ export async function proposeTidy(
       generateText({
         model,
         system: systemFor(sections, householdTags),
-        prompt: recipeText(current.input),
+        prompt: recipeText(
+          current.input,
+          sections.includes("foods") ? unknown : []
+        ),
         output: Output.object({ schema: TidyAnswer, name: "tidy" }),
         maxOutputTokens: 12_000,
       })

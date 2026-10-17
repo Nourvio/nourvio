@@ -8,6 +8,7 @@ import {
   missingDiets,
   NO_TASTES,
   NO_THEMES,
+  covers,
   foodKey,
   reasonsFor,
   saleNudge,
@@ -29,6 +30,7 @@ import {
   RecipeIngredient,
   RecipePairing,
 } from "../../database/entities/index.ts"
+import { householdKeys } from "../list/food-aliases.ts"
 import { getPantry } from "../pantry/pantry.ts"
 import { decodeDiets } from "../recipes/diet-labels.ts"
 import { photoUrls } from "../recipes/photos.ts"
@@ -242,6 +244,7 @@ export async function suggestMeals(
     budget?: SuggestBudget | null
   } = {}
 ): Promise<Suggestion[]> {
+  const keyOf = await householdKeys(em)
   if (slots.length === 0) return []
   const random = options.random ?? Math.random
   const household = await em.findOneOrFail(Household, { id: householdId })
@@ -258,13 +261,20 @@ export async function suggestMeals(
   )
   const usesUp = new Map(
     recipes.map((recipe) => {
-      const keys = new Set(
-        recipe.lines.flatMap((line) =>
-          lineFoods(line).map((food) => foodKey(food.name))
-        )
-      )
+      const keys = [
+        ...new Set(
+          recipe.lines.flatMap((line) =>
+            lineFoods(line).map((food) => keyOf(food.name))
+          )
+        ),
+      ]
+      // What's at home uses up a recipe's food, or a food it's a kind of:
+      // the green bell pepper, a recipe's bell pepper.
       const foods = soon
-        .filter((item) => keys.has(foodKey(item.name)))
+        .filter((item) => {
+          const have = keyOf(item.name)
+          return keys.some((need) => covers(have, need))
+        })
         .map((item) => item.name.toLowerCase())
       return [recipe.id, [...new Set(foods)]] as const
     })

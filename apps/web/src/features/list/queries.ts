@@ -41,3 +41,23 @@ export const fromPlanQuery = (from: string, to: string) =>
         api.GET("/api/list/from-plan", { params: { query: { from, to } } })
       ),
   })
+
+export type FoodAlias = Schemas["FoodAlias"]
+
+/** The household's own names for foods, taught on the list. */
+export const foodAliasesQuery = queryOptions({
+  queryKey: ["list", "foods"],
+  queryFn: () => unwrap(api.GET("/api/list/foods")),
+})
+
+/** The names a line on the list was joined from, for Not the same. */
+export const joinedNamesQuery = (itemId: string) =>
+  queryOptions({
+    queryKey: ["list", "items", itemId, "names"],
+    queryFn: () =>
+      unwrap(
+        api.GET("/api/list/items/{itemId}/names", {
+          params: { path: { itemId } },
+        })
+      ),
+  })

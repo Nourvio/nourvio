@@ -1,3 +1,4 @@
+import { addDays, clockIn } from "@merran/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
 import type { JobRunner } from "../../../../services/jobs/runner.ts"
@@ -70,6 +71,7 @@ const TIDIED = {
     { ingredient: "pepper", mark: "optional" },
     { ingredient: "Fresh parsley", mark: "optional" },
   ],
+  foods: null,
 }
 
 const NOTHING = {
@@ -83,6 +85,7 @@ const NOTHING = {
   cookMinutes: null,
   totalMinutes: null,
   marks: null,
+  foods: null,
 }
 
 let tidy: () => unknown = () => TIDIED
@@ -283,6 +286,85 @@ describe("tidying a recipe", () => {
       (await res.json()).ingredients.map((line: { mark: string }) => line.mark)
     ).toEqual(["needed", "optional", "optional"])
     expect(risotto.ingredients).toHaveLength(4)
+  })
+
+  test("names the food of a line Merran doesn't know, for the list", async () => {
+    await addRecipe({
+      ...RISOTTO,
+      name: "Chili Oil",
+      ingredients: ["2 tbsp gochugaru", "1 cup oil"],
+      steps: ["Warm the oil, then add the gochugaru."],
+    })
+    await addRecipe({
+      ...RISOTTO,
+      name: "Spicy Noodles",
+      ingredients: ["1 tsp red pepper flakes", "8 oz noodles"],
+      steps: ["Toss together."],
+    })
+    tidy = () => ({
+      ...NOTHING,
+      foods: [
+        { ingredient: "2 tbsp gochugaru", food: "red pepper flake" },
+        // A line it knows already stays its own food.
+        { ingredient: "1 cup oil", food: "butter" },
+      ],
+    })
+    try {
+      const res = await tidyUp("chili-oil", ["foods"])
+      expect(res.status, await res.clone().text()).toBe(200)
+      const { proposal } = await res.json()
+      expect(proposal.sections).toEqual(["foods"])
+      expect(proposal.after.foods).toEqual([
+        { line: "2 tbsp gochugaru", food: "red pepper flake" },
+        { line: "1 cup oil", food: null },
+      ])
+      // The model was given only the line to name, and the foods to choose.
+      expect(system()).toContain("Known foods:")
+      expect(JSON.stringify(asked)).toContain("Foods to name:")
+      const applied = await kyle.post(`/api/proposals/${proposal.id}/apply`, {
+        sections: ["foods"],
+      })
+      expect(applied.status, await applied.clone().text()).toBe(200)
+    } finally {
+      tidy = () => TIDIED
+    }
+
+    // Kept through an edit that rewords the line.
+    const res = await kyle.put("/api/recipes/chili-oil", {
+      ...RISOTTO,
+      name: "Chili Oil",
+      ingredients: ["2 tbsp gochugaru, divided", "1 cup oil"],
+      steps: ["Warm the oil, then add the gochugaru."],
+    })
+    expect(res.status, await res.clone().text()).toBe(200)
+
+    // On the list, it's red pepper flakes: one line with the noodles'.
+    const today = clockIn("UTC").today
+    for (const slug of ["chili-oil", "spicy-noodles"]) {
+      const planned = await kyle.post("/api/plan/entries", {
+        date: addDays(today, 2),
+        meal: "dinner",
+        recipe: (await recipe(slug)).id,
+      })
+      expect(planned.status, await planned.clone().text()).toBe(201)
+    }
+    const listed = await kyle.post("/api/list/from-plan", {
+      from: today,
+      to: addDays(today, 6),
+    })
+    expect(listed.status, await listed.clone().text()).toBe(200)
+    const items = (await (await kyle.get("/api/list")).json()).items as {
+      name: string
+    }[]
+    expect(
+      items.filter((item) => /gochugaru|pepper/i.test(item.name))
+    ).toHaveLength(1)
+
+    // Gone again, so the library run below has the recipes it counts on.
+    await kyle.post("/api/list/clear", { which: "all" })
+    for (const slug of ["chili-oil", "spicy-noodles"]) {
+      expect((await kyle.delete(`/api/recipes/${slug}`)).status).toBe(204)
+    }
   })
 
   test("refuses a section changed since it was suggested", async () => {

@@ -468,3 +468,75 @@ export const UsualSkipSchema = z
 export const UsualAddSchema = z
   .object({ foods: z.array(z.string().min(1).max(200)).min(1).max(50) })
   .openapi("UsualAdd", { example: { foods: ["milk"] } })
+
+export const SameAsSchema = z
+  .object({
+    item: z.string().min(1).openapi({
+      description: "The other thing on the list it's the same food as.",
+      example: IDS.listItems[1],
+    }),
+  })
+  .openapi("SameAs", { example: { item: IDS.listItems[1]! } })
+
+export const SameAsResultSchema = z
+  .object({
+    food: z.string().openapi({
+      description: "The food both are now, for the household.",
+      example: "butter",
+    }),
+    joined: z.number().int().openapi({
+      description: "How many lines joined into others.",
+      example: 1,
+    }),
+  })
+  .openapi("SameAsResult", { example: { food: "butter", joined: 1 } })
+
+export const JoinedNamesSchema = z
+  .object({
+    names: z.array(z.string()).openapi({
+      description:
+        "The names this line was joined from: its own, and its meals' lines that came to the same food.",
+      example: ["butter", "unsalted butter"],
+    }),
+  })
+  .openapi("JoinedNames", { example: { names: ["butter", "unsalted butter"] } })
+
+export const KeepApartSchema = z
+  .object({ names: z.array(z.string().trim().min(1).max(200)).min(1).max(50) })
+  .openapi("KeepApart", { example: { names: ["unsalted butter"] } })
+
+export const KeptApartSchema = z
+  .object({ kept: z.number().int() })
+  .openapi("KeptApart", { example: { kept: 1 } })
+
+const FOOD_ALIAS = {
+  id: IDS.listItems[2]!,
+  name: "unsalted butter",
+  food: "unsalted butter",
+  apart: true,
+}
+
+export const FoodAliasSchema = z
+  .object({
+    id: z.string(),
+    name: z.string().openapi({
+      description:
+        "A food's key made another's (Same as…), or a name kept its own (Not the same).",
+    }),
+    food: z
+      .string()
+      .openapi({ description: "The food it is, for the household." }),
+    apart: z.boolean().openapi({ description: "Kept its own food." }),
+  })
+  .openapi("FoodAlias", { example: FOOD_ALIAS })
+
+export const FoodAliasesSchema = z
+  .object({ aliases: z.array(FoodAliasSchema) })
+  .openapi("FoodAliases", { example: { aliases: [FOOD_ALIAS] } })
+
+export const AliasParam = z.object({
+  aliasId: z.string().openapi({
+    param: { name: "aliasId", in: "path" },
+    example: IDS.listItems[2],
+  }),
+})

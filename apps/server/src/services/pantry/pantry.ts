@@ -23,6 +23,7 @@ import {
   PlanEntry,
   STORAGE_PLACES,
 } from "../../database/entities/index.ts"
+import { householdKeys } from "../list/food-aliases.ts"
 import { HOUSEHOLD_FILTER, NOT_DELETED_FILTER } from "../../database/scope.ts"
 import { aislesOf, findAisle, householdAisles } from "../list/aisles.ts"
 import { inHouseholdTransaction, toNumber } from "../recipes/recipes.ts"
@@ -221,7 +222,8 @@ export async function store(
   householdId: string,
   stock: Stock
 ) {
-  const key = foodKey(stock.name)
+  const keyOf = await householdKeys(em)
+  const key = keyOf(stock.name)
   const same = await em.find(PantryItem, {
     foodKey: key,
     storedIn: stock.storedIn,
@@ -353,10 +355,11 @@ export async function updateItem(
   id: string,
   changes: PantryChanges
 ) {
+  const keyOf = await householdKeys(em)
   const item = await findItem(em, id)
   if (changes.name !== undefined) {
     item.name = changes.name.trim()
-    item.foodKey = foodKey(item.name)
+    item.foodKey = keyOf(item.name)
   }
   if (changes.amount !== undefined) em.assign(item, readAmount(changes.amount))
   if (changes.storedIn !== undefined) {
@@ -457,6 +460,7 @@ export async function restoreItems(
   householdId: string,
   snapshots: readonly PantrySnapshotItem[]
 ) {
+  const keyOf = await householdKeys(em)
   return inHouseholdTransaction(em, householdId, async (tx) => {
     const aisles = new Map(
       (await householdAisles(tx, householdId)).map((aisle) => [aisle.id, aisle])
@@ -482,7 +486,7 @@ export async function restoreItems(
       }
       tx.assign(item, {
         name: snapshot.name,
-        foodKey: snapshot.foodKey || foodKey(snapshot.name),
+        foodKey: snapshot.foodKey || keyOf(snapshot.name),
         quantity: snapshot.quantity,
         unit: snapshot.unit,
         amountText: snapshot.amountText,

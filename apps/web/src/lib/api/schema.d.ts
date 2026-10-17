@@ -1052,6 +1052,46 @@ export interface paths {
         patch: operations["updateEveryWeekItem"];
         trace?: never;
     };
+    "/api/list/foods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * The household's own names for foods
+         * @description What it said was the same food as another (Same as…) or kept apart (Not the same) on the list, which win over Merran's own names for it. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["listFoodAliases"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/foods/{aliasId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Forget one of the household's names for a food
+         * @description Merran's own name for it counts again. Lines already joined stay as they are. With an API key, it needs the `list: write` permission.
+         */
+        delete: operations["forgetFoodAlias"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/list/from-plan": {
         parameters: {
             query?: never;
@@ -1138,6 +1178,66 @@ export interface paths {
          * @description Check it off or not, rename it, change how much, or move it to another aisle or list, which the household remembers for the food. With an API key, it needs the `list: write` permission.
          */
         patch: operations["updateListItem"];
+        trace?: never;
+    };
+    "/api/list/items/{itemId}/apart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Say names a line was joined from aren't the same
+         * @description Each name is its own food for the household from the next list on (docs/foods.md). The line as it is stays. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["keepListItemNamesApart"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/items/{itemId}/names": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What a line on the list was joined from
+         * @description Its own name, and the names in its meals' recipes that came to the same food: what Not the same can keep apart. With an API key, it needs the `list: read` permission.
+         */
+        get: operations["listItemNames"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/list/items/{itemId}/same-as": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Say something on the list is the same food as another
+         * @description The household's own name for the food (docs/foods.md): from now on it's the other's food, on the list, at home and in what's to come, and the two lines join where their amounts add up. With an API key, it needs the `list: write` permission.
+         */
+        post: operations["sameAsListItem"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/list/lists": {
@@ -5516,6 +5616,38 @@ export interface components {
         };
         /**
          * @example {
+         *       "aliases": [
+         *         {
+         *           "id": "0199e8b0-5a10-7a01-8b00-00000000001f",
+         *           "name": "unsalted butter",
+         *           "food": "unsalted butter",
+         *           "apart": true
+         *         }
+         *       ]
+         *     }
+         */
+        FoodAliases: {
+            aliases: components["schemas"]["FoodAlias"][];
+        };
+        /**
+         * @example {
+         *       "id": "0199e8b0-5a10-7a01-8b00-00000000001f",
+         *       "name": "unsalted butter",
+         *       "food": "unsalted butter",
+         *       "apart": true
+         *     }
+         */
+        FoodAlias: {
+            id: string;
+            /** @description A food's key made another's (Same as…), or a name kept its own (Not the same). */
+            name: string;
+            /** @description The food it is, for the household. */
+            food: string;
+            /** @description Kept its own food. */
+            apart: boolean;
+        };
+        /**
+         * @example {
          *       "meals": [
          *         {
          *           "id": "0199e8b0-5a10-7a01-8b00-00000000001b",
@@ -5659,6 +5791,72 @@ export interface components {
             aisle?: string | null;
             /** @description Another list's id. Remembered for the food too: next time it goes on that list. */
             list?: string;
+        };
+        /**
+         * @example {
+         *       "kept": 1
+         *     }
+         */
+        KeptApart: {
+            kept: number;
+        };
+        /**
+         * @example {
+         *       "names": [
+         *         "unsalted butter"
+         *       ]
+         *     }
+         */
+        KeepApart: {
+            names: string[];
+        };
+        /**
+         * @example {
+         *       "names": [
+         *         "butter",
+         *         "unsalted butter"
+         *       ]
+         *     }
+         */
+        JoinedNames: {
+            /**
+             * @description The names this line was joined from: its own, and its meals' lines that came to the same food.
+             * @example [
+             *       "butter",
+             *       "unsalted butter"
+             *     ]
+             */
+            names: string[];
+        };
+        /**
+         * @example {
+         *       "food": "butter",
+         *       "joined": 1
+         *     }
+         */
+        SameAsResult: {
+            /**
+             * @description The food both are now, for the household.
+             * @example butter
+             */
+            food: string;
+            /**
+             * @description How many lines joined into others.
+             * @example 1
+             */
+            joined: number;
+        };
+        /**
+         * @example {
+         *       "item": "0199e8b0-5a10-7a01-8b00-00000000001e"
+         *     }
+         */
+        SameAs: {
+            /**
+             * @description The other thing on the list it's the same food as.
+             * @example 0199e8b0-5a10-7a01-8b00-00000000001e
+             */
+            item: string;
         };
         /**
          * @example {
@@ -7117,7 +7315,7 @@ export interface components {
          * @description A part of a recipe a suggestion can change: tidy up's sections, and the notes, which a cooking note can add to.
          * @enum {string}
          */
-        ProposalSection: "ingredients" | "steps" | "tags" | "description" | "details" | "marks" | "notes";
+        ProposalSection: "ingredients" | "steps" | "tags" | "description" | "details" | "marks" | "foods" | "notes";
         /** @description A recipe's sections, only the ones a suggestion changes. Ingredients and steps are editor lines. */
         TidyValues: {
             ingredients?: string[];
@@ -7131,12 +7329,18 @@ export interface components {
                 totalMinutes: number | null;
             };
             marks?: components["schemas"]["MarkedLine"][];
+            foods?: components["schemas"]["FoodLine"][];
             notes?: string | null;
         };
         MarkedLine: {
             line: string;
             /** @enum {string|null} */
             mark: "needed" | "swappable" | "optional" | null;
+        };
+        FoodLine: {
+            line: string;
+            /** @description The food Merran knows that the line is, as a food key; null when no one has said. */
+            food: string | null;
         };
         /**
          * @example {
@@ -8697,7 +8901,7 @@ export interface components {
          * @description A part of a recipe tidy up can change: its ingredients, steps, tags, a missing description, missing servings and times, and the marks on its ingredients.
          * @enum {string}
          */
-        TidySection: "ingredients" | "steps" | "tags" | "description" | "details" | "marks";
+        TidySection: "ingredients" | "steps" | "tags" | "description" | "details" | "marks" | "foods";
         /**
          * @example {
          *       "id": "0199e8b0-5a10-7a01-8b00-00000000000d",
@@ -12969,6 +13173,96 @@ export interface operations {
             };
         };
     };
+    listFoodAliases: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its names, by name. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FoodAliases"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    forgetFoodAlias: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                aliasId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Forgotten. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /** @enum {boolean} */
+                        ok: true;
+                    };
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description No such name. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     previewFromPlan: {
         parameters: {
             query?: {
@@ -13264,6 +13558,170 @@ export interface operations {
                 };
             };
             /** @description Not on the list, or no such aisle or list. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    keepListItemNamesApart: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["KeepApart"];
+            };
+        };
+        responses: {
+            /** @description Remembered. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["KeptApart"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not on the list. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listItemNames: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The names. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["JoinedNames"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not on the list. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    sameAsListItem: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                itemId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SameAs"];
+            };
+        };
+        responses: {
+            /** @description Remembered, and joined. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SameAsResult"];
+                };
+            };
+            /** @description The same thing twice. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not on the list. */
             404: {
                 headers: {
                     [name: string]: unknown;

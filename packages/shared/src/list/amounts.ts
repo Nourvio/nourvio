@@ -1,3 +1,8 @@
+import {
+  householdKey,
+  NO_ALIASES,
+  type FoodAliases,
+} from "../foods/household.ts"
 import { foodUnits, gramsEach } from "../foods/vocabulary.ts"
 import { formatQuantity } from "../ingredients/display.ts"
 import { parseIngredient } from "../ingredients/parse.ts"
@@ -24,6 +29,11 @@ export type ListLine = {
   source: string
   /** The planned meal it's for. */
   meal?: string
+  /**
+   * The food a person or AI said the line is, when it names one: it wins
+   * over the vocabulary.
+   */
+  food?: string | null
 }
 
 export type CombinedItem = Amount & {
@@ -148,18 +158,32 @@ type Group = {
  * units too (a head of garlic is ten cloves), and other counts stay in
  * their own unit (2 cans and 1 lb of tomatoes stay apart). A line without
  * an amount ("salt to taste") is listed once, without one, unless the food
- * has an amount elsewhere. Ranges buy the top: 3 for "2-3 cloves".
+ * has an amount elsewhere. Ranges buy the top: 3 for "2-3 cloves". A
+ * household's own names for foods (`aliases`) win over the vocabulary's.
  */
-export function combineLines(lines: readonly ListLine[]): CombinedItem[] {
+export function combineLines(
+  lines: readonly ListLine[],
+  aliases: FoodAliases = NO_ALIASES
+): CombinedItem[] {
   const groups = new Map<string, Group>()
 
-  // Each food a line names: "salt and pepper" is two.
-  const foods = lines.flatMap((line) =>
-    lineFoods(line.text).map((food) => ({ line, food }))
-  )
-  for (const { line, food: each } of foods) {
+  // Each food a line names ("salt and pepper" is two), as the household
+  // has it: a food someone chose for the line, then its own names.
+  const foods = lines.flatMap((line) => {
+    const named = lineFoods(line.text)
+    return named.map((food) => ({
+      line,
+      food,
+      foodKey: householdKey(
+        food.name,
+        line.food && named.length === 1 ? line.food : food.key,
+        aliases
+      ),
+    }))
+  })
+  for (const { line, food: each, foodKey } of foods) {
     const name = each.name
-    const food = each.key
+    const food = foodKey
     const top = each.quantityMax ?? each.quantity
     const amount = inFoodUnits(food, {
       quantity: top === null ? null : top * line.factor,

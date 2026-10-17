@@ -620,10 +620,8 @@ export const FOODS: Readonly<Record<string, FoodFacts>> = {
   "dulce de leche": { aisle: "canned-jarred" },
   "alfredo sauce": { aisle: "canned-jarred" },
   gravy: { aisle: "canned-jarred" },
-  "diced tomato and green chile": {
-    aisle: "canned-jarred",
-    parent: "diced tomato",
-  },
+  // Not a kind of diced tomato: it has chiles in, so it doesn't stand in for one.
+  "diced tomato and green chile": { aisle: "canned-jarred" },
   "evaporated milk": { aisle: "canned-jarred", gramsPerCup: 252 },
   "sweetened condensed milk": { aisle: "canned-jarred", gramsPerCup: 306 },
   "black-eyed pea": { aisle: "canned-jarred" },
@@ -789,8 +787,9 @@ export const FOODS: Readonly<Record<string, FoodFacts>> = {
   bourbon: { aisle: "beverages" },
   sake: { aisle: "beverages" },
   "orange juice": { aisle: "beverages" },
-  "lemon juice": { aisle: "produce", parent: "lemon" },
-  "lime juice": { aisle: "produce", parent: "lime" },
+  // Made from a lemon, not a kind of one: it doesn't stand in for one.
+  "lemon juice": { aisle: "produce" },
+  "lime juice": { aisle: "produce" },
   coffee: { aisle: "beverages" },
   espresso: { aisle: "beverages" },
   water: { aisle: "beverages", gramsPerCup: 237 },

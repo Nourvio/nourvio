@@ -13,6 +13,7 @@ import { FdcFood } from "./fdc_foods.ts"
 import { FoodMatch } from "./food_matches.ts"
 import { FollowedSite } from "./followed_sites.ts"
 import { EmailInvitation } from "./email_invitations.ts"
+import { FoodAlias } from "./food_aliases.ts"
 import { FoodPlacement } from "./food_placements.ts"
 import { HouseholdMember } from "./household_members.ts"
 import { HouseholdSetting } from "./household_settings.ts"
@@ -59,6 +60,7 @@ export * from "./email_invitations.ts"
 export * from "./fdc_foods.ts"
 export * from "./food_matches.ts"
 export * from "./followed_sites.ts"
+export * from "./food_aliases.ts"
 export * from "./food_placements.ts"
 export * from "./household_members.ts"
 export * from "./household_settings.ts"
@@ -107,6 +109,7 @@ export const entities = [
   FoodMatch,
   FollowedSite,
   EmailInvitation,
+  FoodAlias,
   FoodPlacement,
   Household,
   HouseholdMember,
