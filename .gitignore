@@ -2,8 +2,10 @@
 node_modules
 dist
 dist-ssr
-# The packaged browser extension (built with the image)
+# The browser extension's build, its zips, and what WXT makes for TypeScript
 apps/extension/release
+apps/extension/.output
+apps/extension/.wxt
 coverage
 *.tsbuildinfo
 

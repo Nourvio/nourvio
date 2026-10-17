@@ -131,7 +131,7 @@ export interface paths {
         put?: never;
         /**
          * Make an API key
-         * @description For the household in use. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.
+         * @description For the household in use, or another of yours named in `household`. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.
          */
         post: operations["createApiKey"];
         delete?: never;
@@ -2032,6 +2032,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/recipes/import/page": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a recipe from a page already open
+         * @description For the browser extension: a page as the person's own browser shows it, for sites that turn Merran's server away or only show a recipe to someone signed in. Its recipe data and photo, or its text read by AI when the household has AI for importing. A video's page (YouTube, TikTok, Instagram, Facebook) is imported as the video, as `POST /recipes/import` does. A page imported before gives back that recipe. With an API key, it needs the `imports: write` permission.
+         */
+        post: operations["importReadPage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/recipes/import/text": {
         parameters: {
             query?: never;
@@ -3530,6 +3550,8 @@ export interface components {
         NewApiKeyRequest: {
             name: string;
             permissions: components["schemas"]["ApiKeyPermissions"];
+            /** @description Which of your households it's for: the one in use when left out. */
+            household?: string;
             /** @default 90 */
             expiresInDays: 30 | 90 | 365 | null;
         };
@@ -7684,6 +7706,39 @@ export interface components {
          */
         LinkCheckRequest: {
             /** @description Pasted text with links in it: one per line, or mixed in. */
+            text: string;
+        };
+        /**
+         * @example {
+         *       "url": "https://cooking.example/lemon-chicken",
+         *       "title": "Lemon Chicken | Cooking",
+         *       "jsonld": [
+         *         "{\"@type\":\"Recipe\",\"name\":\"Lemon Chicken\"}"
+         *       ],
+         *       "images": [
+         *         "https://cooking.example/lemon-chicken.jpg"
+         *       ],
+         *       "text": "Lemon Chicken. Serves 4. 4 chicken thighs, 2 lemons..."
+         *     }
+         */
+        ReadPage: {
+            url: string;
+            /** @default  */
+            title: string;
+            /**
+             * @description The page's JSON-LD blocks, as found.
+             * @default []
+             */
+            jsonld: string[];
+            /**
+             * @description Its share images: og:image and the like.
+             * @default []
+             */
+            images: string[];
+            /**
+             * @description Its text, as the browser shows it.
+             * @default
+             */
             text: string;
         };
         /**
@@ -14865,6 +14920,84 @@ export interface operations {
             };
             /** @description It has already finished. */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    importReadPage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReadPage"];
+            };
+        };
+        responses: {
+            /** @description Already in the library. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Added. */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ImportResult"];
+                };
+            };
+            /** @description Not a link Merran can keep. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The page is over 2 MB. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description The page has no recipe data and no AI to read it, or AI found no recipe on it. */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -149,6 +149,32 @@ describe("using an API key", () => {
     expect(await res.json()).toMatchObject({ name: "Home" })
   })
 
+  test("can be made for another of its person's households", async () => {
+    // Parents is in use now; the key is for Home.
+    const me = await (await kyle.get("/api/auth/me")).json()
+    const home = me.households.find(
+      (household: { name: string }) => household.name === "Home"
+    )
+    const res = await kyle.post("/api/auth/api-keys", {
+      name: "Browser extension",
+      permissions: { household: "read" },
+      household: home.id,
+    })
+    expect(res.status).toBe(201)
+    const made = await res.json()
+    expect(made.household).toEqual({ id: home.id, name: "Home" })
+    const current = await withKey(made.key, "/api/households/current")
+    expect(await current.json()).toMatchObject({ name: "Home" })
+
+    // Not one they aren't in.
+    const theirs = await kyle.post("/api/auth/api-keys", {
+      name: "Sneaky",
+      permissions: { household: "read" },
+      household: "01a00000-0000-7000-8000-000000000000",
+    })
+    expect(theirs.status).toBe(404)
+  })
+
   test("a made-up key, or another kind of token, is refused", async () => {
     for (const key of ["mrn_madeup", "eyJhbGciOiJIUzI1NiJ9.e30.x"]) {
       const res = await withKey(key, "/api/households/current")

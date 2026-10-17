@@ -59,7 +59,7 @@ Everything here is in 0.1 unless it says **Later**.
 | Starter collections | M8 | Module (recipe sites) | **A rule per collection, not a list of links:** data files per language, open to contributions, each with a few hand-picked classics (checked weekly) and filled from the recipe sites' newest posts that fit; fitted to the household's tastes; Find more with AI |
 | Follow recipe sites | M8 | Module (recipe sites) | Honest user agent, `robots.txt` respected; one shelf for the server, so a site is read once for every household |
 | Discover with AI, finding recipes online in chat | M7, M8 | AI | Needs a model with web search |
-| Browser extension: page import, right-click, list side panel | M6 | Module | WXT; Chrome, Edge and Firefox; store listings |
+| Browser extension: page import, right-click, list side panel | M6 | Module | WXT; Chrome, Edge and Firefox; connects through `/extension/connect`, which makes it a key with just what it needs; store listings with 0.1 |
 
 ### Planning
 

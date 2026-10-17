@@ -560,3 +560,13 @@ export const TagChangesSchema = z
       }),
   })
   .openapi("TagChanges", { example: { name: "Weeknight" } })
+
+export const ImportResultSchema = z
+  .object({
+    recipe: RecipeSchema,
+    duplicate: z.boolean().openapi({
+      description:
+        "True when the link was imported before: this is that recipe, unchanged.",
+    }),
+  })
+  .openapi("ImportResult", { example: { recipe: RECIPE, duplicate: false } })

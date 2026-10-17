@@ -1,0 +1,28 @@
+{
+  "name": "@merran/extension",
+  "version": "0.0.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "type": "module",
+  "description": "Import recipes into your Merran from any page, and keep the shopping list beside you while you shop.",
+  "scripts": {
+    "watch": "wxt",
+    "watch:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip && wxt zip -b firefox",
+    "typecheck": "wxt prepare && tsc --noEmit",
+    "api": "pnpm dlx --package openapi-typescript@7.13.0 --package typescript@5.9.3 openapi-typescript ../server/src/http/openapi/openapi.json --output src/lib/schema.d.ts"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.17.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@wxt-dev/module-react": "1.2.2",
+    "wxt": "0.21.4"
+  }
+}

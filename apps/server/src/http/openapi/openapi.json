@@ -505,6 +505,10 @@
           "permissions": {
             "$ref": "#/components/schemas/ApiKeyPermissions"
           },
+          "household": {
+            "type": "string",
+            "description": "Which of your households it's for: the one in use when left out."
+          },
           "expiresInDays": {
             "anyOf": [
               {
@@ -9161,6 +9165,61 @@
           "text": "Dinners to try:\nhttps://example.com/lemon-chicken\nhttps://example.com/garlic-rice"
         }
       },
+      "ReadPage": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 500,
+            "default": ""
+          },
+          "jsonld": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 400000
+            },
+            "maxItems": 20,
+            "default": [],
+            "description": "The page's JSON-LD blocks, as found."
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 2000
+            },
+            "maxItems": 10,
+            "default": [],
+            "description": "Its share images: og:image and the like."
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 100000,
+            "default": "",
+            "description": "Its text, as the browser shows it."
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "example": {
+          "url": "https://cooking.example/lemon-chicken",
+          "title": "Lemon Chicken | Cooking",
+          "jsonld": [
+            "{\"@type\":\"Recipe\",\"name\":\"Lemon Chicken\"}"
+          ],
+          "images": [
+            "https://cooking.example/lemon-chicken.jpg"
+          ],
+          "text": "Lemon Chicken. Serves 4. 4 chicken thighs, 2 lemons..."
+        }
+      },
       "TextImport": {
         "type": "object",
         "properties": {
@@ -12604,7 +12663,7 @@
           "API keys"
         ],
         "summary": "Make an API key",
-        "description": "For the household in use. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.",
+        "description": "For the household in use, or another of yours named in `household`. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.",
         "security": [
           {
             "session": []
@@ -20047,6 +20106,107 @@
           },
           "409": {
             "description": "It has already finished.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/recipes/import/page": {
+      "post": {
+        "operationId": "importReadPage",
+        "tags": [
+          "Recipes"
+        ],
+        "summary": "Add a recipe from a page already open",
+        "description": "For the browser extension: a page as the person's own browser shows it, for sites that turn Merran's server away or only show a recipe to someone signed in. Its recipe data and photo, or its text read by AI when the household has AI for importing. A video's page (YouTube, TikTok, Instagram, Facebook) is imported as the video, as `POST /recipes/import` does. A page imported before gives back that recipe. With an API key, it needs the `imports: write` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "imports:write",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReadPage"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Already in the library.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Added.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Not a link Merran can keep.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The page is over 2 MB.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The page has no recipe data and no AI to read it, or AI found no recipe on it.",
             "content": {
               "application/json": {
                 "schema": {

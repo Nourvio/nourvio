@@ -3,23 +3,12 @@ import type { AppDeps } from "../../../../core/context.ts"
 import { importLink } from "../../../../services/recipes/import/import-link.ts"
 import { inHousehold, openToKeys } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
-import { RECIPE } from "../../../schemas/examples.ts"
-import { RecipeSchema } from "../../../schemas/recipes.ts"
+import { ImportResultSchema } from "../../../schemas/recipes.ts"
 import {
   errorResponse,
   jsonResponse,
   SIGNED_IN_ERRORS,
 } from "../../../schemas/responses.ts"
-
-const ImportResultSchema = z
-  .object({
-    recipe: RecipeSchema,
-    duplicate: z.boolean().openapi({
-      description:
-        "True when the link was imported before: this is that recipe, unchanged.",
-    }),
-  })
-  .openapi("ImportResult", { example: { recipe: RECIPE, duplicate: false } })
 
 const route = createRoute({
   method: "post",

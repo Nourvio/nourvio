@@ -106,7 +106,30 @@ export async function importLink(
   const redirected = pageUrl === url ? null : await already([pageUrl])
   if (redirected) return redirected
 
-  const html = decodeHtml(page.body, page.contentType)
+  return importHtml(em, deps, {
+    householdId: options.householdId,
+    userId: options.userId,
+    html: decodeHtml(page.body, page.contentType),
+    pageUrl,
+  })
+}
+
+/**
+ * Adds the recipe on a page already read: its recipe data, or AI reading
+ * it when it has none and the household has AI; and its photo.
+ */
+async function importHtml(
+  em: EntityManager,
+  deps: AiDeps & { files: FileStore },
+  options: {
+    householdId: string
+    userId: string | null
+    html: string
+    pageUrl: string
+  }
+): Promise<ImportResult> {
+  const { fetcher, files } = deps
+  const { html, pageUrl } = options
   const data =
     readRecipeData(html, pageUrl) ??
     (await readPage(deps, em, {
@@ -139,4 +162,72 @@ export async function importLink(
     await removePhoto(files, options.householdId, photoId)
     throw err
   }
+}
+
+/** A page as the browser extension read it, in the person's own browser. */
+export type ReadPage = {
+  url: string
+  title: string
+  /** Its recipe data (JSON-LD), as found in the page. */
+  jsonld: string[]
+  /** Its share images: og:image and the like. */
+  images: string[]
+  /** Its text, as the browser shows it. */
+  text: string
+}
+
+const escapeHtml = (text: string) =>
+  text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+
+/**
+ * Adds the recipe on a page the browser extension read: for sites that
+ * turn servers away, or that only show a recipe to someone signed in. Its
+ * recipe data and photos, or its text read by AI. A video's page (YouTube,
+ * TikTok...) is imported as the video, its words being in its sound and
+ * captions rather than its page. A page imported before gives back that
+ * recipe.
+ */
+export async function importReadPage(
+  em: EntityManager,
+  deps: AiDeps & VideoDeps & { files: FileStore },
+  options: { householdId: string; userId: string | null; page: ReadPage }
+): Promise<ImportResult> {
+  const pageUrl = normalizeLink(options.page.url)
+  if (isVideoLink(pageUrl)) {
+    return importLink(em, deps, {
+      householdId: options.householdId,
+      userId: options.userId,
+      url: pageUrl,
+    })
+  }
+  const existing = await findBySourceUrl(em, [pageUrl])
+  if (existing) {
+    return { recipe: await loadRecipe(em, existing.id), duplicate: true }
+  }
+  // The page again, as just the parts Merran reads.
+  const html = [
+    "<!doctype html><html><head>",
+    `<title>${escapeHtml(options.page.title)}</title>`,
+    ...options.page.images.map(
+      (image) => `<meta property="og:image" content="${escapeHtml(image)}">`
+    ),
+    ...options.page.jsonld.map(
+      (block) =>
+        `<script type="application/ld+json">${block.replace(/<\/script/gi, "<\\/script")}</script>`
+    ),
+    `</head><body><main>${escapeHtml(options.page.text)
+      .split(/\n+/)
+      .map((line) => `<p>${line}</p>`)
+      .join("")}</main></body></html>`,
+  ].join("\n")
+  return importHtml(em, deps, {
+    householdId: options.householdId,
+    userId: options.userId,
+    html,
+    pageUrl,
+  })
 }

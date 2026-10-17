@@ -36,6 +36,10 @@ export const NewApiKeyRequestSchema = z
   .object({
     name: z.string().trim().min(1, "Give it a name.").max(100),
     permissions: ApiKeyPermissionsSchema,
+    household: z.string().optional().openapi({
+      description:
+        "Which of your households it's for: the one in use when left out.",
+    }),
     /** How long it lasts: 30, 90 or 365 days, or null for never. */
     expiresInDays: z
       .union([z.literal(30), z.literal(90), z.literal(365)])

@@ -2337,5 +2337,28 @@
       "startHint": "Follow a recipe site and its newest recipes show up here.",
       "more": "More sites"
     }
+  },
+  "extension": {
+    "title": "Connect the Merran extension",
+    "keyName": "Browser extension",
+    "waiting": "Waiting for the extension…",
+    "missing": "The Merran extension isn't connecting from this page.",
+    "missingHint": "Click the Merran button in your browser's toolbar and enter this Merran's address: it opens this page and connects from here.",
+    "ask": "Let the Merran extension work with {{household}}?",
+    "can": {
+      "recipes": "Add recipes from the pages you're on, and see its recipes",
+      "plan": "See its plan",
+      "list": "See and change its shopping list"
+    },
+    "revoke": "It gets a key of its own, which you can take away any time in Settings, You, API keys. It can't change settings or anyone's account.",
+    "connect": "Connect",
+    "cancel": "Not now",
+    "connected": "Connected. You can close this tab.",
+    "connectedHint": "Click the Merran button in the toolbar on any recipe's page to add it, or right-click a link or a page.",
+    "failed": "The extension didn't take the key. Its key is in Settings, You, API keys, to take away; then connect again from the extension.",
+    "toMerran": "Go to Merran",
+    "toKeys": "API keys",
+    "which": "Which household should the Merran extension work with?",
+    "whichHint": "To work with more than one, connect again from the extension for each: it keeps them all, to switch between."
   }
 }

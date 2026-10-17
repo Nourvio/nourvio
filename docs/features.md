@@ -104,7 +104,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Starter collections that fill themselves from recipe sites, fitted to your tastes | Key | Built | Module, on by default; a rule and a few classics per collection, in data files per language; Find more with AI |
 | Imports in your language: a recipe from another language translated as it comes in | Key | Planned | AI; a setting, with the app's translations |
 | Discover: find recipes for any theme with AI | Key | Built | AI, with web search; each page is opened first, so they all import |
-| Browser extension: import a page, right-click, the list in a side panel | Key | Planned | Chrome, Edge, Firefox |
+| Browser extension: import a page, right-click, the list in a side panel | Key | Built | Chrome, Edge, Firefox; even sites that turn servers away or need a sign-in; in the stores with 0.1 |
 | Tandoor import | Detail | Later | |
 
 ## Planning

@@ -29,6 +29,7 @@ import { Route as AppSettingsHouseholdRouteImport } from './routes/_app/settings
 import { Route as AppSettingsImportExportRouteImport } from './routes/_app/settings/import-export'
 import { Route as AppSettingsServerRouteImport } from './routes/_app/settings/server'
 import { Route as AppSettingsYouRouteImport } from './routes/_app/settings/you'
+import { Route as FocusExtensionConnectRouteImport } from './routes/_focus/extension/connect'
 import { Route as AppPantryReceiptsIndexRouteImport } from './routes/_app/pantry/receipts/index'
 import { Route as AppPantryReceiptsReceiptIdRouteImport } from './routes/_app/pantry/receipts/$receiptId'
 import { Route as AppRecipesSlugIndexRouteImport } from './routes/_app/recipes/$slug/index'
@@ -136,6 +137,11 @@ const AppSettingsYouRoute = AppSettingsYouRouteImport.update({
   path: '/you',
   getParentRoute: () => AppSettingsRoute,
 } as any)
+const FocusExtensionConnectRoute = FocusExtensionConnectRouteImport.update({
+  id: '/extension/connect',
+  path: '/extension/connect',
+  getParentRoute: () => FocusRoute,
+} as any)
 const AppPantryReceiptsIndexRoute = AppPantryReceiptsIndexRouteImport.update({
   id: '/pantry/receipts/',
   path: '/pantry/receipts/',
@@ -196,6 +202,7 @@ export interface FileRoutesByFullPath {
   '/settings/import-export': typeof AppSettingsImportExportRoute
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
+  '/extension/connect': typeof FocusExtensionConnectRoute
   '/pantry/': typeof AppPantryIndexRoute
   '/recipes/': typeof AppRecipesIndexRoute
   '/settings/': typeof AppSettingsIndexRoute
@@ -223,6 +230,7 @@ export interface FileRoutesByTo {
   '/settings/import-export': typeof AppSettingsImportExportRoute
   '/settings/server': typeof AppSettingsServerRoute
   '/settings/you': typeof AppSettingsYouRoute
+  '/extension/connect': typeof FocusExtensionConnectRoute
   '/pantry': typeof AppPantryIndexRoute
   '/recipes': typeof AppRecipesIndexRoute
   '/settings': typeof AppSettingsIndexRoute
@@ -254,6 +262,7 @@ export interface FileRoutesById {
   '/_app/settings/import-export': typeof AppSettingsImportExportRoute
   '/_app/settings/server': typeof AppSettingsServerRoute
   '/_app/settings/you': typeof AppSettingsYouRoute
+  '/_focus/extension/connect': typeof FocusExtensionConnectRoute
   '/_app/pantry/': typeof AppPantryIndexRoute
   '/_app/recipes/': typeof AppRecipesIndexRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
@@ -284,6 +293,7 @@ export interface FileRouteTypes {
     | '/settings/import-export'
     | '/settings/server'
     | '/settings/you'
+    | '/extension/connect'
     | '/pantry/'
     | '/recipes/'
     | '/settings/'
@@ -311,6 +321,7 @@ export interface FileRouteTypes {
     | '/settings/import-export'
     | '/settings/server'
     | '/settings/you'
+    | '/extension/connect'
     | '/pantry'
     | '/recipes'
     | '/settings'
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/_app/settings/import-export'
     | '/_app/settings/server'
     | '/_app/settings/you'
+    | '/_focus/extension/connect'
     | '/_app/pantry/'
     | '/_app/recipes/'
     | '/_app/settings/'
@@ -504,6 +516,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsYouRouteImport
       parentRoute: typeof AppSettingsRoute
     }
+    '/_focus/extension/connect': {
+      id: '/_focus/extension/connect'
+      path: '/extension/connect'
+      fullPath: '/extension/connect'
+      preLoaderRoute: typeof FocusExtensionConnectRouteImport
+      parentRoute: typeof FocusRoute
+    }
     '/_app/pantry/receipts/': {
       id: '/_app/pantry/receipts/'
       path: '/pantry/receipts'
@@ -626,10 +645,12 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface FocusRouteChildren {
+  FocusExtensionConnectRoute: typeof FocusExtensionConnectRoute
   FocusRecipesSlugCookRoute: typeof FocusRecipesSlugCookRoute
 }
 
 const FocusRouteChildren: FocusRouteChildren = {
+  FocusExtensionConnectRoute: FocusExtensionConnectRoute,
   FocusRecipesSlugCookRoute: FocusRecipesSlugCookRoute,
 }
 

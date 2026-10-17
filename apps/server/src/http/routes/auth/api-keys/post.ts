@@ -1,6 +1,8 @@
 import { createRoute } from "@hono/zod-openapi"
 import type { AppDeps } from "../../../../core/context.ts"
+import { AppError } from "../../../../core/errors.ts"
 import { createApiKey } from "../../../../services/auth/api-keys.ts"
+import { roleIn } from "../../../../services/households.ts"
 import { inHousehold } from "../../../middleware/auth.ts"
 import type { Router } from "../../../router.ts"
 import {
@@ -21,7 +23,7 @@ const route = createRoute({
   tags: ["API keys"],
   summary: "Make an API key",
   description:
-    "For the household in use. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.",
+    "For the household in use, or another of yours named in `household`. It acts as you there, with only the permissions given, and stops working if you leave. The key is shown only in this response. Making a key needs a sign-in: a key can't make another.",
   security: SESSION_SECURITY,
   request: {
     body: {
@@ -37,8 +39,20 @@ const route = createRoute({
 
 export default (router: Router, _deps: AppDeps) => {
   router.openapi(route, async (c) => {
-    const { householdId, userId } = inHousehold(c)
+    const inUse = inHousehold(c)
+    const { userId } = inUse
     const body = c.req.valid("json")
+    const householdId = body.household ?? inUse.householdId
+    if (
+      householdId !== inUse.householdId &&
+      !(await roleIn(c.var.em, userId, householdId))
+    ) {
+      throw new AppError(
+        "not_found",
+        "household_not_found",
+        "You're not in that household."
+      )
+    }
     const { apiKey, key } = await createApiKey(c.var.em, {
       userId,
       householdId,
