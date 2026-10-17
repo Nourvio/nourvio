@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest"
-import { combineLines } from "./amounts.ts"
+import { combineLines, joinAmounts } from "./amounts.ts"
 import { parseIngredient } from "../ingredients/parse.ts"
 import { lineFood, lineFoods } from "./food.ts"
 
@@ -12,8 +12,8 @@ test.each([
   ["zest of half of a lemon", "lemon", "lemon"],
   [
     "1/2 tsp. Diamond Crystal or 1/4 tsp. Morton kosher salt, plus more",
-    "salt",
-    "salt",
+    "kosher salt",
+    "kosher salt",
   ],
   [
     "1/2 medium yellow or white onion, diced ((1/2 medium onion yields ~1 heaping cup or 150 g))",
@@ -98,6 +98,39 @@ test("rough amounts, 'and' fractions, and amounts added or taken off", () => {
     "cake flour"
   )
   expect(lineFood("1/3 cup + 2 tbsp white sugar")?.key).toBe("sugar")
+  // "1-1/2" is one and a half, not 1 to ½.
+  expect(parseIngredient("1-1/2 tablespoons flour")).toMatchObject({
+    quantity: 1.5,
+    quantityMax: null,
+    unitId: "tablespoon",
+  })
+  expect(parseIngredient("2-1/2 to 3 pounds veal shanks")).toMatchObject({
+    quantity: 2.5,
+    quantityMax: 3,
+  })
+})
+
+test("sizes, packs and boxes around the amount", () => {
+  expect(parseIngredient("5 7-inch flour tortillas")).toMatchObject({
+    quantity: 5,
+    food: "flour tortillas",
+    note: "7-inch",
+  })
+  expect(parseIngredient("1 3-pound boneless turkey breast")).toMatchObject({
+    quantity: 1,
+    food: "boneless turkey breast",
+  })
+  expect(parseIngredient("1 (15.25-ounce) box spice cake mix")).toMatchObject({
+    quantity: 1,
+    unitId: "box",
+    food: "spice cake mix",
+  })
+  expect(
+    parseIngredient("2 packed tablespoons light brown sugar")
+  ).toMatchObject({
+    quantity: 2,
+    unitId: "tablespoon",
+  })
 })
 
 test("names a list kept before they were tidied as the food", () => {
@@ -108,6 +141,39 @@ test("names a list kept before they were tidied as the food", () => {
   })
   expect(lineFood("can chickpeas (")?.name).toBe("chickpeas")
   expect(lineFood("corn tortillas*")?.name).toBe("corn tortillas")
+})
+
+test("so many of a food and a weight of it are one line, by what one weighs", () => {
+  // 450 g of carrots at 70 g each is 6.4 carrots: 13 in all.
+  expect(
+    combineLines([
+      { text: "6 carrots", factor: 1, source: "A" },
+      { text: "450g carrots peeled and chopped", factor: 1, source: "B" },
+    ]).map((item) => [item.name, item.quantity, item.unit])
+  ).toEqual([["carrots", 13, null]])
+  // The weight first: in its unit, two onions at 225 g each.
+  expect(
+    combineLines([
+      { text: "1 lb onions", factor: 1, source: "A" },
+      { text: "2 onions", factor: 1, source: "B" },
+    ]).map((item) => [item.quantity, item.unit])
+  ).toEqual([[1.992, "pound"]])
+  // And joined onto what's on the list already.
+  expect(
+    joinAmounts(
+      { quantity: 6, unit: null },
+      { quantity: 450, unit: "gram" },
+      "carrot"
+    )
+  ).toEqual({ quantity: 13, unit: null })
+  // Not for a food Merran doesn't know the weight of.
+  expect(
+    joinAmounts(
+      { quantity: 2, unit: null },
+      { quantity: 100, unit: "gram" },
+      "leek"
+    )
+  ).toBeNull()
 })
 
 test("garlic however it's measured is one line, in cloves", () => {

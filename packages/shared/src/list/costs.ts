@@ -1,3 +1,4 @@
+import { gramsEach } from "../foods/vocabulary.ts"
 import { guessAisle } from "./aisles.ts"
 import { amountRatio, type Amount } from "./amounts.ts"
 import { lineFoods } from "./food.ts"
@@ -49,30 +50,23 @@ export function sizeAmount(size: string | null | undefined): Amount | null {
 }
 
 /** Bought by the pack whatever's in it: a can of tomatoes is one can. */
-const PACK_UNITS = new Set(["can", "jar", "package", "bunch", "head"])
-
-/**
- * What one of something sold by weight usually weighs, in grams, by its
- * food key: a recipe's "1 whole chicken" against a price by the pound.
- */
-const EACH_GRAMS: [RegExp, number][] = [
-  [/\bwhole chicken\b/, 2000],
-  [/\bchicken breast\b/, 225],
-  [/\bchicken thigh\b/, 115],
-  [/\bsweet potato\b/, 250],
-  [/\bpotato\b/, 225],
-  [/\bonion\b/, 225],
-  [/\bbell pepper\b/, 170],
-  [/\bcarrot\b/, 70],
-  [/\btomato\b/, 150],
-  [/\bzucchini\b/, 200],
-  [/\bcucumber\b/, 300],
-  [/\bavocado\b/, 170],
-  [/\bapple\b/, 180],
-  [/\bbanana\b/, 120],
-  [/\blemon\b/, 100],
-  [/\blime\b/, 70],
-]
+const PACK_UNITS = new Set([
+  "can",
+  "jar",
+  "package",
+  "box",
+  "bag",
+  "bottle",
+  "container",
+  "carton",
+  "tub",
+  "envelope",
+  "block",
+  "loaf",
+  "sleeve",
+  "bunch",
+  "head",
+])
 
 /**
  * How many packs of a product an amount of a food takes, as a fraction:
@@ -90,8 +84,8 @@ export function packsFor(
   const ratio = pack ? amountRatio(need, pack, food) : null
   if (ratio !== null) return ratio
   if (need.unit && PACK_UNITS.has(need.unit)) return need.quantity
-  // So many of something sold by weight: what they usually weigh.
-  const each = EACH_GRAMS.find(([pattern]) => pattern.test(food))?.[1]
+  // So many of something sold by weight: what one usually weighs.
+  const each = gramsEach(food)
   if (pack && each && need.unit === null) {
     return amountRatio({ quantity: need.quantity * each, unit: "gram" }, pack)
   }

@@ -51,6 +51,34 @@ describe("how many to buy", () => {
     })
   })
 
+  test("so many of something sold by weight, by what one weighs", () => {
+    // 13 carrots at 70 g are 910 g: two 1 lb bags, not thirteen.
+    expect(packagesFor({ quantity: 13, unit: null }, "1 lb", "carrot")).toEqual(
+      {
+        packages: 2,
+        sure: false,
+      }
+    )
+    // Garlic by the head, ten cloves to one.
+    expect(
+      packagesFor({ quantity: 67, unit: "clove" }, null, "garlic")
+    ).toEqual({
+      packages: 7,
+      sure: false,
+    })
+    expect(
+      packagesFor({ quantity: 67, unit: "clove" }, "3 ct", "garlic")
+    ).toEqual({
+      packages: 3,
+      sure: true,
+    })
+    // Without knowing what one weighs, one at a time.
+    expect(packagesFor({ quantity: 3, unit: null }, "1 lb", "leek")).toEqual({
+      packages: 3,
+      sure: false,
+    })
+  })
+
   test("one, unsure, when the size says something else", () => {
     expect(packagesFor({ quantity: 2, unit: "cup" }, "1 lb")).toEqual({
       packages: 1,

@@ -1,7 +1,6 @@
 import { findFood, singular } from "../foods/vocabulary.ts"
 import { bareFood, parseIngredient } from "../ingredients/parse.ts"
-import { guessAisle } from "./aisles.ts"
-import { FOOD_SYNONYMS } from "./synonyms.ts"
+import { aisleByWords } from "./aisles.ts"
 
 // The thing to buy in an ingredient line, named so the same food matches
 // across recipes, the list and the pantry: "2 Large Onions" and "1 onion"
@@ -12,7 +11,7 @@ import { FOOD_SYNONYMS } from "./synonyms.ts"
  * Bumped whenever keys are made differently, so the ones the server keeps
  * (on lists, in the pantry, for aisles and store products) are made again.
  */
-export const FOOD_KEYS_VERSION = 9
+export const FOOD_KEYS_VERSION = 10
 
 /** Words that describe a size or freshness, not a different thing to buy. */
 const DESCRIPTORS =
@@ -38,9 +37,9 @@ export function plainKey(food: string) {
 
 /**
  * A food's key, the same for every way of saying it: the key of the food
- * Merran knows in it, else its shopping name's plain form, as the synonyms
- * have it. "Chopped fresh flat-leaf parsley" and "parsley" are "parsley";
- * "plain flour" is "all-purpose flour".
+ * Merran knows in it, else its shopping name's plain form. "Chopped fresh
+ * flat-leaf parsley" and "parsley" are "parsley"; "plain flour" is
+ * "all-purpose flour".
  */
 export function foodKey(food: string) {
   return named(food).key
@@ -79,7 +78,7 @@ function withoutPrep(name: string) {
     if (PRODUCT.test(rest)) return rest
     const after = rest.match(PREP_AFTER)
     const food = after && after.index! > 0 ? rest.slice(0, after.index) : rest
-    const aisle = guessAisle(food)
+    const aisle = aisleByWords(food)
     if (aisle !== "produce" && aisle !== "meat-seafood") return rest
     if (food !== rest) {
       rest = food
@@ -115,7 +114,8 @@ function firstChoice(name: string) {
   const choices = said.match(/^(.+?)\s+or\s+(.+)$/i)
   if (!choices) return name
   const first = choices[1]!.trim()
-  const second = choices[2]!.trim()
+  // Of three or more choices, the second is up to the next "or".
+  const second = choices[2]!.split(/\s+or\s+/i)[0]!.trim()
   // "Melted butter or ¼ cup vegetable oil" is butter; "½ tsp Diamond
   // Crystal or ¼ tsp Morton kosher salt", with no food first, the second.
   if (/^\d/.test(second)) {
@@ -203,7 +203,7 @@ export function shoppingName(food: string) {
  * A food's name and key: a food Merran knows by the words that named it
  * and its own key ("King Arthur Unbleached All-Purpose Flour" is
  * "All-Purpose Flour", all-purpose flour); else the tidied words and their
- * plain form, as the synonyms have it.
+ * plain form.
  */
 function named(food: string): { name: string; key: string; known: boolean } {
   let name = noBrackets(food).replace(/\*+/g, "").replace(/\s+/g, " ").trim()
@@ -220,8 +220,7 @@ function named(food: string): { name: string; key: string; known: boolean } {
   const known = findFood(name)
   if (known) return { ...known, known: true }
   const shown = withoutPrep(name).replace(/\s+/g, " ").trim() || food
-  const key = plainKey(shown)
-  return { name: shown, key: FOOD_SYNONYMS[key] ?? key, known: false }
+  return { name: shown, key: plainKey(shown), known: false }
 }
 
 /**

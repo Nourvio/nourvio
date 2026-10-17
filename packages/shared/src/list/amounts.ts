@@ -1,3 +1,4 @@
+import { foodUnits, gramsEach } from "../foods/vocabulary.ts"
 import { formatQuantity } from "../ingredients/display.ts"
 import { parseIngredient } from "../ingredients/parse.ts"
 import { METRIC_UNIT_IDS, UNITS_BY_ID, type Unit } from "../units/units.ts"
@@ -44,27 +45,11 @@ const converts = (unit: Unit | null): unit is Unit & { toBase: number } =>
   unit !== null && unit.toBase !== null
 
 /**
- * A food's own units, by its key: a head of garlic is ten cloves, a stick
- * of butter half a cup. `back` goes back to the bigger unit when it comes
- * out whole: 20 cloves is 2 heads.
+ * An amount in a food's own terms (the vocabulary's units for it): heads
+ * of garlic as cloves, sticks of butter as cups.
  */
-const FOOD_UNITS: Record<
-  string,
-  Record<string, { quantity: number; unit: string; back?: boolean }>
-> = {
-  // A garlic is a clove, and a spoon of it minced, cloves too.
-  garlic: {
-    head: { quantity: 10, unit: "clove", back: true },
-    each: { quantity: 1, unit: "clove" },
-    teaspoon: { quantity: 1, unit: "clove" },
-    tablespoon: { quantity: 3, unit: "clove" },
-  },
-  butter: { stick: { quantity: 0.5, unit: "cup" } },
-}
-
-/** An amount in a food's own terms: heads of garlic as cloves. */
 function inFoodUnits(food: string | undefined, amount: Amount): Amount {
-  const as = food ? FOOD_UNITS[food]?.[amount.unit ?? "each"] : undefined
+  const as = foodUnits(food)[amount.unit ?? "each"]
   if (!as) return amount
   return {
     quantity: amount.quantity === null ? null : amount.quantity * as.quantity,
@@ -75,7 +60,7 @@ function inFoodUnits(food: string | undefined, amount: Amount): Amount {
 /** Back to a food's bigger unit when it comes out whole: 2 heads of garlic. */
 function inWholeUnits(food: string | undefined, amount: Amount): Amount {
   if (!food || amount.quantity === null) return amount
-  for (const [unit, as] of Object.entries(FOOD_UNITS[food] ?? {})) {
+  for (const [unit, as] of Object.entries(foodUnits(food))) {
     if (!as.back || amount.unit !== as.unit) continue
     const whole = amount.quantity / as.quantity
     if (Number.isInteger(round(whole))) return { quantity: round(whole), unit }
@@ -103,6 +88,32 @@ function measureOf(food: string | undefined, amount: Amount) {
   return { measure: unit.kind, base: amount.quantity * unit.toBase }
 }
 
+const isWeight = (measure: string) => measure === "weight" || measure === "mass"
+
+/**
+ * How so many of a food and a weight of it add up, when Merran knows what
+ * one weighs (6 carrots and 450 g of them): the second into a count, or
+ * into a weight. Null when they don't.
+ */
+function eachOrWeight(
+  food: string | undefined,
+  first: string,
+  second: string
+): "to count" | "to weight" | null {
+  if (!food || gramsEach(food) === null) return null
+  if (first === "count:each" && isWeight(second)) return "to count"
+  if (isWeight(first) && second === "count:each") return "to weight"
+  return null
+}
+
+/**
+ * So many of something, with some of it from a weight: whole ones,
+ * rounded up unless it's only just over. 12.4 carrots are 13; 4.02
+ * onions, 4.
+ */
+const wholeCount = (count: number) =>
+  count <= 0 ? 0 : Math.max(1, Math.ceil(round(count) - 0.1))
+
 /** How many of a measure's base one of a unit is, for a food. */
 function baseOf(food: string | undefined, unit: Unit & { toBase: number }) {
   const density = food ? bakingDensity(food) : null
@@ -122,6 +133,8 @@ type Group = {
   unit: string | null
   /** The unit to show it in: the biggest of the first kind used. */
   showUnit: (Unit & { toBase: number }) | null
+  /** So many, some of it from a weight, so shown as whole ones. */
+  whole?: true
   sources: Set<string>
   /** Each meal's share, in the same measure as the total. */
   shares: Map<string, number | null>
@@ -194,6 +207,32 @@ export function combineLines(lines: readonly ListLine[]): CombinedItem[] {
     }
   }
 
+  // So many of a food and a weight of it are one line, by what one weighs:
+  // 6 carrots and 450 g of them are 13 carrots, in the first one's terms.
+  for (const group of [...groups.values()]) {
+    if (!groups.has(group.key) || group.total === null) continue
+    for (const other of [...groups.values()]) {
+      if (other === group || other.food !== group.food) continue
+      if (other.total === null) continue
+      const per = eachOrWeight(group.food, group.measure, other.measure)
+      if (!per) continue
+      const grams = gramsEach(group.food)!
+      const into = (value: number) =>
+        per === "to count" ? value / grams : value * grams
+      group.total += into(other.total)
+      for (const [meal, share] of other.shares) {
+        const before = group.shares.get(meal) ?? null
+        group.shares.set(
+          meal,
+          share === null ? before : (before ?? 0) + into(share)
+        )
+      }
+      for (const source of other.sources) group.sources.add(source)
+      if (per === "to count") group.whole = true
+      groups.delete(other.key)
+    }
+  }
+
   // A food with an amount somewhere doesn't also need an "as needed" line.
   for (const [key, group] of groups) {
     if (group.measure !== "none") continue
@@ -211,6 +250,7 @@ export function combineLines(lines: readonly ListLine[]): CombinedItem[] {
     const show = (value: number | null): Amount => {
       if (value === null) return { quantity: null, unit: null }
       const unit = group.showUnit
+      if (group.whole) return { quantity: wholeCount(value), unit: group.unit }
       return inWholeUnits(group.food, {
         quantity: round(unit ? value / baseOf(group.food, unit) : value),
         unit: unit?.id ?? group.unit,
@@ -260,7 +300,22 @@ export function addAmounts(a: Amount, b: Amount, food?: string): Amount | null {
   const my = measureOf(food, y)
   const ux = unitOf(x.unit)
   const uy = unitOf(y.unit)
-  if (!mx || !my || mx.measure !== my.measure) return null
+  if (!mx || !my) return null
+  if (mx.measure !== my.measure) {
+    // So many and a weight: by what one weighs, in the first one's terms.
+    const per = eachOrWeight(food, mx.measure, my.measure)
+    if (per === "to count") {
+      return {
+        quantity: wholeCount(mx.base + my.base / gramsEach(food!)!),
+        unit: x.unit,
+      }
+    }
+    if (per === "to weight" && converts(ux)) {
+      const grams = mx.base + my.base * gramsEach(food!)!
+      return { quantity: round(grams / baseOf(food, ux)), unit: ux.id }
+    }
+    return null
+  }
   if (!converts(ux) || !converts(uy)) return null
   // The bigger of the two, unless one's a weight and one a volume: then
   // the one already there.

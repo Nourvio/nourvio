@@ -1,5 +1,5 @@
+import { howItKeeps } from "../foods/vocabulary.ts"
 import type { AisleKey } from "../list/aisles.ts"
-import { foodKey } from "../list/food.ts"
 import { addDays } from "../plan/days.ts"
 
 // What's at home: where it's kept, when to use it by, and what to use
@@ -8,25 +8,10 @@ import { addDays } from "../plan/days.ts"
 export const STORAGE_PLACES = ["fridge", "freezer", "cupboard"] as const
 export type StoragePlace = (typeof STORAGE_PLACES)[number]
 
-/** Prep and quality words that don't make it a different thing to have. */
-const SAME_THING =
-  /\b(boneless|skinless|bone-in|skin-on|unsalted|salted|low-sodium|reduced-sodium|no-salt-added|low-fat|reduced-fat|fat-free|shredded|grated|chopped|minced|diced|sliced|cubed|peeled|extra-virgin|extra virgin|virgin|yellow)\b/g
-
 /**
- * A food as the pantry matches it: "Boneless skinless chicken thighs" and
- * "chicken thigh" are the same; "cream cheese" and "cheese" are not.
+ * A first guess at where something's kept, from its aisle and name: fresh
+ * produce in the fridge, unless it keeps out of it (onions, bananas).
  */
-export function pantryKey(name: string) {
-  const key = foodKey(name)
-  const core = key.replace(SAME_THING, " ").replace(/\s+/g, " ").trim()
-  return core || key
-}
-
-/** Fresh produce that keeps at room temperature, or for weeks anyway. */
-const KEEPS_OUT =
-  /\b(onion|garlic|potato|sweet potato|shallot|squash|pumpkin|banana|tomato|avocado|ginger|apple|lemon|lime|orange|mango|pineapple)/
-
-/** A first guess at where something's kept, from its aisle and name. */
 export function guessStorage(
   name: string,
   aisle: AisleKey | null
@@ -35,7 +20,7 @@ export function guessStorage(
   if (aisle === "frozen" || /\bfrozen\b/.test(text)) return "freezer"
   if (aisle === "meat-seafood" || aisle === "dairy-eggs" || aisle === "deli")
     return "fridge"
-  if (aisle === "produce") return KEEPS_OUT.test(text) ? "cupboard" : "fridge"
+  if (aisle === "produce") return howItKeeps(name).out ? "cupboard" : "fridge"
   return "cupboard"
 }
 
@@ -47,13 +32,9 @@ const KEEPS_DAYS: Partial<Record<AisleKey, number>> = {
   produce: 7,
 }
 
-/** Produce that keeps for weeks, so it gets no use-by guess. */
-const LONG_KEEPING =
-  /\b(onion|garlic|potato|shallot|squash|pumpkin|cabbage|carrot|apple|lemon|lime|orange|ginger|beet)/
-
 /**
  * A first guess at when fresh food should be used by, from today: none
- * for food that keeps, or what's in the freezer.
+ * for produce that keeps for weeks, or what's in the freezer.
  */
 export function guessUseBy(
   name: string,
@@ -64,7 +45,7 @@ export function guessUseBy(
   if (storedIn === "freezer" || !aisle) return null
   const days = KEEPS_DAYS[aisle]
   if (!days) return null
-  if (aisle === "produce" && LONG_KEEPING.test(name.toLowerCase())) return null
+  if (aisle === "produce" && howItKeeps(name).weeks) return null
   return addDays(today, days)
 }
 

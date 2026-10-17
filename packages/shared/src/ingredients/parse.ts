@@ -221,7 +221,14 @@ const PACK_SIZE =
 
 /** A size before a unit: "2 large cloves garlic", "1 heaped tbsp flour". */
 const UNIT_SIZE =
-  /^(?:large|small|medium|big|heaped|heaping|level|scant|generous|good)$/i
+  /^(?:large|small|medium|big|heaped|heaping|level|scant|generous|good|packed|rounded)$/i
+
+/**
+ * A size joined to its unit by a hyphen, before the food: "3-pound" in "1
+ * 3-pound turkey breast", "7-inch" in "5 7-inch flour tortillas".
+ */
+const HYPHEN_SIZE =
+  /^\s+(\d+(?:\.\d+)?\s*[-–]\s*(?:ounce|oz|pound|lb|inch|in|cm|centimeter|centimetre|gram|g|kg)\.?)(?=\s)/i
 
 /**
  * Text with what's in brackets taken out, nested or left open: "green
@@ -306,6 +313,12 @@ export function normalizeIngredientLine(line: string) {
       .replace(/(\d)\s*⁄\s*(\d)/g, "$1/$2")
       // "1 and 1/2 cups" is 1 1/2 cups.
       .replace(/\b(\d+)\s+and\s+(\d+\/\d+)/g, "$1 $2")
+      // So is "1-1/2 cups": a whole number and a fraction, not 1 to 1/2.
+      .replace(
+        /\b(\d+)-(\d+)\/(\d+)\b/g,
+        (both: string, whole: string, top: string, bottom: string) =>
+          Number(top) < Number(bottom) ? `${whole} ${top}/${bottom}` : both
+      )
       .replace(/\s+/g, " ")
       .trim()
   )
@@ -313,7 +326,7 @@ export function normalizeIngredientLine(line: string) {
 
 /** Words before an amount that only say it's rough: "about 3", "heaping ½". */
 const ROUGHLY =
-  /^(?:about|approx\.?|approximately|roughly|around|~|heaping|heaped|scant|level|generous|a\s+(?:heaping|heaped|scant|generous|good))\s+(?=\d)/i
+  /^(?:about|approx\.?|approximately|roughly|around|~|heaping|heaped|scant|shy|level|generous|a\s+(?:heaping|heaped|scant|shy|generous|good))\s+(?=\d)/i
 
 export type ParsedIngredient = {
   /** The tidied line, exactly what's shown when nothing is scaled. */
@@ -379,7 +392,8 @@ export function parseIngredient(line: string): ParsedIngredient {
     // as does one without them, "1 10.5 oz. can soup".
     const size =
       text.slice(cursor).match(/^\s*\(([^)]+)\)/) ??
-      text.slice(cursor).match(PACK_SIZE)
+      text.slice(cursor).match(PACK_SIZE) ??
+      text.slice(cursor).match(HYPHEN_SIZE)
     if (size) {
       sizeNote = size[1]!.trim()
       between = size[0]
@@ -433,6 +447,9 @@ export function parseIngredient(line: string): ParsedIngredient {
     )
     comma = body.indexOf(",", comma)
   }
+  // A semicolon starts a note too: "kosher salt; for table salt, use half".
+  const semicolon = body.indexOf(";")
+  if (semicolon > 0 && (comma < 0 || semicolon < comma)) comma = semicolon
   if (comma > 0) {
     note = body.slice(comma + 1).trim() || null
     body = body.slice(0, comma).trim()

@@ -1,9 +1,4 @@
-import {
-  foodKey,
-  pantryKey,
-  readAmount,
-  type ModelAbility,
-} from "@merran/shared"
+import { foodKey, readAmount, type ModelAbility } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
 import { generateText, Output, type UserContent } from "ai"
 import sharp from "sharp"
@@ -457,7 +452,7 @@ export async function addReceipt(
         : null
       tx.create(Purchase, {
         household: householdId,
-        foodKey: pantryKey(name),
+        foodKey: foodKey(name),
         name,
         quantity: amount.quantity,
         unit: amount.unit,

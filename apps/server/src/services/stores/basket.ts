@@ -240,7 +240,11 @@ export function lineFor(
   // Doubles can come back as text from some databases.
   const quantity = item.quantity == null ? null : Number(item.quantity)
   const { packages, sure } = product
-    ? packagesFor({ quantity, unit: item.unit ?? null }, product.size)
+    ? packagesFor(
+        { quantity, unit: item.unit ?? null },
+        product.size,
+        foodOf(item)
+      )
     : { packages: 1, sure: false }
   return {
     itemId: item.id,

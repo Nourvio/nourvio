@@ -3,7 +3,7 @@ import {
   guessStorage,
   guessUseBy,
   onHandTest,
-  pantryKey,
+  foodKey,
   sizeAmount,
   type AisleKey,
 } from "@merran/shared"
@@ -59,7 +59,7 @@ export async function putAway(
       const quantity = bought.quantity
       tx.create(Purchase, {
         household: householdId,
-        foodKey: pantryKey(item.name),
+        foodKey: foodKey(item.name),
         name: item.name,
         quantity,
         unit: bought.unit,

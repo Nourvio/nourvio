@@ -1,3 +1,4 @@
+import { foodUnits, gramsEach } from "../foods/vocabulary.ts"
 import { UNITS_BY_ID } from "../units/units.ts"
 
 // A store's products, as Merran keeps them for the things on a list:
@@ -80,20 +81,41 @@ export function readProductSize(size: string | null | undefined): Held[] {
  */
 export function packagesFor(
   need: { quantity: number | null; unit: string | null },
-  size: string | null | undefined
+  size: string | null | undefined,
+  food?: string
 ): { packages: number; sure: boolean } {
   if (need.quantity === null || need.quantity <= 0) {
     return { packages: 1, sure: true }
   }
-  const unit = need.unit ? UNITS_BY_ID.get(need.unit) : undefined
+  let quantity = need.quantity
+  let unitId = need.unit
+  // As it's sold, in the food's bigger unit, one at a time: 67 cloves of
+  // garlic are 7 heads.
+  for (const as of Object.values(foodUnits(food))) {
+    if (as.back && as.unit === unitId) {
+      quantity /= as.quantity
+      unitId = null
+      break
+    }
+  }
+  const unit = unitId ? UNITS_BY_ID.get(unitId) : undefined
   const kind = unit?.kind ?? "count"
-  const needed =
-    kind === "count" ? need.quantity : need.quantity * (unit?.toBase ?? 1)
+  const needed = kind === "count" ? quantity : quantity * (unit?.toBase ?? 1)
   const held = readProductSize(size).find((one) => one.kind === kind)
+  // So many of something sold by weight, by what one weighs: 13 carrots
+  // are two 1 lb bags, at 70 g each.
+  const each = !unit && food ? gramsEach(food) : null
+  const weighed = readProductSize(size).find((one) => one.kind === "weight")
+  if (!held && each && weighed && weighed.amount > 0) {
+    return {
+      packages: clamp(Math.ceil((quantity * each) / weighed.amount - 0.1)),
+      sure: false,
+    }
+  }
   if (!held || held.amount <= 0) {
     // A count with nothing said: sold one at a time, most likely.
     return kind === "count" && !unit
-      ? { packages: clamp(Math.ceil(need.quantity)), sure: false }
+      ? { packages: clamp(Math.ceil(quantity)), sure: false }
       : { packages: 1, sure: false }
   }
   return {

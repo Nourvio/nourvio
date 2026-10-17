@@ -1,4 +1,5 @@
-import { plainKey } from "./food.ts"
+import { foodFacts, knownKey } from "../foods/vocabulary.ts"
+import { foodInLine, plainKey } from "./food.ts"
 
 // Aisles, in a typical walk through the store. Each household starts with
 // its country's names for them, and food is sorted into them by a first
@@ -95,7 +96,7 @@ export function aislesFor(country: string | null | undefined) {
   return AISLE_KEYS.map((key) => ({ key, name: names[key] }))
 }
 
-/** Words for a first guess at the aisle, tried in order. */
+/** Words for a first guess at the aisle of a food Merran doesn't know, tried in order. */
 const AISLE_WORDS: [AisleKey, RegExp][] = [
   // Before produce: potato chips are a snack.
   ["snacks", /\b(potato chip|potato crisp|crisps)\b/],
@@ -160,13 +161,27 @@ const AISLE_WORDS: [AisleKey, RegExp][] = [
 
 /**
  * A first guess at a food's aisle. Frozen is frozen whatever it is (ice
- * cream too), and
- * bought by the can or jar is canned and jarred.
+ * cream too), and bought by the can or jar is canned and jarred; else a
+ * food Merran knows is where the vocabulary shelves it, and anything else
+ * goes by its words.
  */
 export function guessAisle(name: string, unit?: string | null): AisleKey {
   const text = name.toLowerCase()
   if (/\b(frozen|ice cream)\b/.test(text)) return "frozen"
   if (unit === "can" || unit === "jar") return "canned-jarred"
+  // Read as a line is: "chicken stock or water" is chicken stock.
+  const found = foodInLine(text)
+  const known = found?.known ? knownKey(found.key) : undefined
+  if (known) return foodFacts(known)!.aisle
+  return aisleByWords(text)
+}
+
+/**
+ * A first guess at the aisle of a food Merran doesn't know, by its words:
+ * "paper towels" are household.
+ */
+export function aisleByWords(name: string): AisleKey {
+  const text = name.toLowerCase()
   // The singular too: "paper towels" matches "paper towel".
   const forms = [text, plainKey(text)]
   for (const [aisle, words] of AISLE_WORDS) {

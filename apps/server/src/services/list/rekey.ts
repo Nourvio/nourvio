@@ -2,7 +2,6 @@ import {
   foodKey,
   joinAmounts,
   FOOD_KEYS_VERSION,
-  pantryKey,
   shoppingName,
 } from "@merran/shared"
 import type { EntityManager } from "@mikro-orm/sql"
@@ -134,11 +133,11 @@ export async function rekeyHousehold(em: EntityManager) {
   for (const product of stocked.values()) product.food = foodKey(product.food)
 
   for (const row of await em.find(PantryItem, {})) {
-    row.foodKey = pantryKey(row.name)
+    row.foodKey = foodKey(row.name)
   }
   // Purchases are matched as the pantry matches food, for usual buys.
   for (const row of await em.find(Purchase, {})) {
-    row.foodKey = pantryKey(row.name)
+    row.foodKey = foodKey(row.name)
   }
 
   await em.flush()

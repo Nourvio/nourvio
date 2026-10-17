@@ -281,8 +281,8 @@ Naan (, optional) => naan
 # Brands, which aren't the food (or are).
 1 1/2 cups King Arthur Unbleached All-Purpose Flour => all-purpose flour
 1 tbsp King Arthur Pure Vanilla Extract => vanilla extract
-1 1/4 tsp Diamond Crystal or 3/4 tsp Morton kosher salt => salt
-1 tsp Morton kosher salt => salt
+1 1/4 tsp Diamond Crystal or 3/4 tsp Morton kosher salt => kosher salt
+1 tsp Morton kosher salt => morton kosher salt
 1/2 tsp Better Than Bouillon chicken base => chicken bouillon
 2 cups Bob's Red Mill rolled oats => oat
 1 cup Mutti chopped tomatoes => diced tomato
@@ -407,6 +407,23 @@ A couple shakes of Tabasco sauce => hot sauce
 1 cup frozen peppers => frozen bell pepper
 24 chocolate sandwich cookies => chocolate sandwich cookie
 2 tbsp honey or golden syrup => honey
+
+# From a hand-checked sample of lines: names that were another food.
+1 teaspoon ground red pepper => cayenne pepper
+1 pinch ground cayenne pepper => cayenne pepper
+1/2 cup oat flour => oat flour
+4 dried guajillo chiles, seeded => guajillo chile
+1 store-bought rotisserie chicken => rotisserie chicken
+2 tbsp chopped pimento peppers => pimento
+1 cup pea greens => pea shoot
+1/2 cup cream of coconut => cream of coconut
+Tajín or chili powder, to sprinkle => tajin
+2 large yellow potatoes, cubed => yukon gold potato
+1 tsp dark sesame oil => sesame oil
+1 cup semi-sweet chocolate, chopped => dark chocolate
+2 tablespoons Cognac or brandy => brandy
+1 teaspoon pickling lime => pickling lime
+1 cup grapefruit soda => ?grapefruit soda
 
 # Foods it doesn't know yet.
 2 tablespoons salt and vinegar seasoning => ?salt and vinegar seasoning

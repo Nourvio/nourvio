@@ -4,7 +4,7 @@ import {
   formatAmount,
   guessStorage,
   guessUseBy,
-  pantryKey,
+  foodKey,
   readAmount,
   readItem,
   subtractAmounts,
@@ -221,7 +221,7 @@ export async function store(
   householdId: string,
   stock: Stock
 ) {
-  const key = pantryKey(stock.name)
+  const key = foodKey(stock.name)
   const same = await em.find(PantryItem, {
     foodKey: key,
     storedIn: stock.storedIn,
@@ -356,7 +356,7 @@ export async function updateItem(
   const item = await findItem(em, id)
   if (changes.name !== undefined) {
     item.name = changes.name.trim()
-    item.foodKey = pantryKey(item.name)
+    item.foodKey = foodKey(item.name)
   }
   if (changes.amount !== undefined) em.assign(item, readAmount(changes.amount))
   if (changes.storedIn !== undefined) {
@@ -482,7 +482,7 @@ export async function restoreItems(
       }
       tx.assign(item, {
         name: snapshot.name,
-        foodKey: snapshot.foodKey || pantryKey(snapshot.name),
+        foodKey: snapshot.foodKey || foodKey(snapshot.name),
         quantity: snapshot.quantity,
         unit: snapshot.unit,
         amountText: snapshot.amountText,

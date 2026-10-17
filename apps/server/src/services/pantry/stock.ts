@@ -1,6 +1,6 @@
 import {
   addAmounts,
-  pantryKey,
+  foodKey,
   subtractAmounts,
   type Amount,
   type CombinedItem,
@@ -49,7 +49,7 @@ export async function coverFromPantry(
   const inPantry: string[] = []
   const left: CombinedItem[] = []
   for (const item of items) {
-    const key = pantryKey(item.name)
+    const key = foodKey(item.name)
     const rows = pantry.filter((row) => row.foodKey === key)
     if (rows.length === 0) {
       left.push(item)

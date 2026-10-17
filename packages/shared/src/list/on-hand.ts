@@ -1,3 +1,4 @@
+import { foodParents, knownKey } from "../foods/vocabulary.ts"
 import { foodKey } from "./food.ts"
 
 // Always on hand: things lists made from the plan leave off. Each covers
@@ -22,10 +23,18 @@ const KINDS: [string, RegExp][] = [
 
 const KIND_NAMES = new Set(KINDS.map(([kind]) => kind))
 
-/** An on-hand thing as matched: "Kosher salt" and "salt" are both "salt". */
+/**
+ * An on-hand thing as matched: "Kosher salt" and "salt" are both "salt",
+ * and so is Morton kosher salt, a kind of kosher salt.
+ */
 function onHandKey(name: string) {
   const key = foodKey(name)
-  return KINDS.find(([, kinds]) => kinds.test(key))?.[0] ?? key
+  const known = knownKey(key)
+  for (const each of [key, ...(known ? foodParents(known) : [])]) {
+    const kind = KINDS.find(([, kinds]) => kinds.test(each))?.[0]
+    if (kind) return kind
+  }
+  return key
 }
 
 /** What a name stands for: one thing, except "salt and pepper" is both. */

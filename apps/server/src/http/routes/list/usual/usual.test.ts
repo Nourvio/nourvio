@@ -1,4 +1,4 @@
-import { addDays, clockIn, pantryKey } from "@merran/shared"
+import { addDays, clockIn, foodKey } from "@merran/shared"
 import { afterAll, beforeAll, describe, expect, test } from "vitest"
 import type { App } from "../../../../app.ts"
 import { Household, Purchase } from "../../../../database/entities/index.ts"
@@ -49,7 +49,7 @@ async function bought(
   for (const days of daysAgo)
     em.create(Purchase, {
       household: householdId,
-      foodKey: pantryKey(name),
+      foodKey: foodKey(name),
       name,
       quantity: amount.quantity ?? null,
       unit: amount.unit ?? null,

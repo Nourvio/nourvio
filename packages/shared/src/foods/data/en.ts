@@ -147,7 +147,12 @@ export const NAMES_EN: FoodNames = {
   ],
   "white onion": [],
   "yellow squash": ["summer squash"],
-  "yukon gold potato": ["yukon gold"],
+  "yukon gold potato": [
+    "yukon gold",
+    "yellow potato",
+    "gold potato",
+    "yellow gold potato",
+  ],
   zucchini: ["courgette", "zucchinis"],
   apricot: [],
   artichoke: ["globe artichoke"],
@@ -173,6 +178,9 @@ export const NAMES_EN: FoodNames = {
   ],
   "cubanelle pepper": ["cubanelle"],
   "shishito pepper": ["shishito"],
+  ramp: ["wild leek"],
+  "pea shoot": ["pea green", "pea tendril"],
+  "chinese broccoli": ["gai lan", "kai lan"],
 
   // Meat and seafood.
   bacon: [
@@ -273,6 +281,13 @@ export const NAMES_EN: FoodNames = {
   ],
   "beef bone": ["soup bone", "marrow bone", "beef marrow bone"],
   chorizo: ["chorizo sausage"],
+  oxtail: ["beef oxtail"],
+  "rotisserie chicken": [
+    "rotisserie-roasted chicken",
+    "store-bought rotisserie chicken",
+  ],
+  liver: ["beef liver", "calf's liver", "calves liver"],
+  "chicken liver": [],
 
   // Dairy and eggs.
   butter: ["unsalted butter", "salted butter", "butter stick"],
@@ -471,6 +486,7 @@ export const NAMES_EN: FoodNames = {
     "bittersweet chocolate",
     "semisweet chocolate",
     "dark chocolate bar",
+    "semi-sweet chocolate",
   ],
   "espresso powder": ["instant espresso powder", "instant coffee"],
   flour: [],
@@ -566,6 +582,7 @@ export const NAMES_EN: FoodNames = {
     "gel food color",
     "food color",
   ],
+  "oat flour": [],
 
   // Grains, pasta and the cupboard.
   "basmati rice": [],
@@ -610,13 +627,20 @@ export const NAMES_EN: FoodNames = {
     "refined coconut oil",
     "unrefined coconut oil",
   ],
-  "sesame oil": ["toasted sesame oil", "asian sesame oil"],
+  "sesame oil": [
+    "toasted sesame oil",
+    "asian sesame oil",
+    "dark sesame oil",
+    "dark toasted sesame oil",
+  ],
   "cooking spray": [
     "nonstick cooking spray",
     "nonstick spray",
     "oil spray",
     "nonstick vegetable oil spray",
     "avocado oil spray",
+    "baking spray",
+    "nonstick baking spray",
   ],
   almond: [
     "sliced almond",
@@ -673,6 +697,9 @@ export const NAMES_EN: FoodNames = {
     "square dumpling wrapper",
   ],
   dashi: ["instant dashi", "dashi stock", "dashi powder", "hondashi"],
+  chestnut: ["roasted chestnut", "canned roasted chestnut", "cooked chestnut"],
+  "mung bean": ["dried mung bean", "whole mung bean", "whole dried mung bean"],
+  "pickling lime": ["calcium hydroxide"],
 
   // Cans, jars and cartons.
   "black bean": ["black turtle bean"],
@@ -722,6 +749,8 @@ export const NAMES_EN: FoodNames = {
     "chipotle in adobo sauce",
     "chipotle pepper",
     "adobo sauce",
+    "chipotle",
+    "chipotle chile",
   ],
   "coconut milk": [
     "full-fat coconut milk",
@@ -797,7 +826,7 @@ export const NAMES_EN: FoodNames = {
     "green chili pepper",
   ],
   pepperoncini: ["pepperoncini pepper"],
-  pimento: ["pimiento"],
+  pimento: ["pimiento", "pimento pepper", "pimiento pepper"],
   sauerkraut: [],
   "fruit cocktail": [],
   "cranberry sauce": [
@@ -832,6 +861,8 @@ export const NAMES_EN: FoodNames = {
     "french-fried onion",
     "crispy fried onion",
   ],
+  "cherry pepper": ["hot cherry pepper", "pickled cherry pepper"],
+  "cream of coconut": ["coco lopez"],
 
   // Spices and seasonings.
   "bay leaf": ["dried bay leaf", "fresh bay leaf"],
@@ -843,7 +874,7 @@ export const NAMES_EN: FoodNames = {
     "ground pepper",
     "pepper",
   ],
-  "cayenne pepper": ["cayenne", "ground cayenne"],
+  "cayenne pepper": ["cayenne", "ground cayenne", "ground red pepper"],
   "chili powder": ["chilli powder", "hot chilli powder", "chile powder"],
   "chinese five spice": [
     "chinese five spice powder",
@@ -883,16 +914,14 @@ export const NAMES_EN: FoodNames = {
     "red-pepper flake",
   ],
   salt: [
-    "kosher salt",
-    "sea salt",
     "table salt",
     "fine salt",
-    "fine sea salt",
     "coarse salt",
-    "coarse sea salt",
     "cooking salt",
     "iodized salt",
   ],
+  "kosher salt": ["coarse kosher salt"],
+  "sea salt": ["fine sea salt", "coarse sea salt"],
   "flaky sea salt": ["maldon salt", "flaky salt", "sea salt flake"],
   "smoked paprika": ["pimentón", "spanish smoked paprika"],
   turmeric: ["ground turmeric", "turmeric powder", "tumeric"],
@@ -964,10 +993,15 @@ export const NAMES_EN: FoodNames = {
   "chile de arbol": ["dried chile de arbol", "arbol chile", "chile de árbol"],
   "seasoned salt": ["seasoning salt", "lawry's seasoned salt"],
   "onion salt": [],
+  "dried savory": ["savory"],
+  "guajillo chile": ["guajillo", "guajillo chili", "dried guajillo chile"],
+  "ancho chile": ["ancho", "ancho chili", "dried ancho chile", "ancho pepper"],
+  "pasilla chile": ["pasilla", "pasilla chili", "dried pasilla chile"],
+  tajin: ["tajín", "tajin clasico", "tajín clásico", "chile-lime seasoning"],
 
   // Sauces and condiments.
   "apple cider vinegar": ["cider vinegar"],
-  "barbecue sauce": ["bbq sauce"],
+  "barbecue sauce": ["bbq sauce", "barbeque sauce"],
   "chili garlic sauce": [
     "chilli garlic sauce",
     "sambal oelek",
@@ -1048,6 +1082,7 @@ export const NAMES_EN: FoodNames = {
     "salted caramel sauce",
   ],
   "chili oil": ["chile oil", "chili crisp", "chile crisp", "chili crisp oil"],
+  doenjang: ["korean soybean paste", "soybean paste"],
 
   // Drinks, wine and stock.
   "red wine": ["dry red wine", "pinot noir", "cabernet sauvignon", "merlot"],
@@ -1133,10 +1168,32 @@ export const NAMES_EN: FoodNames = {
   popcorn: ["popped popcorn", "popcorn kernel", "unpopped popcorn"],
   "pita chip": [],
   "candy cane": [],
-  "chocolate sandwich cookie": ["oreo", "oreo cookie"],
+  "chocolate sandwich cookie": [
+    "oreo",
+    "oreo cookie",
+    "cream-filled chocolate sandwich cookie",
+    "creme-filled chocolate sandwich cookie",
+    "chocolate cream-filled sandwich cookie",
+  ],
   "turkey stock": ["turkey broth"],
   "fish stock": ["fish broth", "seafood stock"],
   "bone broth": [],
   "ginger ale": [],
   "vanilla wafer": ["nilla wafer"],
+  "pineapple juice": [],
+  "tomato juice": [],
+  "cranberry juice": ["cranberry juice cocktail"],
+  "grapefruit juice": [],
+  "clam juice": ["bottled clam juice"],
+  "club soda": ["soda water", "seltzer", "seltzer water"],
+  "lemon-lime soda": [
+    "lemon-lime flavored carbonated beverage",
+    "lemon-lime soda",
+    "sprite",
+    "7up",
+    "7 up",
+  ],
+  "coffee liqueur": ["kahlua", "kahlúa", "coffee flavored liqueur"],
+  "simple syrup": [],
+  brandy: ["cognac"],
 }

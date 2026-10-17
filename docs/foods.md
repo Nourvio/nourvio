@@ -80,11 +80,11 @@ What a food can say, each optional except its key and aisle:
 | gramsPerCup | Its density, so cups and grams add up | `GRAMS_PER_CUP` | 2 |
 | gramsEach | What one weighs, so "2 onions" can be priced by the pound | `EACH_GRAMS` | 2 |
 | units | Its own units: a head of garlic, a stick of butter | `FOOD_UNITS` | 2 |
-| sold | By weight, by count, or by the pack | the cost rules' guesses | 2 |
+| sold | By weight, by count, or by the pack | the cost rules' guesses | later: packs go by unit (box, bag, bottle, envelope are units) |
 | keeps | Out of the fridge, or for weeks | `KEEPS_OUT`, `LONG_KEEPING` | 2 |
-| onHand | Usually at home | `DEFAULT_ON_HAND` | 2 |
+| onHand | Usually at home | `DEFAULT_ON_HAND` | dropped: that's a household's own list, in the words it shows ("salt, pepper"), and on-hand matching already goes by the vocabulary |
 | search | What to search a store for, when the name isn't it | the search's word swaps | 2 |
-| fdc | Its USDA FoodData Central food | seeds `food_matches` | 2 |
+| fdc | Its USDA FoodData Central food | seeds `food_matches` | later: needs a run against the USDA API |
 
 A brand that's the product, with no food under it (Sriracha, Old Bay), is a food. Brands that name a food ("Diamond Crystal" is salt) are in `means`; the rest are dropped before looking.
 
@@ -154,6 +154,7 @@ Each slice ends with the tests passing and `FOOD_KEYS_VERSION` bumped, so what's
    *Built:* 671 foods; the corpus (384 lines) is 98.4% foods it knows, every line as expected; the dev server's 2,479 lines are 98.7%, and 14,390 lines collected from recipe sites (kept out of the repo) 98.5%, their matches checked for wrong foods.
 2. **One place for what Merran knows about food.** Densities, weights each, food units, aisles, keeping, always-on-hand and store search words read from the vocabulary; `food_matches` starts from its USDA ids; the old lists are deleted, except the aisle patterns for foods it doesn't know.
    *Done when:* `synonyms.ts`, `GRAMS_PER_CUP`, `EACH_GRAMS`, `FOOD_UNITS`, `KEEPS_OUT`, `LONG_KEEPING` and the pantry's same-thing words are gone, and nothing else changed in the tests' results.
+   *Built:* grams per cup, grams each, a food's own units, how it keeps and store search words are facts on the foods; a kind takes its parent's weight and keeping when they share an aisle (a red onion weighs an onion, lemon juice doesn't). Aisles come from the vocabulary for foods it knows, read the way a line is (the first choice), with the word patterns for the rest. The old lists are gone, and so are the search's word swaps; `pantryKey` is `foodKey`. What changed in the tests: kosher, sea and Morton kosher salt are foods of their own, since a cup of each weighs 135, 160 and 230 g against table salt's 292; Parmigiano turns into cups as parmesan does. Also new: so many of a food and a weight of it are one line by what one weighs (6 carrots and 450 g are 13 carrots). Not yet: `sold` and `fdc` (above). Checked against 17,000 lines from recipe sites: their amounts ("1-1/2" is 1½, not 1 to ½; "1 3-pound turkey", boxes, bags and envelopes), and a hand-checked random 300, about 94% the right food and amount and 2.7% a wrong food, each fixed. 705 foods.
 3. **Kinds of.** Parents in the pantry, "uses up" and costs.
    *Done when:* a recipe's bell pepper is covered by the pantry's green bell pepper, and the list still has red and green apart.
 4. **A household's own, and AI's suggestions.** `food_aliases` with "Same as…" and "Not the same" on the list; `recipe_ingredients.food_key`; suggested foods for unknown lines in the tidy-up.

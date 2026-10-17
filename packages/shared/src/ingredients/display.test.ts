@@ -137,12 +137,14 @@ describe("US", () => {
     expect(shown("240 g all-purpose flour", { system: "us" })).toBe(
       "2 cups all-purpose flour"
     )
+    // By any of its names: Parmigiano is parmesan.
+    expect(shown("100 g parmigiano reggiano", { system: "us" })).toBe(
+      "1 cup parmigiano reggiano"
+    )
   })
 
   test("weighs other things in ounces or pounds", () => {
-    expect(shown("100 g parmigiano reggiano", { system: "us" })).toBe(
-      "3 ½ oz parmigiano reggiano"
-    )
+    expect(shown("100 g pancetta", { system: "us" })).toBe("3 ½ oz pancetta")
     expect(shown("1 kg chicken thighs", { system: "us" })).toBe(
       "2 ¼ lb chicken thighs"
     )

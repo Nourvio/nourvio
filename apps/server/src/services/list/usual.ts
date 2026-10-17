@@ -3,7 +3,6 @@ import {
   DEFAULT_ON_HAND,
   foodKey,
   onHandTest,
-  pantryKey,
   readAmount,
   usualBuys,
 } from "@merran/shared"
@@ -59,9 +58,9 @@ export async function dueUsualBuys(em: EntityManager, householdId: string) {
     em.find(WeeklyItem, {}),
   ])
   const have = new Set([
-    ...onList.map((item) => pantryKey(item.name)),
+    ...onList.map((item) => foodKey(item.name)),
     ...atHome.map((item) => item.foodKey),
-    ...weekly.map((item) => pantryKey(item.name)),
+    ...weekly.map((item) => foodKey(item.name)),
   ])
   const isOnHand = onHandTest(
     household.settings?.alwaysOnHand ?? DEFAULT_ON_HAND

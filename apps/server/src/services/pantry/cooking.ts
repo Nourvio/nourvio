@@ -1,7 +1,7 @@
 import {
   addAmounts,
   combineLines,
-  pantryKey,
+  foodKey,
   subtractAmounts,
   type Amount,
   type MealShare,
@@ -52,7 +52,7 @@ export async function useForMeals(
     }
     const needs = hasRecipe(entry) ? combineLines(linesOf(entry)) : []
     for (const need of needs) {
-      const key = pantryKey(need.name)
+      const key = foodKey(need.name)
       // What was set aside for this meal goes first.
       const rows = pantry
         .filter((row) => row.foodKey === key && !gone.has(row.id))
@@ -144,7 +144,7 @@ export async function putBack(
         em.create(PantryItem, {
           id: taken.id,
           household: householdId,
-          foodKey: taken.foodKey || pantryKey(taken.name),
+          foodKey: taken.foodKey || foodKey(taken.name),
           name: taken.name,
           quantity: taken.quantity,
           unit: taken.unit,

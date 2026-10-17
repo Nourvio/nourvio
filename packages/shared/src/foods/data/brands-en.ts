@@ -49,7 +49,9 @@ export const BRANDS_EN: FoodBrands = {
     "whole foods",
   ],
   means: {
-    "diamond crystal": "salt",
+    "diamond crystal": "kosher salt",
+    // Denser than Diamond Crystal, so a cup weighs more.
+    "morton kosher salt": "morton kosher salt",
     maldon: "flaky sea salt",
     "better than bouillon": "chicken bouillon",
   },

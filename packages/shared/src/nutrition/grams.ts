@@ -3,8 +3,7 @@ import {
   plusAmount,
   statedGrams,
 } from "../ingredients/parse.ts"
-import { HOW_MUCH } from "../list/food.ts"
-import { pantryKey } from "../pantry/pantry.ts"
+import { foodKey, HOW_MUCH } from "../list/food.ts"
 import { UNITS, type Unit } from "../units/units.ts"
 import { bakingDensity } from "../units/weights.ts"
 
@@ -62,7 +61,7 @@ export function weighable(text: string): Weighable | null {
   return {
     text,
     name,
-    key: pantryKey(name),
+    key: foodKey(name),
     quantity,
     unit: parsed.unitId ? UNIT_BY_ID.get(parsed.unitId) : undefined,
     size: packSize(parsed.parts?.between ?? ""),

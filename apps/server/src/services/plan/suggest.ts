@@ -8,7 +8,7 @@ import {
   missingDiets,
   NO_TASTES,
   NO_THEMES,
-  pantryKey,
+  foodKey,
   reasonsFor,
   saleNudge,
   themeLabel,
@@ -260,11 +260,11 @@ export async function suggestMeals(
     recipes.map((recipe) => {
       const keys = new Set(
         recipe.lines.flatMap((line) =>
-          lineFoods(line).map((food) => pantryKey(food.name))
+          lineFoods(line).map((food) => foodKey(food.name))
         )
       )
       const foods = soon
-        .filter((item) => keys.has(pantryKey(item.name)))
+        .filter((item) => keys.has(foodKey(item.name)))
         .map((item) => item.name.toLowerCase())
       return [recipe.id, [...new Set(foods)]] as const
     })

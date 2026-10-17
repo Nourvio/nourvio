@@ -144,7 +144,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | What the list costs, and the deals on it | Key | Built | Module (stores): each thing left on the list for Kroger priced for the packs needed (~ when how many is a guess), from the product kept for it and the last price seen; what a real deal saves under its price, and what it's for on one line under the name; each list's card says about what it comes to and what the sales save |
 | Costco and any store with a search page | Detail | Built | Find each thing on a store's list on its site, in the app and the extension; stores by country |
 | Buying by the package: the rest of a 2 lb pack goes in the pantry | Key | Built | Module (stores): what was sent to the Kroger cart is put away as the packs bought, with the meals' share set aside and the rest there to use |
-| Every food known by any of its names: brands, regional names (plain flour, coriander leaves), kinds of (a green bell pepper is a bell pepper), a household's own "same as" | Key | Building | [foods.md](foods.md); one vocabulary for recipes, the list, the pantry, nutrition and the stores; 671 foods so far |
+| Every food known by any of its names: brands, regional names (plain flour, coriander leaves), kinds of (a green bell pepper is a bell pepper), a household's own "same as" | Key | Building | [foods.md](foods.md); one vocabulary for recipes, the list, the pantry, nutrition and the stores; 705 foods so far, with what a cup and one of each weighs, how each keeps and what the store calls it |
 | Fill a Walmart cart through the extension | Detail | Planned | Experimental, off by default |
 | Barcode scanning | Detail | Later | |
 

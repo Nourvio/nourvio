@@ -15,7 +15,28 @@ export type FoodFacts = {
   parent?: string
   /** A size that makes it a different thing to buy: large eggs. */
   keepSize?: true
+  /**
+   * What a US cup of it weighs, in grams, so cups and grams add up: the
+   * spoon-and-level weight bakers go by for dry goods (all-purpose flour is
+   * 120 g, not USDA's 125), density for liquids.
+   */
+  gramsPerCup?: number
+  /** What one weighs, in grams: "2 onions" against a price by the pound. */
+  gramsEach?: number
+  /** Its own units: a head of garlic is ten cloves, a stick of butter half a cup. */
+  units?: Readonly<Record<string, FoodUnit>>
+  /** How it keeps: out of the fridge, and for weeks (so no use-by guess). */
+  keeps?: { out?: true; weeks?: true }
+  /** What to search a store for, when what it's called isn't it. */
+  search?: string
 }
+
+/**
+ * One of a food's own units, as another: a head of garlic is 10 cloves.
+ * `back` goes back to it when an amount comes out whole: 20 cloves is 2
+ * heads.
+ */
+export type FoodUnit = { quantity: number; unit: string; back?: true }
 
 /** The names a food goes by in a language, besides its key. */
 export type FoodNames = Readonly<Record<string, readonly string[]>>
@@ -111,6 +132,9 @@ const MADE_INTO = new Set([
   "icing",
   "candy",
   "pudding",
+  "filled",
+  "juice",
+  "soda",
   "cereal",
   "flavored",
   "seed",
@@ -133,8 +157,11 @@ function saysAgain(key: string, word: string) {
   return (word === "mix" || word === "blend") && aisle === "spices"
 }
 
-/** Words after which the rest is about the food: "tuna in oil". */
-const ABOUT_IT = new Set(["with", "in", "from"])
+/**
+ * Words after which the rest is about the food: "tuna in oil", "salt for
+ * the pasta water".
+ */
+const ABOUT_IT = new Set(["with", "in", "from", "for"])
 
 /** A food said in the plural that's another food. */
 const PLURAL_IS: Record<string, string> = { "black pepper": "bell pepper" }
@@ -259,6 +286,97 @@ export function foodFacts(key: string): FoodFacts | undefined {
   return FOODS[key]
 }
 
+/**
+ * The food Merran knows that a key is about: the key itself, or without
+ * the kind before it ("gluten-free flour" is about flour, "dark brown
+ * sugar" brown sugar). Undefined for a food it doesn't know.
+ */
+export function knownKey(key: string): string | undefined {
+  for (let rest = key; ;) {
+    if (FOODS[rest]) return rest
+    const space = rest.indexOf(" ")
+    if (space < 0) return undefined
+    rest = rest.slice(space + 1)
+  }
+}
+
+/** What a food is a kind of, and what that is, nearest first. */
+export function foodParents(key: string): string[] {
+  const parents: string[] = []
+  for (let at = FOODS[key]?.parent; at && !parents.includes(at);) {
+    parents.push(at)
+    at = FOODS[at]?.parent
+  }
+  return parents
+}
+
+/**
+ * A fact about a food that its kinds share, when the kind doesn't say:
+ * a red onion weighs what an onion does, and keeps as one does. Only from
+ * a parent in the same aisle, so lemon juice doesn't weigh a lemon.
+ */
+function shared<F extends "gramsEach" | "keeps">(
+  key: string,
+  fact: F
+): FoodFacts[F] | undefined {
+  let facts = FOODS[key]
+  while (facts) {
+    if (facts[fact] !== undefined) return facts[fact]
+    const parent = facts.parent ? FOODS[facts.parent] : undefined
+    if (parent?.aisle !== facts.aisle) return undefined
+    facts = parent
+  }
+  return undefined
+}
+
+/** The food Merran knows in a name, as its key: "Kosher salt" is kosher salt. */
+function foodOf(name: string) {
+  const found = findFood(name)
+  return found ? knownKey(found.key) : undefined
+}
+
+/** Grams per US cup of a food, by its key, or null: brown sugar, 213. */
+export function gramsPerCup(key: string): number | null {
+  const known = knownKey(key)
+  return known ? (FOODS[known]?.gramsPerCup ?? null) : null
+}
+
+/** What one of a food weighs, in grams, by its key: an onion, 225. */
+export function gramsEach(key: string): number | null {
+  const known = knownKey(key)
+  return known ? (shared(known, "gramsEach") ?? null) : null
+}
+
+/** A food's own units, by its key: garlic's heads and cloves. */
+export function foodUnits(
+  key: string | undefined
+): Readonly<Record<string, FoodUnit>> {
+  const known = key ? knownKey(key) : undefined
+  return known ? (FOODS[known]?.units ?? {}) : {}
+}
+
+/** How a food named keeps: out of the fridge, for weeks. */
+export function howItKeeps(name: string): { out?: true; weeks?: true } {
+  const key = foodOf(name)
+  return key ? (shared(key, "keeps") ?? {}) : {}
+}
+
+/**
+ * What to search a store for, for a name: the food's own search words
+ * when what it's called isn't what the store calls it ("thickened cream"
+ * is heavy cream), else the name, with the words a store won't know
+ * swapped ("tinned" is "canned").
+ */
+export function searchWords(name: string): string {
+  const key = foodOf(name)
+  const search = key ? FOODS[key]?.search : undefined
+  if (search) return search
+  return name.replace(/[\p{L}]+/gu, (word) => {
+    const same = SAME_WORD[word.toLowerCase()]
+    return same ?? word
+  })
+}
+
 /** A food's name in a language: its key in English, else its first name. */
 export function foodName(key: string, language = "en") {
   if (language === "en") return key
@@ -363,7 +481,11 @@ export function findFood(text: string, language = "en"): FoodFound | null {
     first = best.at - 2
   } else if (
     before &&
-    (KINDS.has(before.form) || (produce && COLORS.has(before.form)))
+    (KINDS.has(before.form) || (produce && COLORS.has(before.form))) &&
+    // Not twice: "yellow summer squash" is yellow squash.
+    !best.key.startsWith(`${before.form} `) &&
+    // A spice is the same ground: ground cayenne is cayenne.
+    !(before.form === "ground" && FOODS[best.key]?.aisle === "spices")
   ) {
     kind = `${before.form} `
     first = best.at - 1

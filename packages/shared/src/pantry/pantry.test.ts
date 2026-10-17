@@ -1,18 +1,19 @@
 import { describe, expect, test } from "vitest"
-import { guessStorage, guessUseBy, pantryKey, whyUseSoon } from "./pantry.ts"
+import { foodKey } from "../list/food.ts"
+import { guessStorage, guessUseBy, whyUseSoon } from "./pantry.ts"
 
 const today = "2026-10-15"
 
 describe("pantry keys", () => {
   test("match a food whatever's been done to it", () => {
-    expect(pantryKey("Boneless skinless chicken thighs")).toBe("chicken thigh")
-    expect(pantryKey("chicken thigh")).toBe("chicken thigh")
-    expect(pantryKey("extra-virgin olive oil")).toBe("olive oil")
-    expect(pantryKey("shredded cheddar")).toBe("cheddar")
+    expect(foodKey("Boneless skinless chicken thighs")).toBe("chicken thigh")
+    expect(foodKey("chicken thigh")).toBe("chicken thigh")
+    expect(foodKey("extra-virgin olive oil")).toBe("olive oil")
+    expect(foodKey("shredded cheddar")).toBe("cheddar")
   })
 
   test("keep different foods apart", () => {
-    expect(pantryKey("cream cheese")).not.toBe(pantryKey("cheese"))
+    expect(foodKey("cream cheese")).not.toBe(foodKey("cheese"))
   })
 })
 

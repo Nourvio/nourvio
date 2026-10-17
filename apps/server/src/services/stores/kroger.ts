@@ -1,4 +1,4 @@
-import type { StoreProduct as Product } from "@merran/shared"
+import { searchWords, type StoreProduct as Product } from "@merran/shared"
 import { AppError } from "../../core/errors.ts"
 import type { StoreLocation } from "../../database/entities/index.ts"
 import { STORE_SETTINGS } from "../../modules/stores/settings.ts"
@@ -387,22 +387,14 @@ function isFood(found: KrogerProductAnswer) {
   )
 }
 
-/** Ways recipes say things that the store's search doesn't know. */
-const SEARCH_WORDS: [RegExp, string][] = [
-  [/\btinned\b/gi, "canned"],
-  [/\btin of\b/gi, "canned"],
-]
-
 /** Searches a store's products for some words. */
 export async function searchProducts(
   fetcher: Fetcher,
   app: KrogerApp,
   options: { term: string; location: StoreLocation; limit?: number }
 ) {
-  const term = SEARCH_WORDS.reduce(
-    (words, [pattern, word]) => words.replace(pattern, word),
-    options.term
-  )
+  // What the store calls it: "thickened cream" is heavy cream.
+  const term = searchWords(options.term)
     .replace(/[^\p{L}\p{N}\s'-]/gu, " ")
     .split(/\s+/)
     .filter(Boolean)
