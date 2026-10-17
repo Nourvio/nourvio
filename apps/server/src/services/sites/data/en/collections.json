@@ -5,9 +5,7 @@
     "description": "Dinners on the table in 40 minutes or less.",
     "theme": "Weeknight dinners on the table in 40 minutes or less",
     "rule": {
-      "courses": [
-        "main"
-      ],
+      "courses": ["main"],
       "maxMinutes": 40
     },
     "classics": [
@@ -59,9 +57,7 @@
     "description": "Curries, roasts, crispy and saucy: the chicken dinners people keep coming back to.",
     "theme": "Chicken dinners, every way",
     "rule": {
-      "words": [
-        "chicken"
-      ]
+      "words": ["chicken"]
     },
     "classics": [
       {
@@ -132,9 +128,7 @@
         "lo mein",
         "pad thai"
       ],
-      "without": [
-        "salad"
-      ]
+      "without": ["salad"]
     },
     "classics": [
       {
@@ -181,9 +175,7 @@
     "description": "Big pots for cold nights, most of them better the next day.",
     "theme": "Soups and stews for cold nights",
     "rule": {
-      "courses": [
-        "soup"
-      ],
+      "courses": ["soup"],
       "words": [
         "soup",
         "stew",
@@ -242,14 +234,8 @@
     "description": "Meatless dinners that don't feel like they're missing anything.",
     "theme": "Vegetarian mains worth making again",
     "rule": {
-      "courses": [
-        "main",
-        "soup",
-        "salad"
-      ],
-      "diets": [
-        "vegetarian"
-      ]
+      "courses": ["main", "soup", "salad"],
+      "diets": ["vegetarian"]
     },
     "classics": [
       {
@@ -344,9 +330,7 @@
     "description": "Bread, cakes and muffins from bakers who test everything.",
     "theme": "Bread, cakes and muffins",
     "rule": {
-      "courses": [
-        "baking"
-      ],
+      "courses": ["baking"],
       "words": [
         "bread",
         "loaf",
@@ -360,12 +344,7 @@
         "biscuits",
         "tart"
       ],
-      "without": [
-        "breadcrumbs",
-        "crab cakes",
-        "fish cakes",
-        "pancake"
-      ]
+      "without": ["breadcrumbs", "crab cakes", "fish cakes", "pancake"]
     },
     "classics": [
       {
@@ -425,9 +404,7 @@
         "blondie",
         "bars"
       ],
-      "without": [
-        "cookie butter"
-      ]
+      "without": ["cookie butter"]
     },
     "classics": [
       {
@@ -454,9 +431,7 @@
     "description": "Slow mornings: pancakes, eggs and something baked.",
     "theme": "Weekend breakfast and brunch",
     "rule": {
-      "courses": [
-        "breakfast"
-      ],
+      "courses": ["breakfast"],
       "words": [
         "pancake",
         "waffle",
@@ -516,9 +491,7 @@
         "cinnamon",
         "chai"
       ],
-      "seasons": [
-        "autumn"
-      ]
+      "seasons": ["autumn"]
     },
     "classics": []
   },
@@ -538,9 +511,7 @@
         "skewers",
         "burger"
       ],
-      "seasons": [
-        "summer"
-      ]
+      "seasons": ["summer"]
     },
     "classics": []
   },
@@ -550,15 +521,9 @@
     "description": "Salads that make a meal when it's too hot to cook.",
     "theme": "Hearty summer salads that make a meal",
     "rule": {
-      "courses": [
-        "salad"
-      ],
-      "words": [
-        "salad"
-      ],
-      "seasons": [
-        "summer"
-      ]
+      "courses": ["salad"],
+      "words": ["salad"],
+      "seasons": ["summer"]
     },
     "classics": []
   },
@@ -579,10 +544,7 @@
         "fruitcake",
         "panettone"
       ],
-      "months": [
-        11,
-        12
-      ]
+      "months": [11, 12]
     },
     "classics": []
   }

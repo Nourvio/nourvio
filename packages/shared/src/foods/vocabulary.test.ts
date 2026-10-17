@@ -46,6 +46,17 @@ describe("the data", () => {
     }
     expect(clashes).toEqual([])
   })
+
+  test("every food is found by its key and each of its names", () => {
+    const missed: string[] = []
+    for (const key of Object.keys(FOODS)) {
+      for (const name of [key, ...(NAMES_EN[key] ?? [])]) {
+        const found = findFood(name)?.key
+        if (found !== key) missed.push(`${name}: ${found ?? "nothing"}`)
+      }
+    }
+    expect(missed).toEqual([])
+  })
 })
 
 describe("finding a food", () => {
@@ -72,10 +83,37 @@ describe("finding a food", () => {
     ["salt and black pepper", "black pepper", "black pepper"],
     ["cooked and peeled tiger prawn tails left on", "shrimp", "prawn tails"],
     ["x 400g 14oz cans butter bean", "butter bean", "butter bean"],
+    // What comes after "from", "with" or "in" is about the food named.
     [
       "chipotle peppers from a can of chipotles in adobo sauce",
       "chipotle in adobo",
-      "chipotles in adobo sauce",
+      "chipotle peppers",
+    ],
+    ["canned tomatoes with green chiles", "diced tomato", "canned tomatoes"],
+    [
+      "diced tomatoes with green chile peppers",
+      "diced tomato and green chile",
+      "diced tomatoes with green chile peppers",
+    ],
+    ["tuna in olive oil", "tuna", "tuna"],
+    ["lemon juice from 1 lemon", "lemon juice", "lemon juice"],
+    // The food is said last: whole-milk yogurt is yogurt.
+    ["plain whole-milk strained yogurt", "yogurt", "yogurt"],
+    ["whole-milk feta", "feta", "feta"],
+    ["cream cheese", "cream cheese", "cream cheese"],
+    // Words after a food that make it something else.
+    ["salt and vinegar seasoning", null, null],
+    ["crisp rice cereal", "rice cereal", "crisp rice cereal"],
+    ["celery seeds", "celery seed", "celery seeds"],
+    ["egg roll wrappers", "egg roll wrapper", "egg roll wrappers"],
+    ["gochujang paste", "gochujang", "gochujang"],
+    ["taco seasoning mix", "taco seasoning", "taco seasoning"],
+    // Peppers, more than one, are bell peppers.
+    ["frozen peppers", "frozen bell pepper", "frozen peppers"],
+    [
+      "chocolate sandwich cookies",
+      "chocolate sandwich cookie",
+      "chocolate sandwich cookies",
     ],
     ["boneless skinless chicken breasts", "chicken breast", "chicken breasts"],
     ["jalapeños", "jalapeño", "jalapeños"],
@@ -83,7 +121,7 @@ describe("finding a food", () => {
     ["tinned tomatoes", "diced tomato", "tinned tomatoes"],
     ["confectioners' sugar", "powdered sugar", "confectioners' sugar"],
   ])("%s", (text, key, name) => {
-    expect(findFood(text)).toEqual({ key, name })
+    expect(findFood(text)).toEqual(key === null ? null : { key, name })
   })
 
   test("nothing it doesn't know", () => {

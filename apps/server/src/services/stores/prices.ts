@@ -4,7 +4,7 @@ import {
   DEFAULT_ON_HAND,
   guessAisle,
   judgeSale,
-  lineFood,
+  lineFoods,
   onHandTest,
   worthIt,
   type AisleKey,
@@ -79,16 +79,20 @@ export async function recipeFoods(em: EntityManager) {
   const byRecipe = new Map<string, RecipeFood[]>()
   const foods = new Map<string, RecipeFood & { recipes: number }>()
   for (const line of lines) {
-    const food = lineFood(line.rawText)
-    if (!food) continue
-    const mine = byRecipe.get(line.recipe.id) ?? []
-    if (mine.some((one) => one.key === food.key)) continue
-    const found = { ...food, aisle: guessAisle(food.name) }
-    mine.push(found)
-    byRecipe.set(line.recipe.id, mine)
-    const counted = foods.get(food.key)
-    if (counted) counted.recipes++
-    else foods.set(food.key, { ...found, recipes: 1 })
+    for (const food of lineFoods(line.rawText)) {
+      const mine = byRecipe.get(line.recipe.id) ?? []
+      if (mine.some((one) => one.key === food.key)) continue
+      const found = {
+        name: food.name,
+        key: food.key,
+        aisle: guessAisle(food.name),
+      }
+      mine.push(found)
+      byRecipe.set(line.recipe.id, mine)
+      const counted = foods.get(food.key)
+      if (counted) counted.recipes++
+      else foods.set(food.key, { ...found, recipes: 1 })
+    }
   }
   return { byRecipe, foods }
 }

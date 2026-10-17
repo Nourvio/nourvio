@@ -2,7 +2,7 @@ import { formatQuantity } from "../ingredients/display.ts"
 import { parseIngredient } from "../ingredients/parse.ts"
 import { METRIC_UNIT_IDS, UNITS_BY_ID, type Unit } from "../units/units.ts"
 import { bakingDensity } from "../units/weights.ts"
-import { foodKey, shoppingName } from "./food.ts"
+import { lineFoods } from "./food.ts"
 
 // Adding up what to buy: the same food across recipes in one line, volumes
 // and weights converted as they're added, and each planned meal's share
@@ -140,15 +140,17 @@ type Group = {
 export function combineLines(lines: readonly ListLine[]): CombinedItem[] {
   const groups = new Map<string, Group>()
 
-  for (const line of lines) {
-    const parsed = parseIngredient(line.text)
-    const name = shoppingName(parsed.food ?? parsed.text)
-    if (!name) continue
-    const food = foodKey(name)
-    const top = parsed.quantityMax ?? parsed.quantity
+  // Each food a line names: "salt and pepper" is two.
+  const foods = lines.flatMap((line) =>
+    lineFoods(line.text).map((food) => ({ line, food }))
+  )
+  for (const { line, food: each } of foods) {
+    const name = each.name
+    const food = each.key
+    const top = each.quantityMax ?? each.quantity
     const amount = inFoodUnits(food, {
       quantity: top === null ? null : top * line.factor,
-      unit: parsed.unitId,
+      unit: each.unitId,
     })
     const found = measureOf(food, amount)
     const measure = found?.measure ?? "none"

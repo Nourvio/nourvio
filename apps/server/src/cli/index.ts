@@ -17,7 +17,7 @@ const COMMANDS: Record<
   },
   foods: {
     description:
-      "How many of this server's ingredient lines (or a text file's, one to a line) name a food Merran knows, and the foods it doesn't.",
+      "How many of this server's ingredient lines (or a file's: text, one to a line, or JSON Lines recipes with an ingredients list) name a food Merran knows, and the foods it doesn't.",
     run: (args) => foodsCoverage(args),
   },
 }

@@ -129,7 +129,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 
 | Feature | Importance | Status | Notes |
 |---|---|---|---|
-| A shopping list from the plan: combined, converted, pantry taken off | Headline | Built | One line per food however recipes name it (plain flour is all-purpose flour, chopped parsley is parsley, lemon wedges are lemons) and measure it (a head of garlic is ten cloves, a stick of butter half a cup, a cup of flour 120 g); names without how it's used or prepped ("to serve", "or vegetable oil", "large" on vegetables) |
+| A shopping list from the plan: combined, converted, pantry taken off | Headline | Built | One line per food however recipes name it (plain flour is all-purpose flour, chopped parsley is parsley, lemon wedges are lemons) and measure it (a head of garlic is ten cloves, a stick of butter half a cup, a cup of flour 120 g); names without how it's used or prepped ("to serve", "or vegetable oil", "large" on vegetables); a line naming more than one food is each of them ("salt and pepper", "½ tsp each thyme and oregano") |
 | Every-week items and always-on-hand staples | Key | Built | |
 | Sorted by aisle, and it remembers where things go | Key | Built | |
 | A list for each place you shop | Key | Built | |
@@ -143,7 +143,7 @@ Keep this page current: when a feature is built, changed, planned or dropped, up
 | Kroger stores (Fry's, Ralphs...): products, send the cart, prices, sales | Key | Built | Module (stores), with the server admin's Kroger developer app: a store by ZIP code, one linked account for the household, Merran's pick and how many for each thing, today's price and sale, sent to the cart by barcode |
 | Costco and any store with a search page | Detail | Built | Find each thing on a store's list on its site, in the app and the extension; stores by country |
 | Buying by the package: the rest of a 2 lb pack goes in the pantry | Key | Built | Module (stores): what was sent to the Kroger cart is put away as the packs bought, with the meals' share set aside and the rest there to use |
-| Every food known by any of its names: brands, regional names (plain flour, coriander leaves), kinds of (a green bell pepper is a bell pepper), a household's own "same as" | Key | Building | [foods.md](foods.md); one vocabulary for recipes, the list, the pantry, nutrition and the stores |
+| Every food known by any of its names: brands, regional names (plain flour, coriander leaves), kinds of (a green bell pepper is a bell pepper), a household's own "same as" | Key | Building | [foods.md](foods.md); one vocabulary for recipes, the list, the pantry, nutrition and the stores; 671 foods so far |
 | Fill a Walmart cart through the extension | Detail | Planned | Experimental, off by default |
 | Barcode scanning | Detail | Later | |
 

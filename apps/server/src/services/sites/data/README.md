@@ -27,7 +27,10 @@ A collection is a rule, not a list: it shows every recipe Merran has read from t
   "theme": "Soups and stews for cold nights",
   "rule": { "courses": ["soup"], "words": ["soup", "stew", "chowder"] },
   "classics": [
-    { "url": "https://www.recipetineats.com/french-onion-soup/", "site": "RecipeTin Eats" }
+    {
+      "url": "https://www.recipetineats.com/french-onion-soup/",
+      "site": "RecipeTin Eats"
+    }
   ]
 }
 ```
@@ -38,12 +41,12 @@ A collection is a rule, not a list: it shows every recipe Merran has read from t
 
 The rule (`courses` and `words` are either-or; everything else must hold too):
 
-| Field | A recipe fits when |
-|---|---|
-| `courses` | Its site calls it one of these: `main`, `side`, `soup`, `salad`, `dessert`, `baking`, `breakfast`, `snack`, `drink`, `sauce` |
-| `words` | One of these is in its name, categories, cuisines or keywords, as a whole word (plurals too) |
-| `without` | None of these is |
-| `diets` | It has all of these diet labels, as Merran works them out: `vegetarian`, `vegan`... |
-| `maxMinutes` | It takes at most this long, all in |
-| `seasons` | The collection only shows in these seasons (`spring`, `summer`, `autumn`, `winter`), six months apart in the southern hemisphere |
-| `months` | The collection only shows in these months (1 is January), wherever the household is |
+| Field        | A recipe fits when                                                                                                               |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| `courses`    | Its site calls it one of these: `main`, `side`, `soup`, `salad`, `dessert`, `baking`, `breakfast`, `snack`, `drink`, `sauce`     |
+| `words`      | One of these is in its name, categories, cuisines or keywords, as a whole word (plurals too)                                     |
+| `without`    | None of these is                                                                                                                 |
+| `diets`      | It has all of these diet labels, as Merran works them out: `vegetarian`, `vegan`...                                              |
+| `maxMinutes` | It takes at most this long, all in                                                                                               |
+| `seasons`    | The collection only shows in these seasons (`spring`, `summer`, `autumn`, `winter`), six months apart in the southern hemisphere |
+| `months`     | The collection only shows in these months (1 is January), wherever the household is                                              |

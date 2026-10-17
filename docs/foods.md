@@ -90,14 +90,19 @@ A brand that's the product, with no food under it (Sriracha, Old Bay), is a food
 
 ## Finding the food in a line
 
-The parser does the amount, unit and notes as before (brackets, nested or left open, are notes too). The tidy-up that follows (`shoppingName`) takes off a label ("Egg wash:"), what's done to it after it ("cut into chunks", "beaten with milk"), how it's used ("to serve"), a measure without a number, what it comes in ("can"), and a second choice. Then `findFood` looks in what's left:
+The parser does the amount, unit and notes as before (brackets, nested or left open, are notes too; so is a pack size without them, "1 10.5 oz. can soup"). Describing words set apart by commas stay with the food they lead to, when they name no food themselves and a food Merran knows ends the part: "creamy, emulsified peanut butter" is peanut butter, "red, green, or yellow bell pepper" red bell pepper. The tidy-up that follows (`shoppingName`) takes off a label ("Egg wash:"), what's done to it after it ("cut into chunks", "beaten with milk"), how it's used ("to serve"), a measure without a number, what it comes in ("can", "envelope", "sleeve"), and a second choice. Then `findFood` looks in what's left:
 
 1. **Brands:** one that names a food is that food; the others are skipped.
-2. **The longest known name anywhere in the words, and of those the last.** English puts the food last, so "vanilla ice cream" is ice cream and "chicken sausage" is sausage, while "King Arthur Unbleached All-Purpose Flour" is all-purpose flour and "lime juice about 2 limes" lime juice.
-3. **The word before it, when it makes a different thing to buy:** dried, frozen, smoked, ground, powdered, pickled, roasted, sweet, hot, dark, light, vegan ("dried oregano", "dark brown sugar"); a color, for fruit and vegetables ("red grape"); dairy-free, gluten-free and the like, which matter for allergies ("dairy-free milk" isn't milk). These make the key, like "dried oregano". A size stays in the name for a food sold by size ("large eggs") but not in its key.
-4. **Otherwise** the tidied words and their plain form, as before. These are the lines the coverage report lists.
+2. **The known name that ends last, and of those the longest.** English puts the food last, so "vanilla ice cream" is ice cream, "chicken sausage" sausage and "whole-milk ricotta" ricotta, while overlapping names go to the longer ("cream cheese", "King Arthur Unbleached All-Purpose Flour" is all-purpose flour).
+3. **Not past "with", "in" or "from"** once a food is named, since what follows is about it: "diced tomatoes with green chiles" is diced tomatoes, "tuna in oil" tuna, "lemon juice from 1 lemon" lemon juice. A name that runs past the word ("chipotles in adobo") still counts.
+4. **A kind said with what it's a kind of** is the kind: "provolone cheese" is provolone, "kielbasa sausage" kielbasa.
+5. **Nothing, when the word after it makes it something else:** seasoning, sauce, mix, paste, soup, syrup, extract, powder, seed, stock, cereal, wrapper and the like. "Salt and vinegar seasoning" isn't vinegar, "celery seed" isn't celery, "egg roll wrappers" aren't eggs, so they're foods it doesn't know (or foods of their own) rather than the wrong food. Unless the word only says it again: "sriracha sauce", "miso paste", "taco seasoning mix".
+6. **The word before it, when it makes a different thing to buy:** dried, frozen, smoked, ground, powdered, pickled, roasted, sweet, hot, dark, light, vegan ("dried oregano", "dark brown sugar"); a color, for fruit and vegetables ("red grape"); dairy-free, gluten-free and the like, which matter for allergies ("dairy-free milk" isn't milk). These make the key, like "dried oregano". A size stays in the name for a food sold by size ("large eggs") but not in its key. "Peppers", more than one, are bell peppers: black pepper never is.
+7. **Otherwise** the tidied words and their plain form, as before. These are the lines the coverage report lists.
 
-A choice shares its food when that's a food Merran knows and the first choice is part of it, or isn't a food at all: "sunflower or vegetable oil" is sunflower oil, "low-sodium chicken or vegetable broth" chicken broth, "fresh or frozen blueberries" blueberries, but "mayonnaise or plain Greek yogurt" is mayonnaise.
+A choice shares its food when that's a food Merran knows and the first choice is part of it, or isn't a food at all: "sunflower or vegetable oil" is sunflower oil, "low-sodium chicken or vegetable broth" chicken broth, "fresh or frozen blueberries" blueberries, but "mayonnaise or plain Greek yogurt" is mayonnaise and "honey or golden syrup" honey. Two whole names are the first ("thickened cream / heavy cream"), and "canola or other neutral oil" is canola oil.
+
+A line can name more than one food (`lineFoods`): "salt and pepper" is salt and pepper, "½ tsp each dried thyme and oregano" ½ tsp of each, "2 tbsp olive oil and 1 tbsp butter" each its own amount. It's parted only when each part is a food Merran knows that ends the part, so "black and white sesame seeds", "half and half" and "salt and vinegar seasoning" stay one. The list, costs, prices and "uses up" each take every food a line names.
 
 What comes out (`foodInLine`):
 
@@ -135,9 +140,9 @@ Recipe lines keep the food they were matched to (`recipe_ingredients.food_key`, 
 
 ## Knowing it works
 
-- **A corpus of lines,** `packages/shared/src/foods/corpus/en.txt`: ingredient lines in the styles sites write them (WP Recipe Maker's "(, drained)", RecipeTin's "((Note 4))", British and Australian names, brands, ranges, choices), written for the project rather than copied, each as `line => food key` (`?` before a key for a food it doesn't know yet). The tests check every one, and that a key is its own key.
+- **A corpus of lines,** `packages/shared/src/foods/corpus/en.txt`: ingredient lines in the styles sites write them (WP Recipe Maker's "(, drained)", RecipeTin's "((Note 4))", British and Australian names, brands, ranges, choices), written for the project rather than copied, each as `line => food key` (`?` before a key for a food it doesn't know yet). The tests check every one, and that a key is its own key. They also check that every food is found by its key and by each of its names.
 - **A coverage target:** the share of corpus lines that are foods it knows, checked in the tests so it can't quietly drop. 95% to start.
-- **A report for a real library:** `pnpm merran foods` (or `merran foods` in the Docker image) runs a server's recipes and recipe sites through it and lists the foods it didn't know, most common first, with a line for each. Given a text file (`merran foods lines.txt`, one ingredient to a line) it reads that instead, which is how a big set of lines collected elsewhere is used: for finding what to add, never committed as it is. It only reads.
+- **A report for a real library:** `pnpm merran foods` (or `merran foods` in the Docker image) runs a server's recipes and recipe sites through it and lists the foods it didn't know, most common first, with a line for each. Given a file it reads that instead: a text file (`merran foods lines.txt`, one ingredient to a line) or a JSON Lines file (`merran foods recipes.jsonl`, a recipe to a line with an `ingredients` list), which is how a big set of lines collected elsewhere is used: for finding what to add, never committed as it is. It only reads.
 - **Adding a food is one entry and one corpus line,** described in the contributing guide.
 
 ## Slices
@@ -146,7 +151,7 @@ Each slice ends with the tests passing and `FOOD_KEYS_VERSION` bumped, so what's
 
 1. **The vocabulary and finding foods.** The data files and their loader; brands; the matcher; `foodKey`, `lineFood` and `shoppingName` using it, with today's lists as the fallback for unknown foods; the first few hundred foods, from the corpus and the dev households' recipes; the corpus, golden file and coverage check.
    *Done when:* the corpus is 95% matched, and a week of the dev household's recipes added from the plan has no line named by a brand, a bracket or a measure.
-   *Built:* the corpus (339 lines) is 98.5% foods it knows, every line as expected; the dev server's 2,479 lines are 98.5%.
+   *Built:* 671 foods; the corpus (384 lines) is 98.4% foods it knows, every line as expected; the dev server's 2,479 lines are 98.7%, and 14,390 lines collected from recipe sites (kept out of the repo) 98.5%, their matches checked for wrong foods.
 2. **One place for what Merran knows about food.** Densities, weights each, food units, aisles, keeping, always-on-hand and store search words read from the vocabulary; `food_matches` starts from its USDA ids; the old lists are deleted, except the aisle patterns for foods it doesn't know.
    *Done when:* `synonyms.ts`, `GRAMS_PER_CUP`, `EACH_GRAMS`, `FOOD_UNITS`, `KEEPS_OUT`, `LONG_KEEPING` and the pantry's same-thing words are gone, and nothing else changed in the tests' results.
 3. **Kinds of.** Parents in the pantry, "uses up" and costs.

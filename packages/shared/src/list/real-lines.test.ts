@@ -1,7 +1,7 @@
-import { expect, test } from "vitest"
+import { describe, expect, test } from "vitest"
 import { combineLines } from "./amounts.ts"
 import { parseIngredient } from "../ingredients/parse.ts"
-import { lineFood } from "./food.ts"
+import { lineFood, lineFoods } from "./food.ts"
 
 // Lines as recipe sites write them, from a household's own recipes: what
 // goes on the list for each.
@@ -118,4 +118,88 @@ test("garlic however it's measured is one line, in cloves", () => {
   ])
   expect(rest).toEqual([])
   expect(garlic).toMatchObject({ name: "garlic", quantity: 8, unit: "clove" })
+})
+
+describe("lines naming more than one food", () => {
+  const foods = (line: string) =>
+    lineFoods(line).map((food) => [food.key, food.quantity, food.unitId])
+
+  test.each([
+    [
+      "Salt and pepper",
+      [
+        ["salt", null, null],
+        ["black pepper", null, null],
+      ],
+    ],
+    [
+      "1/2 tsp EACH dried thyme and oregano",
+      [
+        ["dried thyme", 0.5, "teaspoon"],
+        ["dried oregano", 0.5, "teaspoon"],
+      ],
+    ],
+    [
+      "1 tsp each salt, cumin, ground coriander, paprika (sweet, normal or smokey)",
+      [
+        ["salt", 1, "teaspoon"],
+        ["ground cumin", 1, "teaspoon"],
+        ["ground coriander", 1, "teaspoon"],
+        ["paprika", 1, "teaspoon"],
+      ],
+    ],
+    [
+      "2 tbsp olive oil and 1 tbsp butter",
+      [
+        ["olive oil", 2, "tablespoon"],
+        ["butter", 1, "tablespoon"],
+      ],
+    ],
+    // Without "each", the amount is the first one's.
+    [
+      "1 cup peas and carrots",
+      [
+        ["pea", 1, "cup"],
+        ["carrot", null, null],
+      ],
+    ],
+    [
+      "Vegetable oil and unsalted butter, for cooking",
+      [
+        ["vegetable oil", null, null],
+        ["butter", null, null],
+      ],
+    ],
+    // One food, though "and" is in it.
+    ["2 tbsp black and white sesame seeds", [["sesame seed", 2, "tablespoon"]]],
+    ["1 cup half and half", [["half-and-half", 1, "cup"]]],
+    ["1 cup sweet and sour sauce", [["sweet and sour sauce", 1, "cup"]]],
+    [
+      "2 tablespoons salt and vinegar seasoning, divided",
+      [["salt and vinegar seasoning", 2, "tablespoon"]],
+    ],
+    // Commas without "each" are notes.
+    ["1 onion, peeled and chopped", [["onion", 1, null]]],
+  ])("%s", (line, expected) => {
+    expect(foods(line)).toEqual(expected)
+  })
+
+  test("each goes on the list, eggs and yolks as eggs", () => {
+    const items = combineLines([
+      { text: "Salt and pepper", factor: 1, source: "Soup" },
+      { text: "2 large eggs and 2 large yolks", factor: 1, source: "Custard" },
+      {
+        text: "1/2 tsp each dried thyme and oregano",
+        factor: 2,
+        source: "Stew",
+      },
+    ])
+    expect(items.map((item) => [item.name, item.quantity, item.unit])).toEqual([
+      ["Salt", null, null],
+      ["pepper", null, null],
+      ["large eggs", 4, null],
+      ["dried thyme", 1, "teaspoon"],
+      ["dried oregano", 1, "teaspoon"],
+    ])
+  })
 })

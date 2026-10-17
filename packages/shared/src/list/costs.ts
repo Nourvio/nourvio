@@ -1,7 +1,6 @@
-import { parseIngredient } from "../ingredients/parse.ts"
 import { guessAisle } from "./aisles.ts"
 import { amountRatio, type Amount } from "./amounts.ts"
-import { foodKey, shoppingName } from "./food.ts"
+import { lineFoods } from "./food.ts"
 import { priceNow, type StoreProduct } from "./products.ts"
 
 // What things cost at the household's store: a pack's size as an amount,
@@ -137,17 +136,17 @@ export function recipeCost(
     missingMain: false,
     currency: null,
   }
-  for (const line of lines) {
-    const parsed = parseIngredient(line)
-    const name = shoppingName(parsed.food ?? parsed.text)
-    const quantity = parsed.quantityMax ?? parsed.quantity
+  // Each food a line names, with its amount: "salt and pepper" is two.
+  for (const each of lines.flatMap((line) => lineFoods(line))) {
+    const name = each.name
+    const quantity = each.quantityMax ?? each.quantity
     if (!name || quantity === null || isOnHand(name)) continue
     cost.counted++
-    const food = foodKey(name)
+    const food = each.key
     const product = productOf(food)
     const price = product ? priceNow(product, today).price : null
     const packs = product
-      ? packsFor(food, { quantity, unit: parsed.unitId }, product.size)
+      ? packsFor(food, { quantity, unit: each.unitId }, product.size)
       : null
     // Twenty packs for one line is the wrong product, not a big recipe.
     if (price === null || packs === null || packs > MOST_PACKS) {

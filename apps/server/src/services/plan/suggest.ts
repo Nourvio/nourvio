@@ -4,7 +4,7 @@ import {
   clockIn,
   dayOfWeek,
   fitsTheme,
-  lineFood,
+  lineFoods,
   missingDiets,
   NO_TASTES,
   NO_THEMES,
@@ -259,10 +259,9 @@ export async function suggestMeals(
   const usesUp = new Map(
     recipes.map((recipe) => {
       const keys = new Set(
-        recipe.lines.flatMap((line) => {
-          const food = lineFood(line)
-          return food ? [pantryKey(food.name)] : []
-        })
+        recipe.lines.flatMap((line) =>
+          lineFoods(line).map((food) => pantryKey(food.name))
+        )
       )
       const foods = soon
         .filter((item) => keys.has(pantryKey(item.name)))

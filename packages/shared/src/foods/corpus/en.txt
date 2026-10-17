@@ -356,7 +356,60 @@ egg wash: 1 large egg beaten with 1 tbsp milk => egg
 1/2 cup dried porcini mushrooms => dried mushroom
 1 tsp white sesame seeds => sesame seed
 
+# Packets, boxes and cans, as the big American sites write them.
+1 (10.5 ounce) can condensed cream of mushroom soup => cream of mushroom soup
+1 10.75 oz. can cream of chicken soup => cream of chicken soup
+1 (15.25 ounce) box yellow cake mix => yellow cake mix
+1 (1 ounce) packet ranch dressing mix => ranch seasoning
+1 (1.25 ounce) envelope taco seasoning mix => taco seasoning
+1 1-ounce envelope dry onion soup mix => onion soup mix
+2 15-oz cans great northern beans, rinsed => great northern bean
+1 (14 ounce) can sweetened condensed milk => sweetened condensed milk
+1 (12 fl oz) can evaporated milk => evaporated milk
+1 (10 ounce) can diced tomatoes and green chilies => diced tomato and green chile
+1 (4 ounce) can chopped green chiles, drained => green chile
+2 cans black-eyed peas, drained => black-eyed pea
+1 (14.5 ounce) can stewed tomatoes => stewed tomato
+1 cup light corn syrup => light corn syrup
+3/4 cup sweetened flaked coconut => shredded coconut
+1/2 cup butter or margarine, softened => butter
+1 sleeve buttery round crackers, crushed => cracker
+2 cups mini marshmallows => marshmallow
+6 cups crisp rice cereal => rice cereal
+1 package egg roll wrappers => egg roll wrapper
+12 drops hot pepper sauce => hot sauce
+A couple shakes of Tabasco sauce => hot sauce
+1 tablespoon prepared horseradish => horseradish
+1 teaspoon caraway seeds => caraway seed
+1/2 tsp celery seed => celery seed
+2 cups turkey stock => turkey stock
+1 smoked ham hock => ham hock
+4 slices provolone cheese => provolone
+1 lb kielbasa sausage, sliced => kielbasa
+2 habanero peppers, seeded => habanero
+2 oz vodka => vodka
+1/4 cup dry sherry => sherry
+
+# Describing words set apart by commas, before the food.
+1/2 cup creamy, natural peanut butter => peanut butter
+1 large red, yellow, or orange bell pepper, diced => red bell pepper
+8 cups stemmed, chopped collard greens => collard green
+3 tablespoons, plus 1 cup olive oil => olive oil
+1 tablespoon canola, grapeseed, or other neutral oil => canola oil
+
+# What's after "with", "in" or "from" is about the food.
+1 can tuna in olive oil, drained => tuna
+1 can diced tomatoes with their juice => diced tomato
+2 tbsp lemon juice from 1 lemon => lemon juice
+
+# The food is said last, and what it's made into is another food.
+1 cup whole-milk ricotta cheese => ricotta
+1 cup frozen peppers => frozen bell pepper
+24 chocolate sandwich cookies => chocolate sandwich cookie
+2 tbsp honey or golden syrup => honey
+
 # Foods it doesn't know yet.
+2 tablespoons salt and vinegar seasoning => ?salt and vinegar seasoning
 2 tbsp gochugaru => ?gochugaru
 1 tsp yuzu kosho => ?yuzu kosho
 2 tsp aonori => ?aonori

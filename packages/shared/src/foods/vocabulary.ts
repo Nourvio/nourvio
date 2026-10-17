@@ -72,16 +72,103 @@ const COLORS = new Set([
 const FREE_OF = new Set(["dairy", "gluten", "sugar", "egg", "nut", "plant"])
 const FREE = new Set(["free", "based"])
 
+/**
+ * Words after a food that make it something else: "salt and vinegar
+ * seasoning", "cheese ravioli", "mustard powder", "corn syrup". The line is
+ * then a food Merran doesn't know, rather than the wrong one.
+ */
+const MADE_INTO = new Set([
+  "seasoning",
+  "sauce",
+  "mix",
+  "paste",
+  "dressing",
+  "chip",
+  "crisp",
+  "soup",
+  "spread",
+  "dip",
+  "ravioli",
+  "tortellini",
+  "dumpling",
+  "pie",
+  "cake",
+  "cookie",
+  "cracker",
+  "glaze",
+  "marinade",
+  "rub",
+  "gravy",
+  "jelly",
+  "curd",
+  "syrup",
+  "extract",
+  "powder",
+  "flavoring",
+  "essence",
+  "filling",
+  "frosting",
+  "icing",
+  "candy",
+  "pudding",
+  "cereal",
+  "flavored",
+  "seed",
+  "wafer",
+  "wrapper",
+  "stock",
+  "broth",
+])
+
+/**
+ * A word after a food that only says what it is: "sriracha sauce", "miso
+ * paste", "taco seasoning mix".
+ */
+function saysAgain(key: string, word: string) {
+  const aisle = FOODS[key]?.aisle
+  if (key.endsWith(word)) return true
+  if (word === "sauce" || word === "paste") {
+    return aisle === "condiments" || aisle === "international"
+  }
+  return (word === "mix" || word === "blend") && aisle === "spices"
+}
+
+/** Words after which the rest is about the food: "tuna in oil". */
+const ABOUT_IT = new Set(["with", "in", "from"])
+
+/** A food said in the plural that's another food. */
+const PLURAL_IS: Record<string, string> = { "black pepper": "bell pepper" }
+
 /** Sizes, kept for a food whose size is what's bought. */
 const SIZES = new Set(["large", "medium", "small", "jumbo", "extra"])
 
 /** "Tinned" is "canned", so both find the same food. */
 const SAME_WORD: Record<string, string> = { tinned: "canned" }
 
-function singular(word: string) {
+/** Words whose "-ies" plural is "-ie" or "-i": cookies, chilies. */
+const IES_TO = new Map([
+  ...[
+    "cookie",
+    "brownie",
+    "veggie",
+    "pie",
+    "smoothie",
+    "hoagie",
+    "calorie",
+  ].map((word) => [word.slice(0, -2), word] as const),
+  ...["chili", "chilli", "pierogi"].map(
+    (word) => [word.slice(0, -1), word] as const
+  ),
+])
+
+/** A word's singular, as English mostly makes it: "cherries" is "cherry". */
+export function singular(word: string) {
   if (word === "leaves") return "leaf"
-  if (/(ss|us|is)$/.test(word)) return word
-  if (/ies$/.test(word)) return word.replace(/ies$/, "y")
+  if (/(ss|us)$/.test(word)) return word
+  if (/ies$/.test(word)) {
+    const stem = word.slice(0, -3)
+    return IES_TO.get(stem) ?? `${stem}y`
+  }
   if (/(oes|ches|shes|xes|sses)$/.test(word)) return word.replace(/es$/, "")
   if (/[^s]s$/.test(word)) return word.slice(0, -1)
   return word
@@ -95,11 +182,15 @@ function wordForm(word: string) {
 
 type Token = { form: string; start: number; end: number }
 
-/** Words and where they are: hyphens and slashes part them, apostrophes don't. */
+/**
+ * Words and where they are: hyphens and slashes part them, apostrophes
+ * don't, and "&" is "and".
+ */
 function tokens(text: string): Token[] {
   const found: Token[] = []
-  for (const match of text.matchAll(/[\p{L}\p{N}'’]+/gu)) {
-    const form = wordForm(match[0].replace(/['’]/g, ""))
+  for (const match of text.matchAll(/[\p{L}\p{N}'’]+|&/gu)) {
+    const form =
+      match[0] === "&" ? "and" : wordForm(match[0].replace(/['’]/g, ""))
     if (form) {
       found.push({
         form,
@@ -206,20 +297,55 @@ export function findFood(text: string, language = "en"): FoodFound | null {
     }
   }
 
-  // The longest name, and of those the last: English puts the food last,
-  // so "vanilla ice cream" is ice cream and "chicken sausage" sausage.
-  let best: { at: number; size: number; key: string } | null = null
+  // The name that ends last, and of those the longest: English puts the
+  // food last, so "vanilla ice cream" is ice cream, "chicken sausage"
+  // sausage, "whole-milk ricotta" ricotta, and "cream cheese" cream cheese.
+  const names: { at: number; size: number; key: string }[] = []
   for (let at = 0; at < kept.length; at++) {
     const most = Math.min(vocabulary.longest, kept.length - at)
     for (let size = most; size >= 1; size--) {
       const words = kept.slice(at, at + size)
       const key = vocabulary.names.get(words.map((word) => word.form).join(" "))
       if (!key) continue
-      if (!best || size >= best.size) best = { at, size, key }
+      names.push({ at, size, key })
       break
     }
   }
+  // What comes after "with", "in" or "from", once a food is named, is about
+  // it: "diced tomatoes with green chiles", "tuna in oil", "lemon juice
+  // from 1 lemon". A name that runs past the word ("chipotle in adobo")
+  // still counts.
+  const cut = kept.findIndex(
+    (word, at) =>
+      ABOUT_IT.has(word.form) && names.some((name) => name.at + name.size <= at)
+  )
+  let best: { at: number; size: number; key: string } | null = null
+  for (const name of names) {
+    if (cut >= 0 && name.at > cut) continue
+    const end = name.at + name.size
+    const bestEnd = best ? best.at + best.size : -1
+    if (end > bestEnd || (end === bestEnd && name.size > best!.size)) {
+      best = name
+    }
+  }
   if (!best) return null
+  // "Provolone cheese", "kielbasa sausage": a kind, said with what it's a
+  // kind of, is the kind.
+  const kindOf = names.find(
+    (name) =>
+      name.at + name.size === best!.at && FOODS[name.key]?.parent === best!.key
+  )
+  if (kindOf) best = { ...kindOf, size: kindOf.size + best.size }
+  // "Peppers" are bell peppers: black pepper is never more than one.
+  const word = kept[best.at]!
+  const said = text.slice(word.start, word.end).toLowerCase()
+  if (best.size === 1 && said !== word.form && PLURAL_IS[best.key]) {
+    best = { ...best, key: PLURAL_IS[best.key]! }
+  }
+  const next = kept[best.at + best.size]
+  if (next && MADE_INTO.has(next.form) && !saysAgain(best.key, next.form)) {
+    return null
+  }
   const last = kept[best.at + best.size - 1]!
   let first = best.at
   let kind = ""

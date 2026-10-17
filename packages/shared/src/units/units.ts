@@ -133,6 +133,7 @@ export const UNITS: Unit[] = [
   ...[
     ["pinch", "pinches"],
     ["dash", "dashes"],
+    ["drop", "drops"],
     ["clove", "cloves"],
     ["can", "cans"],
     ["jar", "jars"],

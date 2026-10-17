@@ -1,3 +1,4 @@
+import { findFood } from "../foods/vocabulary.ts"
 import { UNITS, type Unit } from "../units/units.ts"
 
 const UNICODE_FRACTIONS: Record<string, string> = {
@@ -88,15 +89,20 @@ export function parseNumber(text: string): number {
 /** Measures that come without a number, besides units: "a drizzle of". */
 const MEASURE_WORDS = new Set([
   "splash",
+  "splashes",
   "drizzle",
   "sprinkle",
   "sprinkling",
   "squeeze",
   "squirt",
+  "squirts",
+  "shake",
+  "shakes",
   "knob",
   "touch",
   "dollop",
   "glug",
+  "glugs",
   "bit",
   "drop",
   "drops",
@@ -108,7 +114,11 @@ const MEASURES_ALONE = new Set([
   "handful",
   "pinch",
   "dash",
+  "dashes",
   "splash",
+  "splashes",
+  "shake",
+  "shakes",
   "drizzle",
   "sprinkle",
   "knob",
@@ -202,6 +212,13 @@ function withoutOtherAmount(body: string, asides: string[]): string {
   return rest || body
 }
 
+/**
+ * The size of what it comes in, without brackets: "10.5 oz." in "1 10.5
+ * oz. can soup", "15-oz" in "1 15-oz bag frozen peas".
+ */
+const PACK_SIZE =
+  /^\s+(\d+(?:\.\d+)?\s*-?\s*(?:oz|ounces?|fl\.?\s*oz|g|grams?|lbs?|pounds?|ml|l|liters?|litres?)\.?)(?=\s+(?:cans?|jars?|bags?|box(?:es)?|packages?|packets?|pkgs?\.?|blocks?|containers?|cartons?|envelopes?|sleeves?|bottles?|tubs?|tubes?|pouch(?:es)?|loa(?:f|ves)|bars?|logs?)\b)/i
+
 /** A size before a unit: "2 large cloves garlic", "1 heaped tbsp flour". */
 const UNIT_SIZE =
   /^(?:large|small|medium|big|heaped|heaping|level|scant|generous|good)$/i
@@ -241,6 +258,42 @@ function outOfBrackets(text: string) {
 /** Only words that describe the food, before a comma that's between them. */
 const DESCRIBING =
   /^(?:(?:boneless|skinless|bone-in|skin-on|fresh|large|medium|small|extra[- ]large|jumbo|ripe|firm|peeled|raw|cooked|uncooked|unsalted|salted|organic|whole|frozen|thawed|softened|lean|extra[- ]lean|thick[- ]cut|thin[- ]cut|seedless|pitted|dried|toasted|plain|low[- ]sodium|unsweetened|sweetened)(?:\s+|$|\s*and\s+))+$/i
+
+/** What starts a note after a comma, rather than more of the food. */
+const NOTE_START =
+  /^(?:for|to|such|plus|about|from|with|if|see|divided|optional|at|in|into|cut|as|preferably|ideally|room|or\s+(?:more|less|to|as))\b/i
+
+/**
+ * Words set apart by commas before the food they describe, joined: "creamy,
+ * emulsified peanut butter", "stemmed, cleaned, and chopped collard
+ * greens"; and choices, the first with the food: "red, green, or yellow
+ * bell pepper" is "red or yellow bell pepper". Only when the words before
+ * name no food and are few, and a food Merran knows ends the part they
+ * lead to. Else the body as it was.
+ */
+function describedFood(body: string): string {
+  const parts = body.split(",")
+  if (parts.length < 2 || findFood(parts[0]!)) return body
+  for (let at = 1; at < Math.min(parts.length, 5); at++) {
+    const before = parts[at - 1]!.trim()
+    if (!before || /\d/.test(before) || before.split(/\s+/).length > 3) {
+      return body
+    }
+    const part = parts[at]!.trim()
+    if (!part || NOTE_START.test(part)) return body
+    const found = findFood(part)
+    if (!found) continue
+    if (!part.toLowerCase().endsWith(found.name.toLowerCase())) return body
+    const choice = part.match(/^(?:and\/)?or\s+(.+)$/i)
+    const food = choice
+      ? `${parts[0]!.trim()} or ${choice[1]}`
+      : [...parts.slice(0, at), part.replace(/^and\s+/i, "")]
+          .map((words) => words.trim())
+          .join(" ")
+    return [food, ...parts.slice(at + 1)].join(",")
+  }
+  return body
+}
 
 /** Tidies an ingredient line: bullets gone, unicode fractions spelled out, spaces collapsed. */
 export function normalizeIngredientLine(line: string) {
@@ -322,8 +375,11 @@ export function parseIngredient(line: string): ParsedIngredient {
   let unitText = ""
 
   if (quantity !== null) {
-    // "1 (14.5 oz) can tomatoes": the size in brackets belongs in the note.
-    const size = text.slice(cursor).match(/^\s*\(([^)]+)\)/)
+    // "1 (14.5 oz) can tomatoes": the size in brackets belongs in the note,
+    // as does one without them, "1 10.5 oz. can soup".
+    const size =
+      text.slice(cursor).match(/^\s*\(([^)]+)\)/) ??
+      text.slice(cursor).match(PACK_SIZE)
     if (size) {
       sizeNote = size[1]!.trim()
       between = size[0]
@@ -368,6 +424,7 @@ export function parseIngredient(line: string): ParsedIngredient {
   let note: string | null = null
   // A comma between describing words is part of the food: "skinless,
   // boneless chicken thighs, cut up" is skinless boneless chicken thighs.
+  body = describedFood(body)
   let comma = body.indexOf(",")
   while (comma > 0 && DESCRIBING.test(body.slice(0, comma).trim())) {
     body = `${body.slice(0, comma)}${body.slice(comma + 1)}`.replace(
@@ -419,7 +476,7 @@ export function statedGrams(
 export function plusAmount(
   rest: string
 ): { quantity: number; unitId: string; length: number } | null {
-  const lead = /^\s*(?:plus\s+|\+\s*)/i.exec(rest)
+  const lead = /^\s*,?\s*(?:plus\s+|\+\s*)/i.exec(rest)
   if (!lead) return null
   const parsed = parseIngredient(rest.slice(lead[0].length))
   if (parsed.quantity === null || !parsed.unitId || !parsed.parts) return null

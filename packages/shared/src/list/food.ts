@@ -1,4 +1,4 @@
-import { findFood } from "../foods/vocabulary.ts"
+import { findFood, singular } from "../foods/vocabulary.ts"
 import { bareFood, parseIngredient } from "../ingredients/parse.ts"
 import { guessAisle } from "./aisles.ts"
 import { FOOD_SYNONYMS } from "./synonyms.ts"
@@ -12,20 +12,11 @@ import { FOOD_SYNONYMS } from "./synonyms.ts"
  * Bumped whenever keys are made differently, so the ones the server keeps
  * (on lists, in the pantry, for aisles and store products) are made again.
  */
-export const FOOD_KEYS_VERSION = 8
+export const FOOD_KEYS_VERSION = 9
 
 /** Words that describe a size or freshness, not a different thing to buy. */
 const DESCRIPTORS =
   /\b(extra[- ]large|large|medium|small|jumbo|fresh|freshly|ripe|organic|boneless|skinless)\b/g
-
-function singular(word: string) {
-  if (word === "leaves") return "leaf"
-  if (/(ss|us|is)$/.test(word)) return word
-  if (/ies$/.test(word)) return word.replace(/ies$/, "y")
-  if (/(oes|ches|shes|xes|sses)$/.test(word)) return word.replace(/es$/, "")
-  if (/[^s]s$/.test(word)) return word.slice(0, -1)
-  return word
-}
 
 /**
  * A name's plain form: lowercase, without brackets, sizes or freshness,
@@ -130,10 +121,18 @@ function firstChoice(name: string) {
   if (/^\d/.test(second)) {
     return findFood(first) ? first : (parseIngredient(second).food ?? first)
   }
-  if (/^(?:other|another|any|similar)\b/i.test(second)) return first
   const a = first.split(/\s+/)
   const b = second.split(/\s+/)
-  if (b.length < 2) return first
+  // "Canola or other neutral oil", "cannellini or great Northern beans":
+  // the first with the second's last word, when only that's a food.
+  const ownNoun = `${first} ${b.at(-1)}`
+  const withOwnNoun = () =>
+    b.length > 1 && !findFood(first) && findFood(ownNoun) ? ownNoun : first
+  if (/^(?:other|another|any|similar)\b/i.test(second)) return withOwnNoun()
+  // "Thickened cream / heavy cream": two whole names, the first meant.
+  if (b.length < 2 || a.at(-1)!.toLowerCase() === b.at(-1)!.toLowerCase()) {
+    return first
+  }
   const together = `${first} ${b.slice(1).join(" ")}`
   // "Sunflower or vegetable oil", "low-sodium chicken or vegetable broth":
   // the choice is which oil, which broth, when that's a food Merran knows
@@ -151,8 +150,11 @@ function firstChoice(name: string) {
       !findFood(first)
     return shares ? together : first
   }
-  // A food it doesn't know: share it when the first only says which.
+  if (withOwnNoun() !== first) return ownNoun
+  // A food it doesn't know: share it when the first only says which, and
+  // isn't a food itself ("honey or golden syrup" is honey).
   const shared =
+    !findFood(first) &&
     (a.length === 1 || WHICH.test(a.at(-1)!)) &&
     a.at(-1)!.toLowerCase() !== b.at(-1)!.toLowerCase()
   return shared ? together : first
@@ -170,7 +172,7 @@ const DONE_AFTER =
 
 /** What it comes in, said before the food: "can chickpeas", "tube of". */
 const CONTAINER =
-  /^(?:\d+\s*x\s*)?(?:tubes?|cans?|tins?|jars?|packets?|packs?|bags?|boxes|box|bottles?|cartons?|tubs?|pouch(?:es)?)(?:\s+cans?)?(?:\s+of)?\s+/i
+  /^(?:\d+\s*x\s*)?(?:tubes?|cans?|tins?|jars?|packets?|packs?|packages?|pkgs?\.?|bags?|boxes|box|bottles?|cartons?|containers?|envelopes?|sleeves?|blocks?|tubs?|pouch(?:es)?)(?:\s+cans?)?(?:\s+of)?\s+/i
 
 /** Zest or juice of a fruit is the fruit: "zest of half of a lemon". */
 const ZEST_OF =
@@ -239,4 +241,87 @@ export function foodInLine(line: string) {
   const parsed = parseIngredient(line)
   const found = named(parsed.food ?? parsed.text)
   return found.name ? found : null
+}
+
+/** A food in an ingredient line, with how much of it. */
+export type LineFood = {
+  name: string
+  key: string
+  known: boolean
+  quantity: number | null
+  quantityMax: number | null
+  unitId: string | null
+}
+
+/** A word before the first food that the next one shares: "dried". */
+const SHARED_KIND = /^(?:dried|frozen|ground|smoked)\s+/i
+
+/**
+ * Every food an ingredient line names, each with its amount: "Salt and
+ * pepper" is salt and pepper; "½ tsp each dried thyme and oregano" is ½ tsp
+ * of dried thyme and ½ tsp of dried oregano; "2 tbsp olive oil and 1 tbsp
+ * butter" each its own. Without "each", the amount is the first food's. A
+ * line is only parted when each part is a food Merran knows, so "black
+ * and white sesame seeds" and "half and half" stay one food; and commas
+ * part foods only after "each" (otherwise what follows a comma is a
+ * note). Most lines are one food.
+ */
+export function lineFoods(line: string): LineFood[] {
+  const parsed = parseIngredient(line)
+  const whole = named(parsed.food ?? parsed.text)
+  if (!whole.name) return []
+  return (
+    partedFoods(parsed) ?? [
+      {
+        ...whole,
+        quantity: parsed.quantity,
+        quantityMax: parsed.quantityMax,
+        unitId: parsed.unitId,
+      },
+    ]
+  )
+}
+
+/** The foods a line names when it names more than one, else null. */
+function partedFoods(
+  parsed: ReturnType<typeof parseIngredient>
+): LineFood[] | null {
+  let text = noBrackets(parsed.parts ? parsed.parts.rest : parsed.text)
+    .replace(/^\s*of\s+/i, "")
+    .replace(/\*+/g, "")
+  const each = /\beach\b/i.test(text)
+  text = text.replace(/\beach\b/gi, " ")
+  if (!each) text = text.split(",")[0]!
+  const pieces = text
+    .split(/\s*,\s*(?:and\s+|&\s+)?|\s+(?:and|&)\s+/i)
+    .map((piece) => piece.trim())
+    .filter(Boolean)
+  if (pieces.length < 2) return null
+  // A food with "and" in its name is one: half-and-half.
+  if (/\b(?:and)\b|&/i.test(findFood(text)?.name ?? "")) return null
+
+  const foods: LineFood[] = []
+  let kind = ""
+  for (const [i, piece] of pieces.entries()) {
+    // "2 large eggs and 2 yolks": a part with its own amount.
+    const own = /^\d/.test(piece) ? parseIngredient(piece) : null
+    let words = own ? (own.food ?? own.text) : piece
+    const lead = words.match(SHARED_KIND)?.[0]
+    if (i === 0) kind = lead ?? ""
+    else if (kind && !lead) words = kind + words
+    const found = named(words)
+    if (!found.known) return null
+    // The food ends the part: "vinegar seasoning" isn't vinegar, so "salt
+    // and vinegar seasoning" is one thing.
+    const said = noBrackets(words).replace(HOW_MUCH, "").trim().toLowerCase()
+    if (!said.endsWith(found.name.toLowerCase())) return null
+    const amount = own ?? (each || i === 0 ? parsed : null)
+    foods.push({
+      ...found,
+      quantity: amount?.quantity ?? null,
+      quantityMax: amount?.quantityMax ?? null,
+      unitId: amount?.unitId ?? null,
+    })
+  }
+  return foods
 }
