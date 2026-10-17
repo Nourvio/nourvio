@@ -15,7 +15,11 @@ import { cn } from "@/lib/utils"
 
 import { formatMinutes, formatServings } from "./format"
 import { OnSaleBadge } from "@/features/stores/on-sale-badge"
-import type { RecipeSale } from "@/features/stores/queries"
+import {
+  formatPrice,
+  useCosts,
+  type RecipeSale,
+} from "@/features/stores/queries"
 
 import type { RecipeSummary } from "./queries"
 import { RatingStars } from "./rating-stars"
@@ -94,6 +98,14 @@ function CardContent({
   onSale?: readonly RecipeSale[] | undefined
 }) {
   const { t, i18n } = useTranslation()
+  const costs = useCosts()
+  const cost = costs.recipes.get(recipe.id)
+  const perServing =
+    cost?.perServing != null
+      ? t("recipes.perServing", {
+          price: formatPrice(cost.perServing, costs.currency, i18n.language),
+        })
+      : null
   return (
     <>
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
@@ -152,6 +164,7 @@ function CardContent({
               })}
             </span>
           )}
+          {perServing && <span>{perServing}</span>}
           {recipe.rating !== null && <RatingStars rating={recipe.rating} />}
         </div>
         <div className="flex flex-wrap gap-1.5">

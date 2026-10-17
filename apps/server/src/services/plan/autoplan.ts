@@ -17,11 +17,11 @@ import type { EventBus } from "../events/events.ts"
 import { enqueue } from "../jobs/jobs.ts"
 import type { JobHandler } from "../jobs/runner.ts"
 import { addFromPlan } from "../list/meals.ts"
+import { budgetForSuggest } from "../stores/costs.ts"
 import {
   freshPrices,
   salesForSuggest,
   type PriceDeps,
-  type SuggestSales,
 } from "../stores/prices.ts"
 import { addEntries } from "./plan.ts"
 import { suggestMeals } from "./suggest.ts"
@@ -132,7 +132,8 @@ export async function planWeek(
   householdId: string,
   range: { week: string; from: string; to: string },
   settings: Pick<AutoplanSettings, "meals" | "addToList">,
-  sales: SuggestSales | null = null
+  /** For the household's deals and budget, when there's a store. */
+  deps: Pick<PriceDeps, "settings"> | null = null
 ): Promise<AutoplanRun> {
   const household = await em.findOneOrFail(Household, { id: householdId })
   const themes = household.settings?.themes ?? NO_THEMES
@@ -156,7 +157,10 @@ export async function planWeek(
       slots.push({ date, meal })
     }
   }
-  const suggestions = await suggestMeals(em, householdId, slots, { sales })
+  const suggestions = await suggestMeals(em, householdId, slots, {
+    sales: deps ? await salesForSuggest(deps, em, householdId) : null,
+    budget: deps ? await budgetForSuggest(deps, em, householdId, slots) : null,
+  })
   if (suggestions.length > 0) {
     await addEntries(
       em,
@@ -228,7 +232,7 @@ export async function planAheadNow(
     householdId,
     { week, from: week, to: addDays(week, 6) },
     settings,
-    await salesForSuggest(deps, em, householdId)
+    deps
   )
   await noteRun(em, householdId, run)
   if (events) announce(events, householdId, run)
@@ -264,7 +268,7 @@ export const autoplanJob: JobHandler = {
         householdId,
         { week, from: today > week ? today : week, to: addDays(week, 6) },
         settings,
-        await salesForSuggest(deps, em, householdId)
+        deps
       )
       await noteRun(em, householdId, run)
       announce(deps.events, householdId, run)

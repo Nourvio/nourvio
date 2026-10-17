@@ -29,6 +29,7 @@ import {
   InputGroupAddon,
   InputGroupButton,
   InputGroupInput,
+  InputGroupText,
 } from "@/components/ui/input-group"
 import { Spinner } from "@/components/ui/spinner"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
@@ -63,10 +64,25 @@ export function StoresCard() {
   const [changing, setChanging] = React.useState(false)
   const [zip, setZip] = React.useState("")
   const [found, setFound] = React.useState<StoreLocation[] | null>(null)
+  // The budget being typed; null shows the one saved.
+  const [typedBudget, setBudget] = React.useState<string | null>(null)
+  const id = React.useId()
   useLinkedToast()
   if (!on || !data) return null
   const kroger = data.kroger
   const choosing = changing || !kroger.location
+  const savedBudget =
+    kroger.weeklyBudget === null ? "" : String(kroger.weeklyBudget)
+  const budget = typedBudget ?? savedBudget
+  const budgetChanged = budget.trim() !== savedBudget
+  // Kroger's prices are in dollars.
+  const currencySymbol =
+    new Intl.NumberFormat(i18n.language, {
+      style: "currency",
+      currency: "USD",
+    })
+      .formatToParts(0)
+      .find((part) => part.type === "currency")?.value ?? "$"
 
   async function attempt<T>(what: string, work: () => Promise<T>) {
     setBusy(what)
@@ -135,6 +151,31 @@ export function StoresCard() {
   }
 
   /** Today's prices and sales now, rather than tomorrow morning. */
+  /** The weekly budget, or none when it's left empty. */
+  async function saveBudget() {
+    const typed = budget.trim().replace(/[^\d.]/g, "")
+    const value = typed ? Number(typed) : null
+    if (value !== null && !(value > 0)) {
+      toast.error(t("settings.household.stores.budgetHint"))
+      return
+    }
+    const saved = await attempt("budget", () =>
+      unwrap(
+        api.PATCH("/api/settings/household", {
+          body: { "stores.weeklyBudget": value },
+        })
+      )
+    )
+    if (!saved) return
+    setBudget(null)
+    setStores({ kroger: { ...kroger, weeklyBudget: value } })
+    toast.success(
+      value === null
+        ? t("settings.household.stores.budgetCleared")
+        : t("settings.household.stores.budgetSaved")
+    )
+  }
+
   async function checkNow() {
     const check = await attempt("check", () =>
       unwrap(api.POST("/api/stores/kroger/prices"))
@@ -373,6 +414,47 @@ export function StoresCard() {
                   {t("settings.household.stores.checkNow")}
                 </Button>
               </div>
+            </Field>
+          )}
+
+          {kroger.location && (
+            <Field>
+              <FieldLabel htmlFor={`${id}-budget`}>
+                {t("settings.household.stores.budget")}
+              </FieldLabel>
+              <form
+                noValidate
+                className="flex gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault()
+                  void saveBudget()
+                }}
+              >
+                <InputGroup className="max-w-40">
+                  <InputGroupAddon>
+                    <InputGroupText>{currencySymbol}</InputGroupText>
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id={`${id}-budget`}
+                    inputMode="decimal"
+                    value={budget}
+                    onChange={(event) => setBudget(event.target.value)}
+                  />
+                </InputGroup>
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  className="self-center"
+                  disabled={busy !== null || !budgetChanged}
+                >
+                  {busy === "budget" && <Spinner />}
+                  {t("common.save")}
+                </Button>
+              </form>
+              <FieldDescription>
+                {t("settings.household.stores.budgetHint")}
+              </FieldDescription>
             </Field>
           )}
 

@@ -11,11 +11,11 @@ import { FOOD_SYNONYMS } from "./synonyms.ts"
  * Bumped whenever keys are made differently, so the ones the server keeps
  * (on lists, in the pantry, for aisles and store products) are made again.
  */
-export const FOOD_KEYS_VERSION = 3
+export const FOOD_KEYS_VERSION = 7
 
 /** Words that describe a size or freshness, not a different thing to buy. */
 const DESCRIPTORS =
-  /\b(extra[- ]large|large|medium|small|jumbo|fresh|freshly|ripe|organic)\b/g
+  /\b(extra[- ]large|large|medium|small|jumbo|fresh|freshly|ripe|organic|boneless|skinless)\b/g
 
 function singular(word: string) {
   if (word === "leaves") return "leaf"
@@ -71,6 +71,10 @@ const SIZE = /^(?:extra[- ]large|large|medium|small|jumbo|big)\s+/i
 /** Prepared foods that are a product of their own. */
 const PRODUCT = /^crushed red pepper/i
 
+/** Prep said after the food, without a comma: "carrots peeled and chopped". */
+const PREP_AFTER =
+  /(?:\s+(?:and|or)?\s*(?:(?:finely|roughly|coarsely|thinly)\s+)?(?:chopped|minced|diced|sliced|peeled|cubed|halved|quartered|trimmed|deseeded|seeded|cored|grated|shredded|crushed))+$/i
+
 /**
  * Prep and size words come off fruit, vegetables, herbs and meat (chopped
  * parsley is parsley, large onions are onions, diced chicken is chicken),
@@ -81,8 +85,14 @@ function withoutPrep(name: string) {
   let rest = name
   for (;;) {
     if (PRODUCT.test(rest)) return rest
-    const aisle = guessAisle(rest)
+    const after = rest.match(PREP_AFTER)
+    const food = after && after.index! > 0 ? rest.slice(0, after.index) : rest
+    const aisle = guessAisle(food)
     if (aisle !== "produce" && aisle !== "meat-seafood") return rest
+    if (food !== rest) {
+      rest = food
+      continue
+    }
     const prep = rest.match(PREP)
     // Minced meat is a cut of its own: minced beef is ground beef.
     if (prep && aisle === "meat-seafood" && /minced/i.test(prep[0])) return rest
@@ -93,33 +103,75 @@ function withoutPrep(name: string) {
   }
 }
 
+/** Words that say which of a food, so a choice can share the food. */
+const WHICH =
+  /^(?:yellow|white|red|green|brown|black|golden|purple|orange|sweet|hot|mild|dry|fresh|frozen|dried|light|dark|large|medium|small|unsalted|salted|whole|smoked|plain)$/i
+
 /**
- * The first of two choices: "butter or margarine" is butter, "sunflower or
- * vegetable oil" sunflower oil, "chicken or vegetable stock" chicken stock.
+ * The first of two choices, said with "or" or a slash: "butter or
+ * margarine" is butter, "sunflower or vegetable oil" sunflower oil, "medium
+ * yellow or white onion" medium yellow onion, "chicken stock/broth" chicken
+ * stock, "Chardonnay or other dry white wine" Chardonnay. When the second
+ * comes with its own amount ("½ tsp Diamond Crystal or ¼ tsp Morton kosher
+ * salt"), it's the one that names the food.
  */
 function firstChoice(name: string) {
-  const choices = name
+  const said = name
     .replace(/\s+and\/or\s+/gi, " or ")
-    .match(/^(.+?)\s+or\s+(.+)$/i)
+    .replace(/\s+\/\s+/g, " or ")
+    .replace(/(\p{L})\/(\p{L})/gu, "$1 or $2")
+  const choices = said.match(/^(.+?)\s+or\s+(.+)$/i)
   if (!choices) return name
   const first = choices[1]!.trim()
-  const second = choices[2]!.trim().split(/\s+/)
-  // One word, then a choice that names what it's of: they share it.
-  if (!/\s/.test(first) && second.length > 1) {
-    return `${first} ${second.slice(1).join(" ")}`
+  const second = choices[2]!.trim()
+  if (/^\d/.test(second)) return parseIngredient(second).food ?? first
+  if (/^(?:other|another|any|similar)\b/i.test(second)) return first
+  const a = first.split(/\s+/)
+  const b = second.split(/\s+/)
+  // "Sunflower or vegetable oil": the choice is which oil, so they share it.
+  const shared =
+    b.length > 1 &&
+    (a.length === 1 || WHICH.test(a.at(-1)!)) &&
+    a.at(-1)!.toLowerCase() !== b.at(-1)!.toLowerCase()
+  return shared ? `${first} ${b.slice(1).join(" ")}` : first
+}
+
+/** What it comes in, said before the food: "can chickpeas", "tube of". */
+const CONTAINER =
+  /^(?:\d+\s*x\s*)?(?:tubes?|cans?|tins?|jars?|packets?|packs?|bags?|boxes|box|bottles?|cartons?|tubs?|pouch(?:es)?)(?:\s+cans?)?(?:\s+of)?\s+/i
+
+/** Zest or juice of a fruit is the fruit: "zest of half of a lemon". */
+const ZEST_OF =
+  /^(?:the\s+)?(?:zest|juice|rind|zest and juice|juice and zest)\s+of\s+(?:(?:half|½)\s+(?:of\s+)?)?(?:an?|one|the|\d+(?:\/\d+)?)?\s*(.+)$/i
+
+/** What's in brackets, closed or not: "garlic cloves (" is garlic cloves. */
+function noBrackets(name: string) {
+  let rest = name
+  for (let before = ""; before !== rest;) {
+    before = rest
+    rest = rest.replace(/\([^()]*\)/g, " ")
   }
-  return first
+  return rest.replace(/\(.*$/, " ").replace(/\)/g, " ")
 }
 
 /**
- * The thing to buy as the list names it: without a measure ("Pinch of"),
- * how it's used ("to serve"), a second choice, or prep and sizes that
- * don't change what's bought. "Large onions, chopped" is "onions";
- * "lemon wedges to serve" is "lemon wedges".
+ * The thing to buy as the list names it: without what's in brackets, a
+ * measure ("Pinch of"), how it's used ("to serve"), what it comes in ("can
+ * chickpeas"), a second choice, or prep and sizes that don't change what's
+ * bought. "Large onions, chopped" is "onions"; "lemon wedges to serve" is
+ * "lemon wedges"; "zest of half of a lemon" is "lemon".
  */
 export function shoppingName(food: string) {
-  const plain = bareFood(food.replace(HOW_MUCH, "").trim())
-  return withoutPrep(firstChoice(plain)).replace(/\s+/g, " ").trim() || food
+  let name = noBrackets(food).replace(/\*+/g, "").replace(/\s+/g, " ").trim()
+  name = bareFood(name.replace(HOW_MUCH, "").trim())
+  name = name.replace(ZEST_OF, "$1")
+  const container = name.match(CONTAINER)
+  if (container && name.length > container[0].length) {
+    name = name.slice(container[0].length)
+  }
+  // "Large eggs and 2 large yolks": the first, which says what it is.
+  name = name.replace(/\s+(?:and|plus)\s+\d.*$/i, "")
+  return withoutPrep(firstChoice(name)).replace(/\s+/g, " ").trim() || food
 }
 
 /**

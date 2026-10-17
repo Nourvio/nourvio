@@ -355,6 +355,32 @@ describe("adding from the plan", () => {
     await clearAll()
   })
 
+  test("brings the week's any-day meals, from any day of the week", async () => {
+    // Kept on Monday, the week's first day; added from Thursday on.
+    await plan({
+      date: day(0),
+      anyDay: true,
+      meal: "dinner",
+      recipe: ids["Garlic Rice"],
+    })
+    const preview = await (
+      await kyle.get(`/api/list/from-plan?from=${day(3)}&to=${day(6)}`)
+    ).json()
+    expect(preview.meals).toMatchObject([{ name: "Garlic Rice", anyDay: true }])
+    expect(await fromPlan(day(3), day(6))).toMatchObject({ meals: 1 })
+    expect(await find("rice")).toMatchObject({ amount: "1 cup" })
+    // Not from the next week's days.
+    await clearAll()
+    await plan({
+      date: day(0),
+      anyDay: true,
+      meal: "dinner",
+      recipe: ids["Garlic Rice"],
+    })
+    expect(await fromPlan(day(7), day(13))).toMatchObject({ meals: 0 })
+    await clearAll()
+  })
+
   test("adds to the line of the food it adds up with", async () => {
     const head = await type("1 head garlic")
     const clove = await type("1 clove garlic")

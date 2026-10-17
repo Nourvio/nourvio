@@ -1,10 +1,11 @@
 import {
-  addAmounts,
+  addDays,
   combineLines,
   daysBetween,
   DEFAULT_ON_HAND,
   foodKey,
   isDay,
+  joinAmounts,
   onHandTest,
   subtractAmounts,
 } from "@merran/shared"
@@ -84,13 +85,13 @@ export async function listMeals(
       // garlic cloves go with cloves, and with a head of garlic only when
       // there's no line of cloves.
       let match: ShoppingItem | undefined
-      let sum: ReturnType<typeof addAmounts> = null
+      let sum: ReturnType<typeof joinAmounts> = null
       const sameUnitFirst = [...waiting].sort(
         (a, b) => Number(b.unit === item.unit) - Number(a.unit === item.unit)
       )
       for (const row of sameUnitFirst) {
         if (row.foodKey !== item.food || row.amountText) continue
-        sum = addAmounts(
+        sum = joinAmounts(
           { quantity: toNumber(row.quantity), unit: row.unit ?? null },
           item,
           item.food
@@ -245,13 +246,20 @@ function checkRange(from: string, to: string) {
   }
 }
 
-/** Planned meals from one day to another that aren't on the list yet. */
+/**
+ * Planned meals from one day to another that aren't on the list yet, and
+ * the week's any-day meals for a week the days are in: those are kept on
+ * the week's first day, which can be before the first of the days.
+ */
 async function waitingMeals(em: EntityManager, from: string, to: string) {
   checkRange(from, to)
   const entries = await em.find(
     PlanEntry,
     {
-      date: { $gte: from, $lte: to },
+      $or: [
+        { date: { $gte: from, $lte: to } },
+        { anyDay: true, date: { $gte: addDays(from, -6), $lte: to } },
+      ],
       status: "planned",
       recipe: { $ne: null },
     },

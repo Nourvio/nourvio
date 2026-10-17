@@ -16,6 +16,7 @@ import type {
 } from "../../../services/fetch/public-fetch.ts"
 import { suggestMeals } from "../../../services/plan/suggest.ts"
 import type { Settings } from "../../../services/settings/settings.ts"
+import { budgetForSuggest } from "../../../services/stores/costs.ts"
 import {
   priceCheckDue,
   salesForSuggest,
@@ -49,6 +50,7 @@ type FakeProduct = {
   promo?: number
   until?: string
   out?: boolean
+  categories?: string[]
 }
 
 const PRODUCTS: Record<string, FakeProduct[]> = {
@@ -112,6 +114,37 @@ const PRODUCTS: Record<string, FakeProduct[]> = {
       promo: 3.99,
     },
   ],
+  // A search for tomatoes finds a lipstick too.
+  "canned tomatoes": [
+    {
+      productId: "lipstick1",
+      upc: "0004100000001",
+      description: "Super Stay Teddy Tint Lipstick 130 Tomato Girl",
+      brand: "Maybelline",
+      size: "0.17 oz",
+      regular: 13.99,
+      categories: ["Beauty"],
+    },
+    {
+      productId: "tomatoes1",
+      upc: "0001111000002",
+      description: "Kroger Diced Tomatoes",
+      brand: "Kroger",
+      size: "14.5 oz",
+      regular: 1.0,
+      categories: ["Canned & Packaged"],
+    },
+  ],
+  "olive oil": [
+    {
+      productId: "oil1",
+      upc: "0001111000001",
+      description: "Kroger Extra Virgin Olive Oil",
+      brand: "Kroger",
+      size: "16 fl oz",
+      regular: 7.99,
+    },
+  ],
   "ground beef": [
     {
       productId: "beef1",
@@ -142,6 +175,7 @@ const LOCATIONS = [
 
 const asProduct = (found: FakeProduct) => ({
   productId: found.productId,
+  categories: found.categories,
   upc: found.upc,
   brand: found.brand,
   description: found.description,
@@ -522,6 +556,16 @@ describe("Kroger", () => {
     expect(kroger.searched).toEqual(["saffron"])
   })
 
+  test("searches for food: in American words, and not the beauty aisle", async () => {
+    const res = await kyle.get(
+      `/api/stores/kroger/search?q=${encodeURIComponent("tinned tomatoes")}`
+    )
+    expect(res.status, await res.clone().text()).toBe(200)
+    expect(
+      (await res.json()).products.map((p: { id: string }) => p.id)
+    ).toEqual(["tomatoes1"])
+  })
+
   test("another product is picked from the store's search, and kept", async () => {
     const search = await kyle.get("/api/stores/kroger/search?q=eggs")
     expect(search.status).toBe(200)
@@ -824,5 +868,86 @@ describe("prices, sales and deals", () => {
         suggestion.why.some((why: { kind: string }) => why.kind === "onSale")
       ).toBe(false)
     }
+  })
+})
+
+describe("buying by the package, costs and a budget", () => {
+  const today = new Date().toISOString().slice(0, 10)
+  const recipeId = async (name: string) =>
+    (
+      await (
+        await kyle.get(`/api/recipes?q=${encodeURIComponent(name)}`)
+      ).json()
+    ).recipes[0].id as string
+
+  test("what a recipe costs, from each line's share of its product", async () => {
+    const chicken = await recipeId("Roast Chicken Thighs")
+    const rice = await recipeId("Plain Rice")
+    const res = await kyle.get("/api/stores/costs")
+    expect(res.status, await res.clone().text()).toBe(200)
+    const costs = await res.json()
+    // 2 lb of thighs on sale at $3.99 a pound, and a tablespoon of a
+    // 16 fl oz bottle of oil at $7.99; the salt's always at home.
+    const total = Math.round(2 * 399 + 799 / 32)
+    expect(costs.recipes[chicken]).toEqual({
+      total,
+      perServing: Math.round(total / 4),
+      priced: 2,
+      counted: 2,
+    })
+    // No price for the rice: not enough to say.
+    expect(costs.recipes[rice]).toBeUndefined()
+    expect(costs).toMatchObject({ currency: "USD", weeklyBudget: null })
+  })
+
+  test("a weekly budget, shared out over the meals to plan", async () => {
+    const saved = await kyle.patch("/api/settings/household", {
+      "stores.weeklyBudget": 50,
+    })
+    expect(saved.status, await saved.clone().text()).toBe(200)
+    expect((await status()).weeklyBudget).toBe(50)
+    expect(
+      (await (await kyle.get("/api/stores/costs")).json()).weeklyBudget
+    ).toBe(5000)
+
+    const em = database.em.fork()
+    const { household } = await em.findOneOrFail(
+      StoreConnection,
+      { store: "kroger" },
+      ACROSS_HOUSEHOLDS
+    )
+    const scoped = forHousehold(database.em.fork(), household.id)
+    const budget = await budgetForSuggest({ settings }, scoped, household.id, [
+      { date: addDays(today, 1) },
+    ])
+    // A day's share of $50 a week, for one meal.
+    expect(budget?.perMeal).toBeCloseTo(5000 / 7)
+    expect(budget?.costOf.get(await recipeId("Roast Chicken Thighs"))).toBe(
+      Math.round(2 * 399 + 799 / 32)
+    )
+
+    await kyle.patch("/api/settings/household", { "stores.weeklyBudget": null })
+    expect((await status()).weeklyBudget).toBeNull()
+  })
+
+  test("what was sent to the cart goes in the pantry as the packs bought", async () => {
+    // Two gallons of milk went to the cart for the gallon on the list.
+    const list = (await (await kyle.get("/api/list")).json()).items as {
+      id: string
+      name: string
+    }[]
+    const milk = list.find((item) => item.name === "milk")!
+    await kyle.post("/api/list/items/bulk", { ids: [milk.id], action: "check" })
+    const res = await kyle.post("/api/list/put-away", {})
+    expect(res.status, await res.clone().text()).toBe(200)
+    const pantry = (await (await kyle.get("/api/pantry")).json()).items as {
+      name: string
+      quantity: number | null
+      unit: string | null
+    }[]
+    expect(pantry.find((item) => item.name === "milk")).toMatchObject({
+      quantity: 2,
+      unit: "gallon",
+    })
   })
 })

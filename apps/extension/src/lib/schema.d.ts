@@ -3088,6 +3088,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/stores/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * What recipes cost
+         * @description What each recipe costs at the household's Kroger store, from each line's share of its product's price today, where most of its lines have a price; and the household's weekly budget. With an API key, it needs the `recipes: read` permission.
+         */
+        get: operations["listRecipeCosts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/stores/kroger": {
         parameters: {
             query?: never;
@@ -9397,7 +9417,8 @@ export interface components {
          *         },
          *         "needsRelink": false,
          *         "pricesCheckedAt": null,
-         *         "leanOnSales": "some"
+         *         "leanOnSales": "some",
+         *         "weeklyBudget": 120
          *       }
          *     }
          */
@@ -9430,6 +9451,8 @@ export interface components {
                  * @enum {string}
                  */
                 leanOnSales: "off" | "some" | "lots";
+                /** @description The household's weekly budget in its store's currency, or null: the household setting `stores.weeklyBudget`. */
+                weeklyBudget: number | null;
             };
         };
         /**
@@ -9551,6 +9574,37 @@ export interface components {
          * @enum {string}
          */
         SaleVerdict: "lowest" | "sale" | "small";
+        /**
+         * @example {
+         *       "currency": "USD",
+         *       "weeklyBudget": 12000,
+         *       "recipes": {
+         *         "0199e8b0-5a10-7a01-8b00-000000000006": {
+         *           "total": 1240,
+         *           "perServing": 310,
+         *           "priced": 5,
+         *           "counted": 6
+         *         }
+         *       }
+         *     }
+         */
+        RecipeCosts: {
+            currency: string;
+            /** @description The household's weekly budget, in cents, or null. */
+            weeklyBudget: number | null;
+            /** @description By recipe id, the recipes with a cost worth showing: three in five of their lines priced. */
+            recipes: {
+                [key: string]: {
+                    /** @description In cents. */
+                    total: number;
+                    perServing: number | null;
+                    /** @description Its lines with a price. */
+                    priced: number;
+                    /** @description Its lines with an amount of something bought. */
+                    counted: number;
+                };
+            };
+        };
         /**
          * @example {
          *       "locationId": "70500822",
@@ -19090,6 +19144,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Deals"];
+                };
+            };
+            /** @description Not signed in. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Not allowed. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listRecipeCosts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Its recipes' costs. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecipeCosts"];
                 };
             };
             /** @description Not signed in. */

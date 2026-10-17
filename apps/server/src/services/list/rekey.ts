@@ -1,6 +1,6 @@
 import {
-  addAmounts,
   foodKey,
+  joinAmounts,
   FOOD_KEYS_VERSION,
   pantryKey,
   shoppingName,
@@ -69,23 +69,27 @@ export async function rekeyHousehold(em: EntityManager) {
   }
   const kept: ShoppingItem[] = []
   for (const item of items) {
-    const same =
-      !item.checked && !item.amountText
-        ? kept.find(
-            (other) =>
-              !other.checked &&
-              !other.amountText &&
-              other.list.id === item.list.id &&
-              other.foodKey === item.foodKey
-          )
-        : undefined
-    const sum =
-      same &&
-      addAmounts(
-        { quantity: toNumber(same.quantity), unit: same.unit ?? null },
+    // The first line of the same food on the same list it joins with.
+    let same: ShoppingItem | undefined
+    let sum: ReturnType<typeof joinAmounts> = null
+    for (const other of item.checked || item.amountText ? [] : kept) {
+      if (
+        other.checked ||
+        other.amountText ||
+        other.list.id !== item.list.id ||
+        other.foodKey !== item.foodKey
+      )
+        continue
+      sum = joinAmounts(
+        { quantity: toNumber(other.quantity), unit: other.unit ?? null },
         { quantity: toNumber(item.quantity), unit: item.unit ?? null },
         item.foodKey ?? undefined
       )
+      if (sum) {
+        same = other
+        break
+      }
+    }
     if (same && sum) {
       // The name that goes with the amount: 4 lemons, not 4 lemon wedges.
       if (same.quantity == null && item.quantity != null) same.name = item.name
@@ -132,8 +136,9 @@ export async function rekeyHousehold(em: EntityManager) {
   for (const row of await em.find(PantryItem, {})) {
     row.foodKey = pantryKey(row.name)
   }
+  // Purchases are matched as the pantry matches food, for usual buys.
   for (const row of await em.find(Purchase, {})) {
-    row.foodKey = foodKey(row.name)
+    row.foodKey = pantryKey(row.name)
   }
 
   await em.flush()

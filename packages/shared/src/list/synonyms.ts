@@ -37,6 +37,7 @@ export const FOOD_SYNONYMS: Readonly<Record<string, string>> = {
   "parmesan cheese": "parmesan",
   "grated parmesan": "parmesan",
   "grated parmesan cheese": "parmesan",
+  "finely grated parmesan": "parmesan",
   "parmigiano reggiano": "parmesan",
   "parmigiano-reggiano": "parmesan",
 
@@ -61,6 +62,7 @@ export const FOOD_SYNONYMS: Readonly<Record<string, string>> = {
   "curly parsley": "parsley",
   "parsley leaf": "parsley",
   "basil leaf": "basil",
+  "coriander leaf": "cilantro",
   "mint leaf": "mint",
 
   // Meat and fish.
@@ -85,5 +87,7 @@ export const FOOD_SYNONYMS: Readonly<Record<string, string>> = {
   "sea salt": "salt",
   "table salt": "salt",
   "fine salt": "salt",
+  "cooking salt": "salt",
+  "red-pepper flake": "red pepper flake",
   "ground black pepper": "black pepper",
 }

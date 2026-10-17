@@ -271,16 +271,23 @@ export async function checkPrices(
     location,
   })
   const byId = new Map(fresh.map((product) => [product.id, product]))
+  const searchedOn = { ...connection.priceSearches }
   let refreshed = 0
   for (const row of kept) {
     const now = byId.get(row.product.id)
-    if (!now) continue
-    row.product = now
-    refreshed++
+    if (now) {
+      row.product = now
+      refreshed++
+    } else if (!row.chosen) {
+      // Merran's pick that the store doesn't carry now, or that isn't food
+      // (a lipstick called Tomato Girl): looked for again.
+      em.remove(row)
+      byFood.delete(row.food)
+      delete searchedOn[row.food]
+    }
   }
   await recordPrices(em, householdId, fresh)
 
-  const searchedOn = { ...connection.priceSearches }
   const lately = (key: string, days: number) =>
     (searchedOn[key] ?? "") > addDays(today, -days)
   const household = await em.findOneOrFail(Household, { id: householdId })

@@ -100,6 +100,21 @@ const MEASURE_WORDS = new Set([
   "bit",
   "drop",
   "drops",
+  "lot",
+])
+
+/** Measures that need no "of" after them: "handful coriander". */
+const MEASURES_ALONE = new Set([
+  "handful",
+  "pinch",
+  "dash",
+  "splash",
+  "drizzle",
+  "sprinkle",
+  "knob",
+  "squeeze",
+  "clove",
+  "cloves",
 ])
 
 /**
@@ -140,7 +155,8 @@ export function bareFood(text: string, asides: string[] = []): string {
   at++
   const of = is(/^of$/i)
   if (of) at++
-  if ((!of && !few && !little) || at >= words.length) return rest
+  const alone = MEASURES_ALONE.has(measure.toLowerCase())
+  if ((!of && !few && !little && !alone) || at >= words.length) return rest
   asides.push(words.slice(0, of ? at - 1 : at).join(" "))
   return words.slice(at).join(" ")
 }
@@ -172,6 +188,42 @@ function withoutOtherAmount(body: string, asides: string[]): string {
   }
   rest = rest.replace(/^of\s+/i, "").trim()
   return rest || body
+}
+
+/** A size before a unit: "2 large cloves garlic", "1 heaped tbsp flour". */
+const UNIT_SIZE =
+  /^(?:large|small|medium|big|heaped|heaping|level|scant|generous|good)$/i
+
+/**
+ * Text with what's in brackets taken out, nested or left open: "green
+ * onions (, finely sliced)" is "green onions", noted "finely sliced".
+ */
+function outOfBrackets(text: string) {
+  const notes: string[] = []
+  let kept = ""
+  let inside = ""
+  let depth = 0
+  const note = () => {
+    const tidy = inside
+      .replace(/[()]/g, " ")
+      .replace(/^[\s,;:-]+|[\s,;:-]+$/g, "")
+      .replace(/\s+/g, " ")
+    if (tidy) notes.push(tidy)
+    inside = ""
+  }
+  for (const char of text) {
+    if (char === "(") {
+      if (depth > 0) inside += char
+      depth++
+    } else if (char === ")" && depth > 0) {
+      depth--
+      if (depth > 0) inside += char
+      else note()
+    } else if (depth > 0) inside += char
+    else kept += char
+  }
+  if (depth > 0) note()
+  return { text: kept.replace(/\s+/g, " ").trim(), notes }
 }
 
 /** Only words that describe the food, before a comma that's between them. */
@@ -261,9 +313,18 @@ export function parseIngredient(line: string): ParsedIngredient {
       .match(/^(\s*)([A-Za-z.]+)(?:(\s+)([A-Za-z.]+))?/)
     if (words) {
       const two = words[4] ? findUnit(`${words[2]} ${words[4]}`) : undefined
+      // "2 large cloves garlic": a size, then the unit.
+      const sized =
+        words[4] && UNIT_SIZE.test(words[2]!) ? findUnit(words[4]) : undefined
       if (two) {
         unit = two
         unitText = `${words[1]}${words[2]}${words[3]}${words[4]}`
+      } else if (sized) {
+        unit = sized
+        unitText = `${words[1]}${words[2]}${words[3]}${words[4]}`
+        sizeNote = [sizeNote, words[2]!.toLowerCase()]
+          .filter(Boolean)
+          .join(", ")
       } else {
         unit = findUnit(words[2]!)
         if (unit) unitText = `${words[1]}${words[2]}`
@@ -274,9 +335,14 @@ export function parseIngredient(line: string): ParsedIngredient {
 
   const afterUnit = text.slice(cursor)
   let body = (unit ? afterUnit.replace(/^\s+of\b/i, "") : afterUnit).trim()
+  // What's in brackets is about the food, never the food: "(, drained)",
+  // "((Note 4))", "(or Taiwanese rice wine (mijiu) if you can find it".
+  const bracketed = outOfBrackets(body)
+  body = bracketed.text.replace(/\*+/g, "")
   const asides: string[] = []
   if (unit) body = withoutOtherAmount(body, asides)
   else if (quantity === null) body = bareFood(body, asides)
+  asides.push(...bracketed.notes)
   let note: string | null = null
   // A comma between describing words is part of the food: "skinless,
   // boneless chicken thighs, cut up" is skinless boneless chicken thighs.
@@ -291,11 +357,6 @@ export function parseIngredient(line: string): ParsedIngredient {
   if (comma > 0) {
     note = body.slice(comma + 1).trim() || null
     body = body.slice(0, comma).trim()
-  }
-  const trailing = body.match(/\s*\(([^)]+)\)\s*$/)
-  if (trailing) {
-    note = [trailing[1]!.trim(), note].filter(Boolean).join(", ")
-    body = body.slice(0, trailing.index).trim()
   }
   if (sizeNote || asides.length > 0) {
     note = [sizeNote, ...asides, note].filter(Boolean).join(", ")

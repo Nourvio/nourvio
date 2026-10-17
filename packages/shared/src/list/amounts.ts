@@ -52,13 +52,19 @@ const FOOD_UNITS: Record<
   string,
   Record<string, { quantity: number; unit: string; back?: boolean }>
 > = {
-  garlic: { head: { quantity: 10, unit: "clove", back: true } },
+  // A garlic is a clove, and a spoon of it minced, cloves too.
+  garlic: {
+    head: { quantity: 10, unit: "clove", back: true },
+    each: { quantity: 1, unit: "clove" },
+    teaspoon: { quantity: 1, unit: "clove" },
+    tablespoon: { quantity: 3, unit: "clove" },
+  },
   butter: { stick: { quantity: 0.5, unit: "cup" } },
 }
 
 /** An amount in a food's own terms: heads of garlic as cloves. */
 function inFoodUnits(food: string | undefined, amount: Amount): Amount {
-  const as = food && amount.unit ? FOOD_UNITS[food]?.[amount.unit] : undefined
+  const as = food ? FOOD_UNITS[food]?.[amount.unit ?? "each"] : undefined
   if (!as) return amount
   return {
     quantity: amount.quantity === null ? null : amount.quantity * as.quantity,
@@ -264,6 +270,22 @@ export function addAmounts(a: Amount, b: Amount, food?: string): Amount | null {
 }
 
 /**
+ * Two amounts of one food as one line on the list: added up where they
+ * add, and where one has none ("salt to taste"), the other. Null when
+ * they stay two lines.
+ */
+export function joinAmounts(
+  a: Amount,
+  b: Amount,
+  food?: string
+): Amount | null {
+  return (
+    addAmounts(a, b, food) ??
+    (a.quantity === null ? b : b.quantity === null ? a : null)
+  )
+}
+
+/**
  * What's left of one amount after taking another, in the first one's unit
  * (with the food, a food's own units and a baking staple's volume and
  * weight compare too). Null when they don't compare (or either has no
@@ -287,6 +309,21 @@ export function subtractAmounts(
     quantity: round((mh.base - mt.base) / baseOf(food, uh)),
     unit: h.unit,
   }
+}
+
+/**
+ * How many of one amount are in another, for a food, when they compare:
+ * 2 cups of flour are 0.53 of a 5 lb bag; 3 eggs a quarter of a dozen.
+ */
+export function amountRatio(
+  part: Amount,
+  whole: Amount,
+  food?: string
+): number | null {
+  const p = measureOf(food, inFoodUnits(food, part))
+  const w = measureOf(food, inFoodUnits(food, whole))
+  if (!p || !w || p.measure !== w.measure || w.base <= 0) return null
+  return p.base / w.base
 }
 
 /** "1 ½ cups", "3", "2 cans", "500 g". Empty when there's no amount. */

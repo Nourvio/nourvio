@@ -65,6 +65,7 @@ function AddFromPlan({
   const to = addDays(week, 6)
   const preview = useQuery({ ...fromPlanQuery(from, to), enabled: from <= to })
   const meals = preview.data?.meals ?? []
+  const groups = byDay(meals)
   const [busy, setBusy] = React.useState(false)
 
   async function add() {
@@ -129,24 +130,38 @@ function AddFromPlan({
         </ToggleGroupItem>
       </ToggleGroup>
 
-      <div className="rounded-xl bg-muted/60 p-4 text-sm">
+      <div className="max-h-[50vh] overflow-y-auto rounded-xl bg-muted/60 p-4 text-sm">
         {preview.isPending ? (
           <p className="text-muted-foreground">{t("list.plan.checking")}</p>
         ) : meals.length > 0 ? (
-          <ul className="grid gap-1">
-            {meals.map((meal) => (
-              <li key={meal.id} className="flex gap-2">
-                <span className="w-24 shrink-0 text-muted-foreground">
-                  {meal.anyDay
+          <div className="grid gap-4">
+            {groups.map((group) => (
+              <section key={group.key} className="grid gap-2">
+                <h3 className="text-xs font-medium text-muted-foreground">
+                  {group.anyDay
                     ? t("plan.pool")
-                    : `${formatShortWeekday(meal.date, i18n.language)} ${formatMonthDay(meal.date, i18n.language)}`}
-                </span>
-                <span className="min-w-0 truncate font-medium">
-                  {meal.name}
-                </span>
-              </li>
+                    : `${formatShortWeekday(group.date, i18n.language)} ${formatMonthDay(group.date, i18n.language)}`}
+                  {" · "}
+                  {t("list.plan.meals", { count: group.count })}
+                </h3>
+                <ul className="flex flex-wrap gap-1.5">
+                  {group.recipes.map((recipe) => (
+                    <li
+                      key={recipe.name}
+                      className="rounded-full bg-background px-2.5 py-1 font-medium"
+                    >
+                      {recipe.times > 1
+                        ? t("list.plan.times", {
+                            name: recipe.name,
+                            count: recipe.times,
+                          })
+                        : recipe.name}
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         ) : (
           <p className="text-muted-foreground">
             {preview.data?.listed
@@ -164,4 +179,47 @@ function AddFromPlan({
       </Button>
     </div>
   )
+}
+
+type PlannedMeal = { date: string; anyDay: boolean; name: string }
+
+/**
+ * The meals by day, the week's any-day ones first, each recipe once with
+ * how many times it's planned: a long pool reads as a few lines.
+ */
+function byDay(meals: readonly PlannedMeal[]) {
+  const groups = new Map<
+    string,
+    {
+      key: string
+      date: string
+      anyDay: boolean
+      count: number
+      recipes: Map<string, number>
+    }
+  >()
+  for (const meal of meals) {
+    const key = meal.anyDay ? "any" : meal.date
+    const group = groups.get(key) ?? {
+      key,
+      date: meal.date,
+      anyDay: meal.anyDay,
+      count: 0,
+      recipes: new Map<string, number>(),
+    }
+    group.count++
+    group.recipes.set(meal.name, (group.recipes.get(meal.name) ?? 0) + 1)
+    groups.set(key, group)
+  }
+  return [...groups.values()]
+    .sort(
+      (a, b) =>
+        Number(b.anyDay) - Number(a.anyDay) || a.date.localeCompare(b.date)
+    )
+    .map((group) => ({
+      ...group,
+      recipes: [...group.recipes]
+        .map(([name, times]) => ({ name, times }))
+        .sort((a, b) => a.name.localeCompare(b.name)),
+    }))
 }

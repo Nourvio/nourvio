@@ -1,5 +1,9 @@
 import { afterAll, beforeAll, expect, test } from "vitest"
-import { FoodPlacement, ShoppingItem } from "../../database/entities/index.ts"
+import {
+  FoodPlacement,
+  Purchase,
+  ShoppingItem,
+} from "../../database/entities/index.ts"
 import type { Database } from "../../database/orm.ts"
 import { forHousehold } from "../../database/scope.ts"
 import { createTestApp, setUpServer } from "../../test/app.ts"
@@ -55,6 +59,8 @@ test("tidies names from the plan, makes keys again, and joins lines", async () =
   add("parsley", 2, "tablespoon", "plan", 5)
   add("(75 g) butter", 0.5, "cup", "plan", 6)
   add("Pinch of salt", null, null, "typed", 7)
+  add("cooking salt", 3, "teaspoon", "plan", 8)
+  add("cooking salt", 0.75, "teaspoon", "plan", 9)
   em.create(FoodPlacement, {
     household: householdId,
     foodKey: "chopped parsley",
@@ -65,10 +71,18 @@ test("tidies names from the plan, makes keys again, and joins lines", async () =
     foodKey: "parsley",
     aisle: aisleId,
   })
+  em.create(Purchase, {
+    household: householdId,
+    foodKey: "old",
+    name: "Boneless skinless chicken thighs",
+    quantity: 2,
+    unit: "pound",
+    boughtOn: "2026-10-01",
+  })
   await em.flush()
 
   const done = await rekeyHousehold(forHousehold(em, householdId))
-  expect(done).toEqual({ renamed: 3, joined: 3 })
+  expect(done).toEqual({ renamed: 3, joined: 5 })
 
   const after = forHousehold(database.em.fork(), householdId)
   const items = await after.find(
@@ -89,8 +103,9 @@ test("tidies names from the plan, makes keys again, and joins lines", async () =
     ["garlic", "garlic", 16, "clove"],
     ["parsley", "parsley", 4, "tablespoon"],
     ["butter", "butter", 0.5, "cup"],
-    // Typed in: its name stays, its key is the food.
-    ["Pinch of salt", "salt", null, null],
+    // Salt with no amount joins the cooking salt's teaspoons, and the line
+    // takes the name that goes with the amount.
+    ["cooking salt", "salt", 3.75, "teaspoon"],
   ])
   // Each meal's share goes with the line it joined.
   expect(items[1]!.forMeals?.map((share) => share.meal)).toEqual([
@@ -101,6 +116,11 @@ test("tidies names from the plan, makes keys again, and joins lines", async () =
   expect(
     (await after.find(FoodPlacement, {})).map((row) => row.foodKey)
   ).toEqual(["parsley"])
+
+  // Purchases are keyed as the pantry keys food, for usual buys.
+  expect((await after.find(Purchase, {})).map((row) => row.foodKey)).toEqual([
+    "chicken thigh",
+  ])
 
   // Again, nothing changes.
   expect(

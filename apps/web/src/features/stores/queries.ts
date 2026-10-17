@@ -51,6 +51,24 @@ export function useDeals() {
   return { data, recipes, any: recipes.size > 0 }
 }
 
+/** What recipes cost at the household's store, and its weekly budget. */
+export const costsQuery = queryOptions({
+  queryKey: ["stores", "costs"],
+  queryFn: () => unwrap(api.GET("/api/stores/costs")),
+  staleTime: 10 * 60_000,
+})
+
+/** Recipes' costs when the household has a Kroger store, by recipe id. */
+export function useCosts() {
+  const on = useCapability("stores.kroger")
+  const { data } = useQuery({ ...costsQuery, enabled: on })
+  return {
+    recipes: new Map(Object.entries(data?.recipes ?? {})),
+    currency: data?.currency ?? "USD",
+    weeklyBudget: data?.weeklyBudget ?? null,
+  }
+}
+
 /** Keeps the household's stores after a change. */
 export function useSetStores() {
   const queryClient = useQueryClient()
@@ -58,6 +76,7 @@ export function useSetStores() {
     queryClient.setQueryData(storesQuery.queryKey, status)
     void queryClient.invalidateQueries({ queryKey: krogerBasketQuery.queryKey })
     void queryClient.invalidateQueries({ queryKey: dealsQuery.queryKey })
+    void queryClient.invalidateQueries({ queryKey: costsQuery.queryKey })
   }
 }
 

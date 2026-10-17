@@ -50,6 +50,10 @@ export const StoresStatusSchema = z
         description:
           "How much Fill the week and the autoplan lean on deals: the household setting `stores.leanOnSales`.",
       }),
+      weeklyBudget: z.number().nullable().openapi({
+        description:
+          "The household's weekly budget in its store's currency, or null: the household setting `stores.weeklyBudget`.",
+      }),
     }),
   })
   .openapi("StoresStatus", {
@@ -62,6 +66,7 @@ export const StoresStatusSchema = z
         needsRelink: false,
         pricesCheckedAt: null,
         leanOnSales: "some",
+        weeklyBudget: 120,
       },
     },
   })
@@ -335,3 +340,43 @@ export const PriceCheckSchema = z
     }),
   })
   .openapi("PriceCheck", { example: { refreshed: 12, searched: 20, deals: 3 } })
+
+export const CostsSchema = z
+  .object({
+    currency: z.string(),
+    weeklyBudget: z.number().int().nullable().openapi({
+      description: "The household's weekly budget, in cents, or null.",
+    }),
+    recipes: z
+      .record(
+        z.string(),
+        z.object({
+          total: z.number().int().openapi({ description: "In cents." }),
+          perServing: z.number().int().nullable(),
+          priced: z.number().int().openapi({
+            description: "Its lines with a price.",
+          }),
+          counted: z.number().int().openapi({
+            description: "Its lines with an amount of something bought.",
+          }),
+        })
+      )
+      .openapi({
+        description:
+          "By recipe id, the recipes with a cost worth showing: three in five of their lines priced.",
+      }),
+  })
+  .openapi("RecipeCosts", {
+    example: {
+      currency: "USD",
+      weeklyBudget: 12000,
+      recipes: {
+        [IDS.lemonChicken]: {
+          total: 1240,
+          perServing: 310,
+          priced: 5,
+          counted: 6,
+        },
+      },
+    },
+  })

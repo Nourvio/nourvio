@@ -424,7 +424,11 @@
         "checked": "Prices checked {{when}}, and each morning. Only real deals count, not sales barely off the usual price.",
         "checkNow": "Check prices now",
         "checkedNow_one": "Prices checked: {{count}} deal in your recipes.",
-        "checkedNow_other": "Prices checked: {{count}} deals in your recipes."
+        "checkedNow_other": "Prices checked: {{count}} deals in your recipes.",
+        "budget": "Weekly budget",
+        "budgetHint": "What you mean to spend on food in a week. Fill the week and the autoplan pick recipes that fit what's left of it more often. Leave it empty for none.",
+        "budgetSaved": "Weekly budget saved.",
+        "budgetCleared": "Weekly budget cleared."
       }
     },
     "lockedBy": "Set on the server, by {{env}}",
@@ -856,7 +860,9 @@
     "caloriesMore_one": "{{value}}+ cal",
     "caloriesMore_other": "{{value}}+ cal",
     "caloriesADay_one": "about {{value}} cal a day",
-    "caloriesADay_other": "about {{value}} cal a day"
+    "caloriesADay_other": "about {{value}} cal a day",
+    "weekCost": "About {{cost}} of food",
+    "weekCostOf": "About {{cost}} of your {{budget}}"
   },
   "share": {
     "title": "Shared to Merran",
@@ -1137,7 +1143,9 @@
       "prep": "Prep",
       "cook": "Cook",
       "total": "Total",
-      "makes": "Makes"
+      "makes": "Makes",
+      "costs": "Costs about",
+      "costsServing": "{{total}} · {{serving}} a serving"
     },
     "lastMade": "Last made {{when}}",
     "original": "Original recipe: {{site}}",
@@ -1420,7 +1428,8 @@
       "missing": "Not counted: {{lines}}."
     },
     "onSale": "On sale",
-    "onSaleHint": "Recipes that use something on sale at {{store}}"
+    "onSaleHint": "Recipes that use something on sale at {{store}}",
+    "perServing": "{{price}} a serving"
   },
   "cook": {
     "exit": "Exit",
@@ -1613,7 +1622,8 @@
       "and": "{{first}} and {{second}}",
       "nothingNew": "Nothing new to add.",
       "leftOff": "Left off {{names}}: always on hand.",
-      "inPantry": "At home already: {{names}}."
+      "inPantry": "At home already: {{names}}.",
+      "times": "{{name}} ×{{count}}"
     },
     "weekly": {
       "title": "Every week",

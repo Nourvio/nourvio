@@ -77,6 +77,7 @@ import { VersionsDialog } from "@/features/recipes/versions-dialog"
 import { useCapability } from "@/features/capabilities/queries"
 import { useAssistantPage } from "@/features/assistant/assistant-context"
 import { PlanItDialog } from "@/features/plan/plan-it-dialog"
+import { formatPrice, useCosts } from "@/features/stores/queries"
 import { api, ApiError, unwrap } from "@/lib/api/client"
 import { formatRelativeDate } from "@/lib/format"
 
@@ -105,6 +106,7 @@ function RecipePage() {
 
 function RecipeView({ recipe }: { recipe: Recipe }) {
   const { t, i18n } = useTranslation()
+  const costs = useCosts()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const refresh = useRefreshRecipes()
@@ -235,6 +237,9 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
     })
   }
 
+  const cost = costs.recipes.get(recipe.id)
+  const money = (cents: number) =>
+    formatPrice(cents, costs.currency, i18n.language)
   const facts = [
     recipe.prepMinutes !== null && [
       t("recipes.facts.prep"),
@@ -249,6 +254,15 @@ function RecipeView({ recipe }: { recipe: Recipe }) {
       formatMinutes(t, recipe.totalMinutes),
     ],
     recipe.yieldText && [t("recipes.facts.makes"), recipe.yieldText],
+    cost && [
+      t("recipes.facts.costs"),
+      cost.perServing !== null
+        ? t("recipes.facts.costsServing", {
+            total: money(cost.total),
+            serving: money(cost.perServing),
+          })
+        : money(cost.total),
+    ],
   ].filter((fact): fact is [string, string] => Boolean(fact))
 
   return (

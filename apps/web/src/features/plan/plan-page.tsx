@@ -10,6 +10,7 @@ import {
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  costFor,
   addDays,
   dayOfWeek,
   NO_THEMES,
@@ -55,6 +56,7 @@ import {
 } from "./queries"
 import { usePlanActions } from "./use-plan-actions"
 import { useAssistantPage } from "@/features/assistant/assistant-context"
+import { formatPrice, useCosts } from "@/features/stores/queries"
 
 /**
  * The week plan: the week to show and how full it is, what's next, the
@@ -73,6 +75,18 @@ export function PlanPage({ week: asked }: { week?: string }) {
   const plan = useQuery(planQuery(week, addDays(week, 6)))
   const entries = plan.data?.entries ?? []
   const themes = useQuery(themesQuery).data?.themes ?? NO_THEMES
+  // What the week's meals cost, where their recipes' costs are known.
+  const costs = useCosts()
+  const weekCost = entries.reduce<number | null>((sum, entry) => {
+    const cost = entry.recipe ? costs.recipes.get(entry.recipe.id) : undefined
+    if (!cost || entry.status === "skipped") return sum
+    return (
+      (sum ?? 0) +
+      costFor(cost.total, entry.servings, entry.recipe?.servings ?? null)
+    )
+  }, null)
+  const money = (cents: number) =>
+    formatPrice(cents, costs.currency, i18n.language)
   const selection = useSelection()
   useSelectionKeepOnly(
     selection,
@@ -119,6 +133,13 @@ export function PlanPage({ week: asked }: { week?: string }) {
               count: average,
               value: average.toLocaleString(i18n.language),
             }),
+          weekCost !== null &&
+            (costs.weeklyBudget !== null
+              ? t("plan.weekCostOf", {
+                  cost: money(weekCost),
+                  budget: money(costs.weeklyBudget),
+                })
+              : t("plan.weekCost", { cost: money(weekCost) })),
         ]
           .filter(Boolean)
           .join(" · ")}

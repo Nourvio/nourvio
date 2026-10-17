@@ -34,6 +34,7 @@ import { decodeDiets } from "../recipes/diet-labels.ts"
 import { photoUrls } from "../recipes/photos.ts"
 import { toNumber, totalMinutes } from "../recipes/recipes.ts"
 import { tagKey, tagsOf } from "../recipes/tags.ts"
+import type { SuggestBudget } from "../stores/costs.ts"
 import type { RecipeSale, SuggestSales } from "../stores/prices.ts"
 
 // Fill the week, without AI: a recipe for each empty meal, by the
@@ -237,6 +238,8 @@ export async function suggestMeals(
     random?: () => number
     /** What's on sale at the household's store, and how much to lean. */
     sales?: SuggestSales | null
+    /** What's left of the weekly budget for each meal, and what recipes cost. */
+    budget?: SuggestBudget | null
   } = {}
 ): Promise<Suggestion[]> {
   if (slots.length === 0) return []
@@ -274,6 +277,14 @@ export async function suggestMeals(
     )
   const nudge = (recipe: Candidate) =>
     options.sales ? saleNudge(deals(recipe), options.sales.lean) : 0
+  // With a budget, recipes that fit what's left of it are picked more,
+  // and ones well over it less.
+  const fits = (recipe: Candidate) => {
+    const cost = options.budget?.costOf.get(recipe.id)
+    if (!options.budget || cost === undefined) return 1
+    const { perMeal } = options.budget
+    return cost <= perMeal ? 1.3 : cost <= perMeal * 1.5 ? 1 : 0.5
+  }
   const dates = slots.map((slot) => slot.date).sort()
   const nearby = await em.find(PlanEntry, {
     date: {
@@ -375,7 +386,7 @@ export async function suggestMeals(
           usesUp.get(r.id)?.length ?? 0,
           leaveOut(r).length > 0,
           nudge(r)
-        ),
+        ) * fits(r),
       random
     )
     if (!recipe) continue

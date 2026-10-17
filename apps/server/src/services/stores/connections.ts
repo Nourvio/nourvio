@@ -93,6 +93,11 @@ export async function storesStatus(
         householdId,
         STORE_SETTINGS.leanOnSales
       ),
+      weeklyBudget: await deps.settings.household(
+        em,
+        householdId,
+        STORE_SETTINGS.weeklyBudget
+      ),
     },
   }
 }

@@ -1,6 +1,8 @@
 import { SALE_LEANS } from "@merran/shared"
+import { z } from "zod"
 import {
   choiceSetting,
+  numberSetting,
   secretSetting,
   textSetting,
 } from "../../core/settings.ts"
@@ -24,5 +26,12 @@ export const STORE_SETTINGS = {
     description:
       "How much Fill the week and the weekly autoplan lean on what's on sale at the household's store: off, some, or lots. Only real deals count, not sales barely off the usual price.",
     default: "some",
+  }),
+  weeklyBudget: numberSetting({
+    key: "stores.weeklyBudget",
+    level: "household",
+    schema: z.number().positive().max(100_000),
+    description:
+      "What the household means to spend on food in a week, in its store's currency (dollars at Kroger). Fill the week and the weekly autoplan pick recipes that fit what's left of it more often. Empty for none.",
   }),
 }

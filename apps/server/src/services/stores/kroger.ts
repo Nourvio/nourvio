@@ -311,6 +311,8 @@ type KrogerProductAnswer = {
   upc?: string
   brand?: string
   description?: string
+  /** Kroger's departments for it: "Canned & Packaged", "Beauty". */
+  categories?: string[]
   productPageURI?: string
   aisleLocations?: { description?: string; number?: string }[]
   images?: {
@@ -369,13 +371,38 @@ export function toProduct(
   }
 }
 
+/** Kroger's departments that aren't food, whatever the name says. */
+const NOT_FOOD =
+  /\b(beauty|personal care|health|pharmacy|household|cleaning|laundry|paper|pet|baby|kitchen|home|electronics|office|school|party|toys?|apparel|clothing|automotive|garden|outdoor|hardware|tobacco|floral|seasonal décor)\b/i
+
+/**
+ * Something to eat or drink: not a lipstick called "Tomato Girl" found by
+ * a search for tomatoes. A product without departments counts as food.
+ */
+function isFood(found: KrogerProductAnswer) {
+  const categories = found.categories ?? []
+  return (
+    categories.length === 0 ||
+    categories.some((category) => !NOT_FOOD.test(category))
+  )
+}
+
+/** Ways recipes say things that the store's search doesn't know. */
+const SEARCH_WORDS: [RegExp, string][] = [
+  [/\btinned\b/gi, "canned"],
+  [/\btin of\b/gi, "canned"],
+]
+
 /** Searches a store's products for some words. */
 export async function searchProducts(
   fetcher: Fetcher,
   app: KrogerApp,
   options: { term: string; location: StoreLocation; limit?: number }
 ) {
-  const term = options.term
+  const term = SEARCH_WORDS.reduce(
+    (words, [pattern, word]) => words.replace(pattern, word),
+    options.term
+  )
     .replace(/[^\p{L}\p{N}\s'-]/gu, " ")
     .split(/\s+/)
     .filter(Boolean)
@@ -394,6 +421,7 @@ export async function searchProducts(
     `/products?${query}`
   )
   return (answer?.data ?? [])
+    .filter(isFood)
     .map((found) => toProduct(found, options.location.domain))
     .filter((found) => found !== null)
 }
@@ -417,6 +445,7 @@ export async function productsById(
       `/products?${query}`
     )
     for (const found of answer?.data ?? []) {
+      if (!isFood(found)) continue
       const product = toProduct(found, options.location.domain)
       if (product) products.push(product)
     }

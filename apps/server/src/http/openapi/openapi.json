@@ -11959,6 +11959,13 @@
                   "lots"
                 ],
                 "description": "How much Fill the week and the autoplan lean on deals: the household setting `stores.leanOnSales`."
+              },
+              "weeklyBudget": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "The household's weekly budget in its store's currency, or null: the household setting `stores.weeklyBudget`."
               }
             },
             "required": [
@@ -11968,7 +11975,8 @@
               "linked",
               "needsRelink",
               "pricesCheckedAt",
-              "leanOnSales"
+              "leanOnSales",
+              "weeklyBudget"
             ]
           }
         },
@@ -11992,7 +12000,8 @@
             },
             "needsRelink": false,
             "pricesCheckedAt": null,
-            "leanOnSales": "some"
+            "leanOnSales": "some",
+            "weeklyBudget": 120
           }
         }
       },
@@ -12270,6 +12279,71 @@
           "small"
         ],
         "description": "How good a sale is, against what the product usually costs: the lowest in a while, a normal sale, or barely off (under a tenth)."
+      },
+      "RecipeCosts": {
+        "type": "object",
+        "properties": {
+          "currency": {
+            "type": "string"
+          },
+          "weeklyBudget": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "The household's weekly budget, in cents, or null."
+          },
+          "recipes": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "total": {
+                  "type": "integer",
+                  "description": "In cents."
+                },
+                "perServing": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "priced": {
+                  "type": "integer",
+                  "description": "Its lines with a price."
+                },
+                "counted": {
+                  "type": "integer",
+                  "description": "Its lines with an amount of something bought."
+                }
+              },
+              "required": [
+                "total",
+                "perServing",
+                "priced",
+                "counted"
+              ]
+            },
+            "description": "By recipe id, the recipes with a cost worth showing: three in five of their lines priced."
+          }
+        },
+        "required": [
+          "currency",
+          "weeklyBudget",
+          "recipes"
+        ],
+        "example": {
+          "currency": "USD",
+          "weeklyBudget": 12000,
+          "recipes": {
+            "0199e8b0-5a10-7a01-8b00-000000000006": {
+              "total": 1240,
+              "perServing": 310,
+              "priced": 5,
+              "counted": 6
+            }
+          }
+        }
       },
       "KrogerStoreChanges": {
         "type": "object",
@@ -25869,6 +25943,57 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/Deals"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Not signed in.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Not allowed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stores/costs": {
+      "get": {
+        "operationId": "listRecipeCosts",
+        "tags": [
+          "Stores"
+        ],
+        "summary": "What recipes cost",
+        "description": "What each recipe costs at the household's Kroger store, from each line's share of its product's price today, where most of its lines have a price; and the household's weekly budget. With an API key, it needs the `recipes: read` permission.",
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "apiKey": []
+          }
+        ],
+        "x-merran-permission": "recipes:read",
+        "responses": {
+          "200": {
+            "description": "Its recipes' costs.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeCosts"
                 }
               }
             }
