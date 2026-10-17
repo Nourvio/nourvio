@@ -274,7 +274,7 @@ export function ShopPage() {
               . What went then is left out unless you tick it.
             </p>
           )}
-          <ul className="grid gap-2">
+          <ul className="grid grid-cols-1 gap-2">
             {lines.map((line) => (
               <BasketRow
                 key={line.itemId}
