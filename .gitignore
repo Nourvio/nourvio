@@ -14,7 +14,12 @@ coverage
 .env.*
 !.env.example
 *.local
-data/
+# What a running server keeps (its database, files and secret): the data
+# folder at the root, as Docker Compose mounts it, and the dev server's.
+# Not the code's own data folders, like the foods and recipe sites.
+/data/
+apps/server/data/
+apps/REFERENCE/server/data/
 
 # Logs
 logs

@@ -64,7 +64,7 @@ describe("shopping names", () => {
     ["chopped parsley", "parsley"],
     ["large potatoes", "potatoes"],
     ["large green bell peppers", "green bell peppers"],
-    ["finely chopped fresh parsley", "fresh parsley"],
+    ["finely chopped fresh parsley", "parsley"],
     ["diced chicken breast", "chicken breast"],
     ["Pinch of salt", "salt"],
     ["(75 g) butter", "butter"],

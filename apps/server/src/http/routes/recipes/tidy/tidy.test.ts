@@ -251,7 +251,8 @@ describe("tidying a recipe", () => {
     ).toEqual([
       ["1 cup arborio rice", "needed"],
       ["8 oz mushrooms", "optional"],
-      ["salt and pepper", null],
+      // Its food is the pepper, marked optional like the salt.
+      ["salt and pepper", "optional"],
       ["parsley", "optional"],
     ])
     expect(risotto.tags).toEqual(["dinner"])

@@ -161,6 +161,12 @@ export function bareFood(text: string, asides: string[] = []): string {
   return words.slice(at).join(" ")
 }
 
+/** "minus 2 tablespoons " before the food: an amount taken off. */
+const MINUS = new RegExp(
+  String.raw`^((?:minus|less)\s+${NUMBER}\s*([A-Za-z.]+))\s+`,
+  "i"
+)
+
 /** "/ 240 ml " before the food: the amount another way. */
 const OTHER_AMOUNT = new RegExp(String.raw`^\/\s*(${NUMBER}\s*([A-Za-z.]+))\s+`)
 
@@ -175,6 +181,12 @@ function withoutOtherAmount(body: string, asides: string[]): string {
   if (plus) {
     asides.push(rest.slice(0, plus.length).trim())
     rest = rest.slice(plus.length).trim()
+  }
+  // "2 cups minus 2 tablespoons cake flour": noted, not the food.
+  const minus = rest.match(MINUS)
+  if (minus && findUnit(minus[2]!)) {
+    asides.push(minus[1]!.trim())
+    rest = rest.slice(minus[0].length)
   }
   const bracket = rest.match(/^\(([^)]+)\)\s*/)
   if (bracket) {
@@ -232,15 +244,23 @@ const DESCRIBING =
 
 /** Tidies an ingredient line: bullets gone, unicode fractions spelled out, spaces collapsed. */
 export function normalizeIngredientLine(line: string) {
-  return line
-    .replace(/^\s*(?:[-–•*·▢□☐]|\d+[.)](?=\s))\s*/, "")
-    .replace(/(\d)?([½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])/g, (_, whole: string, frac: string) =>
-      whole ? `${whole} ${UNICODE_FRACTIONS[frac]}` : UNICODE_FRACTIONS[frac]!
-    )
-    .replace(/(\d)\s*⁄\s*(\d)/g, "$1/$2")
-    .replace(/\s+/g, " ")
-    .trim()
+  return (
+    line
+      .replace(/^\s*(?:[-–•*·▢□☐]|\d+[.)](?=\s))\s*/, "")
+      .replace(/(\d)?([½⅓⅔¼¾⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞])/g, (_, whole: string, frac: string) =>
+        whole ? `${whole} ${UNICODE_FRACTIONS[frac]}` : UNICODE_FRACTIONS[frac]!
+      )
+      .replace(/(\d)\s*⁄\s*(\d)/g, "$1/$2")
+      // "1 and 1/2 cups" is 1 1/2 cups.
+      .replace(/\b(\d+)\s+and\s+(\d+\/\d+)/g, "$1 $2")
+      .replace(/\s+/g, " ")
+      .trim()
+  )
 }
+
+/** Words before an amount that only say it's rough: "about 3", "heaping ½". */
+const ROUGHLY =
+  /^(?:about|approx\.?|approximately|roughly|around|~|heaping|heaped|scant|level|generous|a\s+(?:heaping|heaped|scant|generous|good))\s+(?=\d)/i
 
 export type ParsedIngredient = {
   /** The tidied line, exactly what's shown when nothing is scaled. */
@@ -273,11 +293,13 @@ export function parseIngredient(line: string): ParsedIngredient {
   let quantityMax: number | null = null
   let quantityText = ""
 
-  const numeric = text.match(QUANTITY)
+  // "Heaping ½ tsp": the amount, said as it's written when it isn't scaled.
+  const rough = text.match(ROUGHLY)?.[0] ?? ""
+  const numeric = text.slice(rough.length).match(QUANTITY)
   if (numeric) {
     quantity = parseNumber(numeric[1]!)
     quantityMax = numeric[2] ? parseNumber(numeric[2]) : null
-    quantityText = numeric[0]
+    quantityText = rough + numeric[0]
   } else {
     const word = text.match(/^([a-z]+)\b/i)
     const value = word ? NUMBER_WORDS[word[1]!.toLowerCase()] : undefined
@@ -397,7 +419,7 @@ export function statedGrams(
 export function plusAmount(
   rest: string
 ): { quantity: number; unitId: string; length: number } | null {
-  const lead = /^\s*plus\s+/i.exec(rest)
+  const lead = /^\s*(?:plus\s+|\+\s*)/i.exec(rest)
   if (!lead) return null
   const parsed = parseIngredient(rest.slice(lead[0].length))
   if (parsed.quantity === null || !parsed.unitId || !parsed.parts) return null

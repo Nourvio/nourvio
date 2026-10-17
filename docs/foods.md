@@ -2,7 +2,7 @@
 
 A plan for one shared vocabulary of foods: what each one is called (in every language Merran speaks, and the ways recipes and regions say it), what it belongs to, and what Merran knows about it. Recipes, the list, the pantry, nutrition and the stores all ask it the same question: which food is this line about?
 
-Status: planned (October 17, 2026). It comes after the stores' costs and budget and before the Walmart cart, which searches by the same names. See [scope.md](scope.md).
+Status: slice 1 built (October 17, 2026): about 450 foods, matching, brands, the corpus and the coverage report. Slices 2 to 4 are planned. It comes after the stores' costs and budget and before the Walmart cart, which searches by the same names. See [scope.md](scope.md).
 
 ## Why
 
@@ -44,93 +44,68 @@ Looked at and decided against, with the reasons, so it isn't proposed again with
 
 ## A food
 
-Foods live in the shared package, as data with the code that reads them: `packages/shared/src/foods/data/<language>.json` for names, and `packages/shared/src/foods/data/foods.json` for what's true of a food in every language. They're read once when the package loads (a few hundred entries is nothing to hold in memory), and they ship with releases, like the starter collections.
+Foods live in the shared package beside the code that reads them, as typed data modules: `foods/data/foods.ts` for what's true of a food in every language, `foods/data/en.ts` for its English names, and `foods/data/brands-en.ts` for brands. Modules rather than JSON files: they're checked by TypeScript, can have comments (each aisle's foods under a heading), and need no JSON-import settings in the server, the web app and the extension, which build them three different ways. They're read once when the package loads, and they ship with releases, like the starter collections.
 
-```jsonc
-// foods.json
-{
-  "all-purpose flour": {
-    "parent": "flour",
-    "aisle": "pantry",
-    "gramsPerCup": 120,
-    "sold": "weight"
-  },
-  "garlic": {
-    "aisle": "produce",
-    "units": { "head": { "clove": 10 }, "each": { "clove": 1 }, "tablespoon": { "clove": 3 } },
-    "shows": { "unit": "head", "whole": true },
-    "keeps": "out"
-  },
-  "egg": {
-    "aisle": "dairy-eggs",
-    "keepSize": true,
-    "gramsEach": 50,
-    "sold": "count"
-  },
-  "whole chicken": { "parent": "chicken", "aisle": "meat-seafood", "gramsEach": 2000, "sold": "weight" }
-}
+```ts
+// foods.ts: what's true of a food, by its key
+"all-purpose flour": { aisle: "pantry", parent: "flour" },
+egg: { aisle: "dairy-eggs", keepSize: true },
+"whole chicken": { aisle: "meat-seafood", parent: "chicken" },
 ```
 
-```jsonc
-// en.json: the names a food goes by, the first the one Merran shows
-{
-  "all-purpose flour": ["all-purpose flour", "plain flour", "AP flour", "all purpose flour"],
-  "cilantro": ["cilantro", "coriander leaves", "fresh coriander"],
-  "garlic": ["garlic", "garlic clove", "clove of garlic"],
-  "kosher salt": ["kosher salt", "coarse salt"]
-}
+```ts
+// en.ts: the names it goes by besides its key
+"all-purpose flour": ["plain flour", "ap flour", "plain purpose flour", "white flour"],
+cilantro: ["coriander leaf", "fresh coriander", "cilantro leaf"],
+"red chili": ["red chilli", "red chillies", "red chilies"],
 ```
 
-```jsonc
-// brands/en.json: dropped before looking, or naming a food
-{
-  "drop": ["King Arthur", "Bob's Red Mill", "Simple Truth", "Private Selection"],
-  "means": { "Diamond Crystal": "kosher salt", "Morton kosher salt": "kosher salt" }
-}
+```ts
+// brands-en.ts: dropped before looking, or naming a food
+drop: ["king arthur", "bob's red mill", "simple truth", "morton"],
+means: { "diamond crystal": "salt", maldon: "flaky sea salt" },
 ```
 
-What a food can say, each optional except its key:
+Names are matched without case, accents, apostrophes or hyphens, each word singular, so a food needs no names for "All-Purpose Flours". Plurals that don't end in a plain "s" are names of their own ("chillies", "chilies").
 
-| Field | What it's for | Replaces |
-|---|---|---|
-| key | Its identity, in English, lowercase, singular | |
-| names (per language) | What it's called; the first is shown | `synonyms.ts`, the pantry's same-thing words |
-| parent | What it's a kind of: green bell pepper → bell pepper | |
-| aisle | Where it's shelved | `AISLE_WORDS` (kept for foods outside the vocabulary) |
-| gramsPerCup | Its density, so cups and grams add up | `GRAMS_PER_CUP` |
-| gramsEach | What one weighs, so "2 onions" can be priced by the pound | `EACH_GRAMS` |
-| units | Its own units: a head of garlic, a stick of butter | `FOOD_UNITS` |
-| keepSize | A size that's a different thing to buy: large eggs, jumbo shrimp | the size rules' exceptions |
-| sold | By weight, by count, or by the pack | the cost rules' guesses |
-| keeps | Out of the fridge, or for weeks | `KEEPS_OUT`, `LONG_KEEPING` |
-| onHand | Usually at home | `DEFAULT_ON_HAND` |
-| product | A name that's a product of its own: crushed red pepper, Better Than Bouillon | `PRODUCT` |
-| search | What to search a store for, when the name isn't it | the search's word swaps |
-| fdc | Its USDA FoodData Central food | seeds `food_matches` |
+What a food can say, each optional except its key and aisle:
 
-Brands get a list of their own, per language: words to drop ("King Arthur", "Bob's Red Mill", "Simple Truth") and brands that name a food ("Diamond Crystal" is kosher salt, "Sriracha" is sriracha). A brand that's the product, with no food under it, is a food with `product`.
+| Field | What it's for | Replaces | Slice |
+|---|---|---|---|
+| key | Its identity: English, lowercase, the last word singular, like every food key | | 1 |
+| names (per language) | What it's called besides its key | `synonyms.ts`, the pantry's same-thing words | 1 |
+| aisle | Where it's shelved | `AISLE_WORDS` (kept for foods outside the vocabulary) | 1, read in 2 |
+| parent | What it's a kind of: green bell pepper → bell pepper | | 1, read in 3 |
+| keepSize | A size that's a different thing to buy: large eggs, jumbo shrimp | the size rules' exceptions | 1 |
+| gramsPerCup | Its density, so cups and grams add up | `GRAMS_PER_CUP` | 2 |
+| gramsEach | What one weighs, so "2 onions" can be priced by the pound | `EACH_GRAMS` | 2 |
+| units | Its own units: a head of garlic, a stick of butter | `FOOD_UNITS` | 2 |
+| sold | By weight, by count, or by the pack | the cost rules' guesses | 2 |
+| keeps | Out of the fridge, or for weeks | `KEEPS_OUT`, `LONG_KEEPING` | 2 |
+| onHand | Usually at home | `DEFAULT_ON_HAND` | 2 |
+| search | What to search a store for, when the name isn't it | the search's word swaps | 2 |
+| fdc | Its USDA FoodData Central food | seeds `food_matches` | 2 |
+
+A brand that's the product, with no food under it (Sriracha, Old Bay), is a food. Brands that name a food ("Diamond Crystal" is salt) are in `means`; the rest are dropped before looking.
 
 ## Finding the food in a line
 
-The parser stays as it is: amount, unit, what's in brackets, notes after a comma. The vocabulary changes what happens to the words left:
+The parser does the amount, unit and notes as before (brackets, nested or left open, are notes too). The tidy-up that follows (`shoppingName`) takes off a label ("Egg wash:"), what's done to it after it ("cut into chunks", "beaten with milk"), how it's used ("to serve"), a measure without a number, what it comes in ("can"), and a second choice. Then `findFood` looks in what's left:
 
-1. **Tidy:** what's in brackets, how it's used ("to serve"), a measure without a number, what it comes in ("can"), a second choice, as `shoppingName` does now.
-2. **Find:** the longest known name inside what's left, on word boundaries, plurals included, brands dropped first. "King Arthur Unbleached All-Purpose Flour" has "all-purpose flour" in it; "finely chopped fresh flat-leaf parsley" has "parsley". Around the name, words for prep ("chopped") and size ("large", unless the food keeps it) are noted, not lost.
-3. **Otherwise:** the tidied text, as today, and its plain form as the key. These are the lines the coverage report lists.
+1. **Brands:** one that names a food is that food; the others are skipped.
+2. **The longest known name anywhere in the words, and of those the last.** English puts the food last, so "vanilla ice cream" is ice cream and "chicken sausage" is sausage, while "King Arthur Unbleached All-Purpose Flour" is all-purpose flour and "lime juice about 2 limes" lime juice.
+3. **The word before it, when it makes a different thing to buy:** dried, frozen, smoked, ground, powdered, pickled, roasted, sweet, hot, dark, light, vegan ("dried oregano", "dark brown sugar"); a color, for fruit and vegetables ("red grape"); dairy-free, gluten-free and the like, which matter for allergies ("dairy-free milk" isn't milk). These make the key, like "dried oregano". A size stays in the name for a food sold by size ("large eggs") but not in its key.
+4. **Otherwise** the tidied words and their plain form, as before. These are the lines the coverage report lists.
 
-What comes out of a line:
+A choice shares its food when that's a food Merran knows and the first choice is part of it, or isn't a food at all: "sunflower or vegetable oil" is sunflower oil, "low-sodium chicken or vegetable broth" chicken broth, "fresh or frozen blueberries" blueberries, but "mayonnaise or plain Greek yogurt" is mayonnaise.
+
+What comes out (`foodInLine`):
 
 ```ts
-type FoodFound = {
-  key: string           // "all-purpose flour", or the plain text's key
-  name: string          // what the list shows: the food's name, or the text
-  known: boolean        // found in the vocabulary
-  prep: string | null   // "finely chopped"
-  size: string | null   // "large"
-}
+{ key: "all-purpose flour", name: "All-Purpose Flour", known: true }
 ```
 
-`foodKey`, `lineFood` and `shoppingName` keep their signatures and use it, so callers don't change.
+The name is the words that named it, as the recipe wrote them ("plain flour" stays "plain flour" for a British household), so lines of the same food join under the first one's name. `foodKey`, `lineFood` and `shoppingName` keep their signatures and use it, so callers didn't change.
 
 ## Kinds of
 
@@ -160,9 +135,9 @@ Recipe lines keep the food they were matched to (`recipe_ingredients.food_key`, 
 
 ## Knowing it works
 
-- **A corpus of lines,** `packages/shared/src/foods/corpus/en.txt`: a thousand or so ingredient lines in the styles sites write them (WP Recipe Maker's "(, drained)", RecipeTin's "((Note 4))", British and Australian names, brands, ranges, choices), written for the project rather than copied. Each one has its expected food in a golden file the tests check.
-- **A coverage target:** the share of corpus lines matched to a known food, checked in CI so it can't quietly drop. 95% to start.
-- **A report for a real library:** `pnpm --filter @merran/server foods:coverage` runs a server's own recipes through it and lists the foods it didn't know, most common first. It reads the database and prints; it's for growing the vocabulary, and nothing it reads is committed.
+- **A corpus of lines,** `packages/shared/src/foods/corpus/en.txt`: ingredient lines in the styles sites write them (WP Recipe Maker's "(, drained)", RecipeTin's "((Note 4))", British and Australian names, brands, ranges, choices), written for the project rather than copied, each as `line => food key` (`?` before a key for a food it doesn't know yet). The tests check every one, and that a key is its own key.
+- **A coverage target:** the share of corpus lines that are foods it knows, checked in the tests so it can't quietly drop. 95% to start.
+- **A report for a real library:** `pnpm merran foods` (or `merran foods` in the Docker image) runs a server's recipes and recipe sites through it and lists the foods it didn't know, most common first, with a line for each. Given a text file (`merran foods lines.txt`, one ingredient to a line) it reads that instead, which is how a big set of lines collected elsewhere is used: for finding what to add, never committed as it is. It only reads.
 - **Adding a food is one entry and one corpus line,** described in the contributing guide.
 
 ## Slices
@@ -171,6 +146,7 @@ Each slice ends with the tests passing and `FOOD_KEYS_VERSION` bumped, so what's
 
 1. **The vocabulary and finding foods.** The data files and their loader; brands; the matcher; `foodKey`, `lineFood` and `shoppingName` using it, with today's lists as the fallback for unknown foods; the first few hundred foods, from the corpus and the dev households' recipes; the corpus, golden file and coverage check.
    *Done when:* the corpus is 95% matched, and a week of the dev household's recipes added from the plan has no line named by a brand, a bracket or a measure.
+   *Built:* the corpus (339 lines) is 98.5% foods it knows, every line as expected; the dev server's 2,479 lines are 98.5%.
 2. **One place for what Merran knows about food.** Densities, weights each, food units, aisles, keeping, always-on-hand and store search words read from the vocabulary; `food_matches` starts from its USDA ids; the old lists are deleted, except the aisle patterns for foods it doesn't know.
    *Done when:* `synonyms.ts`, `GRAMS_PER_CUP`, `EACH_GRAMS`, `FOOD_UNITS`, `KEEPS_OUT`, `LONG_KEEPING` and the pantry's same-thing words are gone, and nothing else changed in the tests' results.
 3. **Kinds of.** Parents in the pantry, "uses up" and costs.

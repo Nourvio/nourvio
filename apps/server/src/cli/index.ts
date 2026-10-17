@@ -3,20 +3,26 @@
 //   pnpm merran <command>                       from a checkout
 //   docker exec -it merran merran <command>     in the Docker image
 
+import { foodsCoverage } from "./foods.ts"
 import { rotateSecret } from "./rotate-secret.ts"
 
 const COMMANDS: Record<
   string,
-  { description: string; run: () => Promise<number> }
+  { description: string; run: (args: string[]) => Promise<number> }
 > = {
   "rotate-secret": {
     description:
       "Change the server's secret, sealing every saved key again with the new one.",
     run: () => rotateSecret(),
   },
+  foods: {
+    description:
+      "How many of this server's ingredient lines (or a text file's, one to a line) name a food Merran knows, and the foods it doesn't.",
+    run: (args) => foodsCoverage(args),
+  },
 }
 
-const [name] = process.argv.slice(2)
+const [name, ...args] = process.argv.slice(2)
 const command = name ? COMMANDS[name] : undefined
 
 if (!command) {
@@ -28,7 +34,7 @@ if (!command) {
 }
 
 try {
-  process.exit(await command.run())
+  process.exit(await command.run(args))
 } catch (err) {
   console.error(err instanceof Error ? err.message : err)
   process.exit(1)

@@ -1,3 +1,4 @@
+import { findFood } from "../foods/vocabulary.ts"
 import { bareFood, parseIngredient } from "../ingredients/parse.ts"
 import { guessAisle } from "./aisles.ts"
 import { FOOD_SYNONYMS } from "./synonyms.ts"
@@ -11,7 +12,7 @@ import { FOOD_SYNONYMS } from "./synonyms.ts"
  * Bumped whenever keys are made differently, so the ones the server keeps
  * (on lists, in the pantry, for aisles and store products) are made again.
  */
-export const FOOD_KEYS_VERSION = 7
+export const FOOD_KEYS_VERSION = 8
 
 /** Words that describe a size or freshness, not a different thing to buy. */
 const DESCRIPTORS =
@@ -45,13 +46,13 @@ export function plainKey(food: string) {
 }
 
 /**
- * A food's key, the same for every way of saying it: its shopping name's
- * plain form, as the synonyms have it. "Chopped fresh flat-leaf parsley"
- * and "parsley" are "parsley"; "plain flour" is "all-purpose flour".
+ * A food's key, the same for every way of saying it: the key of the food
+ * Merran knows in it, else its shopping name's plain form, as the synonyms
+ * have it. "Chopped fresh flat-leaf parsley" and "parsley" are "parsley";
+ * "plain flour" is "all-purpose flour".
  */
 export function foodKey(food: string) {
-  const key = plainKey(shoppingName(food))
-  return FOOD_SYNONYMS[key] ?? key
+  return named(food).key
 }
 
 /**
@@ -124,17 +125,48 @@ function firstChoice(name: string) {
   if (!choices) return name
   const first = choices[1]!.trim()
   const second = choices[2]!.trim()
-  if (/^\d/.test(second)) return parseIngredient(second).food ?? first
+  // "Melted butter or ¼ cup vegetable oil" is butter; "½ tsp Diamond
+  // Crystal or ¼ tsp Morton kosher salt", with no food first, the second.
+  if (/^\d/.test(second)) {
+    return findFood(first) ? first : (parseIngredient(second).food ?? first)
+  }
   if (/^(?:other|another|any|similar)\b/i.test(second)) return first
   const a = first.split(/\s+/)
   const b = second.split(/\s+/)
-  // "Sunflower or vegetable oil": the choice is which oil, so they share it.
+  if (b.length < 2) return first
+  const together = `${first} ${b.slice(1).join(" ")}`
+  // "Sunflower or vegetable oil", "low-sodium chicken or vegetable broth":
+  // the choice is which oil, which broth, when that's a food Merran knows
+  // and the first choice's word is part of it. "Mayonnaise or plain Greek
+  // yogurt" isn't mayonnaise yogurt.
+  const known = findFood(together)
+  if (known) {
+    const word = a.at(-1)!.toLowerCase()
+    const shares =
+      known.name
+        .toLowerCase()
+        .split(/[\s-]+/)
+        .includes(word) ||
+      // "Fresh or frozen blueberries": the first isn't a food, only which.
+      !findFood(first)
+    return shares ? together : first
+  }
+  // A food it doesn't know: share it when the first only says which.
   const shared =
-    b.length > 1 &&
     (a.length === 1 || WHICH.test(a.at(-1)!)) &&
     a.at(-1)!.toLowerCase() !== b.at(-1)!.toLowerCase()
-  return shared ? `${first} ${b.slice(1).join(" ")}` : first
+  return shared ? together : first
 }
+
+/** A label before the food: "Egg wash:", "Optional toppings:". */
+const LABEL = /^[\p{L}\s-]{2,30}:\s+(?=\S)/u
+
+/**
+ * What's done to it said after it, which can name other foods: "onion cut
+ * the same size as the potatoes", "egg beaten with 1 tbsp milk".
+ */
+const DONE_AFTER =
+  /\s+(?:cut|sliced|chopped|diced)\s+(?:into|in|the|to|across|against|lengthwise)\b.*$|\s+(?:beaten|mixed|whisked|tossed|combined|blended)\s+with\b.*$/i
 
 /** What it comes in, said before the food: "can chickpeas", "tube of". */
 const CONTAINER =
@@ -162,7 +194,18 @@ function noBrackets(name: string) {
  * "lemon wedges"; "zest of half of a lemon" is "lemon".
  */
 export function shoppingName(food: string) {
+  return named(food).name
+}
+
+/**
+ * A food's name and key: a food Merran knows by the words that named it
+ * and its own key ("King Arthur Unbleached All-Purpose Flour" is
+ * "All-Purpose Flour", all-purpose flour); else the tidied words and their
+ * plain form, as the synonyms have it.
+ */
+function named(food: string): { name: string; key: string; known: boolean } {
   let name = noBrackets(food).replace(/\*+/g, "").replace(/\s+/g, " ").trim()
+  name = name.replace(LABEL, "").replace(DONE_AFTER, "")
   name = bareFood(name.replace(HOW_MUCH, "").trim())
   name = name.replace(ZEST_OF, "$1")
   const container = name.match(CONTAINER)
@@ -171,7 +214,12 @@ export function shoppingName(food: string) {
   }
   // "Large eggs and 2 large yolks": the first, which says what it is.
   name = name.replace(/\s+(?:and|plus)\s+\d.*$/i, "")
-  return withoutPrep(firstChoice(name)).replace(/\s+/g, " ").trim() || food
+  name = firstChoice(name)
+  const known = findFood(name)
+  if (known) return { ...known, known: true }
+  const shown = withoutPrep(name).replace(/\s+/g, " ").trim() || food
+  const key = plainKey(shown)
+  return { name: shown, key: FOOD_SYNONYMS[key] ?? key, known: false }
 }
 
 /**
@@ -179,7 +227,16 @@ export function shoppingName(food: string) {
  * ("chicken thighs") and key ("chicken thigh"), or null when there's none.
  */
 export function lineFood(line: string) {
+  const found = foodInLine(line)
+  return found && { name: found.name, key: found.key }
+}
+
+/**
+ * The food in an ingredient line, and whether it's one Merran knows: for
+ * seeing how much of a library the food vocabulary covers.
+ */
+export function foodInLine(line: string) {
   const parsed = parseIngredient(line)
-  const name = shoppingName(parsed.food ?? parsed.text)
-  return name ? { name, key: foodKey(name) } : null
+  const found = named(parsed.food ?? parsed.text)
+  return found.name ? found : null
 }

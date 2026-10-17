@@ -1,5 +1,6 @@
 import { expect, test } from "vitest"
 import { combineLines } from "./amounts.ts"
+import { parseIngredient } from "../ingredients/parse.ts"
 import { lineFood } from "./food.ts"
 
 // Lines as recipe sites write them, from a household's own recipes: what
@@ -11,8 +12,8 @@ test.each([
   ["zest of half of a lemon", "lemon", "lemon"],
   [
     "1/2 tsp. Diamond Crystal or 1/4 tsp. Morton kosher salt, plus more",
-    "Morton kosher salt",
-    "morton kosher salt",
+    "salt",
+    "salt",
   ],
   [
     "1/2 medium yellow or white onion, diced ((1/2 medium onion yields ~1 heaping cup or 150 g))",
@@ -31,12 +32,12 @@ test.each([
   [
     "1/3 cup Chardonnay or other dry white wine (, substitute chicken stock/broth (Note 5))",
     "Chardonnay",
-    "chardonnay",
+    "white wine",
   ],
   [
     "2 tbsp Chinese cooking wine (or Taiwanese rice wine (mijiu) if you can find it, or chicken stock/broth (Note 5))",
     "Chinese cooking wine",
-    "chinese cooking wine",
+    "shaoxing wine",
   ],
   [
     "3/4 cup thickened cream / heavy cream (, or any full fat cream ~35% fat)",
@@ -72,6 +73,31 @@ test.each([
   ],
 ])("%s", (line, name, key) => {
   expect(lineFood(line)).toEqual({ name, key })
+})
+
+test("rough amounts, 'and' fractions, and amounts added or taken off", () => {
+  expect(parseIngredient("1 and 1/2 cups milk")).toMatchObject({
+    quantity: 1.5,
+    unitId: "cup",
+    food: "milk",
+  })
+  const heaping = parseIngredient("Heaping ½ teaspoon ground cumin")
+  expect(heaping).toMatchObject({ quantity: 0.5, unitId: "teaspoon" })
+  expect(
+    heaping.parts &&
+      heaping.parts.quantity +
+        heaping.parts.between +
+        heaping.parts.unit +
+        heaping.parts.rest
+  ).toBe(heaping.text)
+  expect(lineFood("About 3 quarts peanut or vegetable oil")).toEqual({
+    name: "peanut oil",
+    key: "peanut oil",
+  })
+  expect(lineFood("2 cups minus 2 tablespoons cake flour")?.key).toBe(
+    "cake flour"
+  )
+  expect(lineFood("1/3 cup + 2 tbsp white sugar")?.key).toBe("sugar")
 })
 
 test("names a list kept before they were tidied as the food", () => {
